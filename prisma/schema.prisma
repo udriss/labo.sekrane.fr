@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String          @id @default(cuid())
+  email             String          @unique
+  password          String
+  name              String
+  role              Role            @default(STUDENT)
+  class             String?
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  auditLogs         AuditLog[]
+  createdNotebooks  NotebookEntry[] @relation("CreatedBy")
+  orders            Order[]
+  assignedNotebooks NotebookEntry[] @relation("AssignedTo")
+
+  @@map("users")
+}
+
+model SecurityEvent {
+  id        Int      @id @default(autoincrement())
+  eventType String
+  timestamp DateTime @default(now())
+}
+
+model Chemical {
+  id              String             @id @default(cuid())
+  name            String
+  formula         String?
+  molfile         String?
+  casNumber       String?
+  barcode         String?            @unique
+  quantity        Float
+  unit            Unit
+  minQuantity     Float?
+  concentration   Float?
+  purity          Float?
+  purchaseDate    DateTime?
+  expirationDate  DateTime?
+  openedDate      DateTime?
+  storage         String?
+  room            String?
+  cabinet         String?
+  shelf           String?
+  hazardClass     HazardClass?
+  sdsFileUrl      String?
+  supplierId      String?
+  batchNumber     String?
+  orderReference  String?
+  status          ChemicalStatus     @default(IN_STOCK)
+  notes           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  supplier        Supplier?          @relation(fields: [supplierId], references: [id])
+  usedInNotebooks NotebookChemical[]
+  orderItems      OrderItem[]
+
+  @@map("chemicals")
+}
+
+model Materiel {
+  id               String              @id @default(cuid())
+  name             String
+  type             EquipmentType
+  model            String?
+  serialNumber     String?             @unique
+  barcode          String?             @unique
+  quantity         Int
+  status           EquipmentStatus     @default(AVAILABLE)
+  location         String?
+  room             String?
+  cabinet          String?
+  lastMaintenance  DateTime?
+  nextMaintenance  DateTime?
+  maintenanceNotes String?
+  supplierId       String?
+  purchaseDate     DateTime?
+  warrantyEnd      DateTime?
+  notes            String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  supplier         Supplier?           @relation(fields: [supplierId], references: [id])
+  maintenanceLogs  MaintenanceLog[]
+  usedInNotebooks  NotebookEquipment[]
+  orderItems       OrderItem[]
+
+  @@map("materiel")
+}
+
+model MaintenanceLog {
+  id          String          @id @default(cuid())
+  equipmentId String
+  date        DateTime
+  type        MaintenanceType
+  description String
+  cost        Float?
+  performedBy String
+  createdAt   DateTime        @default(now())
+  materiel   Materiel       @relation(fields: [equipmentId], references: [id])
+
+  @@map("maintenance_logs")
+}
+
+model Supplier {
+  id        String      @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  website   String?
+  notes     String?
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  chemicals Chemical[]
+  materiel Materiel[]
+  orders    Order[]
+
+  @@map("suppliers")
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique
+  supplierId   String
+  userId       String
+  status       OrderStatus @default(DRAFT)
+  orderDate    DateTime?
+  deliveryDate DateTime?
+  totalAmount  Float?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  items        OrderItem[]
+  supplier     Supplier    @relation(fields: [supplierId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String     @id @default(cuid())
+  orderId     String
+  chemicalId  String?
+  equipmentId String?
+  quantity    Float
+  unitPrice   Float?
+  totalPrice  Float?
+  notes       String?
+  chemical    Chemical?  @relation(fields: [chemicalId], references: [id])
+  materiel   Materiel? @relation(fields: [equipmentId], references: [id])
+  order       Order      @relation(fields: [orderId], references: [id])
+
+  @@map("order_items")
+}
+
+model NotebookEntry {
+  id              String              @id @default(cuid())
+  title           String
+  description     String?
+  protocolFileUrl String?
+  scheduledDate   DateTime
+  duration        Int?
+  class           String
+  groups          String[]
+  createdById     String
+  objectives      String?
+  procedure       String?
+  observations    String?
+  results         String?
+  calculations    String?
+  conclusions     String?
+  images          String[]
+  attachments     String[]
+  studentSigned   Boolean             @default(false)
+  teacherSigned   Boolean             @default(false)
+  signedAt        DateTime?
+  status          NotebookStatus      @default(DRAFT)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  chemicals       NotebookChemical[]
+  createdBy       User                @relation("CreatedBy", fields: [createdById], references: [id])
+  materiel       NotebookEquipment[]
+  assignedTo      User[]              @relation("AssignedTo")
+
+  @@map("notebook_entries")
+}
+
+model NotebookChemical {
+  id           String        @id @default(cuid())
+  notebookId   String
+  chemicalId   String
+  quantityUsed Float
+  unit         Unit
+  notes        String?
+  chemical     Chemical      @relation(fields: [chemicalId], references: [id])
+  notebook     NotebookEntry @relation(fields: [notebookId], references: [id])
+
+  @@map("notebook_chemicals")
+}
+
+model NotebookEquipment {
+  id          String        @id @default(cuid())
+  notebookId  String
+  equipmentId String
+  quantity    Int           @default(1)
+  notes       String?
+  materiel   Materiel     @relation(fields: [equipmentId], references: [id])
+  notebook    NotebookEntry @relation(fields: [notebookId], references: [id])
+
+  @@map("notebook_equipment")
+}
+
+model Calendar {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  class       String?
+  room        String?
+  type        CalendarType
+  notebookId  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("calendar_events")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  timestamp  DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  room      String?
+  cabinet   String?
+  shelf     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("locations")
+}
+
+model ConfigurableList {
+  id         String   @id @default(cuid())
+  type       String   // 'hazard_class', 'storage_condition', 'room', etc.
+  value      String
+  isActive   Boolean  @default(true)
+  sortOrder  Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([type, value])
+  @@map("configurable_lists")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum Unit {
+  ML
+  L
+  G
+  KG
+  MG
+  MOL
+  PIECE
+}
+
+enum ChemicalStatus {
+  IN_STOCK
+  LOW_STOCK
+  OPENED
+  EXPIRED
+  EMPTY
+  QUARANTINE
+}
+
+enum HazardClass {
+  EXPLOSIVE
+  FLAMMABLE
+  OXIDIZING
+  TOXIC
+  CORROSIVE
+  IRRITANT
+  CARCINOGENIC
+  ENVIRONMENTAL
+}
+
+enum EquipmentType {
+  GLASSWARE
+  HEATING
+  MEASURING
+  SAFETY
+  MIXING
+  FILTRATION
+  OPTICAL
+  ELECTRONIC
+  OTHER
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  BROKEN
+  RETIRED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  CALIBRATION
+  CLEANING
+}
+
+enum OrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  RECEIVED
+  CANCELLED
+}
+
+enum NotebookStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum CalendarType {
+  TP
+  MAINTENANCE
+  INVENTORY
+  OTHER
+}
