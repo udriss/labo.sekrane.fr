@@ -82,6 +82,19 @@ interface EquipmentFormData {
   notes?: string
 }
 
+interface RoomLocation {
+  id: string
+  name: string
+  description?: string
+}
+
+interface Room {
+  id: string
+  name: string
+  description?: string
+  locations?: RoomLocation[]
+}
+
 interface TabPanelProps {
   children?: React.ReactNode
   index: number
@@ -839,7 +852,7 @@ export default function EquipmentPage() {
                   variant="outlined" 
                   sx={{ mt: 2 }} 
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, name: 'Équipement personnalisé' }))
+                    setFormData(prev => ({ ...prev, name: 'Équipement personnalisé', type: selectedCategory }))
                     setSelectedItem({ name: 'Équipment personnalisé', svg: '/svg/default.svg' })
                     handleNext()
                   }}
@@ -932,21 +945,55 @@ export default function EquipmentPage() {
                       onChange={(e) => handleFormChange('serialNumber', e.target.value)}
                       margin="normal"
                     />
-                    <TextField
+                    <Autocomplete
                       fullWidth
-                      label="Localisation"
-                      value={formData.location || ''}
-                      onChange={(e) => handleFormChange('location', e.target.value)}
-                      margin="normal"
-                      placeholder="ex: Armoire A, Étagère 2"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Salle"
-                      value={formData.room || ''}
-                      onChange={(e) => handleFormChange('room', e.target.value)}
-                      margin="normal"
-                      placeholder="ex: Labo 101"
+                      options={rooms.flatMap(room => 
+                        room.locations?.length 
+                          ? room.locations.map((location: RoomLocation) => ({
+                              label: `${room.name} - ${location.name}`,
+                              room: room.name,
+                              location: location.name
+                            }))
+                          : [{ label: room.name, room: room.name, location: '' }]
+                      )}
+                      getOptionLabel={(option) => option.label}
+                      value={formData.room && formData.location 
+                        ? { label: `${formData.room} - ${formData.location}`, room: formData.room, location: formData.location }
+                        : formData.room 
+                          ? { label: formData.room, room: formData.room, location: '' }
+                          : null
+                      }
+                      onChange={(_, newValue) => {
+                        if (newValue) {
+                          handleFormChange('room', newValue.room)
+                          handleFormChange('location', newValue.location)
+                        } else {
+                          handleFormChange('room', '')
+                          handleFormChange('location', '')
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Localisation"
+                          margin="normal"
+                          placeholder="Sélectionner une salle et localisation"
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props}>
+                          <Stack>
+                            <Typography variant="body2">
+                              <strong>{option.room}</strong>
+                            </Typography>
+                            {option.location && (
+                              <Typography variant="caption" color="text.secondary">
+                                📍 {option.location}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Box>
+                      )}
                     />
                   </Grid>
 
@@ -1245,7 +1292,7 @@ export default function EquipmentPage() {
                                 <Button
                                   size="small"
                                   color="error"
-                                  onClick={() => handleDeleteEquipment(item.id)}
+                                  onClick={() => handleDeleteEquipment(item)}
                                 >
                                   Supprimer
                                 </Button>

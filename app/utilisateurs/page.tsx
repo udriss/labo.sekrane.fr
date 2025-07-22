@@ -27,6 +27,8 @@ import {
   OutlinedInput,
   Paper,
   Divider,
+  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import {
   Person,
@@ -45,17 +47,17 @@ import { useSession } from "next-auth/react";
 
 // Classes prédéfinies
 const PREDEFINED_CLASSES = [
-  "1ère STL",
-  "Terminale STL",
-  "BTS 1ère année",
-  "BTS 2ème année",
-  "Licence 1",
-  "Licence 2",
-  "Licence 3",
-  "Master 1",
-  "Master 2",
-  "Doctorat",
-  "Formation continue"
+  "1ère ES",
+  "Terminale ES",
+  "1ère STI2D",
+  "Terminale STI2D",
+  "201",
+  "202",
+  "203",
+  "204",
+  "205",
+  "206",
+  "207",
 ];
 
 interface UserClass {
@@ -91,12 +93,14 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [profileData, setProfileData] = useState<UserFormData>({
     name: "",
     email: "",
     role: Role.STUDENT,
     selectedClasses: []
   });
+  const [userClasses, setUserClasses] = useState<string[]>([]);
   const [newClassName, setNewClassName] = useState("");
 
   const fetchUsers = async () => {
@@ -118,20 +122,45 @@ export default function UsersPage() {
     }
   };
 
+  const fetchUserProfile = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      setProfileLoading(true);
+      const response = await fetch(`/api/users/${session.user.id}`);
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement du profil");
+      }
+      
+      const userData = await response.json();
+      
+      // Extraire les classes personnalisées
+      const customClasses = userData.customClasses?.map((uc: any) => uc.className) || [];
+      setUserClasses(customClasses);
+      
+      setProfileData({
+        name: userData.name || "",
+        email: userData.email || "",
+        role: userData.role as Role,
+        selectedClasses: customClasses
+      });
+    } catch (error) {
+      console.error("Erreur lors du chargement du profil:", error);
+      setError("Erreur lors du chargement du profil utilisateur");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
-    if (session?.user) {
-      setProfileData({
-        name: session.user.name || "",
-        email: session.user.email || "",
-        role: session.user.role as Role,
-        selectedClasses: []  // TODO: Load from API
-      });
+    if (session?.user?.id) {
+      fetchUserProfile();
     }
-  }, [session]);
+  }, [session?.user?.id]);
 
   const getRoleColor = (role: Role) => {
     switch (role) {
@@ -160,8 +189,13 @@ export default function UsersPage() {
   };
 
   const handleSaveProfile = async () => {
+    if (!session?.user?.id) return;
+
     try {
-      const response = await fetch(`/api/users/${session?.user?.id}`, {
+      setProfileLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/users/${session.user.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -170,15 +204,32 @@ export default function UsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la mise à jour du profil");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la mise à jour du profil");
+      }
+
+      const result = await response.json();
+      
+      // Mettre à jour les classes locales
+      if (result.user?.customClasses) {
+        const updatedClasses = result.user.customClasses.map((uc: any) => uc.className);
+        setUserClasses(updatedClasses);
+        setProfileData(prev => ({
+          ...prev,
+          selectedClasses: updatedClasses
+        }));
       }
 
       setEditingProfile(false);
-      // Recharger la session ou les données
-      window.location.reload();
+      
+      // Afficher un message de succès (optionnel)
+      console.log("Profil mis à jour avec succès");
+
     } catch (error) {
       console.error("Erreur:", error);
-      setError("Erreur lors de la mise à jour du profil");
+      setError(error instanceof Error ? error.message : "Erreur lors de la mise à jour du profil");
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -300,10 +351,11 @@ export default function UsersPage() {
                 </Button>
                 <Button
                   variant="contained"
-                  startIcon={<Save />}
+                  startIcon={profileLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
                   onClick={handleSaveProfile}
+                  disabled={profileLoading}
                 >
-                  Enregistrer
+                  {profileLoading ? "Enregistrement..." : "Enregistrer"}
                 </Button>
               </Stack>
             )}
@@ -313,64 +365,80 @@ export default function UsersPage() {
             <Box sx={{ flex: 1, minWidth: 300 }}>
               <Card>
                 <CardContent>
-                  <Stack spacing={3}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main' }}>
-                        <Person sx={{ fontSize: 30 }} />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6">{session.user.name}</Typography>
-                        <Chip
-                          label={getRoleLabel(session.user.role as Role)}
-                          color={getRoleColor(session.user.role as Role) as any}
-                          size="small"
-                        />
+                  {profileLoading ? (
+                    <Stack spacing={2}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Skeleton variant="circular" width={60} height={60} />
+                        <Box>
+                          <Skeleton variant="text" width={150} height={30} />
+                          <Skeleton variant="text" width={100} height={20} />
+                        </Box>
                       </Box>
-                    </Box>
+                      <Divider />
+                      <Skeleton variant="text" width="100%" height={40} />
+                      <Skeleton variant="text" width="100%" height={40} />
+                      <Skeleton variant="text" width="100%" height={40} />
+                    </Stack>
+                  ) : (
+                    <Stack spacing={3}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main' }}>
+                          <Person sx={{ fontSize: 30 }} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h6">{session?.user?.name}</Typography>
+                          <Chip
+                            label={getRoleLabel(session?.user?.role as Role)}
+                            color={getRoleColor(session?.user?.role as Role) as any}
+                            size="small"
+                          />
+                        </Box>
+                      </Box>
 
-                    <Divider />
+                      <Divider />
 
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Nom complet
-                      </Typography>
-                      {editingProfile ? (
-                        <TextField
-                          fullWidth
-                          value={profileData.name}
-                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                          size="small"
-                        />
-                      ) : (
-                        <Typography variant="body1">{session.user.name}</Typography>
-                      )}
-                    </Box>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Nom complet
+                        </Typography>
+                        {editingProfile ? (
+                          <TextField
+                            fullWidth
+                            value={profileData.name}
+                            onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography variant="body1">{profileData.name}</Typography>
+                        )}
+                      </Box>
 
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        <Email sx={{ fontSize: 16, mr: 1, verticalAlign: "text-top" }} />
-                        Email
-                      </Typography>
-                      {editingProfile ? (
-                        <TextField
-                          fullWidth
-                          type="email"
-                          value={profileData.email}
-                          onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                          size="small"
-                        />
-                      ) : (
-                        <Typography variant="body1">{session.user.email}</Typography>
-                      )}
-                    </Box>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          <Email sx={{ fontSize: 16, mr: 1, verticalAlign: "text-top" }} />
+                          Email
+                        </Typography>
+                        {editingProfile ? (
+                          <TextField
+                            fullWidth
+                            type="email"
+                            value={profileData.email}
+                            onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography variant="body1">{profileData.email}</Typography>
+                        )}
+                      </Box>
 
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Rôle
-                      </Typography>
-                      <Typography variant="body1">{getRoleLabel(session.user.role as Role)}</Typography>
-                    </Box>
-                  </Stack>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Rôle
+                        </Typography>
+                        <Typography variant="body1">{getRoleLabel(session?.user?.role as Role)}</Typography>
+                      </Box>
+                    </Stack>
+                  )}
                 </CardContent>
               </Card>
             </Box>
@@ -378,77 +446,98 @@ export default function UsersPage() {
             <Box sx={{ flex: 1, minWidth: 300 }}>
               <Card>
                 <CardContent>
-                  <Stack spacing={2}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Class />
-                      <Typography variant="h6">Mes Classes</Typography>
-                    </Box>
+                  {profileLoading ? (
+                    <Stack spacing={2}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Skeleton variant="circular" width={24} height={24} />
+                        <Skeleton variant="text" width={120} height={30} />
+                      </Box>
+                      <Skeleton variant="rectangular" width="100%" height={60} />
+                    </Stack>
+                  ) : (
+                    <Stack spacing={2}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Class />
+                        <Typography variant="h6">Mes Classes</Typography>
+                      </Box>
 
-                    {editingProfile ? (
-                      <Stack spacing={2}>
-                        <FormControl fullWidth>
-                          <InputLabel>Classes</InputLabel>
-                          <Select
-                            multiple
-                            value={profileData.selectedClasses}
-                            onChange={(e) => setProfileData({
-                              ...profileData,
-                              selectedClasses: typeof e.target.value === 'string' 
-                                ? e.target.value.split(',')
-                                : e.target.value
-                            })}
-                            input={<OutlinedInput label="Classes" />}
-                            renderValue={(selected) => (
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {selected.map((value) => (
-                                  <Chip key={value} label={value} size="small" />
-                                ))}
-                              </Box>
-                            )}
-                          >
-                            {PREDEFINED_CLASSES.map((className) => (
-                              <MenuItem key={className} value={className}>
-                                {className}
-                              </MenuItem>
-                            ))}
-                            {profileData.selectedClasses
-                              .filter(className => !PREDEFINED_CLASSES.includes(className))
-                              .map((className) => (
+                      {editingProfile ? (
+                        <Stack spacing={2}>
+                          <FormControl fullWidth>
+                            <InputLabel>Classes</InputLabel>
+                            <Select
+                              multiple
+                              value={profileData.selectedClasses}
+                              onChange={(e) => setProfileData({
+                                ...profileData,
+                                selectedClasses: typeof e.target.value === 'string' 
+                                  ? e.target.value.split(',')
+                                  : e.target.value
+                              })}
+                              input={<OutlinedInput label="Classes" />}
+                              renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {selected.map((value) => (
+                                    <Chip key={value} label={value} size="small" />
+                                  ))}
+                                </Box>
+                              )}
+                            >
+                              {PREDEFINED_CLASSES.map((className) => (
                                 <MenuItem key={className} value={className}>
-                                  {className} (personnalisé)
+                                  {className}
                                 </MenuItem>
                               ))}
-                          </Select>
-                        </FormControl>
+                              {profileData.selectedClasses
+                                .filter(className => !PREDEFINED_CLASSES.includes(className))
+                                .map((className) => (
+                                  <MenuItem key={className} value={className}>
+                                    {className} (personnalisé)
+                                  </MenuItem>
+                                ))}
+                            </Select>
+                          </FormControl>
 
-                        <Box display="flex" gap={1}>
-                          <TextField
-                            size="small"
-                            placeholder="Nouvelle classe..."
-                            value={newClassName}
-                            onChange={(e) => setNewClassName(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddCustomClass()}
-                            sx={{ flexGrow: 1 }}
-                          />
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={handleAddCustomClass}
-                            disabled={!newClassName.trim()}
-                          >
-                            Ajouter
-                          </Button>
+                          <Box display="flex" gap={1}>
+                            <TextField
+                              size="small"
+                              placeholder="Nouvelle classe..."
+                              value={newClassName}
+                              onChange={(e) => setNewClassName(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleAddCustomClass()}
+                              sx={{ flexGrow: 1 }}
+                            />
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={handleAddCustomClass}
+                              disabled={!newClassName.trim()}
+                            >
+                              Ajouter
+                            </Button>
+                          </Box>
+                        </Stack>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {userClasses.length > 0 ? (
+                            userClasses.map((className) => (
+                              <Chip
+                                key={className}
+                                label={className}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              Aucune classe assignée
+                            </Typography>
+                          )}
                         </Box>
-                      </Stack>
-                    ) : (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {/* TODO: Load user classes from API */}
-                        <Typography variant="body2" color="text.secondary">
-                          Aucune classe assignée
-                        </Typography>
-                      </Box>
-                    )}
-                  </Stack>
+                      )}
+                    </Stack>
+                  )}
                 </CardContent>
               </Card>
             </Box>

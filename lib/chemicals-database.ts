@@ -285,7 +285,7 @@ export const COMMON_CHEMICALS: ChemicalCompound[] = [
 
 // Fonction de recherche pour l'auto-complétion
 export function searchChemicals(query: string): ChemicalCompound[] {
-  if (!query || query.length < 2) return []
+  if (!query || query.length < 1) return []
   
   const searchTerm = query.toLowerCase().trim()
   

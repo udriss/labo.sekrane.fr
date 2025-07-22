@@ -123,3 +123,69 @@ PROBLÈME 3 :
 - on doit pourvoir modifier ses propores TP après ajout
  - permettre d'ajouter des fichiers et du matériel tout comme dans le Dialogue de création d'événement multi-étapes de "/var/www/labo.sekrane.fr/app/calendrier/page.tsx". Reprendre un maximum de ce dialogue pour l'adapter lors de l'ajout d'un nouveau TP. 
  - organiser les TP preset par niveau : les niveau de section sont "Seconde", "Première", "Terminale", "Prépa 1ère année", "Prépa 2e année"
+
+
+
+
+
+
+
+
+
+
+ per component="li" tabIndex={-1} role="option" id="_r_12_-opt..." onMouseMove={function handleOptionMouseMove} ...>
+<MuiPaper-root as="li" ownerState={{component:"li", ...}} className="MuiPaper-r..." ref={null} tabIndex={-1} ...>
+<Insertion>
+<li className="MuiPaper-r..." tabIndex={-1} role="option" id="_r_12_-opt..." ...>
+<ListItem disablePadding={true}>
+<MuiListItem-root as="li" ref={function useForkRef.useMemo} ownerState={{...}} className="MuiListIte...">
+<Insertion>
+<li className="MuiListIte..." ref={function useForkRef.useMemo}>
+<ListItemText primary={<ForwardRef(Typography)>} secondary={<ForwardRef(Grid)>}>
+<MuiListItemText-root className="MuiListIte..." ref={null} ownerState={{primary:true, ...}}>
+<Insertion>
+<div className="MuiListIte...">
+<Typography>
+<Typography variant="body2" color="textSecondary" className="MuiListIte..." ref={null} ...>
+<MuiTypography-root as="p" ref={null} className="MuiTypogra..." ...>
+<Insertion>
+
+PROBLÈME 2 dans "/var/www/labo.sekrane.fr/app/materiel" :
+
+lors de l'ajout d'un matériel perso, le dialog de s'affiche bien mais si je clique sur "Oui, ajouter à l'inventaire" associé à "onClick={handleContinueToInventory}" j'ai l'erreur :
+[Error] TypeError: undefined is not an object (evaluating 'formData.name.trim')
+reportError (app_materiel_page_tsx_d659bdb3..js:1702:160)
+onUncaughtError (node_modules_next_dist_client_20b209c9..js:1090)
+logCaughtError (node_modules_next_dist_compiled_react-dom_1f56dc06..js:5196)
+runWithFiberInDEV (node_modules_next_dist_compiled_react-dom_1f56dc06..js:890:140)
+(fonction anonyme) (node_modules_next_dist_compiled_react-
+
+pour la fonciton "handleDeleteEquipment", syuliser le dialogue en prenant exactement le mêe style que le dilaogue de "Dialogue de continuation après ajout de matériel personnalisé" avec "onClick={handleContinueToInventory}"
+pour "handleDeleteEquipment", il ne faut pas recharger toutes la page mais faire une animation stylisé qui montré la supression aevec spiner autour du card supprimé. Les autres card s'ajusteront automatiquement lorsque la card sera suppirmé du DOM
+IMPÉRATIVEMENT : lorsqu'on ajoute un nouveau materiel il doit apparaitre dans la catégorie associé mais spéaré des preset pour montrer que c'est perso. Afficher un petit chip qui montr ele nom de k'user qui l'a ajouté
+PROBLÈME 3 dans "/var/www/labo.sekrane.fr/app/notebook/page.tsx" :
+
+lorsque j'ouvre la page j'ai directement l'erreur :
+[Error] TypeError: entries.forEach is not a function. (In 'entries.forEach((entry)=>{
+if (entry.sections && entry.sections.length > 0) {
+entry.sections.forEach((sectionId)=>{
+if (organized[sectionId]) {
+organized[sectionId].push(entry);
+}
+});
+} else {
+organized['sans-section'].push(entry);
+}
+})', 'entries.forEach' is undefined)
+reportError (0758f389..js:133)
+onUncaughtError (node_modules_next_dist_client_20b209c9..js:1090)
+logCaughtError (node_modules_next_dist_compiled_react-dom_1f56dc06..js:5196)
+runWithFiberInDEV (node_modules_next_dist_compiled_react-dom_1f56dc06..js:890:140)
+(fonction anonyme) (node_modules_next_dist_compiled_react-dom_1f56dc06..js:5237)
+lors de l'affichage des calendrier dans le Dialogue de création d'événement multi-étapes, dès qu'on clique sur le champ de la date, le calendrier doit s'ouvir. Pas besoin de cliquer sur le bouton latéral à droite; De même pour l'heure. pas besoin de date début et date de fin mais faire des crénau. On choisit un jour puis une durée entre deux horaires. On peut manuellement ajouter plusieurs créneaux
+le matériel nécessaire et le s rpdtuis chimiques devraient afficher ceux dispos ou bien permettre d'ajouter des spéicifques
+à l'ajout d'un novueau événément j'ai le message console "Événement créé avec succès!" mais rien n'apparait ni dans le candrier ni dans les ci-dessous :
+<Tab label="Vue hebdomadaire" />
+<Tab label="Liste des événements" />
+<Tab label="Planning du jour" />
+Pourtant j'ai bien "1 TP programmés"

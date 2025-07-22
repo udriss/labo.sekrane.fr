@@ -105,10 +105,8 @@ export default function CalendarPage() {
     title: '',
     description: '',
     file: null as File | null,
-    startDate: '',
-    startTime: '',
-    endDate: '',
-    endTime: '',
+    date: '', // Date par défaut pour tous les créneaux
+    timeSlots: [{ date: '', startTime: '', endTime: '' }] as { date: string; startTime: string; endTime: string }[],
     classes: [] as string[],
     materials: [] as string[],
     chemicals: [] as string[]
@@ -204,10 +202,8 @@ export default function CalendarPage() {
       title: '',
       description: '',
       file: null,
-      startDate: '',
-      startTime: '',
-      endDate: '',
-      endTime: '',
+      date: '',
+      timeSlots: [{ date: '', startTime: '', endTime: '' }],
       classes: [],
       materials: [],
       chemicals: []
@@ -308,39 +304,47 @@ export default function CalendarPage() {
     try {
       setLoading(true)
 
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`)
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`)
+      // Créer un événement pour chaque créneau
+      const events = formData.timeSlots.map(slot => {
+        // Utiliser la date du créneau individuel s'il en a une, sinon la date globale
+        const dateToUse = slot.date || formData.date
+        const startDateTime = new Date(`${dateToUse}T${slot.startTime}`)
+        const endDateTime = new Date(`${dateToUse}T${slot.endTime}`)
 
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
-        type: 'TP',
-        classes: formData.classes,
-        materials: formData.materials,
-        chemicals: formData.chemicals,
-        ...(formData.file && { fileName: formData.file.name })
-      }
-
-      const response = await fetch('/api/calendrier', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData)
+        return {
+          title: formData.title,
+          description: formData.description,
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+          type: 'TP',
+          classes: formData.classes,
+          materials: formData.materials,
+          chemicals: formData.chemicals,
+          ...(formData.file && { fileName: formData.file.name })
+        }
       })
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création de l\'événement')
-      }
+      // Créer tous les événements
+      for (const eventData of events) {
+        const response = await fetch('/api/calendrier', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData)
+        })
 
-      // Recharger les événements
-      await fetchEvents()
+        if (!response.ok) {
+          throw new Error('Erreur lors de la création de l\'événement')
+        }
+      }
       
       // Fermer le dialogue et réinitialiser le formulaire
       setCreateDialogOpen(false)
       resetForm()
+
+      // Recharger les événements pour afficher le nouvel événement
+      await fetchEvents()
 
       // Message de succès (optionnel, on pourrait ajouter un snackbar)
       console.log('Événement créé avec succès!')
@@ -353,6 +357,33 @@ export default function CalendarPage() {
     }
   }
 
+  // Fonctions pour gérer les créneaux
+  const addTimeSlot = () => {
+    setFormData({
+      ...formData,
+      timeSlots: [...formData.timeSlots, { date: formData.date, startTime: '', endTime: '' }]
+    })
+  }
+
+  const removeTimeSlot = (index: number) => {
+    if (formData.timeSlots.length > 1) {
+      const newTimeSlots = formData.timeSlots.filter((_, i) => i !== index)
+      setFormData({
+        ...formData,
+        timeSlots: newTimeSlots
+      })
+    }
+  }
+
+  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: string) => {
+    const newTimeSlots = [...formData.timeSlots]
+    newTimeSlots[index][field] = value
+    setFormData({
+      ...formData,
+      timeSlots: newTimeSlots
+    })
+  }
+
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -361,7 +392,15 @@ export default function CalendarPage() {
         throw new Error('Erreur lors du chargement du calendrier');
       }
       const eventsData = await response.json();
-      setEvents(eventsData);
+      
+      // Convertir les dates ISO strings en objets Date
+      const eventsWithDates = eventsData.map((event: any) => ({
+        ...event,
+        startDate: new Date(event.startDate),
+        endDate: new Date(event.endDate)
+      }));
+      
+      setEvents(eventsWithDates);
     } catch (error) {
       console.error('Erreur lors du chargement du calendrier:', error);
       setError(error instanceof Error ? error.message : "Erreur de chargement");
@@ -1061,80 +1100,133 @@ export default function CalendarPage() {
                   </Typography>
                   
                   <Box display="flex" flexDirection="column" gap={3}>
-                    <Box display="flex" gap={2}>
-                      <DatePicker
-                        label="Date de début"
-                        value={formData.startDate ? new Date(formData.startDate) : null}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            handleFormDataChange('startDate', newValue.toISOString().split('T')[0])
-                          }
-                        }}
-                        slotProps={{
-                          textField: { 
-                            fullWidth: true,
-                            onClick: (e: any) => {
-                              // Ouvrir automatiquement le calendrier au clic
-                              if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                const button = e.currentTarget.querySelector('button')
-                                if (button) button.click()
-                              }
+                    {/* Sélection de la date */}
+                    <DatePicker
+                      label="Date de la séance"
+                      value={formData.date ? new Date(formData.date) : null}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          handleFormDataChange('date', newValue.toISOString().split('T')[0])
+                        }
+                      }}
+                      slotProps={{
+                        textField: { 
+                          fullWidth: true,
+                          onClick: (e: any) => {
+                            // Ouvrir automatiquement le calendrier au clic
+                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                              const button = e.currentTarget.querySelector('button')
+                              if (button) button.click()
                             }
                           }
-                        }}
-                      />
-                      <TimePicker
-                        label="Heure de début"
-                        value={formData.startTime ? new Date(`2000-01-01T${formData.startTime}`) : null}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            const hours = newValue.getHours().toString().padStart(2, '0')
-                            const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                            handleFormDataChange('startTime', `${hours}:${minutes}`)
-                          }
-                        }}
-                        slotProps={{
-                          textField: { 
-                            fullWidth: true,
-                            onClick: (e: any) => {
-                              // Ouvrir automatiquement l'horloge au clic
-                              if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                const button = e.currentTarget.querySelector('button')
-                                if (button) button.click()
-                              }
-                            }
-                          }
-                        }}
-                      />
-                    </Box>
-                    <Box display="flex" gap={2}>
-                      <DatePicker
-                        label="Date de fin"
-                        value={formData.endDate ? new Date(formData.endDate) : null}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            handleFormDataChange('endDate', newValue.toISOString().split('T')[0])
-                          }
-                        }}
-                        slotProps={{
-                          textField: { fullWidth: true }
-                        }}
-                        minDate={formData.startDate ? new Date(formData.startDate) : undefined}
-                      />
-                      <TimePicker
-                        label="Heure de fin"
-                        value={formData.endTime ? new Date(`2000-01-01T${formData.endTime}`) : null}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            const hours = newValue.getHours().toString().padStart(2, '0')
-                            const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                            handleFormDataChange('endTime', `${hours}:${minutes}`)
-                          }
-                        }}
-                        slotProps={{
-                          textField: { fullWidth: true }
-                        }}
-                      />
+                        }
+                      }}
+                    />
+
+                    {/* Créneaux horaires */}
+                    <Box>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          Créneaux horaires
+                        </Typography>
+                        <Button
+                          startIcon={<Add />}
+                          onClick={addTimeSlot}
+                          variant="outlined"
+                          size="small"
+                        >
+                          Ajouter un créneau
+                        </Button>
+                      </Box>
+
+                      {formData.timeSlots.map((slot, index) => (
+                        <Box key={index} mb={2}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Créneau {index + 1}
+                          </Typography>
+                          <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                            <DatePicker
+                              label="Date"
+                              value={slot.date ? new Date(slot.date) : (formData.date ? new Date(formData.date) : null)}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  updateTimeSlot(index, 'date', newValue.toISOString().split('T')[0])
+                                }
+                              }}
+                              slotProps={{
+                                textField: { 
+                                  size: "small",
+                                  sx: { minWidth: 140 },
+                                  onClick: (e: any) => {
+                                    // Ouvrir automatiquement le calendrier au clic
+                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                      const button = e.currentTarget.querySelector('button')
+                                      if (button) button.click()
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+                            <TimePicker
+                              label="Début"
+                              value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  const hours = newValue.getHours().toString().padStart(2, '0')
+                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                  updateTimeSlot(index, 'startTime', `${hours}:${minutes}`)
+                                }
+                              }}
+                              slotProps={{
+                                textField: { 
+                                  size: "small",
+                                  sx: { minWidth: 120 },
+                                  onClick: (e: any) => {
+                                    // Ouvrir automatiquement l'horloge au clic
+                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                      const button = e.currentTarget.querySelector('button')
+                                      if (button) button.click()
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+                            <TimePicker
+                              label="Fin"
+                              value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  const hours = newValue.getHours().toString().padStart(2, '0')
+                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                  updateTimeSlot(index, 'endTime', `${hours}:${minutes}`)
+                                }
+                              }}
+                              slotProps={{
+                                textField: { 
+                                  size: "small",
+                                  sx: { minWidth: 120 },
+                                  onClick: (e: any) => {
+                                    // Ouvrir automatiquement l'horloge au clic
+                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                      const button = e.currentTarget.querySelector('button')
+                                      if (button) button.click()
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+                            {formData.timeSlots.length > 1 && (
+                              <IconButton
+                                color="error"
+                                onClick={() => removeTimeSlot(index)}
+                                size="small"
+                              >
+                                <Delete />
+                              </IconButton>
+                            )}
+                          </Box>
+                        </Box>
+                      ))}
                     </Box>
                   </Box>
 
@@ -1145,7 +1237,11 @@ export default function CalendarPage() {
                     <Button
                       variant="contained"
                       onClick={handleStepNext}
-                      disabled={!formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime}
+                      disabled={formData.timeSlots.some(slot => 
+                        !slot.startTime || 
+                        !slot.endTime || 
+                        !(slot.date || formData.date) // Chaque slot doit avoir une date (propre ou globale)
+                      )}
                     >
                       Continuer
                     </Button>
@@ -1235,9 +1331,12 @@ export default function CalendarPage() {
                   <Autocomplete
                     multiple
                     options={Array.isArray(materials) ? materials : []}
-                    getOptionLabel={(option: any) => `${option.name || option} ${option.volume ? `(${option.volume}mL)` : ''}`}
+                    getOptionLabel={(option: any) => {
+                      if (typeof option === 'string') return option;
+                      return `${option.name || 'Matériel'} ${option.volume ? `(${option.volume}mL)` : ''}`;
+                    }}
                     value={Array.isArray(formData.materials) ? formData.materials : []}
-                    onChange={(_, newValue) => handleFormDataChange('materials', newValue || [])}
+                    onChange={(_, newValue) => handleFormDataChange('materials', Array.isArray(newValue) ? newValue : [])}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -1249,12 +1348,15 @@ export default function CalendarPage() {
                       value.map((option: any, index) => (
                         <Chip
                           variant="outlined"
-                          label={`${option.name || option} ${option.volume ? `(${option.volume}mL)` : ''}`}
+                          label={typeof option === 'string' ? option : `${option.name || 'Matériel'} ${option.volume ? `(${option.volume}mL)` : ''}`}
                           {...getTagProps({ index })}
                           key={index}
                         />
                       ))
                     }
+                    isOptionEqualToValue={(option: any, value: any) => {
+                      return option.id === value.id || option === value;
+                    }}
                   />
 
                   <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
@@ -1284,9 +1386,12 @@ export default function CalendarPage() {
                   <Autocomplete
                     multiple
                     options={Array.isArray(chemicals) ? chemicals : []}
-                    getOptionLabel={(option: any) => `${option.name || option} - ${option.quantity || 0}${option.unit || ''}`}
+                    getOptionLabel={(option: any) => {
+                      if (typeof option === 'string') return option;
+                      return `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`;
+                    }}
                     value={Array.isArray(formData.chemicals) ? formData.chemicals : []}
-                    onChange={(_, newValue) => handleFormDataChange('chemicals', newValue || [])}
+                    onChange={(_, newValue) => handleFormDataChange('chemicals', Array.isArray(newValue) ? newValue : [])}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -1298,12 +1403,15 @@ export default function CalendarPage() {
                       value.map((option: any, index) => (
                         <Chip
                           variant="outlined"
-                          label={`${option.name || option} - ${option.quantity || 0}${option.unit || ''}`}
+                          label={typeof option === 'string' ? option : `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`}
                           {...getTagProps({ index })}
                           key={index}
                         />
                       ))
                     }
+                    isOptionEqualToValue={(option: any, value: any) => {
+                      return option.id === value.id || option === value;
+                    }}
                   />
 
                   <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>

@@ -190,7 +190,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
 
   // Fonction de recherche pour les noms
   const handleNameSearch = async (inputValue: string) => {
-    if (!inputValue || inputValue.length < 2) {
+    if (!inputValue || inputValue.length < 1) {
       setNameOptions([])
       return
     }
@@ -208,7 +208,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
 
   // Fonction de recherche pour les numéros CAS
   const handleCasSearch = async (inputValue: string) => {
-    if (!inputValue || inputValue.length < 3) {
+    if (!inputValue || inputValue.length < 1) {
       setCasOptions([])
       return
     }
@@ -335,62 +335,65 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
             getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
             value={formData.name}
             onInputChange={(_, newInputValue) => {
-              handleChange("name")(newInputValue)
-              handleNameSearch(newInputValue)
-              checkDuplicates(newInputValue, formData.casNumber, formData.formula)
+              if (newInputValue !== null) {
+                handleChange("name")(newInputValue)
+                handleNameSearch(newInputValue)
+                checkDuplicates(newInputValue, formData.casNumber, formData.formula)
+              }
             }}
             onChange={(_, newValue) => {
-              if (typeof newValue === 'object' && newValue) {
+              if (typeof newValue === 'object' && newValue && newValue.name) {
                 handleNameSelection(newValue)
+              } else if (typeof newValue === 'string') {
+                handleChange("name")(newValue)
               }
             }}
             loading={isLoadingName}
             renderInput={(params) => (
               <TextField
-                {...params}
-                fullWidth
-                required
-                label="Nom du produit"
-                placeholder="Commencez à taper le nom..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {isLoadingName && <CircularProgress color="inherit" size={20} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
+              {...params}
+              fullWidth
+              required
+              label="Nom du produit"
+              placeholder="Commencez à taper le nom..."
+              slotProps={{
+                input: {
+                endAdornment: (
+                  <>
+                  {isLoadingName && <CircularProgress color="inherit" size={20} />}
+                  {params.InputProps.endAdornment}
+                  </>
+                ),
+                },
+              }}
               />
             )}
             renderOption={(props, option) => {
               const { key, ...otherProps } = props;
               return (
                 <Paper component="li" key={key} {...otherProps} sx={{ m: 0.5, p: 1 }}>
-                  <ListItem disablePadding>
+                  <ListItem alignItems="flex-start" disablePadding>
                     <ListItemText
-                      primary={
-                        <Typography variant="body2" fontWeight="medium">
-                          {option.name}
-                        </Typography>
-                      }
+                      primary={option.name}
                       secondary={
-                        <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <Typography component="span" variant="caption" color="primary">
-                            {option.formula}
-                          </Typography>
-                          <Typography component="span" variant="caption" color="text.secondary">
-                            CAS: {option.casNumber}
+                        <Stack spacing={0.5}>
+                          <Typography variant="caption" color="text.secondary">
+                            Formule: {option.formula} | CAS: {option.casNumber}
                           </Typography>
                           {option.category && (
-                            <Chip label={option.category} size="small" variant="outlined" />
+                            <Chip
+                              label={option.category}
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: 16 }}
+                            />
                           )}
-                        </Box>
+                        </Stack>
                       }
                     />
                   </ListItem>
                 </Paper>
-              );
+              )
             }}
             noOptionsText="Aucun composé trouvé"
           />
