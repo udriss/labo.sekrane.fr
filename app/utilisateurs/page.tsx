@@ -7,12 +7,6 @@ import {
   Box,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   IconButton,
   Button,
@@ -25,6 +19,14 @@ import {
   Alert,
   Tab,
   Tabs,
+  Avatar,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput,
+  Paper,
+  Divider,
 } from "@mui/material";
 import {
   Person,
@@ -32,11 +34,35 @@ import {
   Delete,
   Add,
   AdminPanelSettings,
+  School,
+  Email,
+  Save,
+  Cancel,
+  Class,
 } from "@mui/icons-material";
 import { Role } from "@prisma/client";
 import { useSession } from "next-auth/react";
 
-// Type pour User basé sur notre API
+// Classes prédéfinies
+const PREDEFINED_CLASSES = [
+  "1ère STL",
+  "Terminale STL",
+  "BTS 1ère année",
+  "BTS 2ème année",
+  "Licence 1",
+  "Licence 2",
+  "Licence 3",
+  "Master 1",
+  "Master 2",
+  "Doctorat",
+  "Formation continue"
+];
+
+interface UserClass {
+  id: string;
+  className: string;
+}
+
 interface User {
   id: string;
   name: string;
@@ -45,6 +71,15 @@ interface User {
   class?: string;
   isActive: boolean;
   createdAt: string;
+  customClasses?: UserClass[];
+}
+
+interface UserFormData {
+  name: string;
+  email: string;
+  role: Role;
+  class?: string;
+  selectedClasses: string[];
 }
 
 export default function UsersPage() {
@@ -55,6 +90,14 @@ export default function UsersPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState<UserFormData>({
+    name: "",
+    email: "",
+    role: Role.STUDENT,
+    selectedClasses: []
+  });
+  const [newClassName, setNewClassName] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -79,6 +122,17 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (session?.user) {
+      setProfileData({
+        name: session.user.name || "",
+        email: session.user.email || "",
+        role: session.user.role as Role,
+        selectedClasses: []  // TODO: Load from API
+      });
+    }
+  }, [session]);
+
   const getRoleColor = (role: Role) => {
     switch (role) {
       case Role.ADMIN:
@@ -86,7 +140,7 @@ export default function UsersPage() {
       case Role.TEACHER:
         return "primary";
       case Role.STUDENT:
-        return "default";
+        return "success";
       default:
         return "default";
     }
@@ -102,6 +156,39 @@ export default function UsersPage() {
         return "Étudiant";
       default:
         return role;
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const response = await fetch(`/api/users/${session?.user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour du profil");
+      }
+
+      setEditingProfile(false);
+      // Recharger la session ou les données
+      window.location.reload();
+    } catch (error) {
+      console.error("Erreur:", error);
+      setError("Erreur lors de la mise à jour du profil");
+    }
+  };
+
+  const handleAddCustomClass = async () => {
+    if (newClassName.trim() && !profileData.selectedClasses.includes(newClassName.trim())) {
+      setProfileData({
+        ...profileData,
+        selectedClasses: [...profileData.selectedClasses, newClassName.trim()]
+      });
+      setNewClassName("");
     }
   };
 
@@ -133,12 +220,6 @@ export default function UsersPage() {
     );
   }
 
-  // Filter users and add role-based options
-  const filteredUsers =
-    session?.user?.role === "ADMIN"
-      ? users
-      : users.filter((user) => user.email === session?.user?.email);
-
   const handleTabChange = (
     event: React.SyntheticEvent,
     newValue: number
@@ -156,21 +237,23 @@ export default function UsersPage() {
       >
         <Box>
           <Typography variant="h3" component="h1" gutterBottom>
-            <Person sx={{ mr: 2, verticalAlign: "middle" }} />
+            <Person sx={{ mr: 2, verticalAlign: "middle", fontSize: "inherit" }} />
             Gestion des Utilisateurs
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Administration des comptes utilisateurs
+            Profil utilisateur et administration
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          size="large"
-          onClick={() => setOpenDialog(true)}
-        >
-          Nouvel utilisateur
-        </Button>
+        {session?.user?.role === "ADMIN" && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            size="large"
+            onClick={() => setOpenDialog(true)}
+          >
+            Nouvel utilisateur
+          </Button>
+        )}
       </Box>
 
       {error && (
@@ -179,154 +262,358 @@ export default function UsersPage() {
         </Alert>
       )}
 
-      {session?.user?.role === "ADMIN" && (
+      {session?.user?.role === "ADMIN" ? (
         <Tabs
           value={tabIndex}
           onChange={handleTabChange}
           aria-label="Admin Tabs"
           sx={{ mb: 4 }}
         >
-          <Tab label="Mes Données" />
+          <Tab label="Mon Profil" />
           <Tab label="Utilisateurs" />
         </Tabs>
-      )}
+      ) : null}
 
-      {tabIndex === 0 && (
-        <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Typography variant="h6">Mes Données</Typography>
-            <Typography>Nom: {session.user.name}</Typography>
-            <Typography>Email: {session.user.email}</Typography>
-            <Typography>Rôle: {session.user.role}</Typography>
-          </CardContent>
-        </Card>
-      )}
+      {/* Onglet Mon Profil */}
+      {(tabIndex === 0 || session?.user?.role !== "ADMIN") && (
+        <Paper elevation={2} sx={{ p: 4 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+            <Typography variant="h5" component="h2">
+              Mon Profil
+            </Typography>
+            {!editingProfile ? (
+              <Button
+                variant="outlined"
+                startIcon={<Edit />}
+                onClick={() => setEditingProfile(true)}
+              >
+                Modifier
+              </Button>
+            ) : (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Cancel />}
+                  onClick={() => setEditingProfile(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Save />}
+                  onClick={handleSaveProfile}
+                >
+                  Enregistrer
+                </Button>
+              </Stack>
+            )}
+          </Stack>
 
-      {tabIndex === 1 && (
-        <Card>
-          <CardContent>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Nom</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Rôle</TableCell>
-                    <TableCell>Classe</TableCell>
-                    <TableCell>Statut</TableCell>
-                    <TableCell>Date de création</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          {user.role === Role.ADMIN && (
-                            <AdminPanelSettings color="error" />
-                          )}
-                          {user.name}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+            <Box sx={{ flex: 1, minWidth: 300 }}>
+              <Card>
+                <CardContent>
+                  <Stack spacing={3}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Avatar sx={{ width: 60, height: 60, bgcolor: 'primary.main' }}>
+                        <Person sx={{ fontSize: 30 }} />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h6">{session.user.name}</Typography>
+                        <Chip
+                          label={getRoleLabel(session.user.role as Role)}
+                          color={getRoleColor(session.user.role as Role) as any}
+                          size="small"
+                        />
+                      </Box>
+                    </Box>
+
+                    <Divider />
+
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Nom complet
+                      </Typography>
+                      {editingProfile ? (
+                        <TextField
+                          fullWidth
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body1">{session.user.name}</Typography>
+                      )}
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Email sx={{ fontSize: 16, mr: 1, verticalAlign: "text-top" }} />
+                        Email
+                      </Typography>
+                      {editingProfile ? (
+                        <TextField
+                          fullWidth
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body1">{session.user.email}</Typography>
+                      )}
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Rôle
+                      </Typography>
+                      <Typography variant="body1">{getRoleLabel(session.user.role as Role)}</Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Box>
+
+            <Box sx={{ flex: 1, minWidth: 300 }}>
+              <Card>
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Class />
+                      <Typography variant="h6">Mes Classes</Typography>
+                    </Box>
+
+                    {editingProfile ? (
+                      <Stack spacing={2}>
+                        <FormControl fullWidth>
+                          <InputLabel>Classes</InputLabel>
+                          <Select
+                            multiple
+                            value={profileData.selectedClasses}
+                            onChange={(e) => setProfileData({
+                              ...profileData,
+                              selectedClasses: typeof e.target.value === 'string' 
+                                ? e.target.value.split(',')
+                                : e.target.value
+                            })}
+                            input={<OutlinedInput label="Classes" />}
+                            renderValue={(selected) => (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {selected.map((value) => (
+                                  <Chip key={value} label={value} size="small" />
+                                ))}
+                              </Box>
+                            )}
+                          >
+                            {PREDEFINED_CLASSES.map((className) => (
+                              <MenuItem key={className} value={className}>
+                                {className}
+                              </MenuItem>
+                            ))}
+                            {profileData.selectedClasses
+                              .filter(className => !PREDEFINED_CLASSES.includes(className))
+                              .map((className) => (
+                                <MenuItem key={className} value={className}>
+                                  {className} (personnalisé)
+                                </MenuItem>
+                              ))}
+                          </Select>
+                        </FormControl>
+
+                        <Box display="flex" gap={1}>
+                          <TextField
+                            size="small"
+                            placeholder="Nouvelle classe..."
+                            value={newClassName}
+                            onChange={(e) => setNewClassName(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAddCustomClass()}
+                            sx={{ flexGrow: 1 }}
+                          />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={handleAddCustomClass}
+                            disabled={!newClassName.trim()}
+                          >
+                            Ajouter
+                          </Button>
                         </Box>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
+                      </Stack>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {/* TODO: Load user classes from API */}
+                        <Typography variant="body2" color="text.secondary">
+                          Aucune classe assignée
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Onglet Utilisateurs (Admin seulement) */}
+      {session?.user?.role === "ADMIN" && tabIndex === 1 && (
+        <Paper elevation={2}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Liste des Utilisateurs
+            </Typography>
+            <Box sx={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: 2 
+            }}>
+              {users.map((user) => (
+                <Card 
+                  key={user.id}
+                  variant="outlined"
+                  sx={{ 
+                    height: '100%',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      boxShadow: 2,
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                >
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: getRoleColor(user.role) + '.main' }}>
+                          {user.role === Role.ADMIN ? <AdminPanelSettings /> : <Person />}
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography variant="subtitle1" fontWeight="bold">
+                            {user.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={0.5}>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setOpenDialog(true);
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" color="error">
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </Box>
+
+                      <Stack direction="row" spacing={1} alignItems="center">
                         <Chip
                           label={getRoleLabel(user.role)}
                           color={getRoleColor(user.role) as any}
                           size="small"
                         />
-                      </TableCell>
-                      <TableCell>{user.class || "-"}</TableCell>
-                      <TableCell>
                         <Chip
                           label={user.isActive ? "Actif" : "Inactif"}
                           color={user.isActive ? "success" : "default"}
                           size="small"
                         />
-                      </TableCell>
-                      <TableCell>
-                        {new Date(user.createdAt).toLocaleDateString("fr-FR")}
-                      </TableCell>
-                      <TableCell>
-                        {session?.user?.role === "ADMIN" && (
-                          <>
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setOpenDialog(true);
-                              }}
-                            >
-                              <Edit />
-                            </IconButton>
-                            <IconButton size="small" color="error">
-                              <Delete />
-                            </IconButton>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                      </Stack>
+
+                      {user.class && (
+                        <Typography variant="body2">
+                          📚 Classe: {user.class}
+                        </Typography>
+                      )}
+
+                      {user.customClasses && user.customClasses.length > 0 && (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Classes personnalisées:
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                            {user.customClasses.map((userClass) => (
+                              <Chip
+                                key={userClass.id}
+                                label={userClass.className}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      <Typography variant="caption" color="text.secondary">
+                        Créé le {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
           </CardContent>
-        </Card>
+        </Paper>
       )}
 
-      {/* Dialog pour créer/modifier un utilisateur */}
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {selectedUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Nom complet"
-              margin="normal"
-              defaultValue={selectedUser?.name || ""}
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              margin="normal"
-              defaultValue={selectedUser?.email || ""}
-            />
-            <TextField
-              fullWidth
-              label="Rôle"
-              select
-              margin="normal"
-              defaultValue={selectedUser?.role || Role.STUDENT}
-            >
-              <MenuItem value={Role.ADMIN}>Administrateur</MenuItem>
-              <MenuItem value={Role.TEACHER}>Enseignant</MenuItem>
-              <MenuItem value={Role.STUDENT}>Étudiant</MenuItem>
-            </TextField>
-            <TextField
-              fullWidth
-              label="Classe"
-              margin="normal"
-              defaultValue={selectedUser?.class || ""}
-              helperText="Optionnel"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button variant="contained">
-            {selectedUser ? "Modifier" : "Créer"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Dialog pour créer/modifier un utilisateur (Admin seulement) */}
+      {session?.user?.role === "ADMIN" && (
+        <Dialog
+          open={openDialog}
+          onClose={() => setOpenDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {selectedUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2 }}>
+              <TextField
+                fullWidth
+                label="Nom complet"
+                margin="normal"
+                defaultValue={selectedUser?.name || ""}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                margin="normal"
+                defaultValue={selectedUser?.email || ""}
+              />
+              <TextField
+                fullWidth
+                label="Rôle"
+                select
+                margin="normal"
+                defaultValue={selectedUser?.role || Role.STUDENT}
+              >
+                <MenuItem value={Role.ADMIN}>Administrateur</MenuItem>
+                <MenuItem value={Role.TEACHER}>Enseignant</MenuItem>
+                <MenuItem value={Role.STUDENT}>Étudiant</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
+                label="Classe"
+                margin="normal"
+                defaultValue={selectedUser?.class || ""}
+                helperText="Optionnel"
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
+            <Button variant="contained">
+              {selectedUser ? "Modifier" : "Créer"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Container>
   );
 }

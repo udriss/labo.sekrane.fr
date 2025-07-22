@@ -66,7 +66,7 @@ const MAIN_MODULES: Module[] = [
     title: "Planification",
     description: "Calendrier des TP et réservations",
     icon: <CalendarMonth />,
-    href: "/calendar",
+    href: "/calendrier",
     color: "#d32f2f",
     features: ["Planning", "Réservations", "Ressources"]
   },
@@ -86,6 +86,8 @@ const ADMIN_LINKS = [
   { title: "Utilisateurs", icon: <Person />, href: "/utilisateurs" },
   { title: "Paramètres", icon: <Settings />, href: "/reglages" },
   { title: "Sécurité", icon: <Security />, href: "/securite" },
+  { title: "Gestion des salles", icon: <Inventory />, href: "/admin/salles" },
+  { title: "Gestion des classes", icon: <Assignment />, href: "/admin/classes" },
 ]
 
 export default function Home() {
@@ -382,7 +384,7 @@ export default function Home() {
                 </Button>
                 <Button 
                   component={Link}
-                  href="/calendar"
+                  href="/calendrier"
                   variant="outlined" 
                   fullWidth 
                   startIcon={<Schedule />}

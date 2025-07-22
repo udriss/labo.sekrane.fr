@@ -28,8 +28,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    // TODO: Implémenter la création d'événement
-    return NextResponse.json({ message: 'Non implémenté' }, { status: 501 })
+    const { 
+      title, 
+      description, 
+      startDate, 
+      endDate, 
+      type,
+      classes,
+      materials,
+      chemicals,
+      fileName
+    } = body
+
+    // Validation des données
+    if (!title || !startDate || !endDate) {
+      return NextResponse.json(
+        { error: 'Les champs titre, date de début et date de fin sont requis' },
+        { status: 400 }
+      )
+    }
+
+    const { createCalendarEvent } = await import('@/lib/services/database')
+    
+    const eventData = {
+      title,
+      description: description || null,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      type: type || 'TP',
+      classes: classes || [],
+      materials: materials || [],
+      chemicals: chemicals || [],
+      fileName: fileName || null
+    }
+
+    const newEvent = await createCalendarEvent(eventData)
+    
+    return NextResponse.json(newEvent, { status: 201 })
   } catch (error) {
     console.error('Erreur création event:', error)
     return NextResponse.json(

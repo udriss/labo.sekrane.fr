@@ -254,25 +254,6 @@ export async function getNotebookEntryById(id: string) {
   })
 }
 
-// Service pour le calendrier
-export async function getCalendarEvents() {
-  return await prisma.calendar.findMany({
-    orderBy: { startDate: 'asc' }
-  })
-}
-
-export async function getCalendarEventsForPeriod(startDate: Date, endDate: Date) {
-  return await prisma.calendar.findMany({
-    where: {
-      startDate: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
-    orderBy: { startDate: 'asc' }
-  })
-}
-
 // Service pour le scanner
 export async function searchProductByCode(code: string) {
   // Chercher d'abord dans les produits chimiques
@@ -302,4 +283,85 @@ export async function getSuppliers() {
     where: { isActive: true },
     orderBy: { name: 'asc' }
   })
+}
+
+// Services pour le calendrier
+export async function getCalendarEvents() {
+  try {
+    const events = await prisma.calendar.findMany({
+      orderBy: { startDate: 'asc' }
+    })
+
+    return events.map(event => ({
+      ...event,
+      // Adapter au format attendu par le frontend
+      classes: event.class ? event.class.split(',') : [],
+      materials: [],
+      chemicals: []
+    }))
+  } catch (error) {
+    console.error('Erreur lors de la récupération des événements du calendrier:', error)
+    throw error
+  }
+}
+
+export async function getCalendarEventsForPeriod(startDate: Date, endDate: Date) {
+  try {
+    const events = await prisma.calendar.findMany({
+      where: {
+        AND: [
+          { startDate: { gte: startDate } },
+          { endDate: { lte: endDate } }
+        ]
+      },
+      orderBy: { startDate: 'asc' }
+    })
+
+    return events.map(event => ({
+      ...event,
+      classes: event.class ? event.class.split(',') : [],
+      materials: [],
+      chemicals: []
+    }))
+  } catch (error) {
+    console.error('Erreur lors de la récupération des événements pour la période:', error)
+    throw error
+  }
+}
+
+export async function createCalendarEvent(eventData: {
+  title: string
+  description?: string | null
+  startDate: Date
+  endDate: Date
+  type: string
+  classes?: string[]
+  materials?: string[]
+  chemicals?: string[]
+  fileName?: string | null
+}) {
+  try {
+    const newEvent = await prisma.calendar.create({
+      data: {
+        title: eventData.title,
+        description: eventData.description,
+        startDate: eventData.startDate,
+        endDate: eventData.endDate,
+        type: eventData.type as any, // Cast to the enum type
+        class: eventData.classes?.join(',') || null,
+        room: null, // À définir si nécessaire
+        notebookId: null // À relier si nécessaire
+      }
+    })
+
+    return {
+      ...newEvent,
+      classes: newEvent.class ? newEvent.class.split(',') : [],
+      materials: eventData.materials || [],
+      chemicals: eventData.chemicals || []
+    }
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'événement du calendrier:', error)
+    throw error
+  }
 }

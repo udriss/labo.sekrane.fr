@@ -9,8 +9,10 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        class: true,
         isActive: true,
         createdAt: true,
+        customClasses: true,
       },
     });
     return NextResponse.json(users);

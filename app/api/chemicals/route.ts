@@ -90,3 +90,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, ...updateData } = body
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID requis pour la mise à jour' }, { status: 400 })
+    }
+
+    // Traitement spécial pour la mise à jour de quantité uniquement
+    if (updateData.quantity !== undefined && Object.keys(updateData).length === 1) {
+      const chemical = await prisma.chemical.update({
+        where: { id },
+        data: { 
+          quantity: parseFloat(updateData.quantity),
+          // Mise à jour automatique du statut basé sur la quantité
+          status: parseFloat(updateData.quantity) === 0 ? 'EMPTY' : 
+                 parseFloat(updateData.quantity) < 10 ? 'LOW_STOCK' : 'IN_STOCK'
+        }
+      })
+      return NextResponse.json(chemical)
+    }
+
+    // Mise à jour complète
+    const chemical = await prisma.chemical.update({
+      where: { id },
+      data: {
+        ...updateData,
+        quantity: updateData.quantity ? parseFloat(updateData.quantity) : undefined,
+        concentration: updateData.concentration ? parseFloat(updateData.concentration) : undefined,
+      }
+    })
+    
+    return NextResponse.json(chemical)
+  } catch (error) {
+    console.error('Erreur mise à jour chemical:', error)
+    return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
+  }
+}

@@ -10,8 +10,13 @@ import {
   Button,
   Paper,
   Stack,
-  Alert
+  Alert,
+  IconButton,
+  InputAdornment,
+  FormControlLabel,
+  Checkbox
 } from "@mui/material"
+import { Visibility, VisibilityOff } from "@mui/icons-material"
 
 
 export default function SignInPage() {
@@ -19,22 +24,31 @@ export default function SignInPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    
     const res = await signIn("credentials", {
       redirect: false,
       email,
-      password
+      password,
+      rememberMe: rememberMe.toString()
     })
+    
     setLoading(false)
     if (res?.error) {
       setError("Identifiants invalides")
     } else {
       window.location.href = "/"
     }
+  }
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
   }
 
   return (
@@ -119,18 +133,45 @@ export default function SignInPage() {
                 fullWidth
                 required
                 autoFocus
+                autoComplete="email"
                 variant="filled"
                 sx={{ background: "rgba(255,255,255,0.7)", borderRadius: 2, boxShadow: "0 2px 8px rgba(100,116,139,0.08)" }}
               />
               <TextField
                 label="Mot de passe"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 fullWidth
                 required
+                autoComplete="current-password"
                 variant="filled"
                 sx={{ background: "rgba(255,255,255,0.7)", borderRadius: 2, boxShadow: "0 2px 8px rgba(100,116,139,0.08)" }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={togglePasswordVisibility}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    name="rememberMe"
+                    color="primary"
+                  />
+                }
+                label="Se souvenir de moi"
+                sx={{ alignSelf: 'flex-start' }}
               />
               <Button
                 type="submit"

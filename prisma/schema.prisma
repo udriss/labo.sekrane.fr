@@ -21,8 +21,21 @@ model User {
   createdNotebooks  NotebookEntry[] @relation("CreatedBy")
   orders            Order[]
   assignedNotebooks NotebookEntry[] @relation("AssignedTo")
+  customClasses     UserClass[]
+  createdTPPresets  TpPreset[]
 
   @@map("users")
+}
+
+model UserClass {
+  id       String @id @default(cuid())
+  userId   String
+  className String
+  createdAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, className])
+  @@map("user_classes")
 }
 
 model SecurityEvent {
@@ -62,6 +75,7 @@ model Chemical {
   supplier        Supplier?          @relation(fields: [supplierId], references: [id])
   usedInNotebooks NotebookChemical[]
   orderItems      OrderItem[]
+  tpPresets       TpPresetChemical[]
 
   @@map("chemicals")
 }
@@ -91,6 +105,7 @@ model Materiel {
   maintenanceLogs  MaintenanceLog[]
   usedInNotebooks  NotebookEquipment[]
   orderItems       OrderItem[]
+  tpPresets        TpPresetMaterial[]
 
   @@map("materiel")
 }
@@ -277,6 +292,78 @@ model ConfigurableList {
   @@map("configurable_lists")
 }
 
+model Room {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  locations   RoomLocation[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("rooms")
+}
+
+model RoomLocation {
+  id          String   @id @default(cuid())
+  roomId      String
+  name        String   // "Armoire A", "Étagère 1", etc.
+  description String?
+  isActive    Boolean  @default(true)
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([roomId, name])
+  @@map("room_locations")
+}
+
+model TpPreset {
+  id               String                @id @default(cuid())
+  title            String
+  description      String?
+  objectives       String?
+  procedure        String?
+  duration         Int?                  // Durée en minutes
+  level            String?               // Niveau scolaire
+  subject          String?               // Matière
+  isActive         Boolean               @default(true)
+  createdById      String
+  attachments      String[]              // URLs des fichiers joints
+  chemicals        TpPresetChemical[]
+  materials        TpPresetMaterial[]
+  createdBy        User                  @relation(fields: [createdById], references: [id])
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@map("tp_presets")
+}
+
+model TpPresetChemical {
+  id           String        @id @default(cuid())
+  tpPresetId   String
+  chemicalId   String
+  quantityUsed Float
+  unit         Unit
+  notes        String?
+  chemical     Chemical      @relation(fields: [chemicalId], references: [id])
+  tpPreset     TpPreset      @relation(fields: [tpPresetId], references: [id], onDelete: Cascade)
+
+  @@map("tp_preset_chemicals")
+}
+
+model TpPresetMaterial {
+  id          String        @id @default(cuid())
+  tpPresetId  String
+  materialId  String
+  quantity    Int           @default(1)
+  notes       String?
+  material    Materiel      @relation(fields: [materialId], references: [id])
+  tpPreset    TpPreset      @relation(fields: [tpPresetId], references: [id], onDelete: Cascade)
+
+  @@map("tp_preset_materials")
+}
+
 enum Role {
   ADMIN
   TEACHER
@@ -356,9 +443,51 @@ enum NotebookStatus {
   CANCELLED
 }
 
+model PresetChemical {
+  id               String   @id @default(cuid())
+  name             String
+  formula          String?
+  casNumber        String?  @unique
+  molarMass        Float?   // g/mol
+  boilingPoint     Float?   // °C
+  meltingPoint     Float?   // °C
+  density          Float?   // g/cm³
+  hazardClass      HazardClass?
+  categories       ChemicalCategory[]
+  physicalState    PhysicalState @default(LIQUID)
+  safetyNotes      String?
+  commonUses       String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("preset_chemicals")
+}
+
+model ChemicalCategory {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  description      String?
+  color            String?         // Couleur hex pour l'affichage
+  sortOrder        Int?
+  isActive         Boolean         @default(true)
+  presetChemicals  PresetChemical[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("chemical_categories")
+}
+
 enum CalendarType {
   TP
   MAINTENANCE
   INVENTORY
   OTHER
+}
+
+enum PhysicalState {
+  SOLID
+  LIQUID
+  GAS
+  PLASMA
 }

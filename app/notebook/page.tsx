@@ -1,59 +1,75 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Container, Typography, Box, Button, Paper, Stack, Alert, CircularProgress } from "@mui/material"
-import { NotebookForm } from "@/components/notebook/notebook-form"
+import { useState } from "react"
+import { Box, Container, Dialog, DialogContent, DialogTitle, IconButton } from "@mui/material"
+import { Close } from "@mui/icons-material"
 import { NotebookList } from "@/components/notebook/notebook-list"
+import { NotebookForm } from "@/components/notebook/notebook-form"
+import { NotebookFormAdvanced } from "@/components/notebook/notebook-form-advanced"
 
 export default function NotebookPage() {
-  const [notebooks, setNotebooks] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [openForm, setOpenForm] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<any>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const fetchNotebooks = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch("/api/notebook")
-      if (!response.ok) throw new Error("Erreur lors du chargement des cahiers TP")
-      const data = await response.json()
-      setNotebooks(data.notebooks || [])
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Une erreur est survenue")
-    } finally {
-      setLoading(false)
-    }
+  const handleAddNew = () => {
+    setEditingEntry(null)
+    setShowForm(true)
   }
 
-  useEffect(() => { fetchNotebooks() }, [])
+  const handleEdit = (entry: any) => {
+    setEditingEntry(entry)
+    setShowForm(true)
+  }
+
+  const handleFormSuccess = () => {
+    setShowForm(false)
+    setEditingEntry(null)
+    setRefreshKey(prev => prev + 1)
+  }
+
+  const handleFormCancel = () => {
+    setShowForm(false)
+    setEditingEntry(null)
+  }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h3" component="h1" gutterBottom>
-        Cahier de TP (ELN)
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
-        Suivi des travaux pratiques, protocoles, calculs et résultats
-      </Typography>
-      <Box sx={{ mb: 3 }}>
-        <Button variant="contained" color="primary" onClick={() => setOpenForm(true)}>
-          Nouveau TP
-        </Button>
-      </Box>
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-      ) : (
-        <NotebookList notebooks={notebooks} onRefresh={fetchNotebooks} />
-      )}
-      {openForm && (
-        <Paper elevation={8} sx={{ p: 4, mt: 4, borderRadius: 4 }}>
-          <NotebookForm onSuccess={() => { setOpenForm(false); fetchNotebooks() }} onCancel={() => setOpenForm(false)} />
-        </Paper>
-      )}
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <NotebookList 
+        key={refreshKey}
+        onEdit={handleEdit}
+        onAdd={handleAddNew}
+      />
+
+      <Dialog 
+        open={showForm} 
+        onClose={handleFormCancel}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: '70vh' }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {editingEntry ? 'Modifier le TP' : 'Nouveau TP'}
+          <IconButton onClick={handleFormCancel}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {editingEntry ? (
+            <NotebookForm
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+            />
+          ) : (
+            <NotebookFormAdvanced
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Container>
   )
 }
