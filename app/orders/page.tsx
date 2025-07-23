@@ -16,7 +16,7 @@ import {
 } from "@mui/icons-material"
 import Link from "next/link"
 
-import { OrderWithRelations, OrderStatus, Role, Unit, HazardClass, ChemicalStatus } from "@/types/prisma"
+import { OrderWithRelations } from "@/types/prisma"
 
 interface TabPanelProps {
   children?: React.ReactNode

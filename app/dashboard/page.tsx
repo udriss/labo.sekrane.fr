@@ -113,11 +113,11 @@ export default function DashboardPage() {
                     </Avatar>
                     <Box>
                       <Typography variant="h4" color="success.main">
-                        {stats.materiel.total}
+                        {stats.equipment.total}
                       </Typography>
                       <Typography variant="body2">Équipements</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {stats.materiel.available} disponibles
+                        {stats.equipment.available} disponibles
                       </Typography>
                     </Box>
                   </Box>
@@ -134,11 +134,11 @@ export default function DashboardPage() {
                     </Avatar>
                     <Box>
                       <Typography variant="h4" color="warning.main">
-                        {stats.notebooks.total}
+                        {stats.notebook.total}
                       </Typography>
                       <Typography variant="body2">Cahiers de TP</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {stats.notebooks.recent} récents
+                        {stats.notebook.completed} terminés
                       </Typography>
                     </Box>
                   </Box>
@@ -191,15 +191,21 @@ export default function DashboardPage() {
             <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Répartition des produits chimiques
+                  État des produits chimiques
                 </Typography>
                 <Box>
-                  {Object.entries(stats.chemicals.byStatus).map(([status, count]) => (
-                    <Box key={status} display="flex" justifyContent="space-between" py={1}>
-                      <Typography variant="body2">{status.replace('_', ' ')}</Typography>
-                      <Typography variant="body2" fontWeight="bold">{count}</Typography>
-                    </Box>
-                  ))}
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Total</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.chemicals.total}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Stock bas</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.chemicals.lowStock}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Expirés</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.chemicals.expired}</Typography>
+                  </Box>
                 </Box>
               </Paper>
             </Grid>
@@ -210,12 +216,22 @@ export default function DashboardPage() {
                   État des équipements
                 </Typography>
                 <Box>
-                  {Object.entries(stats.materiel.byStatus).map(([status, count]) => (
-                    <Box key={status} display="flex" justifyContent="space-between" py={1}>
-                      <Typography variant="body2">{status.replace('_', ' ')}</Typography>
-                      <Typography variant="body2" fontWeight="bold">{count}</Typography>
-                    </Box>
-                  ))}
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Total</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.equipment.total}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Disponibles</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.equipment.available}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Maintenance</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.equipment.maintenance}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between" py={1}>
+                    <Typography variant="body2">Rupture de stock</Typography>
+                    <Typography variant="body2" fontWeight="bold">{stats.equipment.outOfStock}</Typography>
+                  </Box>
                 </Box>
               </Paper>
             </Grid>

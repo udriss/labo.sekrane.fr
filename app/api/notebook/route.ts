@@ -1,19 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db/prisma"
+import { promises as fs } from 'fs'
+import path from 'path'
+
+const NOTEBOOK_FILE = path.join(process.cwd(), 'data', 'notebook.json')
+
+// Fonction pour lire le fichier notebook.json
+async function readNotebookFile() {
+  try {
+    const data = await fs.readFile(NOTEBOOK_FILE, 'utf-8')
+    const parsed = JSON.parse(data)
+    return parsed.experiments || []
+  } catch (error) {
+    console.error('Erreur lecture notebook.json:', error)
+    return []
+  }
+}
+
+// Fonction pour écrire dans le fichier notebook.json
+async function writeNotebookFile(experiments: any[]) {
+  try {
+    const data = { experiments }
+    await fs.writeFile(NOTEBOOK_FILE, JSON.stringify(data, null, 2))
+    return true
+  } catch (error) {
+    console.error('Erreur écriture notebook.json:', error)
+    return false
+  }
+}
 
 export async function GET() {
-  const notebooks = await prisma.notebookEntry.findMany({ 
-    orderBy: { createdAt: "desc" },
-    include: {
-      createdBy: {
-        select: { name: true, email: true }
-      },
-      assignedTo: {
-        select: { name: true, email: true }
-      }
-    }
-  })
-  return NextResponse.json({ notebooks })
+  try {
+    const notebooks = await readNotebookFile()
+    // Trier par date de création décroissante
+    const sortedNotebooks = notebooks.sort((a: any, b: any) => 
+      new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime()
+    )
+    return NextResponse.json({ notebooks: sortedNotebooks })
+  } catch (error) {
+    console.error('Erreur API notebook GET:', error)
+    return NextResponse.json({ error: 'Erreur lors du chargement des notebooks' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -44,27 +70,42 @@ export async function POST(request: NextRequest) {
         parsedDate = tempDate
       }
     }
+
+    // Lire les notebooks existants
+    const notebooks = await readNotebookFile()
     
-    const notebook = await prisma.notebookEntry.create({
-      data: {
-        title,
-        description: description || "",
-        scheduledDate: parsedDate,
-        duration: duration || null,
-        class: className || "",
-        groups: groups || [],
-        createdById: createdById || "",
-        objectives: objectives || null,
-        procedure: procedure || null
-      },
-      include: {
-        createdBy: {
-          select: { name: true, email: true }
-        }
-      }
-    })
+    // Créer un nouvel ID
+    const newId = `NOTEBOOK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
-    return NextResponse.json(notebook, { status: 201 })
+    // Créer le nouveau notebook
+    const newNotebook = {
+      id: newId,
+      title,
+      description: description || "",
+      scheduledDate: parsedDate.toISOString(),
+      duration: duration || null,
+      class: className || "",
+      groups: groups || [],
+      createdById: createdById || "",
+      objectives: objectives || null,
+      procedure: procedure || null,
+      status: 'PLANNED',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // Simuler les relations utilisateur (à adapter selon vos besoins)
+      createdBy: { name: 'Utilisateur', email: 'user@example.com' }
+    }
+    
+    // Ajouter le nouveau notebook
+    notebooks.push(newNotebook)
+    
+    // Sauvegarder
+    const success = await writeNotebookFile(notebooks)
+    if (!success) {
+      return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 })
+    }
+    
+    return NextResponse.json(newNotebook, { status: 201 })
   } catch (error) {
     console.error('Erreur lors de la création du TP:', error)
     return NextResponse.json({ error: "Erreur lors de la création du TP" }, { status: 500 })

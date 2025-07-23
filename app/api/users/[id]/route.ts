@@ -1,9 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { promises as fs } from 'fs';
+import path from 'path';
 import { getServerSession } from "next-auth/next";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
+// Fonction pour lire le fichier users.json
+async function readUsersFile() {
+  try {
+    const data = await fs.readFile(USERS_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    return parsed.users || [];
+  } catch (error) {
+    console.error('Erreur lecture users.json:', error);
+    return [];
+  }
+}
+
+// Fonction pour écrire dans le fichier users.json
+async function writeUsersFile(users: any[]) {
+  try {
+    const data = { users };
+    await fs.writeFile(USERS_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Erreur écriture users.json:', error);
+    return false;
+  }
+}
 
 export async function PUT(
   request: NextRequest,
@@ -19,11 +44,16 @@ export async function PUT(
     const { id } = await params;
     const userId = id;
 
-
-
     // Vérifier que l'utilisateur peut modifier ce profil
     if (session.user.id !== userId && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    }
+
+    const users = await readUsersFile();
+    const userIndex = users.findIndex((user: any) => user.id === userId);
+
+    if (userIndex === -1) {
+      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
     // Préparer les données de mise à jour
@@ -38,40 +68,30 @@ export async function PUT(
     }
 
     // Mettre à jour l'utilisateur
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-    });
+    users[userIndex] = {
+      ...users[userIndex],
+      ...updateData,
+      updatedAt: new Date().toISOString()
+    };
 
-    // Gérer les classes personnalisées
+    // Gérer les classes personnalisées (les stocker directement dans l'utilisateur)
     if (data.selectedClasses && Array.isArray(data.selectedClasses)) {
-      // Supprimer les anciennes classes personnalisées
-      await prisma.userClass.deleteMany({
-        where: { userId }
-      });
-
-      // Ajouter les nouvelles classes personnalisées
-      if (data.selectedClasses.length > 0) {
-        await prisma.userClass.createMany({
-          data: data.selectedClasses.map((className: string) => ({
-            userId,
-            className
-          }))
-        });
-      }
+      users[userIndex].customClasses = data.selectedClasses.map((className: string) => ({
+        id: `CLASS_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId,
+        className,
+        createdAt: new Date().toISOString()
+      }));
     }
 
-    // Récupérer l'utilisateur mis à jour avec ses classes
-    const userWithClasses = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        customClasses: true
-      }
-    });
+    const success = await writeUsersFile(users);
+    if (!success) {
+      return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 });
+    }
 
     return NextResponse.json({
       message: "Profil mis à jour avec succès",
-      user: userWithClasses
+      user: users[userIndex]
     });
 
   } catch (error) {
@@ -102,12 +122,8 @@ export async function GET(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        customClasses: true
-      }
-    });
+    const users = await readUsersFile();
+    const user = users.find((user: any) => user.id === userId);
 
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });

@@ -41,7 +41,7 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
       const response = await fetch("/api/notebook")
       if (!response.ok) throw new Error("Erreur lors du chargement")
       const data = await response.json()
-      setEntries(Array.isArray(data) ? data : data.entries || [])
+      setEntries(data.notebooks || [])
     } catch (error) {
       setError(error instanceof Error ? error.message : "Une erreur est survenue")
     } finally {
