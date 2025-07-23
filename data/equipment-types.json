@@ -101,6 +101,14 @@
             "1 L"
           ],
           "isCustom": true
+        },
+        {
+          "name": "Verrerie TEST",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "N/A"
+          ],
+          "isCustom": true
         }
       ]
     },
@@ -232,7 +240,7 @@
         {
           "id": "EQK0T1U2V3W4X5Y",
           "name": "Hotte aspirante",
-          "svg": "/svg/default.svg", 
+          "svg": "/svg/default.svg",
           "volumes": [],
           "isCustom": false
         },
@@ -244,6 +252,33 @@
           "isCustom": false
         }
       ]
+    },
+    {
+      "id": "CUSTOM_1753288440076",
+      "name": "TEST CAT",
+      "svg": "/svg/default.svg",
+      "items": [
+        {
+          "name": "Exemple",
+          "svg": "/svg/default.svg"
+        },
+        {
+          "name": "azazaz",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "N/A"
+          ],
+          "isCustom": true
+        }
+      ],
+      "isCustom": true
+    },
+    {
+      "id": "UNCATEGORIZED",
+      "name": "Sans catégorie",
+      "svg": "/svg/default.svg",
+      "isCustom": true,
+      "items": []
     }
   ]
 }
