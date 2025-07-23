@@ -2,11 +2,11 @@
   "chemicals": [
     {
       "id": "cmde6xhsd00023i0wdveshe9a",
-      "name": "acide",
+      "name": "Acide nitrique",
       "formula": "HNO₃",
       "molfile": null,
-      "casNumber": "7697-37-1",
-      "barcode": null,
+      "casNumber": "7697-37-2",
+      "barcode": "CHEM001234567890",
       "quantity": 4.7,
       "unit": "g",
       "minQuantity": 0,
@@ -16,7 +16,7 @@
       "expirationDate": null,
       "openedDate": null,
       "storage": "",
-      "room": "",
+      "room": "Laboratoire de recherche",
       "cabinet": "",
       "shelf": "",
       "hazardClass": null,
@@ -27,9 +27,9 @@
       "status": "IN_STOCK",
       "notes": "",
       "createdAt": "2025-07-22T07:05:47.245Z",
-      "updatedAt": "2025-07-23T06:25:42.243Z",
+      "updatedAt": "2025-07-23T08:52:48.121Z",
       "supplier": "",
-      "location": ""
+      "location": "Hotte de synthèse"
     },
     {
       "id": "cmdd5kp9i000d1f0v6dbeh3gi",
@@ -37,7 +37,7 @@
       "formula": "C₃H₆O",
       "molfile": null,
       "casNumber": "67-64-1",
-      "barcode": null,
+      "barcode": "CHEM001234567891",
       "quantity": 3514.7,
       "unit": "mL",
       "minQuantity": 100,
@@ -164,11 +164,41 @@
         "createdAt": "2025-07-21T13:40:04.461Z",
         "updatedAt": "2025-07-21T13:40:04.461Z"
       }
+    },
+    {
+      "id": "CHEM_1753260845051_ihujsf1zc",
+      "name": "Sulfate de cuivre pentahydraté",
+      "formula": "CuSO₄·5H₂O",
+      "molfile": null,
+      "casNumber": "7758-99-8",
+      "barcode": null,
+      "quantity": 215.6,
+      "unit": "g",
+      "minQuantity": 100,
+      "concentration": null,
+      "purity": null,
+      "purchaseDate": "2025-07-15T22:00:00.000Z",
+      "expirationDate": "2029-07-09T22:00:00.000Z",
+      "openedDate": null,
+      "storage": "",
+      "room": "Salle de TP B",
+      "cabinet": null,
+      "shelf": null,
+      "hazardClass": null,
+      "sdsFileUrl": null,
+      "supplierId": null,
+      "batchNumber": null,
+      "orderReference": null,
+      "status": "IN_STOCK",
+      "notes": null,
+      "createdAt": "2025-07-23T08:54:05.051Z",
+      "updatedAt": "2025-07-23T08:56:13.226Z",
+      "supplier": null
     }
   ],
   "stats": {
-    "total": 5,
-    "inStock": 5,
+    "total": 6,
+    "inStock": 6,
     "lowStock": 0,
     "expired": 0,
     "expiringSoon": 0

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -19,7 +19,7 @@ import {
   Alert
 } from "@mui/material"
 import { Search } from "@mui/icons-material"
-import { Room } from "@/types/equipment"
+import { Room, EquipmentType } from "@/types/equipment"
 
 interface EquipmentInventoryTabProps {
   materiel: any[]
@@ -66,6 +66,7 @@ export function EquipmentInventoryTab({
   getFilteredMateriel,
   getTypeLabel
 }: EquipmentInventoryTabProps) {
+ {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -78,6 +79,35 @@ export function EquipmentInventoryTab({
     return <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
   }
 
+    const [equipmentTypes, setEquipmentTypes] = useState<EquipmentType[]>([])
+
+  // Charger les types d'équipement
+  useEffect(() => {
+    const fetchEquipmentTypes = async () => {
+      try {
+        const response = await fetch('/api/equipment-types')
+        if (response.ok) {
+          const data = await response.json()
+          setEquipmentTypes(data.types || [])
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des types d'équipement:", error)
+      }
+    }
+    fetchEquipmentTypes()
+  }, [])
+
+  // Fonction pour trouver la catégorie d'un équipement
+  const findEquipmentCategory = (equipmentTypeId: string) => {
+    for (const type of equipmentTypes) {
+      const item = type.items.find((item: any) => item.id === equipmentTypeId)
+      if (item) {
+        return type
+      }
+    }
+    return null
+  }
+  
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>Inventaire actuel</Typography>
@@ -163,12 +193,14 @@ export function EquipmentInventoryTab({
         if (sortBy === 'category' && typeof filteredData === 'object' && !Array.isArray(filteredData)) {
           materialByType = filteredData
         } else {
-          // Créer les groupes à partir de la liste filtrée
+          // Créer les groupes à partir de la liste filtrée en utilisant equipmentTypeId
           const items = Array.isArray(filteredData) ? filteredData : []
           materialByType = items.reduce((acc: any, item: any) => {
-            const type = item.type || 'CUSTOM'
-            if (!acc[type]) acc[type] = []
-            acc[type].push(item)
+            // Trouver la catégorie en utilisant equipmentTypeId
+            const category = findEquipmentCategory(item.equipmentTypeId)
+            const typeId = category ? category.id : 'CUSTOM'
+            if (!acc[typeId]) acc[typeId] = []
+            acc[typeId].push(item)
             return acc
           }, {})
           
@@ -192,12 +224,17 @@ export function EquipmentInventoryTab({
         }
         
         // Affichage par sections de type
-        return Object.entries(materialByType).map(([type, items]: [string, any]) => (
-          <Box key={type} sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
-              📦 {getTypeLabel(type)} ({items.length})
-            </Typography>
-            <Grid container spacing={2}>
+        return Object.entries(materialByType).map(([typeId, items]: [string, any]) => {
+          // Trouver le nom de la catégorie
+          const category = equipmentTypes.find(type => type.id === typeId)
+          const categoryName = category ? category.name : getTypeLabel(typeId)
+          
+          return (
+            <Box key={typeId} sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
+                📦 {categoryName} ({items.length})
+              </Typography>
+              <Grid container spacing={2}>
               {items.map((item: any) => (
                 <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
                   <Card sx={{ 
@@ -227,7 +264,14 @@ export function EquipmentInventoryTab({
                     )}
                     
                     <CardContent>
-                      <Typography variant="h6">{item.name}</Typography>
+                    <Typography variant="h6">
+                        {item.name}
+                        {item.volume && (
+                            <Typography component="span" variant="h6" color="text.secondary" sx={{ ml: 1, fontSize: '1rem' }}>
+                                ({item.volume})
+                            </Typography>
+                        )}
+                    </Typography>
                       <Typography color="text.secondary">
                         Type: {getTypeLabel(item.type)}
                       </Typography>
@@ -307,7 +351,8 @@ export function EquipmentInventoryTab({
               ))}
             </Grid>
           </Box>
-        ))
+          )
+        })
       })()}
       
       {(() => {
@@ -330,4 +375,5 @@ export function EquipmentInventoryTab({
       })()}
     </Paper>
   )
+}
 }

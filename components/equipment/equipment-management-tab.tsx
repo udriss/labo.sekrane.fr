@@ -300,10 +300,12 @@ export function EquipmentManagementTab({
         }}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+        slotProps={{
+          paper: {
+            sx: {
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }
           }
         }}
       >

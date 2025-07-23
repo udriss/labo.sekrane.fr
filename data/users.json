@@ -1,0 +1,28 @@
+{
+  "users": [
+    {
+      "id": "USER_001",
+      "email": "admin@labo.sekrane.fr",
+      "name": "Administrateur",
+      "role": "ADMIN",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "USER_002",
+      "email": "teacher@labo.sekrane.fr", 
+      "name": "Professeur Martin",
+      "role": "TEACHER",
+      "isActive": true,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "USER_003",
+      "email": "student@labo.sekrane.fr",
+      "name": "Étudiant Dupont",
+      "role": "STUDENT", 
+      "isActive": true,
+      "createdAt": "2025-01-10T00:00:00Z"
+    }
+  ]
+}

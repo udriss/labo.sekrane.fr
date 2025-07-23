@@ -126,13 +126,7 @@ export default function Home() {
         throw new Error('Erreur lors du chargement des statistiques');
       }
       const statsData = await response.json();
-      setStats({
-        ...statsData,
-        user: {
-          name: session?.user?.name || "Utilisateur", 
-          role: (session?.user as any)?.role || "USER", 
-        },
-      });
+      setStats(statsData);
     } catch (error) {
       console.error("Erreur lors du chargement des statistiques:", error);
     } finally {
@@ -202,14 +196,14 @@ export default function Home() {
             </Box>
           </Box>
           <Box display="flex" alignItems="center" gap={2}>
-            <Badge badgeContent={stats?.orders.pending || 0} color="error">
+            <Badge badgeContent={stats?.orders?.pending || 0} color="error">
               <IconButton color="inherit">
                 <Notifications />
               </IconButton>
             </Badge>
             <Chip 
               avatar={<Avatar><Person /></Avatar>}
-              label={stats?.user ? `${stats.user.name} (${stats.user.role})` : "Utilisateur non spécifié"}
+              label={session?.user?.name ? `${session.user.name} (Admin)` : "Utilisateur non spécifié"}
               color="secondary"
               variant="outlined"
               sx={{ color: 'white', borderColor: 'white' }}
@@ -298,11 +292,11 @@ export default function Home() {
                 <Avatar sx={{ bgcolor: '#388e3c' }}><Inventory /></Avatar>
                 <Box>
                   <Typography variant="h4" color="success.main">
-                    {stats?.materiel.total || 0}
+                    {stats?.equipment?.total || 0}
                   </Typography>
                   <Typography variant="body2">Équipements</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {stats?.materiel.available || 0} disponibles
+                    {stats?.equipment?.available || 0} disponibles
                   </Typography>
                 </Box>
               </Box>
@@ -334,11 +328,11 @@ export default function Home() {
                 <Avatar sx={{ bgcolor: '#f57c00' }}><Assignment /></Avatar>
                 <Box>
                   <Typography variant="h4" color="warning.main">
-                    {stats?.notebooks.total || 0}
+                    {stats?.notebook?.total || 0}
                   </Typography>
                   <Typography variant="body2">Cahiers TP</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {stats?.notebooks.recent || 0} récents
+                    {stats?.notebook?.thisMonth || 0} récents
                   </Typography>
                 </Box>
               </Box>
@@ -534,7 +528,7 @@ export default function Home() {
         <Grid size={{ xs:12, lg:3 }}>
           <Stack spacing={3}>
             {/* Liens d'administration ou enseignant */}
-            {stats?.user?.role === 'ADMIN' ? (
+            {session?.user && (session.user as any)?.role === 'ADMIN' ? (
               <Paper elevation={2} sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   <AdminPanelSettings sx={{ mr: 1, verticalAlign: 'middle' }} />
@@ -551,7 +545,7 @@ export default function Home() {
                   ))}
                 </List>
               </Paper>
-            ) : stats?.user?.role === 'TEACHER' ? (
+            ) : session?.user && (session.user as any)?.role === 'TEACHER' ? (
               <Paper elevation={2} sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   <School sx={{ mr: 1, verticalAlign: 'middle' }} />

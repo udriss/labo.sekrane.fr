@@ -1,21 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
+import { promises as fs } from 'fs'
+import path from 'path'
+
+const ROOMS_FILE = path.join(process.cwd(), 'data', 'rooms.json')
+
+// Fonction pour lire le fichier des salles
+async function readRooms() {
+  try {
+    const data = await fs.readFile(ROOMS_FILE, 'utf-8')
+    return JSON.parse(data)
+  } catch (error) {
+    console.error('Erreur lecture fichier salles:', error)
+    return { rooms: [] }
+  }
+}
+
+// Fonction pour écrire le fichier des salles
+async function writeRooms(data: any) {
+  try {
+    await fs.writeFile(ROOMS_FILE, JSON.stringify(data, null, 2))
+  } catch (error) {
+    console.error('Erreur écriture fichier salles:', error)
+    throw error
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const includeLocations = searchParams.get('includeLocations') === 'true'
 
-    const rooms = await prisma.room.findMany({
-      where: { isActive: true },
-      include: includeLocations ? {
-        locations: {
-          where: { isActive: true },
-          orderBy: { name: 'asc' }
-        }
-      } : undefined,
-      orderBy: { name: 'asc' }
-    })
+    const data = await readRooms()
+    let rooms = data.rooms.filter((room: any) => room.isActive !== false)
+
+    if (!includeLocations) {
+      rooms = rooms.map((room: any) => {
+        const { locations, ...roomWithoutLocations } = room
+        return roomWithoutLocations
+      })
+    } else {
+      rooms = rooms.map((room: any) => ({
+        ...room,
+        locations: (room.locations || []).filter((loc: any) => loc.isActive !== false)
+      }))
+    }
+
+    // Trier par nom
+    rooms.sort((a: any, b: any) => a.name.localeCompare(b.name))
 
     return NextResponse.json({ rooms })
   } catch (error) {
@@ -35,23 +66,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Le nom de la salle est requis' }, { status: 400 })
     }
 
-    const room = await prisma.room.create({
-      data: {
-        name: body.name,
-        description: body.description,
-        locations: body.locations ? {
-          create: body.locations.map((loc: any) => ({
-            name: loc.name,
-            description: loc.description
-          }))
-        } : undefined
-      },
-      include: {
-        locations: true
-      }
-    })
+    const data = await readRooms()
     
-    return NextResponse.json(room, { status: 201 })
+    const newRoom = {
+      id: `ROOM_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: body.name,
+      description: body.description || null,
+      isActive: true,
+      capacity: body.capacity || null,
+      locations: (body.locations || []).map((loc: any) => ({
+        id: `LOC_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: loc.name,
+        description: loc.description || null,
+        isActive: true
+      }))
+    }
+
+    data.rooms.push(newRoom)
+    await writeRooms(data)
+    
+    return NextResponse.json(newRoom, { status: 201 })
   } catch (error) {
     console.error('Erreur création salle:', error)
     return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
@@ -67,15 +101,23 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ID requis pour la mise à jour' }, { status: 400 })
     }
 
-    const room = await prisma.room.update({
-      where: { id },
-      data: updateData,
-      include: {
-        locations: true
-      }
-    })
+    const data = await readRooms()
+    const roomIndex = data.rooms.findIndex((room: any) => room.id === id)
     
-    return NextResponse.json(room)
+    if (roomIndex === -1) {
+      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 })
+    }
+
+    // Mettre à jour la salle
+    data.rooms[roomIndex] = {
+      ...data.rooms[roomIndex],
+      ...updateData,
+      id // Garder l'ID original
+    }
+
+    await writeRooms(data)
+    
+    return NextResponse.json(data.rooms[roomIndex])
   } catch (error) {
     console.error('Erreur mise à jour salle:', error)
     return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
@@ -91,9 +133,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 })
     }
 
-    await prisma.room.delete({
-      where: { id }
-    })
+    const data = await readRooms()
+    const roomIndex = data.rooms.findIndex((room: any) => room.id === id)
+    
+    if (roomIndex === -1) {
+      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 })
+    }
+
+    // Marquer comme inactif plutôt que supprimer
+    data.rooms[roomIndex].isActive = false
+    
+    await writeRooms(data)
     
     return NextResponse.json({ message: 'Salle supprimée avec succès' })
   } catch (error) {

@@ -1,28 +1,12 @@
 {
   "equipment": [
     {
-      "id": "EQUIP_1753253955807_0w7nm6yax",
-      "name": "Tube à essai 10 mL",
-      "equipmentTypeId": "EQ4D5E6F7G8H9I0",
-      "model": null,
-      "serialNumber": null,
-      "quantity": 1,
-      "minQuantity": 1,
-      "volume": "10 mL",
-      "location": null,
-      "room": null,
-      "notes": null,
-      "purchaseDate": null,
-      "status": "AVAILABLE",
-      "createdAt": "2025-07-23T06:59:15.807Z",
-      "updatedAt": "2025-07-23T06:59:15.807Z"
-    },
-    {
       "id": "EQUIP_1753254105873_vjm5cl4wd",
       "name": "Tube à essai",
       "equipmentTypeId": "EQ4D5E6F7G8H9I0",
       "model": null,
-      "serialNumber": null,
+      "serialNumber": "TE001",
+      "barcode": "EQUIP001234567890",
       "quantity": 1,
       "minQuantity": 1,
       "volume": "25 mL",
@@ -39,6 +23,35 @@
       "name": "Bécher",
       "equipmentTypeId": "EQ1A2B3C4D5E6F7",
       "model": null,
+      "serialNumber": "BQ001",
+      "barcode": "EQUIP001234567891",
+      "quantity": 1,
+      "minQuantity": 1,
+      "volume": "25 mL",
+      "location": "Station d'analyse",
+      "room": "Laboratoire de recherche",
+      "notes": null,
+      "purchaseDate": null,
+      "status": "AVAILABLE",
+      "createdAt": "2025-07-23T07:02:56.990Z",
+      "updatedAt": "2025-07-23T08:50:56.455Z",
+      "typeName": "Verrerie",
+      "itemName": "Bécher",
+      "svg": "/svg/beaker.svg",
+      "availableVolumes": [
+        "25 mL",
+        "50 mL",
+        "100 mL",
+        "250 mL",
+        "500 mL",
+        "1 L"
+      ]
+    },
+    {
+      "id": "EQUIP_1753257568959_8hpgs0m61",
+      "name": "Bécher",
+      "equipmentTypeId": "EQ1A2B3C4D5E6F7",
+      "model": null,
       "serialNumber": null,
       "quantity": 1,
       "minQuantity": 1,
@@ -48,14 +61,15 @@
       "notes": null,
       "purchaseDate": null,
       "status": "AVAILABLE",
-      "createdAt": "2025-07-23T07:02:56.990Z",
-      "updatedAt": "2025-07-23T07:02:56.990Z"
+      "createdAt": "2025-07-23T07:59:28.959Z",
+      "updatedAt": "2025-07-23T07:59:28.959Z"
     }
   ],
   "stats": {
     "total": 3,
-    "inStock": 3,
-    "lowStock": 3,
-    "outOfStock": 0
+    "available": 3,
+    "inUse": 0,
+    "maintenance": 0,
+    "outOfOrder": 0
   }
 }

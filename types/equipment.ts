@@ -8,6 +8,7 @@ export interface EquipmentType {
 }
 
 export interface EquipmentItem {
+  id?: string
   name: string
   svg: string
   volumes: string[]

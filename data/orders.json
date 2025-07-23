@@ -1,0 +1,56 @@
+{
+  "orders": [
+    {
+      "id": "ORDER_001",
+      "title": "Commande verrerie Q1 2025",
+      "description": "Renouvellement stock verrerie",
+      "status": "PENDING",
+      "totalAmount": 1250.50,
+      "currency": "EUR",
+      "supplier": "VWR",
+      "createdAt": "2025-01-15T10:00:00Z",
+      "items": [
+        {
+          "name": "Bécher 250mL",
+          "quantity": 12,
+          "unitPrice": 15.50
+        }
+      ]
+    },
+    {
+      "id": "ORDER_002",
+      "title": "Commande produits chimiques",
+      "description": "Réactifs pour TP",
+      "status": "DELIVERED", 
+      "totalAmount": 850.00,
+      "currency": "EUR",
+      "supplier": "Sigma-Aldrich",
+      "createdAt": "2025-01-10T14:00:00Z",
+      "deliveredAt": "2025-01-18T09:00:00Z",
+      "items": [
+        {
+          "name": "Acide chlorhydrique",
+          "quantity": 2,
+          "unitPrice": 25.00
+        }
+      ]
+    },
+    {
+      "id": "ORDER_003",
+      "title": "Matériel de sécurité",
+      "description": "EPI et équipements sécurité",
+      "status": "PENDING",
+      "totalAmount": 420.75,
+      "currency": "EUR", 
+      "supplier": "3M",
+      "createdAt": "2025-01-22T16:00:00Z",
+      "items": [
+        {
+          "name": "Lunettes de protection",
+          "quantity": 10,
+          "unitPrice": 12.50
+        }
+      ]
+    }
+  ]
+}

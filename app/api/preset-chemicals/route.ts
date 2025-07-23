@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Chemin vers le fichier JSON des produits chimiques communs
-const COMMON_CHEMICALS_FILE = path.join(process.cwd(), 'data', 'common-chemicals.json');
+const COMMON_CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-common.json');
 
 export async function GET(request: NextRequest) {
   try {

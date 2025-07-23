@@ -436,9 +436,9 @@ export default function EquipmentPage() {
   }
 
   // Fonction pour obtenir les volumes disponibles pour un équipement
-  const getAvailableVolumes = (equipmentName: string): string[] => {
-    for (const equipmentTypeId of getAllEquipmentTypes()) {
-      const item = equipmentTypeId.items.find((item: EquipmentItem) => item.name === equipmentName)
+  const getAvailableVolumes = (equipmentTypeId: string): string[] => {
+    for (const equipmentType of getAllEquipmentTypes()) {
+      const item = equipmentType.items.find((item: EquipmentItem) => item.id === equipmentTypeId)
       if (item) {
         return item.volumes || []
       }
@@ -1159,15 +1159,17 @@ export default function EquipmentPage() {
         onClose={() => setContinueDialog(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }
           }
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle >
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
               <CheckCircle />
@@ -1331,11 +1333,13 @@ export default function EquipmentPage() {
         onClose={() => setAddCustomEquipmentDialog(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }
           }
         }}
       >
@@ -1481,10 +1485,12 @@ export default function EquipmentPage() {
         }}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+        slotProps={{
+          paper: {
+            sx: {
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }
           }
         }}
       >
@@ -1652,24 +1658,32 @@ export default function EquipmentPage() {
         }}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }
           }
         }}
       >
-        <DialogTitle sx={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+        <DialogTitle sx={{ color: 'white',  }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Edit />
             <Typography variant="h6">
               Modifier {editingEquipment?.name}
+              {editingEquipment?.volume && (
+              <span style={{ fontWeight: 400, fontSize: '1rem', marginLeft: 8 }}>
+                ({editingEquipment.volume})
+              </span>
+              )}
             </Typography>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={3}>
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
+        <DialogContent sx={{ p: 3 }}>
+          <Stack spacing={3} >
             {/* Nom de l'équipement */}
             <TextField
               fullWidth
@@ -1677,31 +1691,65 @@ export default function EquipmentPage() {
               value={editingEquipment?.name || ''}
               onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, name: e.target.value }))}
               sx={{
-                '& .MuiInputLabel-root': { color: 'white' },
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' }
-                }
+          '& .MuiInputLabel-root': { color: 'white' },
+          '& .MuiOutlinedInput-root': {
+            color: 'white',
+            '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+            '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+            '&.Mui-focused fieldset': { borderColor: 'white' }
+          }
               }}
             />
-            {/* Volume */}
-            <TextField
-              fullWidth
-              label="Volume"
-              value={editingEquipment?.volume || ''}
-              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
-              sx={{
-                '& .MuiInputLabel-root': { color: 'white' },
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' }
-                }
-              }}
-            />
+            
+            {/* Volume avec sélection des volumes preset */}
+            {editingEquipment?.equipmentTypeId && getAvailableVolumes(editingEquipment.equipmentTypeId).length > 0 ? (
+              <FormControl 
+                fullWidth
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'white' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: 'white' }
+                  },
+                  '& .MuiSvgIcon-root': { color: 'white' }
+                }}
+              >
+                <InputLabel>Volume</InputLabel>
+                <Select
+                  value={editingEquipment?.volume || ''}
+                  label="Volume"
+                  onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
+                >
+                  <MenuItem value="">
+                    <em>Aucun volume spécifié</em>
+                  </MenuItem>
+                  {getAvailableVolumes(editingEquipment.equipmentTypeId).map((volume) => (
+                    <MenuItem key={volume} value={volume}>
+                      {volume}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            ) : (
+              <TextField
+                fullWidth
+                label="Volume"
+                value={editingEquipment?.volume || ''}
+                onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'white' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: 'white' }
+                  }
+                }}
+              />
+            )}
+            
             {/* Quantité */}
             <TextField
               fullWidth
@@ -1719,12 +1767,10 @@ export default function EquipmentPage() {
                 }
               }}
             />
-            {/* Localisation */}
-            <TextField
+            
+            {/* Salle */}
+            <FormControl 
               fullWidth
-              label="Localisation"
-              value={editingEquipment?.location || ''}
-              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, location: e.target.value }))}
               sx={{
                 '& .MuiInputLabel-root': { color: 'white' },
                 '& .MuiOutlinedInput-root': {
@@ -1732,9 +1778,68 @@ export default function EquipmentPage() {
                   '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
                   '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
                   '&.Mui-focused fieldset': { borderColor: 'white' }
-                }
+                },
+                '& .MuiSvgIcon-root': { color: 'white' }
               }}
-            />
+            >
+              <InputLabel>Salle</InputLabel>
+              <Select
+                value={editingEquipment?.room || ''}
+                label="Salle"
+                onChange={(e) => {
+                  setEditingEquipment((prev: any) => ({ 
+                    ...prev, 
+                    room: e.target.value,
+                    location: '' // Reset location when room changes
+                  }))
+                }}
+              >
+                <MenuItem value="">
+                  <em>Aucune salle spécifiée</em>
+                </MenuItem>
+                {rooms.map((room) => (
+                  <MenuItem key={room.id} value={room.name}>
+                    🏠 {room.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Localisation dans la salle */}
+            {editingEquipment?.room && (
+              <FormControl 
+                fullWidth
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'white' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: 'white' }
+                  },
+                  '& .MuiSvgIcon-root': { color: 'white' }
+                }}
+              >
+                <InputLabel>Localisation</InputLabel>
+                <Select
+                  value={editingEquipment?.location || ''}
+                  label="Localisation"
+                  onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, location: e.target.value }))}
+                >
+                  <MenuItem value="">
+                    <em>Aucune localisation spécifiée</em>
+                  </MenuItem>
+                  {(() => {
+                    const selectedRoom = rooms.find(room => room.name === editingEquipment.room)
+                    return selectedRoom?.locations?.map((location: any) => (
+                      <MenuItem key={location.id} value={location.name}>
+                        📍 {location.name}
+                      </MenuItem>
+                    )) || []
+                  })()}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>

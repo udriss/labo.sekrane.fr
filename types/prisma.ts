@@ -311,28 +311,40 @@ export interface StatsData {
     total: number
     lowStock: number
     expired: number
-    byStatus: Record<ChemicalStatus, number>
+    // byStatus?: Record<ChemicalStatus, number>
   }
-  materiel: {
+  equipment: {
     total: number
     available: number
     maintenance: number
-    byStatus: Record<EquipmentStatus, number>
+    outOfStock?: number
+    // byStatus?: Record<EquipmentStatus, number>
   }
   orders: {
     pending: number
     total: number
-    totalAmount: number
-    byStatus: Record<OrderStatus, number>
+    delivered?: number
+    thisMonth?: number
+    // totalAmount?: number
+    // byStatus?: Record<OrderStatus, number>
   }
-  notebooks: {
+  notebook: {
     total: number
-    recent: number
-    byStatus: Record<NotebookStatus, number>
+    thisMonth?: number
+    completed?: number
+    inProgress?: number
+    // byStatus?: Record<NotebookStatus, number>
   }
-  user: {
-    name: string
-    role: Role
+  users: {
+    total: number
+    active: number
+    admins: number
+  }
+  summary?: {
+    totalItems: number
+    totalExperiments: number
+    totalUsers: number
+    totalOrders: number
   }
 }
 
