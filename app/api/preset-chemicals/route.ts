@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Chemin vers le fichier JSON des produits chimiques communs
-const COMMON_CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-common.json');
+const COMMON_CHEMICALS_FILE = path.join(process.cwd(), 'data', 'common-chemicals.json');
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,12 +21,14 @@ export async function GET(request: NextRequest) {
       return chemList.slice().sort((a: any, b: any) => {
         const nameA = a.name.toLowerCase();
         const nameB = b.name.toLowerCase();
+
         // 1. Commence exactement par la query
         const aStarts = nameA.startsWith(query);
         const bStarts = nameB.startsWith(query);
         if (aStarts && !bStarts) return -1;
         if (!aStarts && bStarts) return 1;
         if (aStarts && bStarts) return nameA.localeCompare(nameB);
+
         // 2. Contient la query en début de mot (après espace, tiret, parenthèse, etc.)
         const wordBoundary = /[\s\-\(\[]/;
         const aWord = nameA.split(wordBoundary).some((w: string) => w.startsWith(query));
@@ -34,12 +36,14 @@ export async function GET(request: NextRequest) {
         if (aWord && !bWord) return -1;
         if (!aWord && bWord) return 1;
         if (aWord && bWord) return nameA.localeCompare(nameB);
+
         // 3. Contient la query ailleurs
         const aIdx = nameA.indexOf(query);
         const bIdx = nameB.indexOf(query);
         if (aIdx !== -1 && bIdx === -1) return -1;
         if (aIdx === -1 && bIdx !== -1) return 1;
         if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx || nameA.localeCompare(nameB);
+
         // Sinon, tri alphabétique
         return nameA.localeCompare(nameB);
       });

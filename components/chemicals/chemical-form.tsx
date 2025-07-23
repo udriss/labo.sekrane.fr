@@ -297,72 +297,6 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
             {chemical ? "Modifier le produit" : "Nouveau produit chimique"}
           </Typography>
 
-          {/* Sélection de molécules preset (seulement pour nouveau produit) */}
-          {!chemical && presetCategories.length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Choisir une molécule prédéfinie (optionnel)
-              </Typography>
-              <Autocomplete
-                options={presetCategories.flatMap(cat => 
-                  cat.presetChemicals.map((chem: any) => ({
-                    ...chem,
-                    categoryName: cat.name
-                  }))
-                )}
-                groupBy={(option) => option.categoryName}
-                getOptionLabel={(option) => `${option.name} ${option.formula ? `(${option.formula})` : ''}`}
-                value={selectedPreset}
-                onChange={(_, newValue) => {
-                  if (newValue) {
-                    applyPreset(newValue)
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Rechercher une molécule..."
-                    placeholder="Acide sulfurique, eau, etc..."
-                  />
-                )}
-                renderOption={(props, option) => {
-                  const { key, ...otherProps } = props;
-                  return (
-                    <Paper key={key} component="li" {...otherProps} sx={{ m: 0.5, p: 1 }}>
-                      <ListItemText
-                        primary={option.name}
-                        secondary={
-                          <>
-                            <Typography component="span" variant="caption" color="text.secondary" display="block">
-                              Formule: {option.formula} | CAS: {option.casNumber}
-                            </Typography>
-                            {option.category && option.category === 'RIEN' && (
-                              <Box component="span" display="inline-block" sx={{ mt: 0.5 }}>
-                                <Chip
-                                  label={option.category}
-                                  size="small"
-                                  component={"span"}
-                                  variant="outlined"
-                                  sx={{ height: 16 }}
-                                />
-                              </Box>
-                            )}
-                          </>
-                        }
-                      />
-                    </Paper>
-                  );
-                }}
-                sx={{ mb: 2 }}
-              />
-              {selectedPreset && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Molécule "{selectedPreset.name}" sélectionnée. Vous pouvez maintenant ajuster les quantités et informations de stockage.
-                </Alert>
-              )}
-            </Box>
-          )}
-
           {/* Alerte de doublon */}
           {duplicateWarning && (
             <Alert severity="warning">
@@ -373,10 +307,15 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
           {/* Champ nom avec auto-complétion */}
           <Autocomplete
             freeSolo
-            options={nameOptions}
-            groupBy={(option) => option.category || ''}
             getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
             value={formData.name}
+            options={presetCategories.flatMap(cat => 
+              cat.presetChemicals.map((chem: any) => ({
+                ...chem,
+                categoryName: cat.name
+              }))
+            )}
+            groupBy={(option) => option.categoryName}
             onInputChange={(_, newInputValue) => {
               if (newInputValue !== null) {
                 handleChange("name")(newInputValue)

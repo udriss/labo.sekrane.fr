@@ -89,11 +89,27 @@ export function EquipmentAddTab({
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
       {/* Stepper horizontal */}
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+      <Stepper activeStep={activeStep} sx={{ mb: 4 }} alternativeLabel>
         {steps.map((step, index) => (
           <Step key={step.label}>
             <StepLabel
-              icon={step.icon}
+              icon={
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    bgcolor: index === activeStep ? 'primary.main' : 'grey.300',
+                    color: index === activeStep ? 'white' : 'text.secondary',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {step.icon}
+                </Box>
+              }
               onClick={() => {
                 // Permettre la navigation vers les étapes précédentes
                 // et vers l'étape suivante si on a les données nécessaires
@@ -105,18 +121,31 @@ export function EquipmentAddTab({
                 }
               }}
               sx={{
+                cursor: 'pointer',
                 '& .MuiStepIcon-root': {
                   fontSize: '2rem',
                 },
-                cursor: 'pointer',
                 '&:hover': {
                   backgroundColor: 'rgba(0, 0, 0, 0.04)',
                   borderRadius: 1,
-                }
+                },
               }}
             >
-              <Typography variant="h6">{step.label}</Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: index === activeStep ? 'bold' : 'normal',
+                  color: index === activeStep ? 'primary.main' : 'text.secondary',
+                }}
+              >
+                {step.label}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: index === activeStep ? 'primary.main' : 'text.secondary',
+                }}
+              >
                 {step.description}
               </Typography>
             </StepLabel>
