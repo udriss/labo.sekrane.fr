@@ -34,6 +34,14 @@ import {
   differenceInMinutes
 } from "date-fns"
 
+// Import des composants refactorisés
+import {
+  CalendarStats,
+  WeeklyView,
+  EventsList,
+  DailyPlanning,
+  EventDetailsDialog
+} from '@/components/calendar'
 
 import { Calendar as CalendarType, CalendarType as EventType } from "@/types/prisma"
 
@@ -78,11 +86,6 @@ const EVENT_TYPES = {
   [EventType.INVENTORY]: { label: "Inventaire", color: "#388e3c", icon: <Assignment /> },
   [EventType.OTHER]: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
 }
-
-const TIME_SLOTS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00", 
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
-]
 
 export default function CalendarPage() {
   const [tabValue, setTabValue] = useState(0)
@@ -413,30 +416,10 @@ export default function CalendarPage() {
     loadTpPresets();
   }, []);
 
-  const getWeekDays = () => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 })
-    const end = endOfWeek(currentDate, { weekStartsOn: 1 })
-    return eachDayOfInterval({ start, end })
-  }
-
-  const getEventsForDay = (date: Date) => {
-    return events.filter(event => 
-      isSameDay(event.startDate, date)
-    )
-  }
-
   const getTodayEvents = () => {
     return events.filter(event => 
       isSameDay(event.startDate, new Date())
     )
-  }
-
-  const getUpcomingEvents = () => {
-    const today = startOfDay(new Date())
-    return events
-      .filter(event => event.startDate >= today)
-      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-      .slice(0, 10)
   }
 
   const handleCreateEvent = () => {
@@ -447,18 +430,6 @@ export default function CalendarPage() {
   const handleViewEvent = (event: CalendarEvent) => {
     setSelectedEvent(event)
     setOpenDialog(true)
-  }
-
-  const formatTime = (date: Date) => {
-    return format(date, "HH:mm", { locale: fr })
-  }
-
-  const formatDateTime = (date: Date) => {
-    return format(date, "dd/MM/yyyy HH:mm", { locale: fr })
-  }
-
-  const getEventTypeInfo = (type: string) => {
-    return EVENT_TYPES[type as keyof typeof EVENT_TYPES] || EVENT_TYPES.OTHER
   }
 
   if (loading) {
@@ -500,76 +471,7 @@ export default function CalendarPage() {
         )}
 
         {/* Statistiques du jour */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
-                    <CalendarMonth />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" color="primary">
-                      {getTodayEvents().length}
-                    </Typography>
-                    <Typography variant="body2">Séances aujourd'hui</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: 'success.main' }}>
-                    <Science />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" color="success.main">
-                      {events.filter(e => e.type === 'TP').length}
-                    </Typography>
-                    <Typography variant="body2">TP programmés</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: 'warning.main' }}>
-                    <Schedule />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" color="warning.main">
-                      {events.filter(e => e.type === 'MAINTENANCE').length}
-                    </Typography>
-                    <Typography variant="body2">Maintenances</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: 'info.main' }}>
-                    <Room />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h4" color="info.main">
-                      {Array.from(new Set(events.map(e => e.room))).length}
-                    </Typography>
-                    <Typography variant="body2">Salles utilisées</Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <CalendarStats events={events} getTodayEvents={getTodayEvents} />
 
         {/* Tabs */}
         <Paper elevation={2}>
@@ -587,310 +489,31 @@ export default function CalendarPage() {
 
           {/* Tab 0: Vue hebdomadaire */}
           <TabPanel value={tabValue} index={0}>
-            <Box sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <IconButton onClick={() => setCurrentDate(subDays(currentDate, 7))}>
-                  ←
-                </IconButton>
-                <Typography variant="h6">
-                  Semaine du {format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy", { locale: fr })}
-                </Typography>
-                <IconButton onClick={() => setCurrentDate(addDays(currentDate, 7))}>
-                  →
-                </IconButton>
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  onClick={() => setCurrentDate(new Date())}
-                >
-                  Aujourd'hui
-                </Button>
-              </Stack>
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 1 }}>
-              {/* En-tête des heures */}
-              <Box sx={{ p: 1 }}>
-                <Typography variant="caption" color="text.secondary">Heure</Typography>
-              </Box>
-              {getWeekDays().map((day) => (
-                <Box key={day.toISOString()} sx={{ p: 1, textAlign: 'center' }}>
-                  <Typography variant="subtitle2">
-                    {format(day, "EEEE", { locale: fr })}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {format(day, "dd/MM", { locale: fr })}
-                  </Typography>
-                </Box>
-              ))}
-
-              {TIME_SLOTS.map((time) => (
-                <React.Fragment key={time}>
-                  <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', height: '65px', display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="caption">{time}</Typography>
-                  </Box>
-                  {getWeekDays().map((day) => (
-                      <Box 
-                        key={day.toISOString()}
-                        sx={{ 
-                          p: 0.5, 
-                          borderTop: 1, 
-                          borderColor: 'divider',
-                          height: '65px',
-                          position: 'relative'
-                        }}
-                      >
-                        {/* Events for this day and time slot will be positioned absolutely from a different mapping */}
-                      </Box>
-                  ))}
-                </React.Fragment>
-              ))}
-              {/* Absolutely position events over the grid */}
-              {getWeekDays().map((day, dayIndex) => {
-                const dayEvents = getEventsForDay(day);
-                return dayEvents.map(event => {
-                  const typeInfo = getEventTypeInfo(event.type);
-                  const startHour = event.startDate.getHours();
-                  const startMinute = event.startDate.getMinutes();
-                  const durationInMinutes = differenceInMinutes(event.endDate, event.startDate);
-                  
-                  const top = (startHour - 8) * 65 + (startMinute / 60) * 65; // 8am is the first slot
-                  const height = (durationInMinutes / 60) * 65 - 4; // -4 for padding
-
-                  return (
-                    <Tooltip title={`${event.title} (${format(event.startDate, 'HH:mm')} - ${format(event.endDate, 'HH:mm')})`} key={event.id}>
-                      <Card 
-                        sx={{ 
-                          bgcolor: typeInfo.color,
-                          color: 'white',
-                          cursor: 'pointer',
-                          position: 'absolute',
-                          top: `${top}px`,
-                          left: `calc(${(dayIndex + 1) * (100 / 8)}% + 4px)`,
-                          width: `calc(${(100 / 8)}% - 8px)`,
-                          height: `${height}px`,
-                          zIndex: 1,
-                          '&:hover': { opacity: 0.8, zIndex: 2 }
-                        }}
-                        onClick={() => handleViewEvent(event)}
-                      >
-                        <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                          <Typography variant="caption" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: Math.floor(height/20), WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {event.title}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Tooltip>
-                  )
-                })
-              })}
-            </Box>
+            <WeeklyView
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              events={events}
+              onEventClick={handleViewEvent}
+            />
           </TabPanel>
 
           {/* Tab 1: Liste des événements */}
           <TabPanel value={tabValue} index={1}>
-            <Typography variant="h6" gutterBottom>
-              Tous les événements programmés
-            </Typography>
-            <List>
-              {getUpcomingEvents().map((event) => {
-                const typeInfo = getEventTypeInfo(event.type)
-                return (
-                  <ListItem 
-                    key={event.id}
-                    sx={{ 
-                      border: 1, 
-                      borderColor: 'divider', 
-                      borderRadius: 1, 
-                      mb: 1,
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' }
-                    }}
-                    onClick={() => handleViewEvent(event)}
-                  >
-                    <ListItemIcon>
-                      <Avatar sx={{ bgcolor: typeInfo.color, width: 40, height: 40 }}>
-                        {typeInfo.icon}
-                      </Avatar>
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="subtitle1">{event.title}</Typography>
-                          <Chip label={typeInfo.label} size="small" />
-                          {event.class && (
-                            <Chip label={event.class} size="small" variant="outlined" />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            📅 {formatDateTime(event.startDate)} - {formatTime(event.endDate)}
-                          </Typography>
-                          {event.room && (
-                            <Typography variant="body2" color="text.secondary">
-                              📍 {event.room}
-                            </Typography>
-                          )}
-                          {event.instructor && (
-                            <Typography variant="body2" color="text.secondary">
-                              👨‍🏫 {event.instructor}
-                            </Typography>
-                          )}
-                        </Stack>
-                      }
-                    />
-                  </ListItem>
-                )
-              })}
-            </List>
+            <EventsList events={events} onEventClick={handleViewEvent} />
           </TabPanel>
 
           {/* Tab 2: Planning du jour */}
           <TabPanel value={tabValue} index={2}>
-            <Typography variant="h6" gutterBottom>
-              Planning d'aujourd'hui - {format(new Date(), "EEEE dd MMMM yyyy", { locale: fr })}
-            </Typography>
-            {getTodayEvents().length === 0 ? (
-              <Alert severity="info">
-                Aucune séance programmée aujourd'hui
-              </Alert>
-            ) : (
-              <Grid container spacing={2}>
-                {getTodayEvents().map((event) => {
-                  const typeInfo = getEventTypeInfo(event.type)
-                  return (
-                    <Grid size={{ xs: 12, md: 6 }} key={event.id}>
-                      <Card sx={{ border: 2, borderColor: typeInfo.color }}>
-                        <CardContent>
-                          <Box display="flex" alignItems="start" gap={2}>
-                            <Avatar sx={{ bgcolor: typeInfo.color }}>
-                              {typeInfo.icon}
-                            </Avatar>
-                            <Box flex={1}>
-                              <Typography variant="h6" gutterBottom>
-                                {event.title}
-                              </Typography>
-                              <Stack spacing={1}>
-                                <Typography variant="body2">
-                                  🕒 {formatTime(event.startDate)} - {formatTime(event.endDate)}
-                                </Typography>
-                                {event.class && (
-                                  <Typography variant="body2">
-                                    🎓 {event.class}
-                                  </Typography>
-                                )}
-                                {event.room && (
-                                  <Typography variant="body2">
-                                    📍 {event.room}
-                                  </Typography>
-                                )}
-                                {event.instructor && (
-                                  <Typography variant="body2">
-                                    👨‍🏫 {event.instructor}
-                                  </Typography>
-                                )}
-                                {event.description && (
-                                  <Typography variant="body2" color="text.secondary">
-                                    {event.description}
-                                  </Typography>
-                                )}
-                              </Stack>
-                            </Box>
-                          </Box>
-                        </CardContent>
-                        <CardActions>
-                          <Button size="small" onClick={() => handleViewEvent(event)}>
-                            Voir détails
-                          </Button>
-                          <Button size="small" color="primary">
-                            Modifier
-                          </Button>
-                        </CardActions>
-                      </Card>
-                    </Grid>
-                  )
-                })}
-              </Grid>
-            )}
+            <DailyPlanning events={events} onEventClick={handleViewEvent} />
           </TabPanel>
         </Paper>
 
         {/* Dialog événement */}
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-          <DialogTitle>
-            {selectedEvent ? `Détails - ${selectedEvent.title}` : "Nouvelle séance"}
-          </DialogTitle>
-          <DialogContent>
-            {selectedEvent ? (
-              <Box>
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {selectedEvent.title}
-                    </Typography>
-                    <Chip 
-                      label={getEventTypeInfo(selectedEvent.type).label} 
-                      color="primary" 
-                      sx={{ mb: 2 }}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 6 }}>
-                    <Typography variant="subtitle2">Date et heure</Typography>
-                    <Typography variant="body1">
-                      {formatDateTime(selectedEvent.startDate)} - {formatTime(selectedEvent.endDate)}
-                    </Typography>
-                  </Grid>
-                  <Grid size={{ xs: 6 }}>
-                    <Typography variant="subtitle2">Durée</Typography>
-                    <Typography variant="body1">
-                      {Math.round((selectedEvent.endDate.getTime() - selectedEvent.startDate.getTime()) / (1000 * 60 * 60))}h
-                    </Typography>
-                  </Grid>
-                  {selectedEvent.class && (
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2">Classe</Typography>
-                      <Typography variant="body1">{selectedEvent.class}</Typography>
-                    </Grid>
-                  )}
-                  {selectedEvent.room && (
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2">Salle</Typography>
-                      <Typography variant="body1">{selectedEvent.room}</Typography>
-                    </Grid>
-                  )}
-                  {selectedEvent.instructor && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography variant="subtitle2">Enseignant</Typography>
-                      <Typography variant="body1">{selectedEvent.instructor}</Typography>
-                    </Grid>
-                  )}
-                  {selectedEvent.description && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography variant="subtitle2">Description</Typography>
-                      <Typography variant="body1">{selectedEvent.description}</Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            ) : (
-              <Box>
-                <Typography>Formulaire de création d'événement</Typography>
-                {/* Formulaire à implémenter */}
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Fermer</Button>
-            {selectedEvent && (
-              <>
-                <Button variant="outlined">Modifier</Button>
-                <Button variant="contained" color="error">Supprimer</Button>
-              </>
-            )}
-          </DialogActions>
-        </Dialog>
+        <EventDetailsDialog
+          open={openDialog}
+          event={selectedEvent}
+          onClose={() => setOpenDialog(false)}
+        />
 
         {/* Dialogue de création d'événement multi-étapes */}
         <Dialog

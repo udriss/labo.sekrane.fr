@@ -16,7 +16,7 @@
           "quantity": 4
         },
         {
-          "id": "MAT_002", 
+          "id": "MAT_002",
           "name": "Réfrigérant à boules",
           "quantity": 4
         }
@@ -27,50 +27,8 @@
           "name": "Acide acétique",
           "quantity": 50,
           "unit": "mL"
-        },
-        {
-          "id": "CHEM_002",
-          "name": "Éthanol",
-          "quantity": 100,
-          "unit": "mL"
         }
-      ],
-      "fileName": "tp_synthese_ester.pdf",
-      "createdAt": "2025-01-20T10:00:00Z",
-      "updatedAt": "2025-01-20T10:00:00Z"
-    },
-    {
-      "id": "EVENT_002",
-      "title": "TP Analyse quantitative",
-      "description": "Dosage par titrage et pH-métrie",
-      "startDate": "2025-01-25T14:00:00Z",
-      "endDate": "2025-01-25T16:30:00Z",
-      "type": "TP",
-      "class": "1ère STL",
-      "room": "Laboratoire B2",
-      "materials": [
-        {
-          "id": "MAT_003",
-          "name": "Burette graduée 25mL",
-          "quantity": 8
-        },
-        {
-          "id": "MAT_004",
-          "name": "pH-mètre",
-          "quantity": 4
-        }
-      ],
-      "chemicals": [
-        {
-          "id": "CHEM_003",
-          "name": "Hydroxyde de sodium",
-          "quantity": 0.1,
-          "unit": "mol/L"
-        }
-      ],
-      "fileName": "tp_dosage_acide_base.pdf",
-      "createdAt": "2025-01-22T09:00:00Z",
-      "updatedAt": "2025-01-22T09:00:00Z"
+      ]
     },
     {
       "id": "EVENT_003",
@@ -92,6 +50,34 @@
       "fileName": null,
       "createdAt": "2025-01-15T14:00:00Z",
       "updatedAt": "2025-01-15T14:00:00Z"
+    },
+    {
+      "id": "EVENT_TEST_TODAY",
+      "title": "TP Test - Aujourd'hui",
+      "description": "Séance de test ajoutée automatiquement pour vérifier l'affichage.",
+      "startDate": "2025-07-23T09:00:00Z",
+      "endDate": "2025-07-23T11:00:00Z",
+      "type": "TP",
+      "class": "Test",
+      "room": "Laboratoire Test",
+      "materials": [
+        {
+          "id": "MAT_TEST_001",
+          "name": "Tube à essai",
+          "quantity": 2
+        }
+      ],
+      "chemicals": [
+        {
+          "id": "CHEM_TEST_001",
+          "name": "Eau",
+          "quantity": 10,
+          "unit": "mL"
+        }
+      ],
+      "fileName": null,
+      "createdAt": "2025-07-23T08:00:00Z",
+      "updatedAt": "2025-07-23T08:00:00Z"
     }
   ]
 }
