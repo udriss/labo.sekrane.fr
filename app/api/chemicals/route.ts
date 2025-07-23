@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getChemicals } from '@/lib/services/database'
-import { prisma } from '@/lib/db/prisma'
+import { promises as fs } from 'fs'
+import path from 'path'
+
+const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
+
+// Fonction pour lire l'inventaire des produits chimiques
+async function readChemicalsInventory() {
+  try {
+    const data = await fs.readFile(CHEMICALS_INVENTORY_FILE, 'utf-8')
+    return JSON.parse(data)
+  } catch (error) {
+    console.error('Erreur lecture inventaire chemicals:', error)
+    return { chemicals: [], stats: { total: 0, inStock: 0, lowStock: 0, expired: 0, expiringSoon: 0 } }
+  }
+}
+
+// Fonction pour écrire l'inventaire des produits chimiques
+async function writeChemicalsInventory(data: any) {
+  try {
+    await fs.writeFile(CHEMICALS_INVENTORY_FILE, JSON.stringify(data, null, 2))
+  } catch (error) {
+    console.error('Erreur écriture inventaire chemicals:', error)
+    throw error
+  }
+}
+
+// Fonction pour calculer les statistiques
+function calculateChemicalStats(chemicals: any[]) {
+  const now = new Date()
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  
+  return {
+    total: chemicals.length,
+    inStock: chemicals.filter((c: any) => c.status === 'IN_STOCK').length,
+    lowStock: chemicals.filter((c: any) => c.status === 'LOW_STOCK').length,
+    expired: chemicals.filter((c: any) => c.status === 'EXPIRED').length,
+    expiringSoon: chemicals.filter((c: any) => {
+      if (!c.expirationDate) return false
+      return new Date(c.expirationDate) <= thirtyDaysFromNow && c.status === 'IN_STOCK'
+    }).length
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,48 +49,30 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const hazardClass = searchParams.get('hazardClass')
 
-    const where: any = {}
+    // Lire l'inventaire depuis le fichier JSON
+    const inventory = await readChemicalsInventory()
+    let chemicals = inventory.chemicals
 
-    // Filtre de recherche
+    // Appliquer les filtres
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { formula: { contains: search, mode: 'insensitive' } },
-        { casNumber: { contains: search, mode: 'insensitive' } },
-      ]
+      const searchLower = search.toLowerCase()
+      chemicals = chemicals.filter((c: any) => 
+        c.name?.toLowerCase().includes(searchLower) ||
+        c.formula?.toLowerCase().includes(searchLower) ||
+        c.casNumber?.toLowerCase().includes(searchLower)
+      )
     }
 
-    // Filtre par statut
     if (status && status !== 'ALL') {
-      where.status = status
+      chemicals = chemicals.filter((c: any) => c.status === status)
     }
 
-    // Filtre par classe de danger
     if (hazardClass && hazardClass !== 'ALL') {
-      where.hazardClass = hazardClass
+      chemicals = chemicals.filter((c: any) => c.hazardClass === hazardClass)
     }
 
-    const chemicals = await prisma.chemical.findMany({
-      where,
-      include: {
-        supplier: true,
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    // Calcul des statistiques côté serveur (date statique)
-    const now = new Date()
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const stats = {
-      total: chemicals.length,
-      inStock: chemicals.filter((c: any) => c.status === 'IN_STOCK').length,
-      lowStock: chemicals.filter((c: any) => c.status === 'LOW_STOCK').length,
-      expired: chemicals.filter((c: any) => c.status === 'EXPIRED').length,
-      expiringSoon: chemicals.filter((c: any) => {
-        if (!c.expirationDate) return false
-        return new Date(c.expirationDate) <= thirtyDaysFromNow && c.status === 'IN_STOCK'
-      }).length
-    }
+    // Recalculer les statistiques
+    const stats = calculateChemicalStats(inventory.chemicals)
 
     return NextResponse.json({ 
       chemicals,
@@ -69,22 +91,51 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    const chemical = await prisma.chemical.create({
-      data: {
-        name: body.name,
-        formula: body.formula,
-        casNumber: body.casNumber,
-        quantity: parseFloat(body.quantity),
-        unit: body.unit,
-        concentration: body.concentration ? parseFloat(body.concentration) : null,
-        storage: body.storage,
-        hazardClass: body.hazardClass,
-        status: body.status || 'IN_STOCK',
-        supplierId: body.supplierId || null
-      }
-    })
+    // Lire l'inventaire actuel
+    const inventory = await readChemicalsInventory()
     
-    return NextResponse.json(chemical)
+    // Créer le nouveau produit chimique
+    const newChemical = {
+      id: `CHEM_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: body.name,
+      formula: body.formula || null,
+      molfile: null,
+      casNumber: body.casNumber || null,
+      barcode: null,
+      quantity: parseFloat(body.quantity) || 0,
+      unit: body.unit || 'g',
+      minQuantity: body.minQuantity ? parseFloat(body.minQuantity) : null,
+      concentration: body.concentration ? parseFloat(body.concentration) : null,
+      purity: null,
+      purchaseDate: body.purchaseDate || null,
+      expirationDate: body.expirationDate || null,
+      openedDate: null,
+      storage: body.storage || '',
+      room: body.room || null,
+      cabinet: null,
+      shelf: null,
+      hazardClass: body.hazardClass || null,
+      sdsFileUrl: null,
+      supplierId: body.supplierId || null,
+      batchNumber: null,
+      orderReference: null,
+      status: body.status || 'IN_STOCK',
+      notes: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      supplier: null
+    }
+    
+    // Ajouter à l'inventaire
+    inventory.chemicals.push(newChemical)
+    
+    // Recalculer les stats
+    inventory.stats = calculateChemicalStats(inventory.chemicals)
+    
+    // Sauvegarder
+    await writeChemicalsInventory(inventory)
+    
+    return NextResponse.json(newChemical)
   } catch (error) {
     console.error('Erreur création chemical:', error)
     return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
@@ -100,31 +151,41 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ID requis pour la mise à jour' }, { status: 400 })
     }
 
-    // Traitement spécial pour la mise à jour de quantité uniquement
-    if (updateData.quantity !== undefined && Object.keys(updateData).length === 1) {
-      const chemical = await prisma.chemical.update({
-        where: { id },
-        data: { 
-          quantity: parseFloat(updateData.quantity),
-          // Mise à jour automatique du statut basé sur la quantité
-          status: parseFloat(updateData.quantity) === 0 ? 'EMPTY' : 
-                 parseFloat(updateData.quantity) < 10 ? 'LOW_STOCK' : 'IN_STOCK'
-        }
-      })
-      return NextResponse.json(chemical)
+    // Lire l'inventaire actuel
+    const inventory = await readChemicalsInventory()
+
+    // Trouver le produit chimique à mettre à jour
+    const chemicalIndex = inventory.chemicals.findIndex((c: any) => c.id === id)
+    
+    if (chemicalIndex === -1) {
+      return NextResponse.json({ error: 'Produit chimique non trouvé' }, { status: 404 })
     }
 
-    // Mise à jour complète
-    const chemical = await prisma.chemical.update({
-      where: { id },
-      data: {
+    // Traitement spécial pour la mise à jour de quantité uniquement
+    if (updateData.quantity !== undefined && Object.keys(updateData).length === 1) {
+      const newQuantity = parseFloat(updateData.quantity)
+      inventory.chemicals[chemicalIndex].quantity = newQuantity
+      inventory.chemicals[chemicalIndex].status = newQuantity === 0 ? 'EMPTY' : 
+                                                   newQuantity < 10 ? 'LOW_STOCK' : 'IN_STOCK'
+      inventory.chemicals[chemicalIndex].updatedAt = new Date().toISOString()
+    } else {
+      // Mise à jour complète
+      inventory.chemicals[chemicalIndex] = {
+        ...inventory.chemicals[chemicalIndex],
         ...updateData,
-        quantity: updateData.quantity ? parseFloat(updateData.quantity) : undefined,
-        concentration: updateData.concentration ? parseFloat(updateData.concentration) : undefined,
+        quantity: updateData.quantity ? parseFloat(updateData.quantity) : inventory.chemicals[chemicalIndex].quantity,
+        concentration: updateData.concentration ? parseFloat(updateData.concentration) : inventory.chemicals[chemicalIndex].concentration,
+        updatedAt: new Date().toISOString()
       }
-    })
+    }
+
+    // Recalculer les stats
+    inventory.stats = calculateChemicalStats(inventory.chemicals)
+
+    // Sauvegarder
+    await writeChemicalsInventory(inventory)
     
-    return NextResponse.json(chemical)
+    return NextResponse.json(inventory.chemicals[chemicalIndex])
   } catch (error) {
     console.error('Erreur mise à jour chemical:', error)
     return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })

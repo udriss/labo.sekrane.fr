@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { 
   Container, Typography, Box, Card, CardContent, CardActions, Button,
   Grid, Avatar, Chip, Alert, Paper, Stack, IconButton, Badge,
@@ -20,7 +20,8 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { fr } from "date-fns/locale"
 import { 
-  format, 
+  format,
+  addHours,
   startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
@@ -28,8 +29,12 @@ import {
   addDays,
   subDays,
   startOfDay,
-  addHours
+  set,
+  addMinutes,
+  differenceInMinutes
 } from "date-fns"
+
+
 import { Calendar as CalendarType, CalendarType as EventType } from "@/types/prisma"
 
 interface CalendarEvent {
@@ -304,12 +309,12 @@ export default function CalendarPage() {
     try {
       setLoading(true)
 
-      // Créer un événement pour chaque créneau
-      const events = formData.timeSlots.map(slot => {
-        // Utiliser la date du créneau individuel s'il en a une, sinon la date globale
-        const dateToUse = slot.date || formData.date
-        const startDateTime = new Date(`${dateToUse}T${slot.startTime}`)
-        const endDateTime = new Date(`${dateToUse}T${slot.endTime}`)
+      const eventsToCreate = formData.timeSlots.map(slot => {
+        if (!slot.date || !slot.startTime || !slot.endTime) {
+          throw new Error("Date, heure de début ou heure de fin manquante pour un créneau.");
+        }
+        const startDateTime = new Date(`${slot.date}T${slot.startTime}`)
+        const endDateTime = new Date(`${slot.date}T${slot.endTime}`)
 
         return {
           title: formData.title,
@@ -318,40 +323,33 @@ export default function CalendarPage() {
           endDate: endDateTime.toISOString(),
           type: 'TP',
           classes: formData.classes,
-          materials: formData.materials,
-          chemicals: formData.chemicals,
+          materials: formData.materials.map((m: any) => m.id),
+          chemicals: formData.chemicals.map((c: any) => c.id),
           ...(formData.file && { fileName: formData.file.name })
         }
       })
 
-      // Créer tous les événements
-      for (const eventData of events) {
-        const response = await fetch('/api/calendrier', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(eventData)
-        })
+      const response = await fetch('/api/calendrier', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ events: eventsToCreate })
+      })
 
-        if (!response.ok) {
-          throw new Error('Erreur lors de la création de l\'événement')
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la création des événements');
       }
       
-      // Fermer le dialogue et réinitialiser le formulaire
       setCreateDialogOpen(false)
       resetForm()
-
-      // Recharger les événements pour afficher le nouvel événement
       await fetchEvents()
-
-      // Message de succès (optionnel, on pourrait ajouter un snackbar)
-      console.log('Événement créé avec succès!')
+      console.log('Événements créés avec succès!')
 
     } catch (error) {
       console.error('Erreur lors de la création de l\'événement:', error)
-      setError('Erreur lors de la création de l\'événement')
+      setError(error instanceof Error ? error.message : 'Erreur lors de la création de l\'événement')
     } finally {
       setLoading(false)
     }
@@ -361,7 +359,7 @@ export default function CalendarPage() {
   const addTimeSlot = () => {
     setFormData({
       ...formData,
-      timeSlots: [...formData.timeSlots, { date: formData.date, startTime: '', endTime: '' }]
+      timeSlots: [...formData.timeSlots, { date: '', startTime: '', endTime: '' }] // Chaque créneau a sa propre date
     })
   }
 
@@ -626,64 +624,66 @@ export default function CalendarPage() {
                 </Box>
               ))}
 
-              {/* Grille horaire */}
               {TIME_SLOTS.map((time) => (
-                <Box key={time} sx={{ display: 'contents' }}>
-                  <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider' }}>
+                <React.Fragment key={time}>
+                  <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', height: '65px', display: 'flex', alignItems: 'center' }}>
                     <Typography variant="caption">{time}</Typography>
                   </Box>
-                  {getWeekDays().map((day) => {
-                    const dayEvents = getEventsForDay(day).filter(event => 
-                      formatTime(event.startDate) === time
-                    )
-                    return (
+                  {getWeekDays().map((day) => (
                       <Box 
-                        key={`${day.toISOString()}-${time}`}
+                        key={day.toISOString()}
                         sx={{ 
                           p: 0.5, 
                           borderTop: 1, 
                           borderColor: 'divider',
-                          minHeight: 60,
+                          height: '65px',
                           position: 'relative'
                         }}
                       >
-                        {dayEvents.map((event) => {
-                          const typeInfo = getEventTypeInfo(event.type)
-                          return (
-                            <Card 
-                              key={event.id}
-                              sx={{ 
-                                bgcolor: typeInfo.color,
-                                color: 'white',
-                                cursor: 'pointer',
-                                mb: 0.5,
-                                '&:hover': { opacity: 0.8 }
-                              }}
-                              onClick={() => handleViewEvent(event)}
-                            >
-                              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                                  {event.title}
-                                </Typography>
-                                {event.class && (
-                                  <Typography variant="caption" display="block">
-                                    {event.class}
-                                  </Typography>
-                                )}
-                                {event.room && (
-                                  <Typography variant="caption" display="block">
-                                    {event.room}
-                                  </Typography>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )
-                        })}
+                        {/* Events for this day and time slot will be positioned absolutely from a different mapping */}
                       </Box>
-                    )
-                  })}
-                </Box>
+                  ))}
+                </React.Fragment>
               ))}
+              {/* Absolutely position events over the grid */}
+              {getWeekDays().map((day, dayIndex) => {
+                const dayEvents = getEventsForDay(day);
+                return dayEvents.map(event => {
+                  const typeInfo = getEventTypeInfo(event.type);
+                  const startHour = event.startDate.getHours();
+                  const startMinute = event.startDate.getMinutes();
+                  const durationInMinutes = differenceInMinutes(event.endDate, event.startDate);
+                  
+                  const top = (startHour - 8) * 65 + (startMinute / 60) * 65; // 8am is the first slot
+                  const height = (durationInMinutes / 60) * 65 - 4; // -4 for padding
+
+                  return (
+                    <Tooltip title={`${event.title} (${format(event.startDate, 'HH:mm')} - ${format(event.endDate, 'HH:mm')})`} key={event.id}>
+                      <Card 
+                        sx={{ 
+                          bgcolor: typeInfo.color,
+                          color: 'white',
+                          cursor: 'pointer',
+                          position: 'absolute',
+                          top: `${top}px`,
+                          left: `calc(${(dayIndex + 1) * (100 / 8)}% + 4px)`,
+                          width: `calc(${(100 / 8)}% - 8px)`,
+                          height: `${height}px`,
+                          zIndex: 1,
+                          '&:hover': { opacity: 0.8, zIndex: 2 }
+                        }}
+                        onClick={() => handleViewEvent(event)}
+                      >
+                        <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: Math.floor(height/20), WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {event.title}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Tooltip>
+                  )
+                })
+              })}
             </Box>
           </TabPanel>
 
@@ -1147,7 +1147,7 @@ export default function CalendarPage() {
                           <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
                             <DatePicker
                               label="Date"
-                              value={slot.date ? new Date(slot.date) : (formData.date ? new Date(formData.date) : null)}
+                              value={slot.date ? new Date(slot.date) : null}
                               onChange={(newValue) => {
                                 if (newValue) {
                                   updateTimeSlot(index, 'date', newValue.toISOString().split('T')[0])
@@ -1240,7 +1240,7 @@ export default function CalendarPage() {
                       disabled={formData.timeSlots.some(slot => 
                         !slot.startTime || 
                         !slot.endTime || 
-                        !(slot.date || formData.date) // Chaque slot doit avoir une date (propre ou globale)
+                        !slot.date // Chaque slot doit avoir sa propre date
                       )}
                     >
                       Continuer

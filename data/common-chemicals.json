@@ -1,0 +1,826 @@
+{
+  "chemicals": [
+    {
+      "name": "Acide chlorhydrique",
+      "formula": "HCl",
+      "casNumber": "7647-01-0",
+      "aliases": ["Chlorure d'hydrogène", "Acide muriatique"],
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 36.46
+    },
+    {
+      "name": "Acide sulfurique",
+      "formula": "H₂SO₄",
+      "casNumber": "7664-93-9",
+      "aliases": ["Huile de vitriol"],
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 98.08
+    },
+    {
+      "name": "Acide nitrique",
+      "formula": "HNO₃",
+      "casNumber": "7697-37-2",
+      "aliases": ["Eau forte"],
+      "category": "Acide",
+      "hazardClass": "Corrosif, Oxydant",
+      "molarMass": 63.01
+    },
+    {
+      "name": "Acide acétique",
+      "formula": "CH₃COOH",
+      "casNumber": "64-19-7",
+      "aliases": ["Acide éthanoïque", "Vinaigre blanc"],
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 60.05
+    },
+    {
+      "name": "Acide phosphorique",
+      "formula": "H₃PO₄",
+      "casNumber": "7664-38-2",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 97.99
+    },
+    {
+      "name": "Hydroxyde de sodium",
+      "formula": "NaOH",
+      "casNumber": "1310-73-2",
+      "aliases": ["Soude caustique", "Lessive de soude"],
+      "category": "Base",
+      "hazardClass": "Corrosif",
+      "molarMass": 39.997
+    },
+    {
+      "name": "Hydroxyde de potassium",
+      "formula": "KOH",
+      "casNumber": "1310-58-3",
+      "aliases": ["Potasse caustique"],
+      "category": "Base",
+      "hazardClass": "Corrosif",
+      "molarMass": 56.11
+    },
+    {
+      "name": "Hydroxyde de calcium",
+      "formula": "Ca(OH)₂",
+      "casNumber": "1305-62-0",
+      "aliases": ["Chaux éteinte", "Lait de chaux"],
+      "category": "Base",
+      "hazardClass": "Irritant",
+      "molarMass": 74.09
+    },
+    {
+      "name": "Ammoniaque",
+      "formula": "NH₃",
+      "casNumber": "7664-41-7",
+      "aliases": ["Ammoniac"],
+      "category": "Base",
+      "hazardClass": "Toxique, Corrosif",
+      "molarMass": 17.03
+    },
+    {
+      "name": "Chlorure de sodium",
+      "formula": "NaCl",
+      "casNumber": "7647-14-5",
+      "aliases": ["Sel de table", "Halite"],
+      "category": "Sel",
+      "molarMass": 58.44
+    },
+    {
+      "name": "Sulfate de cuivre pentahydraté",
+      "formula": "CuSO₄·5H₂O",
+      "casNumber": "7758-99-8",
+      "aliases": ["Vitriol bleu"],
+      "category": "Sel métallique",
+      "hazardClass": "Nocif",
+      "molarMass": 249.68
+    },
+    {
+      "name": "Nitrate d'argent",
+      "formula": "AgNO₃",
+      "casNumber": "7761-88-8",
+      "category": "Sel métallique",
+      "hazardClass": "Corrosif, Oxydant",
+      "molarMass": 169.87
+    },
+    {
+      "name": "Chlorure de fer (III)",
+      "formula": "FeCl₃",
+      "casNumber": "7705-08-0",
+      "aliases": ["Perchlorure de fer"],
+      "category": "Sel métallique",
+      "hazardClass": "Corrosif",
+      "molarMass": 162.2
+    },
+    {
+      "name": "Éthanol",
+      "formula": "C₂H₅OH",
+      "casNumber": "64-17-5",
+      "aliases": ["Alcool éthylique", "Esprit-de-vin"],
+      "category": "Alcool",
+      "hazardClass": "Inflammable",
+      "molarMass": 46.07
+    },
+    {
+      "name": "Méthanol",
+      "formula": "CH₃OH",
+      "casNumber": "67-56-1",
+      "aliases": ["Alcool méthylique", "Esprit-de-bois"],
+      "category": "Alcool",
+      "hazardClass": "Toxique, Inflammable",
+      "molarMass": 32.04
+    },
+    {
+      "name": "Acétone",
+      "formula": "C₃H₆O",
+      "casNumber": "67-64-1",
+      "aliases": ["Propanone"],
+      "category": "Cétone",
+      "hazardClass": "Inflammable",
+      "molarMass": 58.08
+    },
+    {
+      "name": "Dichlorométhane",
+      "formula": "CH₂Cl₂",
+      "casNumber": "75-09-2",
+      "aliases": ["Chlorure de méthylène"],
+      "category": "Solvant halogéné",
+      "hazardClass": "Toxique",
+      "molarMass": 84.93
+    },
+    {
+      "name": "Hexane",
+      "formula": "C₆H₁₄",
+      "casNumber": "110-54-3",
+      "category": "Alcane",
+      "hazardClass": "Inflammable, Toxique",
+      "molarMass": 86.18
+    },
+    {
+      "name": "Bleu de bromothymol",
+      "formula": "C₂₇H₂₈Br₂O₅S",
+      "casNumber": "76-59-5",
+      "aliases": ["BTB"],
+      "category": "Indicateur coloré",
+      "molarMass": 624.38
+    },
+    {
+      "name": "Phénolphtaléine",
+      "formula": "C₂₀H₁₄O₄",
+      "casNumber": "77-09-8",
+      "category": "Indicateur coloré",
+      "molarMass": 318.32
+    },
+    {
+      "name": "Rouge de méthyle",
+      "formula": "C₁₅H₁₅N₃O₂",
+      "casNumber": "493-52-7",
+      "category": "Indicateur coloré",
+      "molarMass": 269.3
+    },
+    {
+      "name": "Permanganate de potassium",
+      "formula": "KMnO₄",
+      "casNumber": "7722-64-7",
+      "category": "Oxydant",
+      "hazardClass": "Oxydant",
+      "molarMass": 158.03
+    },
+    {
+      "name": "Dichromate de potassium",
+      "formula": "K₂Cr₂O₇",
+      "casNumber": "7778-50-9",
+      "category": "Oxydant",
+      "hazardClass": "Cancérogène, Oxydant",
+      "molarMass": 294.18
+    },
+    {
+      "name": "Peroxyde d'hydrogène",
+      "formula": "H₂O₂",
+      "casNumber": "7722-84-1",
+      "aliases": ["Eau oxygénée"],
+      "category": "Oxydant",
+      "hazardClass": "Oxydant, Corrosif",
+      "molarMass": 34.01
+    },
+    {
+      "name": "Glucose",
+      "formula": "C₆H₁₂O₆",
+      "casNumber": "50-99-7",
+      "aliases": ["Dextrose"],
+      "category": "Glucide",
+      "molarMass": 180.16
+    },
+    {
+      "name": "Saccharose",
+      "formula": "C₁₂H₂₂O₁₁",
+      "casNumber": "57-50-1",
+      "aliases": ["Sucre de table"],
+      "category": "Glucide",
+      "molarMass": 342.3
+    },
+    {
+      "name": "Urée",
+      "formula": "CO(NH₂)₂",
+      "casNumber": "57-13-6",
+      "aliases": ["Carbamide"],
+      "category": "Composé azoté",
+      "molarMass": 60.06
+    },
+    {
+      "name": "Dioxyde de carbone",
+      "formula": "CO₂",
+      "casNumber": "124-38-9",
+      "aliases": ["Gaz carbonique"],
+      "category": "Gaz",
+      "molarMass": 44.01
+    },
+    {
+      "name": "Dihydrogène",
+      "formula": "H₂",
+      "casNumber": "1333-74-0",
+      "aliases": ["Hydrogène"],
+      "category": "Gaz",
+      "hazardClass": "Inflammable",
+      "molarMass": 2.02
+    },
+    {
+      "name": "Dioxygène",
+      "formula": "O₂",
+      "casNumber": "7782-44-7",
+      "aliases": ["Oxygène"],
+      "category": "Gaz",
+      "hazardClass": "Comburant",
+      "molarMass": 32.00
+    },
+    {
+      "name": "Chlorure de magnésium",
+      "formula": "MgCl₂",
+      "casNumber": "7786-30-3",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 95.21
+    },
+    {
+      "name": "Sulfate de magnésium",
+      "formula": "MgSO₄",
+      "casNumber": "7487-88-9",
+      "aliases": ["Sel d'Epsom"],
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 120.37
+    },
+    {
+      "name": "Acide borique",
+      "formula": "H₃BO₃",
+      "casNumber": "10043-35-3",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 61.83
+    },
+    {
+      "name": "Tétrachlorure de carbone",
+      "formula": "CCl₄",
+      "casNumber": "56-23-5",
+      "category": "Solvant halogéné",
+      "hazardClass": "Toxique",
+      "molarMass": 153.82
+    },
+    {
+      "name": "Chlorure de zinc",
+      "formula": "ZnCl₂",
+      "casNumber": "7646-85-7",
+      "category": "Sel métallique",
+      "hazardClass": "Corrosif",
+      "molarMass": 136.30
+    },
+    {
+      "name": "Acide oxalique",
+      "formula": "C₂H₂O₄",
+      "casNumber": "144-62-7",
+      "category": "Acide",
+      "hazardClass": "Toxique",
+      "molarMass": 90.03
+    },
+    {
+      "name": "Bicarbonate de sodium",
+      "formula": "NaHCO₃",
+      "casNumber": "144-55-8",
+      "aliases": ["Bicarbonate de soude"],
+      "category": "Sel",
+      "molarMass": 84.01
+    },
+    {
+      "name": "Phosphate de calcium",
+      "formula": "Ca₃(PO₄)₂",
+      "casNumber": "7758-87-4",
+      "category": "Sel",
+      "molarMass": 310.18
+    },
+    {
+      "name": "Chlorure d'ammonium",
+      "formula": "NH₄Cl",
+      "casNumber": "12125-02-9",
+      "category": "Sel",
+      "hazardClass": "Irritant",
+      "molarMass": 53.49
+    },
+    {
+      "name": "Acide citrique",
+      "formula": "C₆H₈O₇",
+      "casNumber": "77-92-9",
+      "aliases": ["Citrate de sodium"],
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 192.12
+    },
+    {
+      "name": "Chlorure de cobalt(II)",
+      "formula": "CoCl₂",
+      "casNumber": "7646-79-9",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 129.84
+    },
+    {
+      "name": "Nitrate de potassium",
+      "formula": "KNO₃",
+      "casNumber": "7757-79-1",
+      "category": "Sel",
+      "hazardClass": "Oxydant",
+      "molarMass": 101.1
+    },
+    {
+      "name": "Chlorure de calcium",
+      "formula": "CaCl₂",
+      "casNumber": "10043-52-4",
+      "category": "Sel",
+      "hazardClass": "Irritant",
+      "molarMass": 110.98
+    },
+    {
+      "name": "Acide malique",
+      "formula": "C₄H₆O₅",
+      "casNumber": "6915-15-7",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 134.09
+    },
+    {
+      "name": "Acide tartrique",
+      "formula": "C₄H₆O₆",
+      "casNumber": "87-69-4",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 150.09
+    },
+    {
+      "name": "Acide lactique",
+      "formula": "C₃H₆O₃",
+      "casNumber": "50-21-5",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 90.08
+    },
+    {
+      "name": "Chlorure de baryum",
+      "formula": "BaCl₂",
+      "casNumber": "10361-37-2",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 208.23
+    },
+    {
+      "name": "Sulfate de baryum",
+      "formula": "BaSO₄",
+      "casNumber": "7727-43-7",
+      "category": "Sel métallique",
+      "molarMass": 233.39
+    },
+    {
+      "name": "Chlorure de nickel(II)",
+      "formula": "NiCl₂",
+      "casNumber": "7718-54-9",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 129.6
+    },
+    {
+      "name": "Sulfate de nickel(II)",
+      "formula": "NiSO₄",
+      "casNumber": "7786-81-4",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 154.75
+    },
+    {
+      "name": "Chlorure de manganèse(II)",
+      "formula": "MnCl₂",
+      "casNumber": "7773-01-5",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 125.84
+    },
+    {
+      "name": "Sulfate de manganèse(II)",
+      "formula": "MnSO₄",
+      "casNumber": "7785-87-7",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 151.0
+    },
+    {
+      "name": "Chlorure de strontium",
+      "formula": "SrCl₂",
+      "casNumber": "10476-85-4",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 158.53
+    },
+    {
+      "name": "Sulfate de strontium",
+      "formula": "SrSO₄",
+      "casNumber": "7759-02-6",
+      "category": "Sel métallique",
+      "molarMass": 183.68
+    },
+    {
+      "name": "Chlorure de lithium",
+      "formula": "LiCl",
+      "casNumber": "7447-41-8",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 42.39
+    },
+    {
+      "name": "Sulfate de lithium",
+      "formula": "Li₂SO₄",
+      "casNumber": "10377-48-7",
+      "category": "Sel métallique",
+      "molarMass": 109.94
+    },
+    {
+      "name": "Chlorure d'aluminium",
+      "formula": "AlCl₃",
+      "casNumber": "7446-70-0",
+      "category": "Sel métallique",
+      "hazardClass": "Corrosif",
+      "molarMass": 133.34
+    },
+    {
+      "name": "Sulfate d'aluminium",
+      "formula": "Al₂(SO₄)₃",
+      "casNumber": "10043-01-3",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 342.15
+    },
+    {
+      "name": "Chlorure de cuivre(I)",
+      "formula": "CuCl",
+      "casNumber": "7758-89-6",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 98.99
+    },
+    {
+      "name": "Sulfate de cuivre(I)",
+      "formula": "Cu₂SO₄",
+      "casNumber": "1317-39-1",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 223.15
+    },
+    {
+      "name": "Chlorure de mercure(I)",
+      "formula": "Hg₂Cl₂",
+      "casNumber": "10112-91-1",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 472.09
+    },
+    {
+      "name": "Sulfate de mercure(I)",
+      "formula": "Hg₂SO₄",
+      "casNumber": "7783-36-0",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 497.18
+    },
+    {
+      "name": "Chlorure de mercure(II)",
+      "formula": "HgCl₂",
+      "casNumber": "7487-94-7",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 271.5
+    },
+    {
+      "name": "Sulfate de mercure(II)",
+      "formula": "HgSO₄",
+      "casNumber": "7783-35-9",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 296.65
+    },
+    {
+      "name": "Chlorure de plomb(II)",
+      "formula": "PbCl₂",
+      "casNumber": "7758-95-4",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 278.1
+    },
+    {
+      "name": "Sulfate de plomb(II)",
+      "formula": "PbSO₄",
+      "casNumber": "7446-14-2",
+      "category": "Sel métallique",
+      "hazardClass": "Toxique",
+      "molarMass": 303.26
+    },
+    {
+      "name": "Sulfate de zinc",
+      "formula": "ZnSO₄",
+      "casNumber": "7733-02-0",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 161.44
+    },
+    {
+      "name": "Chlorure de fer(II)",
+      "formula": "FeCl₂",
+      "casNumber": "7758-94-3",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 126.75
+    },
+    {
+      "name": "Sulfate de fer(II)",
+      "formula": "FeSO₄",
+      "casNumber": "7720-78-7",
+      "category": "Sel métallique",
+      "hazardClass": "Irritant",
+      "molarMass": 151.91
+    },
+    {
+      "name": "Acide formique",
+      "formula": "HCOOH",
+      "casNumber": "64-18-6",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 46.03
+    },
+    {
+      "name": "Acide benzoïque",
+      "formula": "C₇H₆O₂",
+      "casNumber": "65-85-0",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 122.12
+    },
+    {
+      "name": "Acide ascorbique",
+      "formula": "C₆H₈O₆",
+      "casNumber": "50-81-7",
+      "aliases": ["Vitamine C"],
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 176.12
+    },
+    {
+      "name": "Acide salicylique",
+      "formula": "C₇H₆O₃",
+      "casNumber": "69-72-7",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 138.12
+    },
+    {
+      "name": "Acide picrique",
+      "formula": "C₆H₃N₃O₇",
+      "casNumber": "88-89-1",
+      "category": "Acide",
+      "hazardClass": "Explosif, Toxique",
+      "molarMass": 229.1
+    },
+    {
+      "name": "Acide fluorhydrique",
+      "formula": "HF",
+      "casNumber": "7664-39-3",
+      "category": "Acide",
+      "hazardClass": "Corrosif, Toxique",
+      "molarMass": 20.01
+    },
+    {
+      "name": "Acide chromique",
+      "formula": "H₂CrO₄",
+      "casNumber": "7738-94-5",
+      "category": "Acide",
+      "hazardClass": "Corrosif, Cancérogène",
+      "molarMass": 118.01
+    },
+    {
+      "name": "Acide permanganique",
+      "formula": "HMnO₄",
+      "casNumber": "13465-60-6",
+      "category": "Acide",
+      "hazardClass": "Oxydant, Corrosif",
+      "molarMass": 119.01
+    },
+    {
+      "name": "Acide perchlorique",
+      "formula": "HClO₄",
+      "casNumber": "7601-90-3",
+      "category": "Acide",
+      "hazardClass": "Oxydant, Corrosif",
+      "molarMass": 100.46
+    },
+    {
+      "name": "Acide hypochloreux",
+      "formula": "HClO",
+      "casNumber": "7790-92-3",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 52.46
+    },
+    {
+      "name": "Acide sulfurique fumant",
+      "formula": "H₂SO₄ + SO₃",
+      "casNumber": "8014-95-7",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 98.08
+    },
+    {
+      "name": "Acide phosphoreux",
+      "formula": "H₃PO₃",
+      "casNumber": "13598-36-2",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 82.0
+    },
+    {
+      "name": "Acide borique anhydre",
+      "formula": "B₂O₃",
+      "casNumber": "1303-86-2",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 69.62
+    },
+    {
+      "name": "Acide nitreux",
+      "formula": "HNO₂",
+      "casNumber": "7782-77-6",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 47.01
+    },
+    {
+      "name": "Acide cyanurique",
+      "formula": "C₃H₃N₃O₃",
+      "casNumber": "108-80-5",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 129.07
+    },
+    {
+      "name": "Acide adipique",
+      "formula": "C₆H₁₀O₄",
+      "casNumber": "124-04-9",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 146.14
+    },
+    {
+      "name": "Acide succinique",
+      "formula": "C₄H₆O₄",
+      "casNumber": "110-15-6",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 118.09
+    },
+    {
+      "name": "Acide glutamique",
+      "formula": "C₅H₉NO₄",
+      "casNumber": "56-86-0",
+      "category": "Acide aminé",
+      "hazardClass": "Irritant",
+      "molarMass": 147.13
+    },
+    {
+      "name": "Acide aspartique",
+      "formula": "C₄H₇NO₄",
+      "casNumber": "56-84-8",
+      "category": "Acide aminé",
+      "hazardClass": "Irritant",
+      "molarMass": 133.1
+    },
+    {
+      "name": "Acide citramalique",
+      "formula": "C₅H₈O₅",
+      "casNumber": "617-48-1",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 148.11
+    },
+    {
+      "name": "Acide méthanesulfonique",
+      "formula": "CH₄O₃S",
+      "casNumber": "75-75-2",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 96.11
+    },
+    {
+      "name": "Acide trifluoroacétique",
+      "formula": "C₂HF₃O₂",
+      "casNumber": "76-05-1",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 114.02
+    },
+    {
+      "name": "Acide dichloroacétique",
+      "formula": "C₂H₂Cl₂O₂",
+      "casNumber": "79-43-6",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 128.94
+    },
+    {
+      "name": "Acide trichloroacétique",
+      "formula": "C₂HCl₃O₂",
+      "casNumber": "76-03-9",
+      "category": "Acide",
+      "hazardClass": "Corrosif",
+      "molarMass": 163.39
+    },
+    {
+      "name": "Acide oxalique dihydraté",
+      "formula": "C₂H₂O₄·2H₂O",
+      "casNumber": "6153-56-6",
+      "category": "Acide",
+      "hazardClass": "Toxique",
+      "molarMass": 126.07
+    },
+    {
+      "name": "Acide malonique",
+      "formula": "C₃H₄O₄",
+      "casNumber": "141-82-2",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 104.06
+    },
+    {
+      "name": "Acide pimélique",
+      "formula": "C₇H₁₂O₄",
+      "casNumber": "111-16-0",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 160.17
+    },
+    {
+      "name": "Acide subérique",
+      "formula": "C₈H₁₄O₄",
+      "casNumber": "505-48-6",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 174.2
+    },
+    {
+      "name": "Acide azélaïque",
+      "formula": "C₉H₁₆O₄",
+      "casNumber": "123-99-9",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 188.22
+    },
+    {
+      "name": "Acide sébacique",
+      "formula": "C₁₀H₁₈O₄",
+      "casNumber": "111-20-6",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 202.25
+    },
+    {
+      "name": "Acide undécanoïque",
+      "formula": "C₁₁H₂₂O₂",
+      "casNumber": "112-37-8",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 186.29
+    },
+    {
+      "name": "Acide dodécanoïque",
+      "formula": "C₁₂H₂₄O₂",
+      "casNumber": "143-07-7",
+      "category": "Acide",
+      "hazardClass": "Irritant",
+      "molarMass": 200.32
+    }
+  ]
+}

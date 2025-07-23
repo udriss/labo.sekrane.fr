@@ -1,0 +1,249 @@
+{
+  "types": [
+    {
+      "id": "GLASSWARE",
+      "name": "Verrerie",
+      "svg": "/svg/beaker.svg",
+      "isCustom": false,
+      "items": [
+        {
+          "id": "EQ1A2B3C4D5E6F7",
+          "name": "Bécher",
+          "svg": "/svg/beaker.svg",
+          "volumes": [
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ2B3C4D5E6F7G8",
+          "name": "Erlenmeyer",
+          "svg": "/svg/erlenmeyer.svg",
+          "volumes": [
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L",
+            "2 L"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ3C4D5E6F7G8H9",
+          "name": "Ballon",
+          "svg": "/svg/ballon.svg",
+          "volumes": [
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L",
+            "2 L"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ4D5E6F7G8H9I0",
+          "name": "Tube à essai",
+          "svg": "/svg/tube.svg",
+          "volumes": [
+            "10 mL",
+            "15 mL",
+            "20 mL",
+            "25 mL"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ5E6F7G8H9I0J1",
+          "name": "Flacon jaugé",
+          "svg": "/svg/flacon.svg",
+          "volumes": [
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ6F7G8H9I0J1K2",
+          "name": "TEEST",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L"
+          ],
+          "isCustom": true
+        },
+        {
+          "id": "EQ7G8H9I0J1K2L3",
+          "name": "TEST",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L"
+          ],
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "id": "MEASURING",
+      "name": "Mesure",
+      "svg": "/svg/default.svg",
+      "isCustom": false,
+      "items": [
+        {
+          "id": "EQ8H9I0J1K2L3M4",
+          "name": "Pipette graduée",
+          "svg": "/svg/pipette.svg",
+          "volumes": [
+            "1 mL",
+            "2 mL",
+            "5 mL",
+            "10 mL",
+            "25 mL",
+            "50 mL"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQ9I0J1K2L3M4N5",
+          "name": "Burette",
+          "svg": "/svg/burette.svg",
+          "volumes": [
+            "10 mL",
+            "25 mL",
+            "50 mL"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQA0J1K2L3M4N5O",
+          "name": "Éprouvette graduée",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "10 mL",
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1L"
+          ],
+          "isCustom": false
+        },
+        {
+          "id": "EQB1K2L3M4N5O6P",
+          "name": "Balance",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQC2L3M4N5O6P7Q",
+          "name": "Pied à coulisse",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQD3M4N5O6P7Q8R",
+          "name": "Thermomètre",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        }
+      ]
+    },
+    {
+      "id": "HEATING",
+      "name": "Chauffage",
+      "svg": "/svg/default.svg",
+      "isCustom": false,
+      "items": [
+        {
+          "id": "EQE4N5O6P7Q8R9S",
+          "name": "Bec Bunsen",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQF5O6P7Q8R9S0T",
+          "name": "Plaque chauffante",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQG6P7Q8R9S0T1U",
+          "name": "Manteau chauffant",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQH7Q8R9S0T1U2V",
+          "name": "Bain-marie",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        }
+      ]
+    },
+    {
+      "id": "SAFETY",
+      "name": "Sécurité",
+      "svg": "/svg/default.svg",
+      "isCustom": false,
+      "items": [
+        {
+          "id": "EQI8R9S0T1U2V3W",
+          "name": "Lunettes de protection",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQJ9S0T1U2V3W4X",
+          "name": "Gants",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQK0T1U2V3W4X5Y",
+          "name": "Hotte aspirante",
+          "svg": "/svg/default.svg", 
+          "volumes": [],
+          "isCustom": false
+        },
+        {
+          "id": "EQL1U2V3W4X5Y6Z",
+          "name": "Douche de sécurité",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": false
+        }
+      ]
+    }
+  ]
+}

@@ -2,125 +2,35 @@
 
 import { useState, useEffect } from "react"
 import { 
-  Container, Typography, Box, Button, Paper, Stack, Alert, CircularProgress,
-  Stepper, Step, StepLabel, StepContent, TextField, FormControl, InputLabel,
-  Select, MenuItem, Card, CardContent, CardMedia, CardActions, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete,
-  List, ListItem, ListItemText, ListItemAvatar, Avatar, Fab, Tab, Tabs,
-  Slider, Tooltip, IconButton
+  Container, Typography, Box, Button, Stack, Alert, CircularProgress,
+  TextField, FormControl, InputLabel, Select, MenuItem, Dialog, DialogTitle,
+  DialogContent, DialogActions, Autocomplete, Fab, Tab, Tabs,
+  Card, CardContent, Chip, Slider, Tooltip, IconButton, Paper, Stepper,
+  Step, StepLabel, Grid, Avatar, CardMedia, Divider
 } from "@mui/material"
-import Grid from "@mui/material/Grid"
 import { 
-  Science, Category, Numbers, Inventory, Check, Add, Search,
-  LocationOn, DateRange, Assignment, Warning, Save, Edit, Delete, CheckCircle
+  Add, Inventory, Settings, Edit, Delete, Check, Science, Category, Numbers,
+  Search, Warning, Save, Assignment, LocationOn, CheckCircle
 } from "@mui/icons-material"
 
-// Types de matériel prédéfinis avec SVG
-const EQUIPMENT_TYPES = [
-  { 
-    id: 'GLASSWARE', 
-    name: 'Verrerie', 
-    svg: '/svg/beaker.svg', 
-    items: [
-      { name: 'Bécher', svg: '/svg/beaker.svg', volumes: ['25ml', '50ml', '100ml', '250ml', '500ml', '1L'] },
-      { name: 'Erlenmeyer', svg: '/svg/erlenmeyer.svg', volumes: ['50ml', '100ml', '250ml', '500ml', '1L', '2L'] },
-      { name: 'Ballon', svg: '/svg/ballon.svg', volumes: ['50ml', '100ml', '250ml', '500ml', '1L', '2L'] },
-      { name: 'Tube à essai', svg: '/svg/tube.svg', volumes: ['10ml', '15ml', '20ml', '25ml'] },
-      { name: 'Flacon jaugé', svg: '/svg/flacon.svg', volumes: ['25ml', '50ml', '100ml', '250ml', '500ml', '1L'] },
-    ]
-  },
-  { 
-    id: 'MEASURING', 
-    name: 'Mesure', 
-    svg: '/svg/default.svg', 
-    items: [
-      { name: 'Pipette graduée', svg: '/svg/pipette.svg', volumes: ['1ml', '2ml', '5ml', '10ml', '25ml', '50ml'] },
-      { name: 'Burette', svg: '/svg/burette.svg', volumes: ['10ml', '25ml', '50ml'] },
-      { name: 'Éprouvette graduée', svg: '/svg/default.svg', volumes: ['10ml', '25ml', '50ml', '100ml', '250ml', '500ml', '1L'] },
-      { name: 'Balance', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Pied à coulisse', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Thermomètre', svg: '/svg/default.svg', volumes: [] },
-    ]
-  },
-  { 
-    id: 'HEATING', 
-    name: 'Chauffage', 
-    svg: '/svg/default.svg', 
-    items: [
-      { name: 'Bec Bunsen', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Plaque chauffante', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Manteau chauffant', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Bain-marie', svg: '/svg/default.svg', volumes: [] },
-    ]
-  },
-  { 
-    id: 'SAFETY', 
-    name: 'Sécurité', 
-    svg: '/svg/default.svg', 
-    items: [
-      { name: 'Lunettes de protection', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Gants', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Hotte aspirante', svg: '/svg/default.svg', volumes: [] },
-      { name: 'Douche de sécurité', svg: '/svg/default.svg', volumes: [] },
-    ]
-  },
-]
+// Import des composants refactorisés
+import { TabPanel } from "@/components/equipment/tab-panel"
+import { EquipmentAddTab } from "@/components/equipment/equipment-add-tab"
+import { EquipmentInventoryTab } from "@/components/equipment/equipment-inventory-tab"
+import { EquipmentManagementTab } from "@/components/equipment/equipment-management-tab"
 
-interface EquipmentFormData {
-  name: string
-  type: string
-  model?: string
-  serialNumber?: string
-  quantity: number
-  volume?: string
-  customVolume?: string
-  resolution?: string
-  location?: string
-  room?: string
-  supplier?: string
-  purchaseDate?: string
-  notes?: string
-}
-
-interface RoomLocation {
-  id: string
-  name: string
-  description?: string
-}
-
-interface Room {
-  id: string
-  name: string
-  description?: string
-  locations?: RoomLocation[]
-}
-
-interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  )
-}
+// Import des types
+import { EquipmentType, EquipmentItem, EquipmentFormData, Room, RoomLocation } from "@/types/equipment"
 
 export default function EquipmentPage() {
   const [tabValue, setTabValue] = useState(0)
   const [materiel, setEquipment] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // États pour les types d'équipement dynamiques
+  const [equipmentTypes, setEquipmentTypes] = useState<EquipmentType[]>([])
+  const [customEquipmentTypes, setCustomEquipmentTypes] = useState<EquipmentType[]>([])
   
   // États pour les filtres et recherche
   const [searchTerm, setSearchTerm] = useState('')
@@ -136,7 +46,7 @@ export default function EquipmentPage() {
   const [activeStep, setActiveStep] = useState(0)
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: '',
-    type: '',
+    equipmentTypeId: '',
     quantity: 1,
     volume: '',
   })
@@ -158,6 +68,39 @@ export default function EquipmentPage() {
   const [deleteDialog, setDeleteDialog] = useState(false)
   const [equipmentToDelete, setEquipmentToDelete] = useState<any>(null)
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set())
+
+  // États pour l'ajout d'équipement personnalisé aux catégories
+  const [addCustomEquipmentDialog, setAddCustomEquipmentDialog] = useState(false)
+  const [customEquipmentData, setCustomEquipmentData] = useState({
+    name: '',
+    category: '',
+    volumes: [] as string[],
+    newVolume: ''
+  })
+
+  // États pour la gestion des types d'équipement (onglet 3)
+  const [selectedManagementCategory, setSelectedManagementCategory] = useState<string>('')
+  const [selectedManagementItem, setSelectedManagementItem] = useState<any>(null)
+  const [editItemDialog, setEditItemDialog] = useState(false)
+  const [editingItemData, setEditingItemData] = useState({
+    name: '',
+    volumes: [] as string[],
+    newVolume: '',
+    targetCategory: ''
+  })
+
+  // Charger les types d'équipement depuis l'API
+  const loadEquipmentTypes = async () => {
+    try {
+      const response = await fetch('/api/equipment-types')
+      if (response.ok) {
+        const data = await response.json()
+        setEquipmentTypes(data.types || [])
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des types d'équipement:", error)
+    }
+  }
 
   const fetchEquipment = async () => {
     try {
@@ -186,6 +129,7 @@ export default function EquipmentPage() {
   }
 
   useEffect(() => {
+    loadEquipmentTypes()
     fetchEquipment()
     fetchRooms()
   }, [])
@@ -322,16 +266,23 @@ export default function EquipmentPage() {
     }
   }
 
+  // Fonction pour obtenir tous les types d'équipement (standard + personnalisés)
+  const getAllEquipmentTypes = () => {
+    return [...equipmentTypes, ...customEquipmentTypes]
+  }
+
   // Fonction pour rendre une carte d'équipement avec slider
   const renderEquipmentCard = (item: any) => {
     const currentQuantity = quantityValues[item.id] ?? item.quantity
     const maxQuantity = Math.max(currentQuantity * 2, 10)
     const isUpdating = updatingCards.has(item.id)
     const isDeleting = deletingItems.has(item.id)
-    const isCustomItem = item.isCustom || !EQUIPMENT_TYPES.some(type => 
-      type.items.some(preset => preset.name === item.name)
+    const isCustomItem = item.isCustom || !getAllEquipmentTypes().some((type: EquipmentType) => 
+      type.items.some((preset: EquipmentItem) => preset.name === item.name)
     )
 
+    // Affichage du nom concaténé avec le volume si présent
+    const displayName = item.volume ? `${item.name} ${item.volume}` : item.name
     return (
       <Card sx={{ 
         height: '100%', 
@@ -363,10 +314,9 @@ export default function EquipmentPage() {
           </Box>
         )}
 
-        
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Typography variant="h6">{item.name}</Typography>
+            <Typography variant="h6">{displayName}</Typography>
             {isCustomItem && (
               <Chip 
                 label={`👤 ${item.createdBy || 'Personnalisé'}`}
@@ -381,7 +331,6 @@ export default function EquipmentPage() {
             Type: {getTypeLabel(item.type)}
           </Typography>
 
-          
           {/* Slider de quantité */}
           <Box sx={{ mt: 2, mb: 2 }}>
             <Typography 
@@ -423,13 +372,13 @@ export default function EquipmentPage() {
               }}
             />
           </Box>
-          
+
           {item.location && (
             <Typography color="text.secondary">
               📍 {item.location}
             </Typography>
           )}
-          
+
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Chip 
               label={item.status || 'Disponible'} 
@@ -473,7 +422,7 @@ export default function EquipmentPage() {
     setActiveStep(0)
     setFormData({
       name: '',
-      type: '',
+      equipmentTypeId: '',
       quantity: 1,
       volume: '',
     })
@@ -488,8 +437,8 @@ export default function EquipmentPage() {
 
   // Fonction pour obtenir les volumes disponibles pour un équipement
   const getAvailableVolumes = (equipmentName: string): string[] => {
-    for (const type of EQUIPMENT_TYPES) {
-      const item = type.items.find(item => item.name === equipmentName)
+    for (const equipmentTypeId of getAllEquipmentTypes()) {
+      const item = equipmentTypeId.items.find((item: EquipmentItem) => item.name === equipmentName)
       if (item) {
         return item.volumes || []
       }
@@ -521,40 +470,49 @@ export default function EquipmentPage() {
   }
 
   const confirmDeleteEquipment = async () => {
-    if (!equipmentToDelete) return
+    if (!equipmentToDelete || !equipmentToDelete.id) {
+      setError("Impossible de supprimer l'équipement : ID manquant.");
+      setDeleteDialog(false);
+      setEquipmentToDelete(null);
+      return;
+    }
 
     try {
-      // Ajouter l'ID à la liste des éléments en cours de suppression
-      setDeletingItems(prev => new Set([...prev, equipmentToDelete.id]))
-      setDeleteDialog(false)
+      setDeletingItems(prev => new Set([...prev, equipmentToDelete.id]));
+      setDeleteDialog(false);
 
       const response = await fetch(`/api/equipement/${equipmentToDelete.id}`, {
         method: "DELETE"
-      })
+      });
       
-      if (!response.ok) throw new Error("Erreur lors de la suppression")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Erreur de suppression:", errorData);
+        throw new Error(errorData.message || "Erreur lors de la suppression");
+      }
       
-      // Attendre un peu pour l'animation
       setTimeout(async () => {
-        await fetchEquipment()
+        await fetchEquipment();
         setDeletingItems(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(equipmentToDelete.id)
-          return newSet
-        })
-        setEquipmentToDelete(null)
-      }, 1000)
+          const newSet = new Set(prev);
+          newSet.delete(equipmentToDelete.id);
+          return newSet;
+        });
+        setEquipmentToDelete(null);
+      }, 500);
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Erreur lors de la suppression")
+      setError(error instanceof Error ? error.message : "Erreur lors de la suppression");
       setDeletingItems(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(equipmentToDelete.id)
-        return newSet
-      })
-      setEquipmentToDelete(null)
+        const newSet = new Set(prev);
+        if (equipmentToDelete) {
+          newSet.delete(equipmentToDelete.id);
+        }
+        return newSet;
+      });
+      setEquipmentToDelete(null);
     }
-  }
+  };
 
   // Gestion des catégories personnalisées
   const handleCreateCustomCategory = () => {
@@ -572,7 +530,7 @@ export default function EquipmentPage() {
   }
 
   const getAllCategories = () => {
-    return [...EQUIPMENT_TYPES, ...customCategories]
+    return getAllEquipmentTypes()
   }
 
   // Correction du FAB - ouvre directement le formulaire d'ajout
@@ -583,7 +541,7 @@ export default function EquipmentPage() {
     setSelectedItem(null)
     setFormData({
       name: '',
-      type: '',
+      equipmentTypeId: '',
       quantity: 1,
       volume: '',
     })
@@ -591,7 +549,7 @@ export default function EquipmentPage() {
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId)
-    setFormData(prev => ({ ...prev, type: categoryId }))
+    setFormData(prev => ({ ...prev, equipmentTypeId: categoryId }))
     handleNext()
   }
 
@@ -600,26 +558,29 @@ export default function EquipmentPage() {
     setFormData(prev => ({ 
       ...prev, 
       name: item.name,
-      volume: item.volumes && item.volumes.length > 0 ? item.volumes[0] : ''
+      volume: item.volumes && item.volumes.length > 0 ? item.volumes[0] : '',
+      equipmentTypeId: item.id
     }))
     handleNext()
   }
 
-  const handleFormChange = (field: keyof EquipmentFormData, value: any) => {
+  const handleFormChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async () => {
     try {
       // Construire le nom final avec le volume si applicable
-      const finalName = formData.volume 
-        ? `${formData.name} ${formData.customVolume || formData.volume}`
-        : formData.name
-
+      // Le nom doit être uniquement le nom de l'item (issu de equipment-types.json)
       const dataToSubmit = {
-        ...formData,
-        name: finalName
+        name: formData.name, // juste le nom de l'item
+        equipmentTypeId: formData.equipmentTypeId,
+        quantity: formData.quantity,
+        volume: formData.volume,
+        isCustom: selectedCategory.startsWith('CUSTOM')
       }
+
+      console.log("Données à soumettre:", dataToSubmit)
 
       const response = await fetch("/api/equipement", {
         method: "POST",
@@ -630,42 +591,50 @@ export default function EquipmentPage() {
       if (!response.ok) throw new Error("Erreur lors de l'ajout")
       
       const newEquipment = await response.json()
-      await fetchEquipment()
       
-      // Si c'est un équipement personnalisé, proposer de continuer
-      if (selectedItem?.name === 'Équipment personnalisé') {
+      // Si c'est un équipement personnalisé, l'ajouter aux types d'équipement
+      if (selectedItem?.name === 'Équipement personnalisé') {
+        const selectedType = getAllEquipmentTypes().find((t: EquipmentType) => t.id === selectedCategory)
+        if (selectedType) {
+          const newItem = {
+            name: formData.name,
+            svg: '/svg/default.svg',
+            volumes: formData.volume ? [formData.volume] : []
+          }
+
+          // Sauvegarder dans l'API des types d'équipement
+          try {
+            await fetch('/api/equipment-types', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: selectedType,
+                item: newItem
+              })
+            })
+            
+            // Recharger les types d'équipement localement
+            await loadEquipmentTypes()
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du type d\'équipement:', error)
+          }
+        }
+        
         setNewlyCreatedItem(newEquipment)
         setContinueDialog(true)
       } else {
         handleReset()
         setTabValue(1) // Basculer vers l'onglet inventaire
       }
+      
+      await fetchEquipment()
     } catch (error) {
       setError(error instanceof Error ? error.message : "Erreur lors de l'ajout")
     }
   }
 
-  // Fonction pour continuer l'ajout dans l'inventaire
-  const handleContinueToInventory = () => {
-    if (!newlyCreatedItem) {
-      console.error('Aucun élément nouvellement créé trouvé')
-      setContinueDialog(false)
-      return
-    }
 
-    setContinueDialog(false)
-    setActiveStep(2) // Aller à l'étape "Compléter les informations"
-    setFormData(prev => ({
-      ...prev,
-      name: newlyCreatedItem.name || '',
-      type: newlyCreatedItem.type || '',
-      quantity: 1,
-      location: '',
-      room: '',
-      notes: ''
-    }))
-    setNewlyCreatedItem(null)
-  }
+
 
   // Fonction pour terminer sans continuer
   const handleFinishWithoutContinue = () => {
@@ -673,6 +642,184 @@ export default function EquipmentPage() {
     setNewlyCreatedItem(null)
     handleReset()
     setTabValue(1) // Basculer vers l'onglet inventaire
+  }
+
+  // Fonctions pour gérer l'ajout d'équipement personnalisé aux catégories
+  const handleAddVolumeToCustomEquipment = () => {
+    if (customEquipmentData.newVolume.trim()) {
+      setCustomEquipmentData(prev => ({
+        ...prev,
+        volumes: [...prev.volumes, prev.newVolume.trim()],
+        newVolume: ''
+      }));
+    }
+  };
+
+  const handleRemoveVolumeFromCustomEquipment = (volumeToRemove: string) => {
+    setCustomEquipmentData(prev => ({
+      ...prev,
+      volumes: prev.volumes.filter(v => v !== volumeToRemove)
+    }));
+  };
+
+  const handleSaveCustomEquipment = async () => {
+    if (!customEquipmentData.name.trim()) {
+      alert('Veuillez entrer un nom pour l\'équipement');
+      return;
+    }
+
+    try {
+      // Ajouter l'équipement à la catégorie dans le fichier JSON
+      const response = await fetch('/api/equipment-types', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          categoryId: customEquipmentData.category,
+          newItem: {
+            name: customEquipmentData.name,
+            svg: '/svg/default.svg',
+            volumes: customEquipmentData.volumes.length > 0 ? customEquipmentData.volumes : ['N/A']
+          }
+        }),
+      });
+
+      if (response.ok) {
+        // Recharger les types d'équipement
+        await loadEquipmentTypes();
+        
+        // Fermer le dialog et montrer le dialog de continuation
+        setAddCustomEquipmentDialog(false);
+        setNewlyCreatedItem({
+          name: customEquipmentData.name,
+          category: customEquipmentData.category,
+          volumes: customEquipmentData.volumes
+        });
+        setContinueDialog(true);
+      } else {
+        throw new Error('Erreur lors de l\'ajout de l\'équipement');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de l\'équipement personnalisé:', error);
+      alert('Erreur lors de l\'ajout de l\'équipement');
+    }
+  };
+
+   // Fonction pour continuer l'ajout dans l'inventaire 
+  const handleContinueToInventory = () => {
+    setContinueDialog(false);
+    if (newlyCreatedItem) {
+      // Sélectionner l'équipement nouvellement créé et continuer à l'étape suivante
+      setSelectedItem({
+        name: newlyCreatedItem.name,
+        svg: '/svg/default.svg',
+        volumes: newlyCreatedItem.volumes || ['N/A']
+      });
+      setFormData(prev => ({
+        ...prev,
+        name: newlyCreatedItem.name,
+        type: newlyCreatedItem.category
+      }));
+      setActiveStep(2); // Aller à l'étape des détails
+      setTabValue(0); // Rester sur l'onglet d'ajout
+    }
+    setNewlyCreatedItem(null);
+  };
+
+  // Fonctions pour la gestion des types d'équipement
+  const handleAddVolumeToEditingItem = () => {
+    if (editingItemData.newVolume.trim()) {
+      setEditingItemData(prev => ({
+        ...prev,
+        volumes: [...prev.volumes, prev.newVolume.trim()],
+        newVolume: ''
+      }))
+    }
+  }
+
+  const handleRemoveVolumeFromEditingItem = (volumeToRemove: string) => {
+    setEditingItemData(prev => ({
+      ...prev,
+      volumes: prev.volumes.filter(v => v !== volumeToRemove)
+    }))
+  }
+
+  const handleSaveEditedItem = async () => {
+    if (!selectedManagementItem || !selectedManagementCategory) return
+
+    try {
+      // Créer l'item mis à jour
+      const updatedItem = {
+        ...selectedManagementItem,
+        name: editingItemData.name,
+        volumes: editingItemData.volumes
+      }
+
+      // Vérifier si on change de catégorie
+      const targetCategory = editingItemData.targetCategory || selectedManagementCategory
+      const isCategoryChange = targetCategory !== selectedManagementCategory
+
+      if (isCategoryChange) {
+        // Si on change de catégorie, faire un déplacement (suppression + ajout)
+        const response = await fetch('/api/equipment-types', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'move',
+            sourceCategoryId: selectedManagementCategory,
+            targetCategoryId: targetCategory,
+            itemName: selectedManagementItem.name,
+            updatedItem: updatedItem
+          })
+        })
+
+        if (response.ok) {
+          // Recharger les types d'équipement
+          await loadEquipmentTypes()
+          
+          // Fermer le dialog et changer la catégorie sélectionnée
+          setEditItemDialog(false)
+          setSelectedManagementItem(null)
+          setSelectedManagementCategory(targetCategory)
+          
+          alert('Équipement déplacé avec succès vers la nouvelle catégorie !')
+        } else {
+          throw new Error('Erreur lors du déplacement')
+        }
+      } else {
+        // Mise à jour normale dans la même catégorie
+        const response = await fetch('/api/equipment-types', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            categoryId: selectedManagementCategory,
+            itemName: selectedManagementItem.name,
+            updatedItem: updatedItem
+          })
+        })
+
+        if (response.ok) {
+          // Recharger les types d'équipement
+          await loadEquipmentTypes()
+          
+          // Fermer le dialog
+          setEditItemDialog(false)
+          setSelectedManagementItem(null)
+          
+          alert('Équipement mis à jour avec succès !')
+        } else {
+          throw new Error('Erreur lors de la mise à jour')
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'équipement:', error)
+      alert('Erreur lors de la mise à jour de l\'équipement')
+    }
   }
 
   const steps = [
@@ -712,715 +859,289 @@ export default function EquipmentPage() {
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
           <Tab label="Ajouter du matériel" icon={<Add />} />
           <Tab label="Inventaire actuel" icon={<Inventory />} />
+          <Tab label="Gérer les types" icon={<Settings />} />
         </Tabs>
       </Box>
 
       {/* Onglet Ajout */}
       <TabPanel value={tabValue} index={0}>
-        <Paper elevation={3} sx={{ p: 3 }}>
-          {/* Stepper horizontal */}
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((step, index) => (
-              <Step key={step.label}>
-                <StepLabel
-                  icon={step.icon}
-                  onClick={() => {
-                    // Permettre la navigation vers les étapes précédentes
-                    // et vers l'étape suivante si on a les données nécessaires
-                    if (index < activeStep || 
-                        (index === 1 && selectedCategory) ||
-                        (index === 2 && selectedItem) ||
-                        (index === 3 && formData.name && formData.type)) {
-                      setActiveStep(index)
-                    }
-                  }}
-                  sx={{
-                    '& .MuiStepIcon-root': {
-                      fontSize: '2rem',
-                    },
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                      borderRadius: 1,
-                    }
-                  }}
-                >
-                  <Typography variant="h6">{step.label}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {step.description}
-                  </Typography>
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-
-          {/* Contenu des étapes */}
-          <Box sx={{ minHeight: 400 }}>
-            {/* Étape 0: Sélection de catégorie */}
-            {activeStep === 0 && (
-              <Box>
-                <Typography variant="h5" gutterBottom>Choisir une catégorie</Typography>
-                <Grid container spacing={3}>
-                  {getAllCategories().map((category) => (
-                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
-                      <Card 
-                        sx={{ 
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s',
-                          '&:hover': { transform: 'scale(1.05)' },
-                          border: selectedCategory === category.id ? 2 : 1,
-                          borderColor: selectedCategory === category.id ? 'primary.main' : 'divider'
-                        }}
-                        onClick={() => handleCategorySelect(category.id)}
-                      >
-                        <CardMedia
-                          component="img"
-                          height="120"
-                          image={category.svg}
-                          alt={category.name}
-                          sx={{ objectFit: 'contain', p: 2 }}
-                        />
-                        <CardContent>
-                          <Typography variant="h6" textAlign="center">
-                            {category.name}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                  
-                  {/* Bouton pour ajouter une nouvelle catégorie */}
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card 
-                      sx={{ 
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s',
-                        '&:hover': { transform: 'scale(1.05)' },
-                        border: '2px dashed',
-                        borderColor: 'primary.main',
-                        backgroundColor: 'primary.light',
-                        opacity: 0.7
-                      }}
-                      onClick={() => setNewCategoryDialog(true)}
-                    >
-                      <CardContent sx={{ 
-                        height: 120, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        justifyContent: 'center', 
-                        alignItems: 'center' 
-                      }}>
-                        <Add sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                      </CardContent>
-                      <CardContent sx={{ pt: 0 }}>
-                        <Typography variant="h6" textAlign="center" color="primary.main">
-                          Nouvelle catégorie
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {/* Étape 1: Sélection d'équipement */}
-            {activeStep === 1 && selectedCategory && (
-              <Box>
-                <Typography variant="h5" gutterBottom>
-                  Choisir un équipement - {getAllCategories().find(t => t.id === selectedCategory)?.name}
-                </Typography>
-                <Grid container spacing={2}>
-                  {EQUIPMENT_TYPES.find(t => t.id === selectedCategory)?.items.map((item, index) => (
-                    <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                      <Card 
-                        sx={{ 
-                          cursor: 'pointer',
-                          border: selectedItem?.name === item.name ? 2 : 0,
-                          borderColor: 'primary.main'
-                        }}
-                        onClick={() => handleItemSelect(item)}
-                      >
-                        <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar src={item.svg} sx={{ width: 56, height: 56 }} />
-                          <Typography variant="body1">{item.name}</Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-                <Button 
-                  variant="outlined" 
-                  sx={{ mt: 2 }} 
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, name: 'Équipement personnalisé', type: selectedCategory }))
-                    setSelectedItem({ name: 'Équipment personnalisé', svg: '/svg/default.svg' })
-                    handleNext()
-                  }}
-                >
-                  Ajouter un équipement personnalisé
-                </Button>
-              </Box>
-            )}
-
-            {/* Étape 2: Détails */}
-            {activeStep === 2 && (
-              <Box>
-                <Typography variant="h5" gutterBottom>Compléter les informations</Typography>
-                <Grid container spacing={3}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Nom de l'équipement"
-                      value={formData.name}
-                      onChange={(e) => handleFormChange('name', e.target.value)}
-                      margin="normal"
-                      disabled={selectedItem?.name !== 'Équipment personnalisé'}
-                      helperText={selectedItem?.name !== 'Équipment personnalisé' ? 
-                        'Nom prédéfini pour cet équipement' : 
-                        'Saisissez le nom de votre équipement personnalisé'
-                      }
-                    />
-                    
-                    {/* Sélection de volume pour la verrerie et équipement de mesure */}
-                    {selectedItem?.volumes && selectedItem.volumes.length > 0 && (
-                      <Autocomplete
-                        freeSolo
-                        options={selectedItem.volumes}
-                        value={formData.customVolume || formData.volume || ''}
-                        onInputChange={(_, newValue) => {
-                          handleFormChange('volume', newValue)
-                          handleFormChange('customVolume', newValue)
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            label="Volume"
-                            margin="normal"
-                            placeholder="Choisissez un volume ou saisissez le vôtre"
-                            helperText="Sélectionnez dans la liste ou tapez une valeur personnalisée"
-                          />
-                        )}
-                        noOptionsText="Tapez votre volume personnalisé"
-                        sx={{ mt: 2 }}
-                      />
-                    )}
-
-                    {/* Champ résolution pour les appareils de mesure */}
-                    {selectedCategory === 'MEASURING' && (
-                      <TextField
-                        fullWidth
-                        label="Résolution de l'appareil"
-                        value={formData.resolution || ''}
-                        onChange={(e) => handleFormChange('resolution', e.target.value)}
-                        margin="normal"
-                        placeholder="ex: 0.1mg, 0.01ml, 0.1°C"
-                        helperText="Précision de l'appareil de mesure"
-                      />
-                    )}
-
-                    <TextField
-                      fullWidth
-                      label="Quantité"
-                      type="number"
-                      value={formData.quantity}
-                      onChange={(e) => handleFormChange('quantity', parseInt(e.target.value) || 1)}
-                      margin="normal"
-                      inputProps={{ min: 1 }}
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Modèle/Référence"
-                      value={formData.model || ''}
-                      onChange={(e) => handleFormChange('model', e.target.value)}
-                      margin="normal"
-                    />
-                    <TextField
-                      fullWidth
-                      label="Numéro de série"
-                      value={formData.serialNumber || ''}
-                      onChange={(e) => handleFormChange('serialNumber', e.target.value)}
-                      margin="normal"
-                    />
-                    <Autocomplete
-                      fullWidth
-                      options={rooms.flatMap(room => 
-                        room.locations?.length 
-                          ? room.locations.map((location: RoomLocation) => ({
-                              label: `${room.name} - ${location.name}`,
-                              room: room.name,
-                              location: location.name
-                            }))
-                          : [{ label: room.name, room: room.name, location: '' }]
-                      )}
-                      getOptionLabel={(option) => option.label}
-                      value={formData.room && formData.location 
-                        ? { label: `${formData.room} - ${formData.location}`, room: formData.room, location: formData.location }
-                        : formData.room 
-                          ? { label: formData.room, room: formData.room, location: '' }
-                          : null
-                      }
-                      onChange={(_, newValue) => {
-                        if (newValue) {
-                          handleFormChange('room', newValue.room)
-                          handleFormChange('location', newValue.location)
-                        } else {
-                          handleFormChange('room', '')
-                          handleFormChange('location', '')
-                        }
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Localisation"
-                          margin="normal"
-                          placeholder="Sélectionner une salle et localisation"
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props}>
-                          <Stack>
-                            <Typography variant="body2">
-                              <strong>{option.room}</strong>
-                            </Typography>
-                            {option.location && (
-                              <Typography variant="caption" color="text.secondary">
-                                📍 {option.location}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </Box>
-                      )}
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      label="Notes"
-                      value={formData.notes || ''}
-                      onChange={(e) => handleFormChange('notes', e.target.value)}
-                      margin="normal"
-                      multiline
-                      rows={3}
-                      placeholder="Observations, état, remarques..."
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {/* Étape 3: Finalisation */}
-            {activeStep === 3 && (
-              <Box>
-                <Typography variant="h5" gutterBottom>Vérification</Typography>
-                <Card sx={{ p: 3 }}>
-                  <Stack spacing={2}>
-                    <Typography><strong>Nom:</strong> {formData.volume ? `${formData.name} ${formData.customVolume || formData.volume}` : formData.name}</Typography>
-                    <Typography><strong>Type:</strong> {EQUIPMENT_TYPES.find(t => t.id === formData.type)?.name}</Typography>
-                    <Typography><strong>Quantité:</strong> {formData.quantity}</Typography>
-                    {formData.model && <Typography><strong>Modèle:</strong> {formData.model}</Typography>}
-                    {formData.location && <Typography><strong>Localisation:</strong> {formData.location}</Typography>}
-                    {formData.room && <Typography><strong>Salle:</strong> {formData.room}</Typography>}
-                    {formData.notes && <Typography><strong>Notes:</strong> {formData.notes}</Typography>}
-                  </Stack>
-                </Card>
-              </Box>
-            )}
-          </Box>
-
-          {/* Boutons de navigation */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Retour
-            </Button>
-            <Box sx={{ flex: '1 1 auto' }} />
-            {activeStep === steps.length - 1 ? (
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                startIcon={<Save />}
-              >
-                Enregistrer
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={
-                  (activeStep === 0 && !selectedCategory) ||
-                  (activeStep === 1 && !selectedItem) ||
-                  (activeStep === 2 && !formData.name.trim())
-                }
-              >
-                Suivant
-              </Button>
-            )}
-          </Box>
-        </Paper>
+        <EquipmentAddTab
+          activeStep={activeStep}
+          setActiveStep={setActiveStep}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedItem={selectedItem}
+          setSelectedItem={setSelectedItem}
+          formData={formData}
+          setFormData={setFormData}
+          equipmentTypes={equipmentTypes}
+          rooms={rooms}
+          onCategorySelect={handleCategorySelect}
+          onItemSelect={handleItemSelect}
+          onFormChange={handleFormChange}
+          onSubmit={handleSubmit}
+          onReset={handleReset}
+          loading={loading}
+        />
       </TabPanel>
 
       {/* Onglet Inventaire */}
       <TabPanel value={tabValue} index={1}>
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        ) : (
-          <Paper elevation={3} sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>Inventaire actuel</Typography>
-            
-            {/* Barre de recherche et filtres */}
-            <Box sx={{ mb: 3 }}>
-              <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Rechercher par nom ou localisation..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
-                  }}
-                />
-                <FormControl sx={{ minWidth: 200 }}>
-                  <InputLabel>Type de matériel</InputLabel>
-                  <Select
-                    value={typeFilter}
-                    label="Type de matériel"
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                  >
-                    <MenuItem value="all">Tous les types</MenuItem>
-                    <MenuItem value="GLASSWARE">Verrerie</MenuItem>
-                    <MenuItem value="MEASURING">Mesure</MenuItem>
-                    <MenuItem value="HEATING">Chauffage</MenuItem>
-                    <MenuItem value="SAFETY">Sécurité</MenuItem>
-                    <MenuItem value="MIXING">Mélange</MenuItem>
-                    <MenuItem value="STORAGE">Stockage</MenuItem>
-                    <MenuItem value="ELECTRICAL">Électrique</MenuItem>
-                    <MenuItem value="OPTICAL">Optique</MenuItem>
-                    <MenuItem value="CUSTOM">Personnalisé</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl sx={{ minWidth: 220 }}>
-                  <InputLabel>Lieu de stockage</InputLabel>
-                  <Select
-                    value={locationFilter}
-                    label="Lieu de stockage"
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                  >
-                    <MenuItem value="all">Tous les lieux</MenuItem>
-                    {rooms.map((room) => [
-                      <MenuItem key={room.id} value={room.name} sx={{ fontWeight: 'bold' }}>
-                        🏠 {room.name}
-                      </MenuItem>,
-                      ...(room.locations || []).map((location: any) => (
-                        <MenuItem 
-                          key={`${room.id}-${location.id}`} 
-                          value={`${room.name}|${location.name}`}
-                          sx={{ pl: 4 }}
-                        >
-                          📍 {location.name}
-                        </MenuItem>
-                      ))
-                    ])}
-                  </Select>
-                </FormControl>
-                <FormControl sx={{ minWidth: 150 }}>
-                  <InputLabel>Organiser par</InputLabel>
-                  <Select
-                    value={sortBy}
-                    label="Organiser par"
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <MenuItem value="category">Catégorie</MenuItem>
-                    <MenuItem value="name">Nom</MenuItem>
-                    <MenuItem value="quantity">Quantité</MenuItem>
-                    <MenuItem value="type">Type</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box>
-
-            {/* Affichage du matériel organisé par sections de type */}
-            {(() => {
-              const filteredData = getFilteredMateriel()
-              
-              // Toujours grouper par type pour l'affichage en sections
-              let materialByType: any = {}
-              
-              if (sortBy === 'category' && typeof filteredData === 'object' && !Array.isArray(filteredData)) {
-                materialByType = filteredData
-              } else {
-                // Créer les groupes à partir de la liste filtrée
-                const items = Array.isArray(filteredData) ? filteredData : []
-                materialByType = items.reduce((acc: any, item: any) => {
-                  const type = item.type || 'CUSTOM'
-                  if (!acc[type]) acc[type] = []
-                  acc[type].push(item)
-                  return acc
-                }, {})
-                
-                // Trier les éléments dans chaque groupe si nécessaire
-                if (sortBy !== 'category') {
-                  Object.keys(materialByType).forEach(type => {
-                    materialByType[type].sort((a: any, b: any) => {
-                      switch (sortBy) {
-                        case 'name':
-                          return a.name.localeCompare(b.name)
-                        case 'quantity':
-                          return (b.quantity || 0) - (a.quantity || 0)
-                        case 'type':
-                          return getTypeLabel(a.type).localeCompare(getTypeLabel(b.type))
-                        default:
-                          return 0
-                      }
-                    })
-                  })
-                }
-              }
-              
-              // Affichage par sections de type
-              return Object.entries(materialByType).map(([type, items]: [string, any]) => (
-                <Box key={type} sx={{ mb: 4 }}>
-                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 'bold' }}>
-                    📦 {getTypeLabel(type)} ({items.length})
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {items.map((item: any) => (
-                      <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                        <Card sx={{ 
-                          position: 'relative',
-                          opacity: updatingCards.has(item.id) ? 0.7 : 1,
-                          transition: 'all 0.2s'
-                        }}>
-                          {/* Overlay avec spinner pendant la mise à jour */}
-                          {updatingCards.has(item.id) && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 10,
-                                borderRadius: 1
-                              }}
-                            >
-                              <CircularProgress size={40} />
-                            </Box>
-                          )}
-                          
-                          <CardContent>
-                            <Typography variant="h6">{item.name}</Typography>
-                            <Typography color="text.secondary">
-                              Type: {getTypeLabel(item.type)}
-                            </Typography>
-                            {item.volume && (
-                              <Typography color="text.secondary">
-                                Volume: {item.volume}
-                              </Typography>
-                            )}
-                            {item.location && (
-                              <Typography color="text.secondary">
-                                📍 {item.location}
-                              </Typography>
-                            )}
-                            {item.room && (
-                              <Typography color="text.secondary">
-                                🏠 {item.room}
-                              </Typography>
-                            )}
-                            
-                            {/* Slider pour la quantité */}
-                            <Box sx={{ mt: 2, mb: 1 }}>
-                              <Typography variant="body2" gutterBottom>
-                                Quantité: {quantityValues[item.id] !== undefined ? quantityValues[item.id] : item.quantity}
-                              </Typography>
-                              <Slider
-                                value={quantityValues[item.id] !== undefined ? quantityValues[item.id] : item.quantity}
-                                onChange={(_, newValue) => {
-                                  const value = newValue as number
-                                  setQuantityValues(prev => ({
-                                    ...prev,
-                                    [item.id]: value
-                                  }))
-                                }}
-                                onChangeCommitted={(_, newValue) => {
-                                  const value = newValue as number
-                                  if (value !== item.quantity) {
-                                    handleQuantityChange(item.id, value)
-                                  }
-                                }}
-                                min={0}
-                                max={Math.max(item.quantity * 2, 10)}
-                                step={1}
-                                size="small"
-                                valueLabelDisplay="auto"
-                                sx={{
-                                  color: item.quantity === 0 ? 'warning.main' : 'primary.main'
-                                }}
-                              />
-                            </Box>
-                            
-                            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Chip 
-                                label={item.status || 'Disponible'} 
-                                color={item.quantity === 0 ? 'warning' : 'success'} 
-                                size="small"
-                              />
-                              <Box>
-                                <Button
-                                  size="small"
-                                  onClick={() => handleEditEquipment(item)}
-                                  sx={{ mr: 1 }}
-                                >
-                                  Modifier
-                                </Button>
-                                <Button
-                                  size="small"
-                                  color="error"
-                                  onClick={() => handleDeleteEquipment(item)}
-                                >
-                                  Supprimer
-                                </Button>
-                              </Box>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              ))
-            })()}
-            
-            {(() => {
-              const filteredData = getFilteredMateriel()
-              let totalItems = 0
-              
-              if (typeof filteredData === 'object' && !Array.isArray(filteredData)) {
-                totalItems = Object.values(filteredData).reduce((acc: number, items: any) => acc + items.length, 0)
-              } else {
-                totalItems = Array.isArray(filteredData) ? filteredData.length : 0
-              }
-              
-              return totalItems === 0 && (
-                <Box textAlign="center" py={4}>
-                  <Typography color="text.secondary">
-                    {searchTerm || typeFilter !== 'all' || locationFilter !== 'all' ? 
-                      'Aucun matériel ne correspond aux critères de recherche' :
-                      'Aucun matériel dans l\'inventaire'
-                    }
-                  </Typography>
-                </Box>
-              )
-            })()}
-          </Paper>
-        )}
+        <EquipmentInventoryTab
+          materiel={materiel}
+          loading={loading}
+          error={error}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          locationFilter={locationFilter}
+          setLocationFilter={setLocationFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          rooms={rooms}
+          quantityValues={quantityValues}
+          setQuantityValues={setQuantityValues}
+          updatingCards={updatingCards}
+          onQuantityChange={handleQuantityChange}
+          onEditEquipment={handleEditEquipment}
+          onDeleteEquipment={handleDeleteEquipment}
+          getTypeLabel={getTypeLabel}
+          getFilteredMateriel={getFilteredMateriel}
+        />
       </TabPanel>
 
-      {/* Dialog de modification d'équipement */}
-      <Dialog
-        open={openEditDialog}
-        onClose={() => setOpenEditDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Modifier l'équipement</DialogTitle>
-        <DialogContent>
-          {editingEquipment && (
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                fullWidth
-                label="Nom (sans volume)"
-                value={editingEquipment.name?.split(' - ')[0] || editingEquipment.name || ''}
-                onChange={(e) => {
-                  const baseName = e.target.value
-                  const volume = editingEquipment.volume || ''
-                  const newName = volume ? `${baseName} - ${volume}` : baseName
-                  setEditingEquipment({...editingEquipment, name: newName, baseName})
-                }}
-              />
-              <Autocomplete
-                freeSolo
-                options={getAvailableVolumes(editingEquipment.baseName || editingEquipment.name?.split(' - ')[0] || editingEquipment.name || '')}
-                value={editingEquipment.volume || ''}
-                onInputChange={(_, newValue) => {
-                  const volume = newValue
-                  const baseName = editingEquipment.baseName || editingEquipment.name?.split(' - ')[0] || editingEquipment.name || ''
-                  const newName = volume ? `${baseName} - ${volume}` : baseName
-                  setEditingEquipment({...editingEquipment, volume, name: newName})
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    fullWidth
-                    label="Volume"
-                    placeholder="ex: 250ml, 1L ou valeur personnalisée"
-                  />
-                )}
-                noOptionsText="Aucun volume prédéfini - vous pouvez saisir une valeur personnalisée"
-              />
-              {editingEquipment.type === 'MEASURING' && (
-                <TextField
-                  fullWidth
-                  label="Résolution de l'appareil"
-                  value={editingEquipment.resolution || ''}
-                  onChange={(e) => setEditingEquipment({...editingEquipment, resolution: e.target.value})}
-                  placeholder="ex: 0.1mg, 0.01ml"
-                />
-              )}
-              <TextField
-                fullWidth
-                label="Quantité"
-                type="number"
-                value={editingEquipment.quantity || 1}
-                onChange={(e) => setEditingEquipment({...editingEquipment, quantity: parseInt(e.target.value) || 1})}
-                inputProps={{ min: 1 }}
-              />
-              <TextField
-                fullWidth
-                label="Localisation"
-                value={editingEquipment.location || ''}
-                onChange={(e) => setEditingEquipment({...editingEquipment, location: e.target.value})}
-              />
-              <TextField
-                fullWidth
-                label="Salle"
-                value={editingEquipment.room || ''}
-                onChange={(e) => setEditingEquipment({...editingEquipment, room: e.target.value})}
-              />
-              <TextField
-                fullWidth
-                label="Notes"
-                multiline
-                rows={3}
-                value={editingEquipment.notes || ''}
-                onChange={(e) => setEditingEquipment({...editingEquipment, notes: e.target.value})}
-              />
-            </Stack>
+      {/* Onglet Gestion des types */}
+      <TabPanel value={tabValue} index={2}>
+        <Paper elevation={3} sx={{ p: 3 }}>
+          <Typography variant="h5" gutterBottom>
+            Gérer les types d'équipement
+          </Typography>
+          
+          {!selectedManagementCategory ? (
+            // Affichage des catégories
+            <Box>
+              <Typography variant="h6" sx={{ mb: 3 }}>
+                Sélectionnez une catégorie à modifier :
+              </Typography>
+              <Grid container spacing={2}>
+                {getAllCategories().map((category) => (
+                  <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': { 
+                          transform: 'translateY(-2px)',
+                          boxShadow: 4 
+                        }
+                      }}
+                      onClick={() => setSelectedManagementCategory(category.id)}
+                    >
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Avatar 
+                          src={category.svg} 
+                          sx={{ 
+                            width: 64, 
+                            height: 64, 
+                            mx: 'auto', 
+                            mb: 2,
+                            bgcolor: 'primary.light'
+                          }} 
+                        />
+                        <Typography variant="h6" gutterBottom>
+                          {category.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {category.items?.length || 0} équipements
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          ) : (
+            // Affichage des équipements de la catégorie sélectionnée
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  onClick={() => {
+                    setSelectedManagementCategory('')
+                    setSelectedManagementItem(null)
+                  }}
+                >
+                  ← Retour aux catégories
+                </Button>
+                <Typography variant="h6">
+                  {getAllCategories().find(c => c.id === selectedManagementCategory)?.name}
+                </Typography>
+              </Box>
+              
+              {(() => {
+                const allItems = getAllEquipmentTypes().find((t: EquipmentType) => t.id === selectedManagementCategory)?.items || []
+                const presetItems = allItems.filter((item: EquipmentItem) => !item.isCustom)
+                const customItems = allItems.filter((item: EquipmentItem) => item.isCustom)
+                
+                return (
+                  <>
+                    {/* Équipements preset */}
+                    {presetItems.length > 0 && (
+                      <>
+                        <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                          📦 Équipements standard
+                        </Typography>
+                        <Grid container spacing={2} sx={{ mb: 3 }}>
+                          {presetItems.map((item: EquipmentItem, index: number) => (
+                            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                              <Card 
+                                sx={{ 
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  '&:hover': { 
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: 4 
+                                  }
+                                }}
+                                onClick={() => {
+                                  setSelectedManagementItem(item)
+                                  setEditingItemData({
+                                    name: item.name,
+                                    volumes: [...item.volumes],
+                                    newVolume: '',
+                                    targetCategory: selectedManagementCategory
+                                  })
+                                  setEditItemDialog(true)
+                                }}
+                              >
+                                <CardContent>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <Avatar src={item.svg} sx={{ width: 48, height: 48 }} />
+                                    <Typography variant="h6">{item.name}</Typography>
+                                  </Box>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {item.volumes?.length || 0} volumes disponibles
+                                  </Typography>
+                                  {item.volumes?.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                      {item.volumes.slice(0, 3).map((volume, vIndex) => (
+                                        <Chip 
+                                          key={vIndex} 
+                                          label={volume} 
+                                          size="small" 
+                                          variant="outlined" 
+                                        />
+                                      ))}
+                                      {item.volumes.length > 3 && (
+                                        <Chip 
+                                          label={`+${item.volumes.length - 3}`} 
+                                          size="small" 
+                                          variant="outlined" 
+                                        />
+                                      )}
+                                    </Box>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </>
+                    )}
+                    
+                    {/* Divider si on a les deux types */}
+                    {presetItems.length > 0 && customItems.length > 0 && (
+                      <Divider sx={{ my: 3 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Équipements personnalisés
+                        </Typography>
+                      </Divider>
+                    )}
+                    
+                    {/* Équipements personnalisés */}
+                    {customItems.length > 0 && (
+                      <>
+                        <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
+                          🔧 Équipements personnalisés
+                        </Typography>
+                        <Grid container spacing={2}>
+                          {customItems.map((item: EquipmentItem, index: number) => (
+                            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                              <Card 
+                                sx={{ 
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s',
+                                  bgcolor: 'action.hover',
+                                  '&:hover': { 
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: 4 
+                                  }
+                                }}
+                                onClick={() => {
+                                  setSelectedManagementItem(item)
+                                  setEditingItemData({
+                                    name: item.name,
+                                    volumes: [...item.volumes],
+                                    newVolume: '',
+                                    targetCategory: selectedManagementCategory
+                                  })
+                                  setEditItemDialog(true)
+                                }}
+                              >
+                                <CardContent>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                    <Avatar 
+                                      src={item.svg} 
+                                      sx={{ 
+                                        width: 48, 
+                                        height: 48,
+                                        bgcolor: 'secondary.light',
+                                        color: 'secondary.contrastText'
+                                      }} 
+                                    />
+                                    <Typography variant="h6" sx={{ fontStyle: 'italic' }}>
+                                      {item.name}
+                                    </Typography>
+                                  </Box>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {item.volumes?.length || 0} volumes disponibles
+                                  </Typography>
+                                  {item.volumes?.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                      {item.volumes.slice(0, 3).map((volume, vIndex) => (
+                                        <Chip 
+                                          key={vIndex} 
+                                          label={volume} 
+                                          size="small" 
+                                          variant="outlined" 
+                                          color="secondary"
+                                        />
+                                      ))}
+                                      {item.volumes.length > 3 && (
+                                        <Chip 
+                                          label={`+${item.volumes.length - 3}`} 
+                                          size="small" 
+                                          variant="outlined" 
+                                          color="secondary"
+                                        />
+                                      )}
+                                    </Box>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
+            </Box>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Annuler</Button>
-          <Button variant="contained" onClick={handleSaveEdit}>
-            Sauvegarder
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Paper>
+      </TabPanel>
 
       {/* FAB pour ajout rapide */}
       <Fab
@@ -1603,6 +1324,445 @@ export default function EquipmentPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog pour ajouter un équipement personnalisé aux catégories */}
+      <Dialog
+        open={addCustomEquipmentDialog}
+        onClose={() => setAddCustomEquipmentDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
+              <Add />
+            </Avatar>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">
+                Ajouter un équipement personnalisé
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Catégorie: {getAllCategories().find(c => c.id === customEquipmentData.category)?.name}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent>
+          <Paper 
+            sx={{ 
+              p: 3, 
+              backgroundColor: 'rgba(255,255,255,0.1)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 2
+            }}
+          >
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label="Nom de l'équipement"
+                value={customEquipmentData.name}
+                onChange={(e) => setCustomEquipmentData(prev => ({
+                  ...prev,
+                  name: e.target.value
+                }))}
+                placeholder="Ex: Micropipette, Balance analytique..."
+                sx={{
+                  '& .MuiInputLabel-root': { color: 'white' },
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: 'white' }
+                  }
+                }}
+              />
+
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Volumes/Tailles disponibles (optionnel)
+                </Typography>
+                <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                  <TextField
+                    label="Ajouter un volume"
+                    value={customEquipmentData.newVolume}
+                    onChange={(e) => setCustomEquipmentData(prev => ({
+                      ...prev,
+                      newVolume: e.target.value
+                    }))}
+                    placeholder="Ex: 250ml, 10cm, 1kg..."
+                    sx={{
+                      flex: 1,
+                      '& .MuiInputLabel-root': { color: 'white' },
+                      '& .MuiOutlinedInput-root': {
+                        color: 'white',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                        '&.Mui-focused fieldset': { borderColor: 'white' }
+                      }
+                    }}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddVolumeToCustomEquipment()}
+                  />
+                  <Button
+                    onClick={handleAddVolumeToCustomEquipment}
+                    variant="contained"
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+                    }}
+                  >
+                    Ajouter
+                  </Button>
+                </Stack>
+
+                {customEquipmentData.volumes.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {customEquipmentData.volumes.map((volume, index) => (
+                      <Chip
+                        key={index}
+                        label={volume}
+                        onDelete={() => handleRemoveVolumeFromCustomEquipment(volume)}
+                        sx={{
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          color: 'white',
+                          '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </Stack>
+          </Paper>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button 
+            onClick={() => setAddCustomEquipmentDialog(false)}
+            sx={{ 
+              color: 'rgba(255,255,255,0.8)',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+            }}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSaveCustomEquipment}
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+              fontWeight: 'bold'
+            }}
+            startIcon={<Save />}
+            disabled={!customEquipmentData.name.trim()}
+          >
+            Créer l'équipement
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog de modification d'équipement preset */}
+      <Dialog
+        open={editItemDialog}
+        onClose={() => {
+          setEditItemDialog(false)
+          setSelectedManagementItem(null)
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Settings />
+            <Typography variant="h6">
+              Modifier {selectedManagementItem?.name}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={3}>
+            {/* Nom de l'équipement */}
+            <TextField
+              fullWidth
+              label="Nom de l'équipement"
+              value={editingItemData.name}
+              onChange={(e) => setEditingItemData(prev => ({
+                ...prev,
+                name: e.target.value
+              }))}
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+
+            {/* Sélecteur de catégorie */}
+            <FormControl 
+              fullWidth
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                },
+                '& .MuiSvgIcon-root': { color: 'white' }
+              }}
+            >
+              <InputLabel>Catégorie</InputLabel>
+              <Select
+                value={editingItemData.targetCategory}
+                label="Catégorie"
+                onChange={(e) => setEditingItemData(prev => ({
+                  ...prev,
+                  targetCategory: e.target.value
+                }))}
+              >
+                {getAllCategories().map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Avatar src={category.svg} sx={{ width: 24, height: 24 }} />
+                      {category.name}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Gestion des volumes */}
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, color: 'white' }}>
+                Volumes disponibles
+              </Typography>
+              
+              {/* Volumes existants */}
+              {editingItemData.volumes.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  {editingItemData.volumes.map((volume, index) => (
+                    <Chip
+                      key={index}
+                      label={volume}
+                      onDelete={() => handleRemoveVolumeFromEditingItem(volume)}
+                      deleteIcon={<Delete />}
+                      sx={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        color: 'white',
+                        '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' }
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+
+              {/* Ajouter un nouveau volume */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <TextField
+                  label="Nouveau volume"
+                  value={editingItemData.newVolume}
+                  onChange={(e) => setEditingItemData(prev => ({
+                    ...prev,
+                    newVolume: e.target.value
+                  }))}
+                  placeholder="Ex: 250ml, 10cm, 1kg..."
+                  sx={{
+                    flex: 1,
+                    '& .MuiInputLabel-root': { color: 'white' },
+                    '& .MuiOutlinedInput-root': {
+                      color: 'white',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                      '&.Mui-focused fieldset': { borderColor: 'white' }
+                    }
+                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddVolumeToEditingItem()}
+                />
+                <Button
+                  onClick={handleAddVolumeToEditingItem}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+                  }}
+                >
+                  Ajouter
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+          <Button
+            onClick={() => {
+              setEditItemDialog(false)
+              setSelectedManagementItem(null)
+            }}
+            sx={{ color: 'rgba(255,255,255,0.7)' }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSaveEditedItem}
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+              fontWeight: 'bold'
+            }}
+            startIcon={<Save />}
+            disabled={!editingItemData.name.trim()}
+          >
+            Sauvegarder
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog d'édition d'un équipement de l'inventaire */}
+      <Dialog
+        open={openEditDialog}
+        onClose={() => {
+          setOpenEditDialog(false)
+          setEditingEquipment(null)
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Edit />
+            <Typography variant="h6">
+              Modifier {editingEquipment?.name}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Stack spacing={3}>
+            {/* Nom de l'équipement */}
+            <TextField
+              fullWidth
+              label="Nom de l'équipement"
+              value={editingEquipment?.name || ''}
+              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, name: e.target.value }))}
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+            {/* Volume */}
+            <TextField
+              fullWidth
+              label="Volume"
+              value={editingEquipment?.volume || ''}
+              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+            {/* Quantité */}
+            <TextField
+              fullWidth
+              label="Quantité"
+              type="number"
+              value={editingEquipment?.quantity || 1}
+              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, quantity: Number(e.target.value) }))}
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+            {/* Localisation */}
+            <TextField
+              fullWidth
+              label="Localisation"
+              value={editingEquipment?.location || ''}
+              onChange={(e) => setEditingEquipment((prev: any) => ({ ...prev, location: e.target.value }))}
+              sx={{
+                '& .MuiInputLabel-root': { color: 'white' },
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                  '&.Mui-focused fieldset': { borderColor: 'white' }
+                }
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+          <Button
+            onClick={() => {
+              setOpenEditDialog(false)
+              setEditingEquipment(null)
+            }}
+            sx={{ color: 'rgba(255,255,255,0.7)' }}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            variant="contained"
+            sx={{ 
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+              fontWeight: 'bold'
+            }}
+            startIcon={<Save />}
+            disabled={!editingEquipment?.name?.trim()}
+          >
+            Sauvegarder
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
-  )
+  );
 }

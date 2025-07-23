@@ -16,13 +16,13 @@ export { Role } from '@prisma/client'
 // }
 
 export enum Unit {
-  ML = 'ML',
+  mL = 'mL',
   L = 'L',
-  G = 'G',
-  KG = 'KG',
-  MG = 'MG',
-  MOL = 'MOL',
-  PIECE = 'PIECE'
+  g = 'g',
+  kg = 'kg',
+  mg = 'mg',
+  mol = 'mol',
+  piece = 'pièce'
 }
 
 export enum ChemicalStatus {
@@ -347,4 +347,12 @@ export interface ScanResult {
   status: "found" | "not_found" | "error"
   timestamp: Date
   details?: Chemical | Materiel
+}
+
+export interface ChemicalCompound {
+  name: string;
+  formula: string;
+  casNumber: string;
+  category?: string;
+  aliases?: string[];
 }

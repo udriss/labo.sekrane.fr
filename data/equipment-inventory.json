@@ -1,0 +1,61 @@
+{
+  "equipment": [
+    {
+      "id": "EQUIP_1753253955807_0w7nm6yax",
+      "name": "Tube à essai 10 mL",
+      "equipmentTypeId": "EQ4D5E6F7G8H9I0",
+      "model": null,
+      "serialNumber": null,
+      "quantity": 1,
+      "minQuantity": 1,
+      "volume": "10 mL",
+      "location": null,
+      "room": null,
+      "notes": null,
+      "purchaseDate": null,
+      "status": "AVAILABLE",
+      "createdAt": "2025-07-23T06:59:15.807Z",
+      "updatedAt": "2025-07-23T06:59:15.807Z"
+    },
+    {
+      "id": "EQUIP_1753254105873_vjm5cl4wd",
+      "name": "Tube à essai",
+      "equipmentTypeId": "EQ4D5E6F7G8H9I0",
+      "model": null,
+      "serialNumber": null,
+      "quantity": 1,
+      "minQuantity": 1,
+      "volume": "25 mL",
+      "location": null,
+      "room": null,
+      "notes": null,
+      "purchaseDate": null,
+      "status": "AVAILABLE",
+      "createdAt": "2025-07-23T07:01:45.873Z",
+      "updatedAt": "2025-07-23T07:01:45.873Z"
+    },
+    {
+      "id": "EQUIP_1753254176990_5y8n3pivf",
+      "name": "Bécher",
+      "equipmentTypeId": "EQ1A2B3C4D5E6F7",
+      "model": null,
+      "serialNumber": null,
+      "quantity": 1,
+      "minQuantity": 1,
+      "volume": "25 mL",
+      "location": null,
+      "room": null,
+      "notes": null,
+      "purchaseDate": null,
+      "status": "AVAILABLE",
+      "createdAt": "2025-07-23T07:02:56.990Z",
+      "updatedAt": "2025-07-23T07:02:56.990Z"
+    }
+  ],
+  "stats": {
+    "total": 3,
+    "inStock": 3,
+    "lowStock": 3,
+    "outOfStock": 0
+  }
+}

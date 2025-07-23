@@ -2,7 +2,7 @@
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'TEACHER', 'STUDENT');
 
 -- CreateEnum
-CREATE TYPE "Unit" AS ENUM ('ML', 'L', 'G', 'KG', 'MG', 'MOL', 'PIECE');
+CREATE TYPE "Unit" AS ENUM ('mL', 'L', 'g', 'kg', 'MG', 'MOL', 'PIECE');
 
 -- CreateEnum
 CREATE TYPE "ChemicalStatus" AS ENUM ('IN_STOCK', 'LOW_STOCK', 'OPENED', 'EXPIRED', 'EMPTY', 'QUARANTINE');

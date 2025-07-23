@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Chemical, ChemicalStatus } from "@/types/prisma"
 import {
   Box,
@@ -26,7 +26,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { fr } from "date-fns/locale"
-import { searchChemicals, findByCAS, findByName, type ChemicalCompound } from "@/lib/chemicals-database"
 
 interface ConfigurableOption {
   id: string;
@@ -64,7 +63,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
     formula: chemical?.formula || "",
     casNumber: chemical?.casNumber || "",
     quantity: chemical?.quantity || 0,
-    unit: chemical?.unit || "G",
+    unit: chemical?.unit || "g",
     minQuantity: chemical?.minQuantity || 0,
     purchaseDate: chemical?.purchaseDate ? new Date(chemical.purchaseDate) : null,
     expirationDate: chemical?.expirationDate ? new Date(chemical.expirationDate) : null,
@@ -84,20 +83,22 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
   
   // États pour l'auto-complétion
-  const [nameOptions, setNameOptions] = useState<ChemicalCompound[]>([])
-  const [casOptions, setCasOptions] = useState<ChemicalCompound[]>([])
+  const [nameOptions, setNameOptions] = useState<any[]>([])
+  const [casOptions, setCasOptions] = useState<any[]>([])
   const [isLoadingName, setIsLoadingName] = useState(false)
   const [isLoadingCas, setIsLoadingCas] = useState(false)
   const [existingChemicals, setExistingChemicals] = useState<Chemical[]>([])
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  const [rooms, setRooms] = useState<any[]>([])
 
   // Charger les données preset et existantes
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [presetsRes, chemicalsRes] = await Promise.all([
+        const [presetsRes, chemicalsRes, roomsRes] = await Promise.all([
           fetch('/api/preset-chemicals'),
-          fetch('/api/chemicals')
+          fetch('/api/chemicals'),
+          fetch('/api/salles?includeLocations=true')
         ])
 
         if (presetsRes.ok) {
@@ -108,6 +109,11 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
         if (chemicalsRes.ok) {
           const chemicals = await chemicalsRes.json()
           setExistingChemicals(Array.isArray(chemicals.chemicals) ? chemicals.chemicals : chemicals || [])
+        }
+
+        if (roomsRes.ok) {
+          const roomsData = await roomsRes.json()
+          setRooms(roomsData.rooms || [])
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error)
@@ -191,32 +197,57 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
   // Fonction de recherche pour les noms
   const handleNameSearch = async (inputValue: string) => {
     if (!inputValue || inputValue.length < 1) {
-      setNameOptions([])
-      return
+      setNameOptions([]);
+      return;
     }
-    
-    setIsLoadingName(true)
+
+    setIsLoadingName(true);
     try {
-      const results = searchChemicals(inputValue)
-      setNameOptions(results)
+      const response = await fetch(`/api/preset-chemicals?query=${encodeURIComponent(inputValue)}&type=name`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des données depuis l\'API');
+      }
+      const results = await response.json();
+
+      // Flatten the results grouped by categories for the autocomplete
+      const flattenedResults = results.flatMap((category: any) =>
+        category.presetChemicals.map((chemical: any) => ({
+          ...chemical,
+          categoryName: category.name
+        }))
+      );
+
+      console.log("Résultats de la recherche par nom (aplaties):", flattenedResults);
+      setNameOptions(flattenedResults);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error)
+      console.error('Erreur lors de la recherche:', error);
     } finally {
-      setIsLoadingName(false)
+      setIsLoadingName(false);
     }
   }
 
-  // Fonction de recherche pour les numéros CAS
+  // Fonction de recherche pour les numéros CAS (structure groupée)
   const handleCasSearch = async (inputValue: string) => {
     if (!inputValue || inputValue.length < 1) {
       setCasOptions([])
       return
     }
-    
     setIsLoadingCas(true)
     try {
-      const results = searchChemicals(inputValue)
-      setCasOptions(results)
+      const response = await fetch(`/api/preset-chemicals?query=${encodeURIComponent(inputValue)}&type=cas`);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des données depuis l\'API');
+      }
+      const results = await response.json();
+      // Flatten the results grouped by categories for the autocomplete
+      const flattenedResults = results.flatMap((category: any) =>
+        category.presetChemicals.map((chemical: any) => ({
+          ...chemical,
+          categoryName: category.name
+        }))
+      );
+      setCasOptions(flattenedResults);
+      console.log("Résultats de la recherche par CAS (aplaties):", flattenedResults);
     } catch (error) {
       console.error('Erreur lors de la recherche:', error)
     } finally {
@@ -225,7 +256,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
   }
 
   // Auto-complétion quand on sélectionne un composé par le nom
-  const handleNameSelection = (compound: ChemicalCompound | null) => {
+  const handleNameSelection = (compound: any | null) => {
     if (compound) {
       setFormData(prev => ({
         ...prev,
@@ -240,7 +271,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
   }
 
   // Auto-complétion quand on sélectionne un composé par le CAS
-  const handleCasSelection = (compound: ChemicalCompound | null) => {
+  const handleCasSelection = (compound: any | null) => {
     if (compound) {
       setFormData(prev => ({
         ...prev,
@@ -297,18 +328,29 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
                 renderOption={(props, option) => {
                   const { key, ...otherProps } = props;
                   return (
-                    <Box component="li" key={key} {...otherProps}>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {option.name}
-                        </Typography>
-                        {option.formula && (
-                          <Typography variant="caption" color="text.secondary">
-                            {option.formula} {option.casNumber && `• CAS: ${option.casNumber}`}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
+                    <Paper key={key} component="li" {...otherProps} sx={{ m: 0.5, p: 1 }}>
+                      <ListItemText
+                        primary={option.name}
+                        secondary={
+                          <>
+                            <Typography component="span" variant="caption" color="text.secondary" display="block">
+                              Formule: {option.formula} | CAS: {option.casNumber}
+                            </Typography>
+                            {option.category && option.category === 'RIEN' && (
+                              <Box component="span" display="inline-block" sx={{ mt: 0.5 }}>
+                                <Chip
+                                  label={option.category}
+                                  size="small"
+                                  component={"span"}
+                                  variant="outlined"
+                                  sx={{ height: 16 }}
+                                />
+                              </Box>
+                            )}
+                          </>
+                        }
+                      />
+                    </Paper>
                   );
                 }}
                 sx={{ mb: 2 }}
@@ -332,6 +374,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
           <Autocomplete
             freeSolo
             options={nameOptions}
+            groupBy={(option) => option.category || ''}
             getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
             value={formData.name}
             onInputChange={(_, newInputValue) => {
@@ -349,49 +392,48 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
               }
             }}
             loading={isLoadingName}
+            loadingText="Chargement..."
             renderInput={(params) => (
               <TextField
-              {...params}
-              fullWidth
-              required
-              label="Nom du produit"
-              placeholder="Commencez à taper le nom..."
-              slotProps={{
-                input: {
-                endAdornment: (
-                  <>
-                  {isLoadingName && <CircularProgress color="inherit" size={20} />}
-                  {params.InputProps.endAdornment}
-                  </>
-                ),
-                },
-              }}
+                {...params}
+                fullWidth
+                required
+                label="Nom du produit"
+                placeholder="Commencez à taper le nom..."
+                autoComplete="off"
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {isLoadingName && <CircularProgress color="inherit" size={20} />}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  },
+                }}
               />
+            )}
+            renderGroup={(params) => (
+              <li key={params.key}>
+                <Typography variant="overline" color="primary" sx={{ pl: 2 }}>
+                  {params.group}
+                </Typography>
+                <ul style={{ margin: 0, padding: 0 }}>{params.children}</ul>
+              </li>
             )}
             renderOption={(props, option) => {
               const { key, ...otherProps } = props;
               return (
-                <Paper component="li" key={key} {...otherProps} sx={{ m: 0.5, p: 1 }}>
-                  <ListItem alignItems="flex-start" disablePadding>
-                    <ListItemText
-                      primary={option.name}
-                      secondary={
-                        <Stack spacing={0.5}>
-                          <Typography variant="caption" color="text.secondary">
-                            Formule: {option.formula} | CAS: {option.casNumber}
-                          </Typography>
-                          {option.category && (
-                            <Chip
-                              label={option.category}
-                              size="small"
-                              variant="outlined"
-                              sx={{ height: 16 }}
-                            />
-                          )}
-                        </Stack>
-                      }
-                    />
-                  </ListItem>
+                <Paper key={key} component="li" {...otherProps} sx={{ m: 0.5, p: 1 }}>
+                  <ListItemText
+                    primary={option.name}
+                    secondary={
+                      <Typography component="span" variant="caption" color="text.secondary" display="block">
+                        Formule: {option.formula} | CAS: {option.casNumber}
+                      </Typography>
+                    }
+                  />
                 </Paper>
               )
             }}
@@ -414,61 +456,67 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
             <Autocomplete
               freeSolo
               options={casOptions}
+              groupBy={(option) => option.categoryName || ''}
               getOptionLabel={(option) => typeof option === 'string' ? option : option.casNumber}
               value={formData.casNumber}
               onInputChange={(_, newInputValue) => {
-                handleChange("casNumber")(newInputValue)
-                handleCasSearch(newInputValue)
-                checkDuplicates(formData.name, newInputValue, formData.formula)
+                if (newInputValue !== null) {
+                  handleChange("casNumber")(newInputValue)
+                  handleCasSearch(newInputValue)
+                  checkDuplicates(formData.name, newInputValue, formData.formula)
+                }
               }}
               onChange={(_, newValue) => {
-                if (typeof newValue === 'object' && newValue) {
+                if (typeof newValue === 'object' && newValue && newValue.casNumber) {
                   handleCasSelection(newValue)
+                } else if (typeof newValue === 'string') {
+                  handleChange("casNumber")(newValue)
                 }
               }}
               loading={isLoadingCas}
+              loadingText="Chargement..."
               renderInput={(params) => (
                 <TextField
                   {...params}
                   fullWidth
                   label="Numéro CAS"
                   placeholder="7664-93-9"
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {isLoadingCas && <CircularProgress color="inherit" size={20} />}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
+                  autoComplete="off"
+                  slotProps={{
+                    input: {
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {isLoadingCas && <CircularProgress color="inherit" size={20} />}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    },
                   }}
                 />
+              )}
+              renderGroup={(params) => (
+                <li key={params.key}>
+                  <Typography variant="overline" color="primary" sx={{ pl: 2 }}>
+                    {params.group}
+                  </Typography>
+                  <ul style={{ margin: 0, padding: 0 }}>{params.children}</ul>
+                </li>
               )}
               renderOption={(props, option) => {
                 const { key, ...otherProps } = props;
                 return (
-                  <Paper component="li" key={key} {...otherProps} sx={{ m: 0.5, p: 1 }}>
-                    <ListItem disablePadding>
-                      <ListItemText
-                        primary={
-                          <Typography variant="body2" fontWeight="medium">
-                            {option.casNumber}
-                          </Typography>
-                        }
-                        secondary={
-                          <Box component="span" sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Typography component="span" variant="caption" color="primary">
-                              {option.name}
-                            </Typography>
-                            <Typography component="span" variant="caption" color="text.secondary">
-                              {option.formula}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
+                  <Paper key={key} component="li" {...otherProps} sx={{ m: 0.5, p: 1 }}>
+                    <ListItemText
+                      primary={option.casNumber}
+                      secondary={
+                        <Typography component="span" variant="caption" color="text.secondary" display="block">
+                          {option.name} | {option.formula}
+                        </Typography>
+                      }
+                    />
                   </Paper>
-                );
+                )
               }}
               noOptionsText="Aucun composé trouvé"
               sx={{ minWidth: 200 }}
@@ -491,12 +539,12 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
                 label="Unité"
                 onChange={(e) => handleChange("unit")(e.target.value)}
               >
-                <MenuItem value="G">grammes (g)</MenuItem>
-                <MenuItem value="KG">kilogrammes (kg)</MenuItem>
-                <MenuItem value="ML">millilitres (ml)</MenuItem>
-                <MenuItem value="L">litres (L)</MenuItem>
-                <MenuItem value="MOL">moles (mol)</MenuItem>
-                <MenuItem value="PIECE">pièces</MenuItem>
+                <MenuItem value="g">grammes (g)</MenuItem>
+                <MenuItem value="kg">kilogrammes (kg)</MenuItem>
+                <MenuItem value="mL">millilitres (ml)</MenuItem>
+                <MenuItem value="L">litres (l)</MenuItem>
+                <MenuItem value="mol">moles (mol)</MenuItem>
+                <MenuItem value="pièce">pièces</MenuItem>
               </Select>
             </FormControl>
             <TextField
@@ -513,13 +561,37 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
               label="Date d'achat"
               value={formData.purchaseDate}
               onChange={(date) => handleChange("purchaseDate")(date)}
-              slotProps={{ textField: { fullWidth: true } }}
+              openTo="day"
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  onClick: (e) => {
+                    // Force l'ouverture du calendrier
+                    e.currentTarget.focus();
+                  }
+                },
+                popper: {
+                  placement: "bottom-start"
+                }
+              }}
             />
             <DatePicker
               label="Date d'expiration"
               value={formData.expirationDate}
               onChange={(date) => handleChange("expirationDate")(date)}
-              slotProps={{ textField: { fullWidth: true } }}
+              openTo="day"
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  onClick: (e) => {
+                    // Force l'ouverture du calendrier
+                    e.currentTarget.focus();
+                  }
+                },
+                popper: {
+                  placement: "bottom-start"
+                }
+              }}
             />
           </Stack>
 
@@ -530,12 +602,54 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
               value={formData.supplier}
               onChange={(e) => handleChange("supplier")(e.target.value)}
             />
-            <TextField
+            <Autocomplete
               fullWidth
-              label="Localisation"
-              value={formData.location}
-              onChange={(e) => handleChange("location")(e.target.value)}
-              placeholder="Armoire A, Étagère 2"
+              options={rooms.flatMap(room => 
+                room.locations?.length 
+                  ? room.locations.map((location: any) => ({
+                      label: location.name,
+                      room: room.name,
+                      location: location.name,
+                      groupLabel: room.name
+                    }))
+                  : [{ label: room.name, room: room.name, location: '', groupLabel: room.name }]
+              )}
+              groupBy={(option: any) => option.groupLabel}
+              getOptionLabel={(option: any) => option.location ? option.location : option.room}
+              value={formData.room && formData.location 
+                ? { label: formData.location, room: formData.room, location: formData.location, groupLabel: formData.room }
+                : formData.room 
+                  ? { label: formData.room, room: formData.room, location: '', groupLabel: formData.room }
+                  : null
+              }
+              onChange={(_, newValue: any) => {
+                if (newValue) {
+                  handleChange("room")(newValue.room)
+                  handleChange("location")(newValue.location)
+                } else {
+                  handleChange("room")('')
+                  handleChange("location")('')
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Localisation"
+                  placeholder="Sélectionner une salle et localisation"
+                />
+              )}
+              renderOption={(props, option: any) => {
+                const { key, ...otherProps } = props;
+                return (
+                  <Box component="li" key={key} {...otherProps}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Typography variant="body2">
+                        {option.location || option.room}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                )
+              }}
             />
           </Stack>
 

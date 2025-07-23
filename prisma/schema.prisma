@@ -371,13 +371,13 @@ enum Role {
 }
 
 enum Unit {
-  ML
+  mL
   L
-  G
-  KG
-  MG
-  MOL
-  PIECE
+  g
+  kg
+  mg
+  mol
+  piece
 }
 
 enum ChemicalStatus {
