@@ -5,7 +5,14 @@ import {
   Container, Typography, Box, Button, Stack,
   TextField, FormControl, InputLabel, Select, MenuItem, Dialog, DialogTitle,
   DialogContent, DialogActions, Fab, Tab, Tabs,
-  Card, CardContent, Chip, Paper, Grid, Avatar, Divider
+  Card, CardContent, Chip, Paper, Grid, Avatar, Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton
 } from "@mui/material"
 import { 
   Add, Inventory, Settings, Edit, Delete, Save, Category, CheckCircle, Warning
@@ -464,166 +471,299 @@ export default function EquipmentPage() {
                   onViewModeChange={handleViewModeChange}
                 />
               </Box>
-              
+
               {(() => {
                 const allItems = equipmentData.getAllEquipmentTypes().find((t: EquipmentType) => t.id === dialogs.selectedManagementCategory)?.items || []
                 const presetItems = allItems.filter((item: EquipmentItem) => !item.isCustom)
                 const customItems = allItems.filter((item: EquipmentItem) => item.isCustom)
-                
+
                 return (
                   <>
-                    {/* Équipements preset */}
-                    {presetItems.length > 0 && (
+                    {viewMode === 'cards' ? (
+                      // Vue en cartes (existante)
                       <>
-                        <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                          📦 Équipements standard
-                        </Typography>
-                        <Grid container spacing={2} sx={{ mb: 3 }}>
+                        {/* Équipements preset */}
+                        {presetItems.length > 0 && (
+                    <>
+                      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                        📦 Équipements standard
+                      </Typography>
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        {presetItems.map((item: EquipmentItem, index: number) => (
+                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Card 
+                              sx={{ 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                '&:hover': { 
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 4 
+                                }
+                              }}
+                              onClick={() => {
+                                dialogs.setSelectedManagementItem(item)
+                                dialogs.setEditingItemData({
+                                  name: item.name,
+                                  volumes: [...item.volumes],
+                                  newVolume: '',
+                                  targetCategory: dialogs.selectedManagementCategory
+                                })
+                                dialogs.setEditItemDialog(true)
+                              }}
+                            >
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                  <Avatar src={item.svg} sx={{ width: 48, height: 48 }} />
+                                  <Typography variant="h6">{item.name}</Typography>
+                                </Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  {item.volumes?.length || 0} volumes disponibles
+                                </Typography>
+                                {item.volumes?.length > 0 && (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                    {item.volumes.slice(0, 3).map((volume, vIndex) => (
+                                      <Chip 
+                                        key={vIndex} 
+                                        label={volume} 
+                                        size="small" 
+                                        variant="outlined" 
+                                      />
+                                    ))}
+                                    {item.volumes.length > 3 && (
+                                      <Chip 
+                                        label={`+${item.volumes.length - 3}`} 
+                                        size="small" 
+                                        variant="outlined" 
+                                      />
+                                    )}
+                                  </Box>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </>
+                  )}
+                  
+                  {/* Divider si on a les deux types */}
+                  {presetItems.length > 0 && customItems.length > 0 && (
+                    <Divider sx={{ my: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Équipements personnalisés
+                      </Typography>
+                    </Divider>
+                  )}
+                  
+                  {/* Équipements personnalisés */}
+                  {customItems.length > 0 && (
+                    <>
+                      <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
+                        🔧 Équipements personnalisés
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {customItems.map((item: EquipmentItem, index: number) => (
+                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Card 
+                              sx={{ 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                bgcolor: 'action.hover',
+                                '&:hover': { 
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 4 
+                                }
+                              }}
+                              onClick={() => {
+                                dialogs.setSelectedManagementItem(item)
+                                dialogs.setEditingItemData({
+                                  name: item.name,
+                                  volumes: [...item.volumes],
+                                  newVolume: '',
+                                  targetCategory: dialogs.selectedManagementCategory
+                                })
+                                dialogs.setEditItemDialog(true)
+                              }}
+                            >
+                              <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                  <Avatar 
+                                    src={item.svg} 
+                                    sx={{ 
+                                      width: 48, 
+                                      height: 48,
+                                      bgcolor: 'secondary.light',
+                                      color: 'secondary.contrastText'
+                                    }} 
+                                  />
+                                  <Typography variant="h6" sx={{ fontStyle: 'italic' }}>
+                                    {item.name}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  {item.volumes?.length || 0} volumes disponibles
+                                </Typography>
+                                {item.volumes?.length > 0 && (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                                    {item.volumes.slice(0, 3).map((volume, vIndex) => (
+                                      <Chip 
+                                        key={vIndex} 
+                                        label={volume} 
+                                        size="small" 
+                                        variant="outlined" 
+                                        color="secondary"
+                                      />
+                                    ))}
+                                    {item.volumes.length > 3 && (
+                                      <Chip 
+                                        label={`+${item.volumes.length - 3}`} 
+                                        size="small" 
+                                        variant="outlined" 
+                                        color="secondary"
+                                      />
+                                    )}
+                                  </Box>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </>
+                  )}
+                </>
+              ) : (
+                // Vue en liste
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Nom</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Volumes disponibles</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {/* Équipements standard */}
+                      {presetItems.length > 0 && (
+                        <>
+                          <TableRow>
+                            <TableCell colSpan={4} sx={{ bgcolor: 'grey.100', fontWeight: 'bold' }}>
+                              <Typography variant="subtitle1" color="primary">
+                                📦 Équipements standard ({presetItems.length})
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
                           {presetItems.map((item: EquipmentItem, index: number) => (
-                            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                              <Card 
-                                sx={{ 
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s',
-                                  '&:hover': { 
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: 4 
-                                  }
-                                }}
-                                onClick={() => {
-                                  dialogs.setSelectedManagementItem(item)
-                                  dialogs.setEditingItemData({
-                                    name: item.name,
-                                    volumes: [...item.volumes],
-                                    newVolume: '',
-                                    targetCategory: dialogs.selectedManagementCategory
-                                  })
-                                  dialogs.setEditItemDialog(true)
-                                }}
-                              >
-                                <CardContent>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                    <Avatar src={item.svg} sx={{ width: 48, height: 48 }} />
-                                    <Typography variant="h6">{item.name}</Typography>
-                                  </Box>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {item.volumes?.length || 0} volumes disponibles
-                                  </Typography>
-                                  {item.volumes?.length > 0 && (
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                                      {item.volumes.slice(0, 3).map((volume, vIndex) => (
-                                        <Chip 
-                                          key={vIndex} 
-                                          label={volume} 
-                                          size="small" 
-                                          variant="outlined" 
-                                        />
-                                      ))}
-                                      {item.volumes.length > 3 && (
-                                        <Chip 
-                                          label={`+${item.volumes.length - 3}`} 
-                                          size="small" 
-                                          variant="outlined" 
-                                        />
-                                      )}
-                                    </Box>
+                            <TableRow 
+                              key={index} 
+                              hover
+                              sx={{ cursor: 'pointer' }}
+                              onClick={() => {
+                                dialogs.setSelectedManagementItem(item)
+                                dialogs.setEditingItemData({
+                                  name: item.name,
+                                  volumes: [...item.volumes],
+                                  newVolume: '',
+                                  targetCategory: dialogs.selectedManagementCategory
+                                })
+                                dialogs.setEditItemDialog(true)
+                              }}
+                            >
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Avatar src={item.svg} sx={{ width: 32, height: 32 }} />
+                                  {item.name}
+                                </Box>
+                              </TableCell>
+                              <TableCell>Standard</TableCell>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {item.volumes?.slice(0, 3).map((volume, vIndex) => (
+                                    <Chip key={vIndex} label={volume} size="small" />
+                                  ))}
+                                  {item.volumes?.length > 3 && (
+                                    <Chip label={`+${item.volumes.length - 3}`} size="small" />
                                   )}
-                                </CardContent>
-                              </Card>
-                            </Grid>
+                                </Box>
+                              </TableCell>
+                              <TableCell align="right">
+                                <IconButton size="small" onClick={(e) => e.stopPropagation()}>
+                                  <Edit />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </Grid>
-                      </>
-                    )}
-                    
-                    {/* Divider si on a les deux types */}
-                    {presetItems.length > 0 && customItems.length > 0 && (
-                      <Divider sx={{ my: 3 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Équipements personnalisés
-                        </Typography>
-                      </Divider>
-                    )}
-                    
-                    {/* Équipements personnalisés */}
-                    {customItems.length > 0 && (
-                      <>
-                        <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
-                          🔧 Équipements personnalisés
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {customItems.map((item: EquipmentItem, index: number) => (
-                            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                              <Card 
-                                sx={{ 
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s',
-                                  bgcolor: 'action.hover',
-                                  '&:hover': { 
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: 4 
-                                  }
-                                }}
-                                onClick={() => {
-                                  dialogs.setSelectedManagementItem(item)
-                                  dialogs.setEditingItemData({
-                                    name: item.name,
-                                    volumes: [...item.volumes],
-                                    newVolume: '',
-                                    targetCategory: dialogs.selectedManagementCategory
-                                  })
-                                  dialogs.setEditItemDialog(true)
-                                }}
-                              >
-                                <CardContent>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                    <Avatar 
-                                      src={item.svg} 
-                                      sx={{ 
-                                        width: 48, 
-                                        height: 48,
-                                        bgcolor: 'secondary.light',
-                                        color: 'secondary.contrastText'
-                                      }} 
-                                    />
-                                    <Typography variant="h6" sx={{ fontStyle: 'italic' }}>
-                                      {item.name}
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {item.volumes?.length || 0} volumes disponibles
-                                  </Typography>
-                                  {item.volumes?.length > 0 && (
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                                      {item.volumes.slice(0, 3).map((volume, vIndex) => (
-                                        <Chip 
-                                          key={vIndex} 
-                                          label={volume} 
-                                          size="small" 
-                                          variant="outlined" 
-                                          color="secondary"
-                                        />
-                                      ))}
-                                      {item.volumes.length > 3 && (
-                                        <Chip 
-                                          label={`+${item.volumes.length - 3}`} 
-                                          size="small" 
-                                          variant="outlined" 
-                                          color="secondary"
-                                        />
-                                      )}
-                                    </Box>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Grid>
+                        </>
+                      )}
+              
+              {/* Équipements personnalisés */}
+              {customItems.length > 0 && (
+                <>
+                  <TableRow>
+                    <TableCell colSpan={4} sx={{ bgcolor: 'grey.100', fontWeight: 'bold' }}>
+                      <Typography variant="subtitle1" color="secondary">
+                        🔧 Équipements personnalisés ({customItems.length})
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                  {customItems.map((item: EquipmentItem, index: number) => (
+                    <TableRow 
+                      key={index} 
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        dialogs.setSelectedManagementItem(item)
+                        dialogs.setEditingItemData({
+                          name: item.name,
+                          volumes: [...item.volumes],
+                          newVolume: '',
+                          targetCategory: dialogs.selectedManagementCategory
+                        })
+                        dialogs.setEditItemDialog(true)
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar 
+                            src={item.svg} 
+                            sx={{ 
+                              width: 32, 
+                              height: 32,
+                              bgcolor: 'secondary.light'
+                            }} 
+                          />
+                          <Typography sx={{ fontStyle: 'italic' }}>{item.name}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>Personnalisé</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {item.volumes?.slice(0, 3).map((volume, vIndex) => (
+                            <Chip key={vIndex} label={volume} size="small" color="secondary" />
                           ))}
-                        </Grid>
-                      </>
-                    )}
-                  </>
-                )
-              })()}
+                          {item.volumes?.length > 3 && (
+                            <Chip label={`+${item.volumes.length - 3}`} size="small" color="secondary" />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" onClick={(e) => e.stopPropagation()}>
+                          <Edit />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </>
+  )
+})()}
             </Box>
           )}
         </Paper>

@@ -1,0 +1,89 @@
+{
+  "predefinedClasses": [
+    {
+      "id": "CLASS_PRE_001",
+      "name": "1ère ES",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_002",
+      "name": "Terminale ES",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_003",
+      "name": "1ère STI2D",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_004",
+      "name": "Terminale STI2D",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_005",
+      "name": "201",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_006",
+      "name": "202",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_007",
+      "name": "203",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_008",
+      "name": "204",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_009",
+      "name": "205",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_010",
+      "name": "206",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_011",
+      "name": "207",
+      "type": "predefined",
+      "createdAt": "2025-01-01T00:00:00Z",
+      "createdBy": "SYSTEM"
+    },
+    {
+      "id": "CLASS_PRE_1753349540872",
+      "name": "TEST SYST",
+      "type": "predefined",
+      "createdAt": "2025-07-24T09:32:20.872Z",
+      "createdBy": "USER_001"
+    }
+  ],
+  "customClasses": []
+}

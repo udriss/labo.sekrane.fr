@@ -2,27 +2,75 @@
   "users": [
     {
       "id": "USER_001",
-      "email": "admin@labo.sekrane.fr",
+      "email": "admin@labo.fr",
+      "password": "$2b$12$w5lQjiA9imZCBq09e537JuoJwFh5Fi6QSKTJ1CF1FFHv.WtHQPZY.",
       "name": "Administrateur",
       "role": "ADMIN",
       "isActive": true,
-      "createdAt": "2025-01-01T00:00:00Z"
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-07-24T08:21:01.060Z",
+      "siteConfig": {
+        "materialsViewMode": "list",
+        "chemicalsViewMode": "list",
+        "theme": "light",
+        "language": "fr",
+        "notifications": {
+          "email": true,
+          "push": false
+        },
+        "dashboard": {
+          "defaultView": "overview",
+          "widgetsOrder": [
+            "stats",
+            "recent",
+            "calendar"
+          ]
+        },
+        "lastUpdated": "2025-07-24T11:03:18.087Z"
+      },
+      "associatedClasses": [
+        "1ère ES",
+        "Terminale ES"
+      ]
     },
     {
       "id": "USER_002",
-      "email": "teacher@labo.sekrane.fr", 
+      "email": "teacher@labo.fr",
+      "password": "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYpfQYGFRY1xUl.",
       "name": "Professeur Martin",
       "role": "TEACHER",
       "isActive": true,
-      "createdAt": "2025-01-01T00:00:00Z"
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-07-24T09:05:03.295Z",
+      "siteConfig": {
+        "materialsViewMode": "list",
+        "chemicalsViewMode": "cards"
+      },
+      "associatedClasses": [
+        "1ère ES",
+        "Terminale ES"
+      ],
+      "customClasses": [
+        "Mine"
+      ]
     },
     {
       "id": "USER_003",
-      "email": "student@labo.sekrane.fr",
+      "email": "student@labo.fr",
+      "password": "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYpfQYGFRY1xUl.",
       "name": "Étudiant Dupont",
-      "role": "STUDENT", 
+      "role": "STUDENT",
       "isActive": true,
-      "createdAt": "2025-01-10T00:00:00Z"
+      "createdAt": "2025-01-10T00:00:00Z",
+      "updatedAt": "2025-07-24T08:21:14.250Z",
+      "siteConfig": {
+        "materialsViewMode": "cards",
+        "chemicalsViewMode": "cards"
+      },
+      "associatedClasses": [
+        "Terminale STI2D",
+        "201"
+      ]
     }
   ]
 }

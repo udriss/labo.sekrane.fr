@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+// Force dynamic rendering pour éviter les erreurs de pré-génération
+export const dynamic = 'force-dynamic';
 import {
   Container,
   Typography,
@@ -44,7 +46,7 @@ import {
   Class,
 } from "@mui/icons-material";
 import { useSession } from "next-auth/react";
-import { useClasses } from "@/lib/hooks/useClasses";
+import { useClasses } from '@/lib/hooks/useClasses';
 
 // Enum Role défini localement
 enum Role {
@@ -52,6 +54,9 @@ enum Role {
   TEACHER = "TEACHER",
   STUDENT = "STUDENT"
 }
+
+// Classes prédéfinies
+const { predefinedClasses, loading: classesLoading } = useClasses();
 
 interface User {
   id: string;
@@ -74,8 +79,6 @@ interface UserFormData {
 
 export default function UsersPage() {
   const { data: session } = useSession();
-  const { predefinedClasses, loading: classesLoading } = useClasses();
-  
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -664,7 +667,7 @@ export default function UsersPage() {
                                   Classes prédéfinies
                                 </Typography>
                               </MenuItem>
-                              {predefinedClasses.map((className: string) => (
+                              {predefinedClasses.map((className) => (
                                 <MenuItem key={className} value={className}>
                                   {className}
                                 </MenuItem>
