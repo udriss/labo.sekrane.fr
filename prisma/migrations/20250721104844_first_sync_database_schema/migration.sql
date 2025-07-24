@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'TEACHER', 'STUDENT');
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'TEACHER', 'ADMINLABO', 'LABORANTIN', 'STUDENT');
 
 -- CreateEnum
 CREATE TYPE "Unit" AS ENUM ('mL', 'L', 'g', 'kg', 'MG', 'MOL', 'PIECE');

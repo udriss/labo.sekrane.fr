@@ -45,12 +45,15 @@ import {
 } from "@mui/icons-material";
 import { useSession } from "next-auth/react";
 import { useClasses } from "@/lib/hooks/useClasses";
+import { ca } from "date-fns/locale";
 
 // Enum Role défini localement
 enum Role {
   ADMIN = "ADMIN",
+  ADMINLABO = "ADMINLABO",
   TEACHER = "TEACHER",
-  STUDENT = "STUDENT"
+  STUDENT = "STUDENT",
+  LABORANTIN = "LABORANTIN"
 }
 
 interface User {
@@ -172,8 +175,12 @@ export default function UsersPage() {
         return "error";
       case Role.TEACHER:
         return "primary";
+      case Role.LABORANTIN:
+        return "secondary";
       case Role.STUDENT:
         return "success";
+      case Role.ADMINLABO:
+        return "warning";
       default:
         return "default";
     }
@@ -183,8 +190,12 @@ export default function UsersPage() {
     switch (role) {
       case Role.ADMIN:
         return "Administrateur";
+      case Role.ADMINLABO:
+        return "Administrateur de Laboratoire";
       case Role.TEACHER:
         return "Enseignant";
+      case Role.LABORANTIN:
+        return "Laborantin";
       case Role.STUDENT:
         return "Étudiant";
       default:
@@ -878,7 +889,9 @@ export default function UsersPage() {
                 onChange={(e) => setFormData({...formData, role: e.target.value as Role})}
               >
                 <MenuItem value={Role.ADMIN}>Administrateur</MenuItem>
+                <MenuItem value={Role.ADMINLABO}>Administrateur de Laboratoire</MenuItem>
                 <MenuItem value={Role.TEACHER}>Enseignant</MenuItem>
+                <MenuItem value={Role.LABORANTIN}>Laborantin</MenuItem>
                 <MenuItem value={Role.STUDENT}>Étudiant</MenuItem>
               </TextField>
               

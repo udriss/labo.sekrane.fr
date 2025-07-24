@@ -598,7 +598,9 @@ useEffect(() => {
                       </Typography>
                       <Typography variant="caption" sx={{ opacity: 0.8 }}>
                         {(session?.user as any)?.role === 'ADMIN' ? 'Administrateur' : 
-                         (session?.user as any)?.role === 'TEACHER' ? 'Enseignant' : 'Utilisateur'}
+                         (session?.user as any)?.role === 'TEACHER' ? 'Enseignant' : 
+                         (session?.user as any)?.role === 'ADMINLABO' ? 'Administrateur de Laboratoire' : 
+                         (session?.user as any)?.role === 'LABORANTIN' ? 'Laborantin' : 'Utilisateur'}
                       </Typography>
                     </Box>
                   }

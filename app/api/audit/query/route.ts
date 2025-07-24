@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
 
     // Check if user has admin privileges
     const userRole = (session.user as any).role;
-    if (userRole !== 'ADMIN' && userRole !== 'TEACHER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TEACHER' && 
+        userRole !== 'ADMINLABO' && userRole !== 'LABORANTIN') {
       return NextResponse.json({ error: 'Privilèges insuffisants' }, { status: 403 });
     }
 

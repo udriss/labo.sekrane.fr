@@ -367,6 +367,8 @@ model TpPresetMaterial {
 enum Role {
   ADMIN
   TEACHER
+  ADMINLABO
+  LABORANTIN
   STUDENT
 }
 

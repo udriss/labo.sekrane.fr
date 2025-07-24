@@ -14,10 +14,13 @@ import { fr } from 'date-fns/locale';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // Composants de layout (à créer)
-// import { NavbarLIMS } from '@/components/layout/NavbarLIMS';
-// import { SidebarLIMS } from '@/components/layout/SidebarLIMS';
-// import { FooterLIMS } from '@/components/layout/FooterLIMS';
-// import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
+import { NavbarLIMS } from '@/components/layout/NavbarLIMS';
+import { SidebarLIMS } from '@/components/layout/SidebarLIMS';
+import { FooterLIMS } from '@/components/layout/FooterLIMS';
+import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
+
+
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -297,7 +300,8 @@ export default function RootLayout({
                           flexDirection: 'column',
                           minHeight: '100vh',
                           transition: 'margin-left 0.3s ease',
-                          marginLeft: appSettings.sidebarCollapsed ? '64px' : '240px',
+                          // marginLeft: appSettings.sidebarCollapsed ? '64px' : '240px',
+                          margin: '0 auto',
                         }}
                       >
                         {/* Navbar - À décommenter quand le composant sera créé */}

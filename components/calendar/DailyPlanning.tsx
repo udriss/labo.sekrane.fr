@@ -1,3 +1,5 @@
+// components/calendar/DailyPlanning.tsx
+
 "use client"
 
 import React from 'react'
@@ -8,47 +10,38 @@ import {
 import { format, isSameDay } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Science, Schedule, Assignment, EventAvailable } from '@mui/icons-material'
-import { CalendarType as EventType } from "@/types/prisma"
-
-interface CalendarEvent {
-  id: string
-  title: string
-  description?: string | null
-  startDate: Date
-  endDate: Date
-  type: EventType
-  class?: string | null
-  room?: string | null
-  notebookId?: string | null
-  instructor?: string
-  students?: string[]
-}
+import { CalendarEvent, EventType } from '@/types/calendar'
 
 interface DailyPlanningProps {
   events: CalendarEvent[]
   onEventClick: (event: CalendarEvent) => void
 }
 
+// Définition corrigée de EVENT_TYPES
 const EVENT_TYPES = {
-  [EventType.TP]: { label: "Travaux Pratiques", color: "#1976d2", icon: <Science /> },
-  [EventType.MAINTENANCE]: { label: "Maintenance", color: "#f57c00", icon: <Schedule /> },
-  [EventType.INVENTORY]: { label: "Inventaire", color: "#388e3c", icon: <Assignment /> },
-  [EventType.OTHER]: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
+  TP: { label: "Travaux Pratiques", color: "#1976d2", icon: <Science /> },
+  MAINTENANCE: { label: "Maintenance", color: "#f57c00", icon: <Schedule /> },
+  INVENTORY: { label: "Inventaire", color: "#388e3c", icon: <Assignment /> },
+  OTHER: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
 }
 
 const DailyPlanning: React.FC<DailyPlanningProps> = ({ events, onEventClick }) => {
   const getTodayEvents = () => {
-    return events.filter(event => 
-      isSameDay(event.startDate, new Date())
-    )
+    return events.filter(event => {
+      const eventDate = typeof event.startDate === 'string' 
+        ? new Date(event.startDate) 
+        : event.startDate
+      return isSameDay(eventDate, new Date())
+    })
   }
 
   const getEventTypeInfo = (type: EventType) => {
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
   }
 
-  const formatTime = (date: Date) => {
-    return format(date, "HH:mm", { locale: fr })
+  const formatTime = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return format(dateObj, "HH:mm", { locale: fr })
   }
 
   const todayEvents = getTodayEvents()
@@ -92,14 +85,24 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({ events, onEventClick }) =
                               📍 {event.room}
                             </Typography>
                           )}
-                          {event.instructor && (
-                            <Typography variant="body2">
-                              👨‍🏫 {event.instructor}
-                            </Typography>
-                          )}
                           {event.description && (
                             <Typography variant="body2" color="text.secondary">
                               {event.description}
+                            </Typography>
+                          )}
+                          {event.materials && event.materials.length > 0 && (
+                            <Typography variant="body2">
+                              🧪 {event.materials.length} matériel(s)
+                            </Typography>
+                          )}
+                          {event.chemicals && event.chemicals.length > 0 && (
+                            <Typography variant="body2">
+                              ⚗️ {event.chemicals.length} produit(s) chimique(s)
+                            </Typography>
+                          )}
+                          {event.fileName && (
+                            <Typography variant="body2">
+                              📎 Document joint: {event.fileName}
                             </Typography>
                           )}
                         </Stack>
@@ -109,9 +112,6 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({ events, onEventClick }) =
                   <CardActions>
                     <Button size="small" onClick={() => onEventClick(event)}>
                       Voir détails
-                    </Button>
-                    <Button size="small" color="primary">
-                      Modifier
                     </Button>
                   </CardActions>
                 </Card>

@@ -9,20 +9,6 @@ import { withAudit } from '@/lib/api/with-audit';
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
-// Classes prédéfinies
-const PREDEFINED_CLASSES = [
-  "1ère ES",
-  "Terminale ES",
-  "1ère STI2D",
-  "Terminale STI2D",
-  "201",
-  "202",
-  "203",
-  "204",
-  "205",
-  "206",
-  "207",
-];
 
 // Types
 interface UserData {
@@ -54,7 +40,7 @@ async function getPredefinedClasses(): Promise<string[]> {
     // Retourner les classes par défaut en cas d'erreur
     return [
       "1ère ES", "Terminale ES", "1ère STI2D", "Terminale STI2D",
-      "201", "202", "203", "204", "205", "206", "207"
+      "201", "202", "203", "204", "205", "206", "207", "FALLBACK_CLASS"
     ];
   }
 }

@@ -19,7 +19,7 @@ export default async function LogsPage() {
 
   // Vérifier les permissions - seuls les admins et enseignants peuvent voir tous les logs
   const userRole = (session.user as any).role;
-  const hasFullAccess = userRole === 'ADMIN' || userRole === 'TEACHER';
+  const hasFullAccess = userRole === 'ADMIN' || userRole === 'ADMINLABO';
 
   return (
     <div className="min-h-screen bg-gray-50">

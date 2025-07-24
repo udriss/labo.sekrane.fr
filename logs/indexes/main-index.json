@@ -10,6 +10,12 @@
     ],
     "EQUIPMENT": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ],
+    "USERS": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ],
+    "CALENDAR": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
     ]
   },
   "actions": {
@@ -17,6 +23,9 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
     ],
     "CREATE": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ],
+    "READ": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
     ]
   },

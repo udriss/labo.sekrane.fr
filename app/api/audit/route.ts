@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
 
     // Vérifier les permissions
     const userRole = (session.user as any).role;
-    if (userRole !== 'ADMIN' && userRole !== 'TEACHER') {
+    if (userRole !== 'ADMIN' && userRole !== 'TEACHER' &&
+        userRole !== 'ADMINLABO' && userRole !== 'LABORANTIN') {
       return NextResponse.json(
         { error: 'Privilèges insuffisants' },
         { status: 403 }

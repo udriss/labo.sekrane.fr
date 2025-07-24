@@ -3,21 +3,8 @@
 import React from 'react'
 import { Grid, Card, CardContent, Box, Avatar, Typography } from '@mui/material'
 import { CalendarMonth, Science, Schedule, Room } from '@mui/icons-material'
-import { CalendarType as EventType } from "@/types/prisma"
+import { CalendarEvent } from '@/types/calendar'
 
-interface CalendarEvent {
-  id: string
-  title: string
-  description?: string | null
-  startDate: Date
-  endDate: Date
-  type: EventType
-  class?: string | null
-  room?: string | null
-  notebookId?: string | null
-  instructor?: string
-  students?: string[]
-}
 
 interface CalendarStatsProps {
   events: CalendarEvent[]

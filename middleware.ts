@@ -58,7 +58,8 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    if (token.role !== 'ADMIN' && token.role !== 'TEACHER') {
+    if (token.role !== 'ADMIN' && token.role !== 'TEACHER' &&
+        token.role !== 'ADMINLABO' && token.role !== 'LABORANTIN') {
       return NextResponse.json(
         { error: 'Privilèges insuffisants' },
         { status: 403 }
