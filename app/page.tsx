@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState, useCallback } from 'react';
 import { 
   Container, Typography, Box, Card, CardContent, CardActions, Button,
   Grid, Avatar, Chip, Alert, Paper, Stack, IconButton, Badge,
   LinearProgress, List, ListItem, ListItemIcon, ListItemText,
   CircularProgress, Backdrop, Skeleton, Tooltip, Fade, Grow,
-  useTheme, alpha, Divider, ButtonBase
+  useTheme, alpha, Divider, ButtonBase,
+  Collapse,
 } from "@mui/material"
 import { 
   Science, Inventory, Assignment, CalendarMonth, ShoppingCart,
@@ -15,7 +16,14 @@ import {
   QrCodeScanner, Security, BookmarkBorder, Schedule,
   School, Room, Memory, NetworkPing, Construction,
   ArrowForward, CheckCircle, ErrorOutline, InfoOutlined,
-  AccessTime, Logout, MoreVert, Menu as MenuIcon
+  AccessTime, Logout, MoreVert, Menu as MenuIcon, 
+  Refresh,
+  ExpandMore,
+  ExpandLess,
+  Error as ErrorIcon,
+  Storage,
+  Speed,
+  People,
 } from "@mui/icons-material"
 import Link from "next/link"
 import Image from "next/image"
@@ -339,21 +347,42 @@ const DEVELOPMENT_MODULES: Module[] = [
   }
 ]
 
+
+
+interface SystemStats {
+  platform: string;
+  nodeVersion: string;
+  appVersion: string;
+  dbStatus: string;
+  dbResponseTime: number;
+  ram: string;
+  ramPercentage: number;
+  storage: string;
+  storagePercentage: number;
+  cpuModel: string;
+  cpuCores: number;
+  cpuLoad: number;
+  uptime: string;
+  activeUsers: number;
+  totalUsers: number;
+  health: {
+    database: boolean;
+    memory: boolean;
+    storage: boolean;
+    cpu: boolean;
+  };
+  lastUpdate: string;
+}
+
 export default function Home() {
   const { data: session } = useSession();
   const theme = useTheme();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [systemStats, setSystemStats] = useState({
-    dbStatus: 'Connectée',
-    ram: '2.3 GB / 8 GB',
-    ramPercentage: 29,
-    storage: '2.3 GB / 10 GB',
-    storagePercentage: 23,
-    ping: '12ms',
-    uptime: '7 jours 14h',
-    activeUsers: 12
-  });
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
+  const [loadingSystem, setLoadingSystem] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchStats = async () => {
     try {
@@ -371,19 +400,49 @@ export default function Home() {
     }
   };
 
-  const fetchSystemStats = async () => {
+  // Fonction pour charger les stats système
+const fetchSystemStats = useCallback(async () => {
+  try {
+    const response = await fetch('/api/system-status');
+    if (!response.ok) throw new Error('Erreur réseau');
+    const data = await response.json();
+    setSystemStats(data);
+  } catch (error) {
+    console.error('Erreur chargement stats système:', error);
+  } finally {
+    setLoadingSystem(false);
+  }
+}, []);
+
+// Ajouter dans useEffect
+useEffect(() => {
+  // Tracker l'activité de l'utilisateur actuel
+  const trackActivity = async () => {
     try {
-      // Simuler le chargement des statistiques système
-      const memoryUsage = process.memoryUsage ? process.memoryUsage() : null;
-      setSystemStats(prev => ({
-        ...prev,
-        ram: memoryUsage ? `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(1)} MB / ${(memoryUsage.heapTotal / 1024 / 1024).toFixed(1)} MB` : prev.ram,
-        ramPercentage: memoryUsage ? Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100) : prev.ramPercentage
-      }));
+      await fetch('/api/track-activity', { method: 'POST' });
     } catch (error) {
-      console.error("Erreur lors du chargement des statistiques système:", error);
+      console.error('Erreur tracking activité:', error);
     }
   };
+
+  // Tracker immédiatement
+  trackActivity();
+
+  // Puis toutes les 2 minutes
+  const activityInterval = setInterval(trackActivity, 2 * 60 * 1000);
+
+  return () => clearInterval(activityInterval);
+}, []);
+
+// Effect pour charger et rafraîchir les stats
+useEffect(() => {
+  fetchSystemStats();
+  
+  if (autoRefresh) {
+    const interval = setInterval(fetchSystemStats, 30000); // Toutes les 30 secondes
+    return () => clearInterval(interval);
+  }
+}, [fetchSystemStats, autoRefresh]);
 
   useEffect(() => {
     fetchStats();
@@ -858,45 +917,81 @@ export default function Home() {
                 </Paper>
               </div>
 
-              {/* État du système */}
-              <div>
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    État du système
+              {/* État du système amélioré */}
+              <Paper elevation={2} sx={{ p: 2 }}>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Typography variant="h6" display="flex" alignItems="center" gap={1}>
+                    <Speed /> État du système
                   </Typography>
-                  
-                  <Stack spacing={2.5}>
-                    <Box>
-                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Tooltip title={autoRefresh ? "Actualisation auto activée" : "Actualisation auto désactivée"}>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => setAutoRefresh(!autoRefresh)}
+                        color={autoRefresh ? "primary" : "default"}
+                      >
+                        <Refresh className={autoRefresh ? "spinning" : ""} />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton size="small" onClick={() => setExpanded(!expanded)}>
+                      {expanded ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
+                  </Box>
+                </Box>
+                
+                {loadingSystem ? (
+                  <Box display="flex" justifyContent="center" p={3}>
+                    <CircularProgress />
+                  </Box>
+                ) : systemStats ? (
+                  <>
+                    {/* Santé globale */}
+                    <Box mb={2}>
+                      <Alert 
+                        severity={
+                          Object.values(systemStats.health).every(v => v) ? "success" : 
+                          Object.values(systemStats.health).some(v => !v) ? "warning" : "error"
+                        }
+                        icon={<CheckCircle />}
+                      >
+                        {Object.values(systemStats.health).every(v => v) 
+                          ? "Tous les systèmes sont opérationnels" 
+                          : "Certains systèmes nécessitent votre attention"}
+                      </Alert>
+                    </Box>
+
+                    {/* Base de données */}
+                    <Box mb={2}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Typography variant="body2" color="text.secondary">
                           Base de données
                         </Typography>
                         <Chip 
-                          icon={<CheckCircle />}
-                          label={systemStats.dbStatus} 
-                          color="success" 
-                          size="small"
-                          sx={{ fontWeight: 500 }}
+                          icon={systemStats.health.database ? <CheckCircle /> : <ErrorIcon />}
+                          label={`${systemStats.dbStatus} (${systemStats.dbResponseTime}ms)`} 
+                          color={systemStats.health.database ? "success" : "error"} 
+                          size="small" 
                         />
                       </Box>
                     </Box>
                     
-                    <Box>
-                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                        <Typography variant="body2" color="text.secondary">
-                          Mémoire RAM
+                    {/* RAM */}
+                    <Box mb={2}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                        <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={0.5}>
+                          <Memory fontSize="small" /> Mémoire RAM
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                        <Typography variant="caption" fontWeight={500}>
                           {systemStats.ram}
                         </Typography>
                       </Box>
                       <LinearProgress 
                         variant="determinate" 
-                        value={systemStats.ramPercentage}
+                        value={systemStats.ramPercentage} 
                         sx={{ 
                           height: 8, 
                           borderRadius: 4,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          bgcolor: 'action.hover',
                           '& .MuiLinearProgress-bar': {
                             borderRadius: 4,
                             bgcolor: systemStats.ramPercentage > 80 ? 'error.main' : 
@@ -904,14 +999,18 @@ export default function Home() {
                           }
                         }}
                       />
+                      <Typography variant="caption" color="text.secondary">
+                        {systemStats.ramPercentage}% utilisé
+                      </Typography>
                     </Box>
                     
-                    <Box>
-                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                        <Typography variant="body2" color="text.secondary">
-                          Stockage
+                    {/* Stockage */}
+                    <Box mb={2}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                        <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={0.5}>
+                          <Storage fontSize="small" /> Stockage
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                        <Typography variant="caption" fontWeight={500}>
                           {systemStats.storage}
                         </Typography>
                       </Box>
@@ -921,44 +1020,94 @@ export default function Home() {
                         sx={{ 
                           height: 8, 
                           borderRadius: 4,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          '& .MuiLinearProgress-bar': {
+                          bgcolor: 'action.hover',
+                                      '& .MuiLinearProgress-bar': {
                             borderRadius: 4,
                             bgcolor: systemStats.storagePercentage > 80 ? 'error.main' : 
                                     systemStats.storagePercentage > 60 ? 'warning.main' : 'success.main'
                           }
                         }}
                       />
+                      <Typography variant="caption" color="text.secondary">
+                        {systemStats.storagePercentage}% utilisé
+                      </Typography>
                     </Box>
+
+                    {/* CPU (visible si expanded) */}
+                    <Collapse in={expanded}>
+                      <Box mb={2}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                          <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={0.5}>
+                            <Speed fontSize="small" /> Processeur
+                          </Typography>
+                          <Typography variant="caption" fontWeight={500}>
+                            {systemStats.cpuLoad}% charge
+                          </Typography>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={systemStats.cpuLoad}
+                          sx={{ 
+                            height: 8, 
+                            borderRadius: 4,
+                            bgcolor: 'action.hover',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 4,
+                              bgcolor: systemStats.cpuLoad > 80 ? 'error.main' : 
+                                      systemStats.cpuLoad > 60 ? 'warning.main' : 'success.main'
+                            }
+                          }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {systemStats.cpuModel} ({systemStats.cpuCores} cœurs)
+                        </Typography>
+                      </Box>
+                    </Collapse>
                     
-                    <Divider />
+                    <Divider sx={{ my: 2 }} />
                     
-                    <Box display="flex" flexWrap="wrap" gap={1}>
-                      <Chip 
-                        icon={<NetworkPing />} 
-                        label={`Ping: ${systemStats.ping}`} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ fontWeight: 500 }}
-                      />
-                      <Chip 
-                        icon={<Person />} 
-                        label={`${systemStats.activeUsers} actifs`} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ fontWeight: 500 }}
-                      />
-                      <Chip 
-                        icon={<AccessTime />} 
-                        label={systemStats.uptime} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ fontWeight: 500 }}
-                      />
-                    </Box>
-                  </Stack>
-                </Paper>
-              </div>
+                    {/* Statistiques rapides */}
+                    <Grid container spacing={1}>
+                      <Grid size={6}>
+                        <Box textAlign="center" p={1} borderRadius={1} bgcolor="action.hover">
+                          <People color="primary" />
+                          <Typography variant="h6">{systemStats.activeUsers}/{systemStats.totalUsers}</Typography>
+                          <Typography variant="caption" color="text.secondary">Utilisateurs actifs</Typography>
+                        </Box>
+                      </Grid>
+                      <Grid size={6}>
+                        <Box textAlign="center" p={1} borderRadius={1} bgcolor="action.hover">
+                          <AccessTime color="primary" />
+                          <Typography variant="h6">{systemStats.uptime}</Typography>
+                          <Typography variant="caption" color="text.secondary">Uptime</Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* Détails supplémentaires (visible si expanded) */}
+                    <Collapse in={expanded}>
+                      <Box mt={2} p={1.5} borderRadius={1} bgcolor="action.hover">
+                        <Typography variant="caption" component="div" color="text.secondary">
+                          <strong>Plateforme:</strong> {systemStats.platform}
+                        </Typography>
+                        <Typography variant="caption" component="div" color="text.secondary">
+                          <strong>Node.js:</strong> {systemStats.nodeVersion}
+                        </Typography>
+                        <Typography variant="caption" component="div" color="text.secondary">
+                          <strong>Version LIMS:</strong> v{systemStats.appVersion}
+                        </Typography>
+                        <Typography variant="caption" component="div" color="text.secondary">
+                          <strong>Dernière mise à jour:</strong> {new Date(systemStats.lastUpdate).toLocaleTimeString('fr-FR')}
+                        </Typography>
+                      </Box>
+                    </Collapse>
+                  </>
+                ) : (
+                  <Alert severity="error">
+                    Impossible de charger les statistiques système
+                  </Alert>
+                )}
+              </Paper>
 
               {/* Info box */}
               <div>
