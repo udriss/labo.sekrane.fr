@@ -101,9 +101,9 @@ export async function GET() {
     // Température CPU (si disponible)
     let cpuTemperature = null;
     try {
-      const temps = await si.cpuTemperature();
-      if (temps.main) {
-        cpuTemperature = Math.round(temps.main);
+      const tempData = await si.cpuTemperature();
+      if (tempData.main && !isNaN(tempData.main)) {
+        cpuTemperature = Math.round(tempData.main);
       }
     } catch {
       // Pas de données de température disponibles

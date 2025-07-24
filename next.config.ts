@@ -5,6 +5,25 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   reactStrictMode: true,
+  
+  // Configuration webpack pour ignorer les dépendances optionnelles
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'osx-temperature-sensor': 'commonjs osx-temperature-sensor',
+      });
+    }
+    
+    // Ignorer les modules optionnels manquants
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'osx-temperature-sensor': false,
+    };
+    
+    return config;
+  },
+  
   images: {
     unoptimized: true,
     domains: [process.env.NEXT_PUBLIC_DEPLOYMENT_DOMAIN || 'labo.sekrane.fr'],
