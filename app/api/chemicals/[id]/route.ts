@@ -1,7 +1,10 @@
+// app/api/chemicals/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import fs from 'fs/promises';
 import path from 'path';
+import { withAudit } from '@/lib/api/with-audit';
 
 // Chemin vers le fichier JSON local
 const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json');
@@ -57,11 +60,36 @@ async function writeChemicalsInventory(data: any) {
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    const chemicalId = id;
+
+    // Lire depuis le fichier JSON local
+    const inventory = await readChemicalsInventory();
+    const chemical = inventory.chemicals.find((chem: any) => chem.id === chemicalId);
+
+    if (!chemical) {
+      return NextResponse.json(
+        { error: "Produit chimique non trouvé" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(chemical);
+  },
+  {
+    module: 'CHEMICALS',
+    entity: 'chemical',
+    action: 'READ',
+    extractEntityIdFromResponse: (response) => response?._auditId || response?.id
+  }
+)
+
+
+// PUT - Envelopper car c'est une modification sensible
+export const PUT = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const data = await request.json();
     const { id } = await params;
     const chemicalId = id;
@@ -90,19 +118,22 @@ export async function PUT(
       message: "Chemical updated successfully",
       chemical: inventory.chemicals[chemicalIndex]
     });
-  } catch (error) {
-    console.error("Error updating chemical:", error);
-    return NextResponse.json(
-      { error: "Failed to update chemical" },
-      { status: 500 }
-    );
+  },
+  {
+    module: 'CHEMICALS',
+    entity: 'chemical',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.chemical?.id,
+    customDetails: (req, response) => ({
+      chemicalName: response?.chemical?.name,
+      fieldsUpdated: Object.keys(response?.chemical || {})
+    })
   }
-}
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+)
+
+// DELETE - Envelopper car c'est une suppression sensible
+export const DELETE = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     const chemicalId = id;
 
@@ -116,47 +147,27 @@ export async function DELETE(
       return NextResponse.json({ error: "Chemical not found" }, { status: 404 });
     }
 
+    // Stocker le nom avant suppression pour l'audit
+    const deletedChemical = inventory.chemicals[chemicalIndex];
+
     // Supprimer le produit chimique du tableau
     inventory.chemicals.splice(chemicalIndex, 1);
 
     // Sauvegarder dans le fichier JSON
     await writeChemicalsInventory(inventory);
 
-    return NextResponse.json({ message: "Produit chimique supprimé avec succès" });
-  } catch (error) {
-    console.error("Erreur lors de la suppression du produit chimique:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression du produit chimique" },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      message: "Produit chimique supprimé avec succès",
+      deletedChemical: { id: deletedChemical.id, name: deletedChemical.name }
+    });
+  },
+  {
+    module: 'CHEMICALS',
+    entity: 'chemical',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedChemical?.id,
+    customDetails: (req, response) => ({
+      chemicalName: response?.deletedChemical?.name
+    })
   }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const chemicalId = id;
-
-    // Lire depuis le fichier JSON local
-    const inventory = await readChemicalsInventory();
-    const chemical = inventory.chemicals.find((chem: any) => chem.id === chemicalId);
-
-    if (!chemical) {
-      return NextResponse.json(
-        { error: "Produit chimique non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(chemical);
-  } catch (error) {
-    console.error("Erreur lors de la récupération du produit chimique:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération du produit chimique" },
-      { status: 500 }
-    );
-  }
-}
+)

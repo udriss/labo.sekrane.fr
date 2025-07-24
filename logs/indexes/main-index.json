@@ -1,6 +1,26 @@
 {
-  "users": {},
-  "modules": {},
-  "actions": {},
-  "dates": {}
+  "users": {
+    "USER_001": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ]
+  },
+  "modules": {
+    "CHEMICALS": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ],
+    "EQUIPMENT": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ]
+  },
+  "actions": {
+    "UPDATE": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ],
+    "CREATE": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+    ]
+  },
+  "dates": {
+    "2025-07-24": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json"
+  }
 }

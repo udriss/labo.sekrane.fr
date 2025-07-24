@@ -38,6 +38,7 @@ export const NewCategoryDialog = ({
         paper: {
           sx: {
             borderRadius: 3,
+            padding: 2,
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white'
           }
@@ -54,7 +55,7 @@ export const NewCategoryDialog = ({
           variant="outlined"
           value={categoryName}
           onChange={(e) => setCategoryName(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
         />
       </DialogContent>
       <DialogActions>

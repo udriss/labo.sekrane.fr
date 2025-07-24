@@ -1,6 +1,9 @@
+// app/api/notebook/route.ts
+
 import { NextRequest, NextResponse } from "next/server"
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit';
 
 const NOTEBOOK_FILE = path.join(process.cwd(), 'data', 'notebook.json')
 
@@ -42,7 +45,8 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { 
@@ -110,4 +114,16 @@ export async function POST(request: NextRequest) {
     console.error('Erreur lors de la création du TP:', error)
     return NextResponse.json({ error: "Erreur lors de la création du TP" }, { status: 500 })
   }
-}
+},
+  {
+    module: 'SYSTEM',
+    entity: 'notebook',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      notebookTitle: response?.title,
+      class: response?.class,
+      scheduledDate: response?.scheduledDate
+    })
+  }
+)

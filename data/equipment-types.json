@@ -294,6 +294,20 @@
       "svg": "/svg/default.svg",
       "isCustom": true,
       "items": []
+    },
+    {
+      "id": "CUSTOM_1753366672125",
+      "name": "TEST LOG",
+      "svg": "/svg/default.svg",
+      "items": [],
+      "isCustom": true
+    },
+    {
+      "id": "CUSTOM_1753367177014",
+      "name": "CAT TEST LOG",
+      "svg": "/svg/default.svg",
+      "items": [],
+      "isCustom": true
     }
   ]
 }

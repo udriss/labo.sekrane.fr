@@ -1,6 +1,9 @@
+// app/api/equipement/route.ts
+
 import { NextRequest, NextResponse } from "next/server"
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit';
 
 const EQUIPMENT_INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
 const EQUIPMENT_TYPES_FILE = path.join(process.cwd(), 'data', 'equipment-types.json')
@@ -90,7 +93,8 @@ export async function GET() {
 }
 
 // POST - Ajouter un nouvel équipement
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const data = await request.json()
     
@@ -166,10 +170,24 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+},
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.materiel?.id,
+    customDetails: (req, response) => ({
+      equipmentName: response?.materiel?.name,
+      type: response?.materiel?.typeName,
+      quantity: response?.materiel?.quantity
+    })
+  }
+);
+
 
 // PUT - Mettre à jour un équipement
-export async function PUT(request: NextRequest) {
+export const PUT = withAudit(
+  async (request: NextRequest) => {
   try {
     const data = await request.json()
     const { id, ...updateData } = data
@@ -218,54 +236,65 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+},
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.materiel?.id,
+    customDetails: (req, response) => ({
+      equipmentName: response?.materiel?.name,
+      quantity: response?.materiel?.quantity
+    })
+  }
+);
+
 
 // DELETE - Supprimer un équipement
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+export const DELETE = withAudit(
+  async (request: NextRequest) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json(
         { error: "ID requis pour la suppression" },
         { status: 400 }
-      )
+      );
     }
 
-    // Lire l'inventaire actuel
-    const inventory = await readEquipmentInventory()
-
-    // Trouver l'équipement à supprimer
-    const equipmentIndex = inventory.equipment.findIndex((eq: any) => eq.id === id)
+    const inventory = await readEquipmentInventory();
+    const equipmentIndex = inventory.equipment.findIndex((eq: any) => eq.id === id);
     
     if (equipmentIndex === -1) {
       return NextResponse.json(
         { error: "Équipement non trouvé" },
         { status: 404 }
-      )
+      );
     }
 
-    // Supprimer l'équipement
-    inventory.equipment.splice(equipmentIndex, 1)
-
-    // Recalculer les stats
-    inventory.stats = calculateStats(inventory.equipment)
-
-    // Sauvegarder
-    await writeEquipmentInventory(inventory)
+    // Stocker les infos avant suppression
+    const deletedEquipment = inventory.equipment[equipmentIndex];
+    
+    inventory.equipment.splice(equipmentIndex, 1);
+    inventory.stats = calculateStats(inventory.equipment);
+    await writeEquipmentInventory(inventory);
 
     return NextResponse.json({ 
-      message: "Équipement supprimé avec succès"
+      message: "Équipement supprimé avec succès",
+      deletedEquipment: { id: deletedEquipment.id, name: deletedEquipment.name }
+    });
+  },
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedEquipment?.id,
+    customDetails: (req, response) => ({
+      equipmentName: response?.deletedEquipment?.name
     })
-  } catch (error) {
-    console.error("Erreur lors de la suppression de l'équipement:", error)
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression de l'équipement" },
-      { status: 500 }
-    )
   }
-}
+)
 
 
 

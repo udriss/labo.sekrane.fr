@@ -1,9 +1,10 @@
-// app/api/user/config/route.ts
+// app/api/user/config/route.ts 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import fs from 'fs/promises';
 import path from 'path';
+import { withAudit } from '@/lib/api/with-audit';
 
 const USERS_FILE_PATH = path.join(process.cwd(), 'data', 'users.json');
 
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     // Vérifier l'authentification
     const session = await getServerSession(authOptions);
@@ -122,4 +124,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'USERS',
+    entity: 'user-config',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.userId,
+    customDetails: (req, response) => ({
+      configKeys: Object.keys(response?.siteConfig || {}),
+      viewModeUpdated: response?.siteConfig?.materialsViewMode || response?.siteConfig?.chemicalsViewMode
+    })
+  }
+);

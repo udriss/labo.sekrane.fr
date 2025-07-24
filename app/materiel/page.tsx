@@ -857,13 +857,14 @@ export default function EquipmentPage() {
           paper: {
             sx: {
               borderRadius: 3,
+              padding: 2,
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white'
             }
           }
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle sx={{ pb: 2 }}>
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)' }}>
               <Add />
@@ -995,7 +996,7 @@ export default function EquipmentPage() {
           </Paper>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3, pt: 1 }}>
+        <DialogActions sx={{ pt: 1 }}>
           <Button 
             onClick={() => dialogs.setAddCustomEquipmentDialog(false)}
             sx={{ 
@@ -1017,7 +1018,7 @@ export default function EquipmentPage() {
             startIcon={<Save />}
             disabled={!dialogs.customEquipmentData.name.trim()}
           >
-            Créer l'équipement
+            Ajouter l'équipement
           </Button>
         </DialogActions>
       </Dialog>
@@ -1168,7 +1169,7 @@ export default function EquipmentPage() {
           </Stack>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+        <DialogActions sx={{ p: 0, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
           <Button
             onClick={() => {
               dialogs.setEditItemDialog(false)
@@ -1228,7 +1229,7 @@ export default function EquipmentPage() {
           </Box>
         </DialogTitle>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: 0 }}>
           <Stack spacing={3}>
             {/* Nom de l'équipement */}
             <TextField
@@ -1388,7 +1389,7 @@ export default function EquipmentPage() {
             )}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+        <DialogActions sx={{ p: 0, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
           <Button
             onClick={() => {
               dialogs.setOpenEditDialog(false)

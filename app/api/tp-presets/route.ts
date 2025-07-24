@@ -1,6 +1,9 @@
+// app/api/tp-presets/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit';
 
 const TP_PRESETS_FILE = path.join(process.cwd(), 'data', 'tp-presets.json')
 
@@ -76,7 +79,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     
@@ -124,9 +128,23 @@ export async function POST(request: NextRequest) {
     console.error('Erreur création TP preset:', error)
     return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
   }
-}
+},
+  {
+    module: 'SYSTEM',
+    entity: 'tp-preset',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      presetTitle: response?.title,
+      level: response?.level,
+      subject: response?.subject,
+      createdBy: response?.createdById
+    })
+  }
+)
 
-export async function PUT(request: NextRequest) {
+export const PUT = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { id, ...updateData } = body
@@ -163,35 +181,59 @@ export async function PUT(request: NextRequest) {
     console.error('Erreur mise à jour TP preset:', error)
     return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
   }
-}
+},
+  {
+    module: 'SYSTEM',
+    entity: 'tp-preset',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      presetTitle: response?.title,
+      fieldsUpdated: Object.keys(response || {}).filter(key => !['id', 'createdAt', 'updatedAt'].includes(key))
+    })
+  }
+);
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+
+
+export const DELETE = withAudit(
+  async (request: NextRequest) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     
     if (!id) {
-      return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 })
+      return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 });
     }
 
-    const presets = await readTpPresetsFile()
-    const presetIndex = presets.findIndex((preset: any) => preset.id === id)
+    const presets = await readTpPresetsFile();
+    const presetIndex = presets.findIndex((preset: any) => preset.id === id);
     
     if (presetIndex === -1) {
-      return NextResponse.json({ error: 'TP preset non trouvé' }, { status: 404 })
+      return NextResponse.json({ error: 'TP preset non trouvé' }, { status: 404 });
     }
     
-    // Supprimer le preset
-    presets.splice(presetIndex, 1)
+    // Stocker les infos avant suppression
+    const deletedPreset = presets[presetIndex];
     
-    const success = await writeTpPresetsFile(presets)
+    presets.splice(presetIndex, 1);
+    
+    const success = await writeTpPresetsFile(presets);
     if (!success) {
-      return NextResponse.json({ error: 'Erreur lors de la sauvegarde' }, { status: 500 })
+      return NextResponse.json({ error: 'Erreur lors de la sauvegarde' }, { status: 500 });
     }
     
-    return NextResponse.json({ message: 'TP preset supprimé avec succès' })
-  } catch (error) {
-    console.error('Erreur suppression TP preset:', error)
-    return NextResponse.json({ error: 'Erreur suppression' }, { status: 500 })
+    return NextResponse.json({ 
+      message: 'TP preset supprimé avec succès',
+      deletedPreset: { id: deletedPreset.id, title: deletedPreset.title }
+    });
+  },
+  {
+    module: 'SYSTEM',
+    entity: 'tp-preset',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedPreset?.id,
+    customDetails: (req, response) => ({
+      presetTitle: response?.deletedPreset?.title
+    })
   }
-}
+)

@@ -1,6 +1,9 @@
+// app/api/chemicals/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit'
 
 const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 
@@ -87,8 +90,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withAudit(
+  async (request: NextRequest) => {
     const body = await request.json()
     
     // Lire l'inventaire actuel
@@ -136,14 +139,24 @@ export async function POST(request: NextRequest) {
     await writeChemicalsInventory(inventory)
     
     return NextResponse.json(newChemical)
-  } catch (error) {
-    console.error('Erreur création chemical:', error)
-    return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
+  },
+  {
+    module: 'CHEMICALS',
+    entity: 'chemical',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      chemicalName: response?.name,
+      hazardClass: response?.hazardClass,
+      quantity: response?.quantity,
+      unit: response?.unit
+    })
   }
-}
+)
 
-export async function PUT(request: NextRequest) {
-  try {
+// PUT - Envelopper car c'est une modification
+export const PUT = withAudit(
+  async (request: NextRequest) => {
     const body = await request.json()
     const { id, ...updateData } = body
     
@@ -160,6 +173,9 @@ export async function PUT(request: NextRequest) {
     if (chemicalIndex === -1) {
       return NextResponse.json({ error: 'Produit chimique non trouvé' }, { status: 404 })
     }
+
+    // Stocker l'ancien état pour l'audit
+    const oldChemical = { ...inventory.chemicals[chemicalIndex] };
 
     // Traitement spécial pour la mise à jour de quantité uniquement
     if (updateData.quantity !== undefined && Object.keys(updateData).length === 1) {
@@ -186,8 +202,16 @@ export async function PUT(request: NextRequest) {
     await writeChemicalsInventory(inventory)
     
     return NextResponse.json(inventory.chemicals[chemicalIndex])
-  } catch (error) {
-    console.error('Erreur mise à jour chemical:', error)
-    return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
+  },
+  {
+    module: 'CHEMICALS',
+    entity: 'chemical',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      chemicalName: response?.name,
+      quantityUpdate: response?.quantity !== undefined,
+      fields: Object.keys(response || {})
+    })
   }
-}
+)

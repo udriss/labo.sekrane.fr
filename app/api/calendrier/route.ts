@@ -1,6 +1,9 @@
+// app/api/calendrier/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit'
 
 const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
 
@@ -56,16 +59,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
+// POST - Envelopper car c'est une création
+export const POST = withAudit(
+  async (request: NextRequest) => {
     const body = await request.json()
     const { 
       title, 
       description, 
       date,
       timeSlots,
-      startDate, // Pour la rétrocompatibilité
-      endDate,   // Pour la rétrocompatibilité
+      startDate,
+      endDate,
       type,
       classes,
       materials,
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
       fileName
     } = body
 
-    // Validation des données - nouveau format avec créneaux ou ancien format
+    // Validation des données
     if (!title) {
       return NextResponse.json(
         { error: 'Le titre est requis' },
@@ -81,11 +85,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Support du nouveau format (date + timeSlots) et de l'ancien format (startDate/endDate)
+    // Support du nouveau format (date + timeSlots) et de l'ancien format
     let eventsToCreate = []
 
     if (date && timeSlots && Array.isArray(timeSlots)) {
-      // Nouveau format : créer un événement pour chaque créneau
+      // Nouveau format
       for (const slot of timeSlots) {
         if (!slot.startTime || !slot.endTime) {
           return NextResponse.json(
@@ -114,7 +118,7 @@ export async function POST(request: NextRequest) {
         })
       }
     } else if (startDate && endDate) {
-      // Ancien format : rétrocompatibilité
+      // Ancien format
       eventsToCreate.push({
         id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         title,
@@ -150,17 +154,22 @@ export async function POST(request: NextRequest) {
     await writeCalendarFile(calendarData)
     
     return NextResponse.json(newEvents.length === 1 ? newEvents[0] : newEvents, { status: 201 })
-  } catch (error) {
-    console.error('Erreur création event:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la création' },
-      { status: 500 }
-    )
+  },
+  {
+    module: 'CALENDAR',
+    entity: 'event',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id || response?.[0]?.id,
+    customDetails: (req, response) => ({
+      eventTitle: response?.title || response?.[0]?.title,
+      eventCount: Array.isArray(response) ? response.length : 1
+    })
   }
-}
+)
 
-export async function PUT(request: NextRequest) {
-  try {
+// PUT - Envelopper car c'est une modification
+export const PUT = withAudit(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
     
@@ -193,17 +202,19 @@ export async function PUT(request: NextRequest) {
     await writeCalendarFile(calendarData)
     
     return NextResponse.json(updatedEvent)
-  } catch (error) {
-    console.error('Erreur mise à jour event:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour' },
-      { status: 500 }
-    )
+  },
+  {
+    module: 'CALENDAR',
+    entity: 'event',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined
   }
-}
+)
 
-export async function DELETE(request: NextRequest) {
-  try {
+// DELETE - Envelopper car c'est une suppression
+export const DELETE = withAudit(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
     
@@ -229,11 +240,12 @@ export async function DELETE(request: NextRequest) {
     await writeCalendarFile(calendarData)
     
     return NextResponse.json({ message: 'Événement supprimé', event: deletedEvent })
-  } catch (error) {
-    console.error('Erreur suppression event:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la suppression' },
-      { status: 500 }
-    )
+  },
+  {
+    module: 'CALENDAR',
+    entity: 'event',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.event?.id,
+    extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined
   }
-}
+)

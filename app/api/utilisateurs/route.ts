@@ -1,10 +1,11 @@
-// app/api/utilisateurs/route.ts
+// app/api/utilisateurs/route.ts 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { promises as fs } from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import { withAudit } from '@/lib/api/with-audit';
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
@@ -31,7 +32,8 @@ interface UsersFile {
   users: UserData[];
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withAudit(
+  async (request: NextRequest) => {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -59,9 +61,20 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'USERS',
+    entity: 'users-list',
+    action: 'READ',
+    customDetails: (req, response) => ({
+      usersCount: Array.isArray(response) ? response.length : 0,
+      action: 'list-all-users'
+    })
+  }
+);
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== "ADMIN") {
@@ -129,4 +142,20 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'USERS',
+    entity: 'user',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      newUserEmail: response?.email,
+      newUserName: response?.name,
+      newUserRole: response?.role,
+      classesAssigned: [
+        ...(response?.associatedClasses || []),
+        ...(response?.customClasses || [])
+      ].length
+    })
+  }
+)

@@ -1,10 +1,11 @@
-// app/api/user/[id]/route.ts
+// app/api/user/[id]/route.ts 
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { withAudit } from '@/lib/api/with-audit';
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
@@ -82,10 +83,8 @@ async function writeUsersFile(users: UserData[]): Promise<boolean> {
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -173,12 +172,25 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'USERS',
+    entity: 'user',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.user?.id,
+    customDetails: (req, response) => ({
+      modifiedUser: response?.user?.email,
+      fieldsUpdated: ['name', 'email', 'classes', 'password'].filter(field => 
+        response?.user?.[field] !== undefined
+      ),
+      classesUpdated: response?.user?.associatedClasses !== undefined || response?.user?.customClasses !== undefined
+    })
+  }
+);
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+
+export const GET = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -219,13 +231,22 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'USERS',
+    entity: 'user',
+    action: 'READ',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      viewedUser: response?.email,
+      viewedUserRole: response?.role
+    })
+  }
+);
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+
+export const DELETE = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -234,30 +255,37 @@ export async function DELETE(
     const { id } = await params;
     const userId = id;
 
-    // Empêcher l'admin de se supprimer lui-même
     if (session.user.id === userId) {
       return NextResponse.json({ error: "Vous ne pouvez pas supprimer votre propre compte" }, { status: 400 });
     }
 
     const users = await readUsersFile();
-    const filteredUsers = users.filter((user) => user.id !== userId);
-
-    if (users.length === filteredUsers.length) {
+    const userToDelete = users.find((user) => user.id === userId);
+    
+    if (!userToDelete) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
+    const filteredUsers = users.filter((user) => user.id !== userId);
     const success = await writeUsersFile(filteredUsers);
+    
     if (!success) {
       return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
     }
 
-    return NextResponse.json({ message: "Utilisateur supprimé avec succès" });
-
-  } catch (error) {
-    console.error("Erreur lors de la suppression de l'utilisateur:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression de l'utilisateur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      message: "Utilisateur supprimé avec succès",
+      deletedUser: { id: userToDelete.id, email: userToDelete.email, name: userToDelete.name }
+    });
+  },
+  {
+    module: 'USERS',
+    entity: 'user',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedUser?.id,
+    customDetails: (req, response) => ({
+      deletedUserEmail: response?.deletedUser?.email,
+      deletedUserName: response?.deletedUser?.name
+    })
   }
-}
+)

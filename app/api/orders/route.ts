@@ -1,6 +1,9 @@
+// app/api/orders/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit';
 
 const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json')
 
@@ -38,7 +41,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { 
@@ -87,9 +91,24 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+},
+  {
+    module: 'ORDERS',
+    entity: 'order',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      orderTitle: response?.title,
+      supplier: response?.supplier,
+      totalAmount: response?.totalAmount,
+      currency: response?.currency
+    })
+  }
+);
 
-export async function PUT(request: NextRequest) {
+
+export const PUT = withAudit(
+  async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get('id')
@@ -130,9 +149,22 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+},
+  {
+    module: 'ORDERS',
+    entity: 'order',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      orderTitle: response?.title,
+      status: response?.status
+    })
+  }
+);
 
-export async function DELETE(request: NextRequest) {
+
+export const DELETE = withAudit(
+  async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get('id')
@@ -166,4 +198,16 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+},
+  {
+    module: 'ORDERS',
+    entity: 'order',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.order?.id,
+    customDetails: (req, response) => ({
+      orderTitle: response?.order?.title,
+      orderStatus: response?.order?.status
+    })
+  }
+);
+

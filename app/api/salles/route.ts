@@ -1,6 +1,9 @@
+// app/api/salles/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { withAudit } from '@/lib/api/with-audit';
 
 const ROOMS_FILE = path.join(process.cwd(), 'data', 'rooms.json')
 
@@ -58,7 +61,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     
@@ -90,9 +94,23 @@ export async function POST(request: NextRequest) {
     console.error('Erreur création salle:', error)
     return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
   }
-}
+},
+  {
+    module: 'ROOMS',
+    entity: 'room',
+    action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      roomName: response?.name,
+      capacity: response?.capacity,
+      locationsCount: response?.locations?.length || 0
+    })
+  }
+);
 
-export async function PUT(request: NextRequest) {
+
+export const PUT = withAudit(
+  async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { id, ...updateData } = body
@@ -122,32 +140,56 @@ export async function PUT(request: NextRequest) {
     console.error('Erreur mise à jour salle:', error)
     return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
   }
-}
+},
+  {
+    module: 'ROOMS',
+    entity: 'room',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      roomName: response?.name
+    })
+  }
+);
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+
+export const DELETE = withAudit(
+  async (request: NextRequest) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     
     if (!id) {
-      return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 })
+      return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 });
     }
 
-    const data = await readRooms()
-    const roomIndex = data.rooms.findIndex((room: any) => room.id === id)
+    const data = await readRooms();
+    const roomIndex = data.rooms.findIndex((room: any) => room.id === id);
     
     if (roomIndex === -1) {
-      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 })
+      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 });
     }
 
+    // Stocker les infos avant modification
+    const deletedRoom = data.rooms[roomIndex];
+    
     // Marquer comme inactif plutôt que supprimer
-    data.rooms[roomIndex].isActive = false
+    data.rooms[roomIndex].isActive = false;
     
-    await writeRooms(data)
+    await writeRooms(data);
     
-    return NextResponse.json({ message: 'Salle supprimée avec succès' })
-  } catch (error) {
-    console.error('Erreur suppression salle:', error)
-    return NextResponse.json({ error: 'Erreur suppression' }, { status: 500 })
+    return NextResponse.json({ 
+      message: 'Salle supprimée avec succès',
+      deletedRoom: { id: deletedRoom.id, name: deletedRoom.name }
+    });
+  },
+  {
+    module: 'ROOMS',
+    entity: 'room',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedRoom?.id,
+    customDetails: (req, response) => ({
+      roomName: response?.deletedRoom?.name,
+      softDelete: true
+    })
   }
-}
+)

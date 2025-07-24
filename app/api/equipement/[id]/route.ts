@@ -1,6 +1,9 @@
+// app/api/equipement/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from 'fs';
 import path from 'path';
+import { withAudit } from '@/lib/api/with-audit';
 
 interface Equipment {
   id: string;
@@ -83,10 +86,8 @@ function calculateStats(equipment: Equipment[]): EquipmentInventory['stats'] {
   };
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PUT = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const data = await request.json();
     const { id } = await params;
@@ -122,13 +123,21 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+},
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'UPDATE',
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      equipmentName: response?.name,
+      status: response?.status
+    })
+  }
+);
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const DELETE = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     const equipmentId = id;
 
@@ -142,23 +151,29 @@ export async function DELETE(
       );
     }
 
-    // Suppression de l'équipement
+    // Stocker les infos avant suppression
+    const deletedEquipment = inventory.equipment[equipmentIndex];
+    
     inventory.equipment.splice(equipmentIndex, 1);
-
-    // Recalcul des statistiques
     inventory.stats = calculateStats(inventory.equipment);
-
     await writeEquipmentInventory(inventory);
 
-    return NextResponse.json({ message: "Équipement supprimé avec succès" });
-  } catch (error) {
-    console.error("Erreur lors de la suppression de l'équipement:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression de l'équipement" },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      message: "Équipement supprimé avec succès",
+      deletedEquipment: { id: deletedEquipment.id, name: deletedEquipment.name }
+    });
+  },
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'DELETE',
+    extractEntityIdFromResponse: (response) => response?.deletedEquipment?.id,
+    customDetails: (req, response) => ({
+      equipmentName: response?.deletedEquipment?.name
+    })
   }
-}
+);
+
 
 export async function GET(
   request: NextRequest,
