@@ -19,9 +19,10 @@ import {
   MenuItem,
   Stack,
   Divider,
-  Avatar
+  Avatar,
+  Chip
 } from "@mui/material"
-import { Add, Check, Science, Category, Numbers } from "@mui/icons-material"
+import { Add, Check, Science, Category, Numbers, Home, LocationOn } from "@mui/icons-material"
 import { EquipmentType, EquipmentItem, EquipmentFormData } from "@/types/equipment"
 
 interface EquipmentAddTabProps {
@@ -371,20 +372,91 @@ export function EquipmentAddTab({
               </Grid>
               
               <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Home /> Localisation
+                </Typography>
+                
+                {/* Sélection de salle */}
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Salle</InputLabel>
                   <Select
                     value={formData.room || ''}
                     label="Salle"
-                    onChange={(e) => onFormChange('room', e.target.value)}
+                    onChange={(e) => {
+                      onFormChange('room', e.target.value)
+                      // Reset location when room changes
+                      onFormChange('location', '')
+                    }}
                   >
+                    <MenuItem value="">
+                      <em>Aucune salle</em>
+                    </MenuItem>
                     {rooms.map((room) => (
                       <MenuItem key={room.id} value={room.name}>
-                        {room.name}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Home fontSize="small" />
+                          <span>{room.name}</span>
+                          {room.locations && room.locations.length > 0 && (
+                            <Chip 
+                              size="small" 
+                              label={`${room.locations.length} loc.`} 
+                              variant="outlined"
+                              sx={{ ml: 1 }}
+                            />
+                          )}
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
+
+                {/* Sélection de localisation si la salle en a */}
+                {formData.room && (() => {
+                  const selectedRoom = rooms.find(room => room.name === formData.room)
+                  if (selectedRoom && selectedRoom.locations && selectedRoom.locations.length > 0) {
+                    return (
+                      <FormControl fullWidth margin="normal">
+                        <InputLabel>Localisation précise</InputLabel>
+                        <Select
+                          value={formData.location || ''}
+                          label="Localisation précise"
+                          onChange={(e) => onFormChange('location', e.target.value)}
+                        >
+                          <MenuItem value="">
+                            <em>Aucune localisation précise</em>
+                          </MenuItem>
+                          {selectedRoom.locations.map((location: any) => (
+                            <MenuItem key={location.id} value={location.name}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <LocationOn fontSize="small" color="secondary" />
+                                <span>{location.name}</span>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )
+                  }
+                  return null
+                })()}
+
+                {/* Affichage de la sélection actuelle */}
+                {formData.room && (
+                  <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'info.light' }}>
+                    <Typography variant="body2" color="info.contrastText">
+                      <strong>📍 Localisation sélectionnée:</strong><br />
+                      <Home fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
+                      {formData.room}
+                      {formData.location && (
+                        <>
+                          <br />
+                          <LocationOn fontSize="small" sx={{ mr: 1, ml: 2, verticalAlign: 'middle' }} />
+                          {formData.location}
+                        </>
+                      )}
+                    </Typography>
+                  </Paper>
+                )}
                 
                 <TextField
                   fullWidth
@@ -492,7 +564,7 @@ export function EquipmentAddTab({
               disabled={
                 (activeStep === 0 && !selectedCategory) ||
                 (activeStep === 1 && !selectedItem) ||
-                (activeStep === 2 && (!formData.name || !formData.equipmentTypeId))
+                (activeStep === 2 && (!formData.name || (!formData.equipmentTypeId && !selectedItem)))
               }
             >
               Suivant

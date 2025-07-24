@@ -105,8 +105,23 @@
         {
           "name": "Verrerie TEST",
           "svg": "/svg/default.svg",
+          "volumes": [],
+          "isCustom": true
+        },
+        {
+          "name": "ErlenmeyerEEE",
+          "svg": "/svg/default.svg",
           "volumes": [
-            "N/A"
+            "1 mL",
+            "5 mL",
+            "10 mL",
+            "25 mL",
+            "50 mL",
+            "100 mL",
+            "250 mL",
+            "500 mL",
+            "1 L",
+            "2 L"
           ],
           "isCustom": true
         }

@@ -497,20 +497,24 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
 
           <Stack direction="row" spacing={2}>
             <DatePicker
-              label="Date d'achat"
+              label="Date d'achat (optionnelle)"
               value={formData.purchaseDate}
               onChange={(date) => handleChange("purchaseDate")(date)}
               openTo="day"
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  onClick: (e) => {
-                    // Force l'ouverture du calendrier
-                    e.currentTarget.focus();
+                  placeholder: "Cliquez pour sélectionner une date",
+                  InputProps: {
+                    readOnly: true,
                   }
                 },
-                popper: {
-                  placement: "bottom-start"
+                actionBar: {
+                  actions: ['clear', 'today', 'accept']
+                },
+                field: {
+                  clearable: true,
+                  onClear: () => handleChange("purchaseDate")(null)
                 }
               }}
             />
