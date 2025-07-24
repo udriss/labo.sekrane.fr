@@ -467,7 +467,7 @@ useEffect(() => {
           >
             <Box sx={{ mb: 4 }}>
               <Image
-                src="/logo.png"
+                src="/logo_2.png"
                 alt="Logo Laboratoire"
                 width={120}
                 height={120}

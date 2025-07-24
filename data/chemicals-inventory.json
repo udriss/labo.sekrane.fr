@@ -100,7 +100,7 @@
       "molfile": null,
       "casNumber": "7647-01-0",
       "barcode": null,
-      "quantity": 6180.5,
+      "quantity": 158.2,
       "unit": "mL",
       "minQuantity": 0,
       "concentration": 37,
@@ -120,7 +120,7 @@
       "status": "IN_STOCK",
       "notes": "",
       "createdAt": "2025-07-21T13:40:04.635Z",
-      "updatedAt": "2025-07-24T14:10:49.785Z",
+      "updatedAt": "2025-07-24T18:41:33.129Z",
       "supplier": "cmdd5kp1000021f0vuhvtfk1y",
       "location": "Armoire acides"
     },

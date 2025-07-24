@@ -39,3 +39,8 @@ body {
 .spinning {
   animation: spin 2s linear infinite;
 }
+
+.MuiSpeedDial-root .MuiTooltip-tooltip {
+  white-space: nowrap !important;
+  max-width: none !important;
+}

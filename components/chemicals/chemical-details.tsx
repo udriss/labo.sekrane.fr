@@ -128,7 +128,7 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
   }
 
   return (
-    <Box>
+    <Box sx={{ p: 3, }}>
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="start" sx={{ mb: 3 }}>
         <Stack spacing={1}>
@@ -186,6 +186,7 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
           gap: 3,
+          p: 3,
         }}
       >
         {/* Informations principales */}

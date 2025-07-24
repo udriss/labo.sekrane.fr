@@ -3323,5 +3323,1966 @@
       "duration": 8
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "4b93db9f-1bfe-4fa8-9fea-592a8376f927",
+    "timestamp": "2025-07-24T18:22:22.984Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-24T18:22:22.984Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381342974_fmtheks3i",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6d5398c1-4431-4d5f-9350-e0acba6ddd1f",
+    "timestamp": "2025-07-24T18:23:24.010Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-24T18:23:24.010Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381404006_awtqh4fj9",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8b70c4f5-4819-4fc0-8cc4-3e59adc18807",
+    "timestamp": "2025-07-24T18:23:32.773Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-24T18:23:32.773Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381412768_n8sv4pnry",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f932e7c4-a666-439f-8c16-7f2d6741c6b9",
+    "timestamp": "2025-07-24T18:23:40.203Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-24T18:23:40.203Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381420197_kueyw8z6l",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "db4b2c84-0909-41aa-8a84-b81d78dcebce",
+    "timestamp": "2025-07-24T18:23:59.740Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-24T18:23:59.740Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381439733_rzjfpjuiv",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "567ff0d1-eed8-4b11-a8dd-c2f9daf28500",
+    "timestamp": "2025-07-24T18:24:13.086Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-24T18:24:13.086Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381453078_fke40f2xh",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "92b221e9-7c0b-46ed-bfb0-fc8d0241fe8f",
+    "timestamp": "2025-07-24T18:25:10.730Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-07-24T18:25:10.730Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381510721_ptjr6fim0",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b661e6e3-5890-4738-988f-b44d6ffcb4c2",
+    "timestamp": "2025-07-24T18:25:42.969Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-24T18:25:42.969Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381542961_vyh9k5pqf",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "33a9847c-7185-4a90-9afd-b5e4501074f6",
+    "timestamp": "2025-07-24T18:25:45.820Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-24T18:25:45.820Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753381545816_w19652z4p",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ed76be7a-0710-484e-a0d4-d70468edeec4",
+    "timestamp": "2025-07-24T18:37:32.000Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 23594.6
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 23594.6,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:37:31.999Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-24T18:37:32.000Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382251996_pocm30iv1",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0725cc18-b854-4669-9fca-8258fa681286",
+    "timestamp": "2025-07-24T18:39:06.224Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 51324
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 51324,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:06.223Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-24T18:39:06.224Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382346221_whalctgxd",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d6c1f579-ebbd-4edf-9894-dca43b170227",
+    "timestamp": "2025-07-24T18:39:52.756Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 94663.7
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 94663.7,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:52.755Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-24T18:39:52.756Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382392753_oyj0hwaq1",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c1438b6a-18f0-4bc4-aeae-33ce413d935a",
+    "timestamp": "2025-07-24T18:39:54.839Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 28537.2
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 28537.2,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:54.839Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-24T18:39:54.839Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382394837_qukuc0i39",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0e85da49-80bf-428b-888c-bbee1e2e3ded",
+    "timestamp": "2025-07-24T18:39:55.532Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 8174.4
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 8174.4,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:55.532Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-24T18:39:55.532Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382395530_eoc05ssx9",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "885cee04-34cd-46d5-8fa5-59eedd7326d3",
+    "timestamp": "2025-07-24T18:39:56.151Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 1609.9
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 1609.9,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:56.150Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-24T18:39:56.151Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382396147_nv17kmst8",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "082b4b95-8c96-4923-8d7e-897d61823faf",
+    "timestamp": "2025-07-24T18:39:56.683Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 372.2
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 372.2,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:56.683Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-24T18:39:56.683Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382396680_sbd41gcz7",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b4804f22-23b0-4d28-b3cb-56c2294aa72f",
+    "timestamp": "2025-07-24T18:39:57.580Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 84.7
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 84.7,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:39:57.580Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-24T18:39:57.580Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382397578_l5hm2zraq",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "65adbdc9-687e-4162-a72a-2ad93c78c42c",
+    "timestamp": "2025-07-24T18:41:33.130Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "query": {},
+        "body": {
+          "quantity": 158.2
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 158.2,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Labo 1",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-24T18:41:33.129Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Armoire acides"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-24T18:41:33.130Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382493127_4bajuigtv",
+      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "18210bcc-42a2-47d1-be8c-cf0ae9d9cc8a",
+    "timestamp": "2025-07-24T18:47:07.090Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "USERS",
+      "entity": "user-config",
+      "entityId": "config"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/user/config/",
+        "query": {},
+        "body": {
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "cards",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "success": true,
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "cards",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T18:47:07.089Z"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-24T18:47:07.090Z"
+      },
+      "configKeys": [
+        "materialsViewMode",
+        "chemicalsViewMode",
+        "theme",
+        "language",
+        "notifications",
+        "dashboard",
+        "lastUpdated"
+      ],
+      "viewModeUpdated": "list",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382827085_87a3zpx5f",
+      "path": "/api/user/config/",
+      "method": "POST",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cdf2db4a-b8cb-4e7a-91d9-7a0829fac731",
+    "timestamp": "2025-07-24T18:47:08.622Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "USERS",
+      "entity": "user-config",
+      "entityId": "config"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/user/config/",
+        "query": {},
+        "body": {
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T11:03:18.087Z"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "success": true,
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T18:47:08.622Z"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-24T18:47:08.622Z"
+      },
+      "configKeys": [
+        "materialsViewMode",
+        "chemicalsViewMode",
+        "theme",
+        "language",
+        "notifications",
+        "dashboard",
+        "lastUpdated"
+      ],
+      "viewModeUpdated": "list",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382828619_gokkgivxm",
+      "path": "/api/user/config/",
+      "method": "POST",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "48a99588-fde5-4de2-8a12-85fcfb1d88de",
+    "timestamp": "2025-07-24T18:47:44.683Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "cmdd5kox200001f0vj0se0mc8"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/cmdd5kox200001f0vj0se0mc8/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-07-24T18:47:44.683Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382864664_096ykqick",
+      "path": "/api/user/cmdd5kox200001f0vj0se0mc8/",
+      "method": "GET",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a0dbd244-9b26-47cb-91b5-41ac75c934ef",
+    "timestamp": "2025-07-24T18:48:27.428Z",
+    "user": {
+      "id": "cmdd5kox200001f0vj0se0mc8",
+      "email": "admin@labo.fr",
+      "name": "Administrateur Labo",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "cmdd5kox200001f0vj0se0mc8"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/cmdd5kox200001f0vj0se0mc8/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-24T18:48:27.428Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753382907423_tac1yo25m",
+      "path": "/api/user/cmdd5kox200001f0vj0se0mc8/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
   }
 ]
