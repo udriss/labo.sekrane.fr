@@ -181,11 +181,11 @@ const handleCreateCalendarEvent = async () => {
 
     // Préparer les données des fichiers avec le contenu uploadé
     const filesData = files
-      .filter(f => f.uploadStatus === 'completed')
+      .filter(f => f.uploadStatus === 'completed' && f.file)
       .map(f => ({
-        fileName: f.file.name,
-        fileSize: f.file.size,
-        fileType: f.file.type,
+        fileName: f.file!.name,
+        fileSize: f.file!.size,
+        fileType: f.file!.type,
         fileUrl: f.fileContent, // fileContent contient maintenant l'URL retournée par le serveur
         uploadedAt: new Date().toISOString()
       }))
@@ -900,7 +900,8 @@ const handleCreateCalendarEvent = async () => {
                 onFilesChange={setFiles}
                 maxFiles={5}
                 maxSizePerFile={10}
-                acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif']}
+                acceptedTypes={['.pdf', '.doc', '.docx', '.odt', '.jpg',
+                       '.jpeg', '.png', '.gif', '.txt', '.svg', ]}
               />
 
               {getOutsideBusinessHoursWarnings().length > 0 && (

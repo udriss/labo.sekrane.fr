@@ -25,7 +25,8 @@ import {
   Grow,
   alpha,
   CircularProgress,
-  Chip
+  Chip,
+  GlobalStyles
 } from "@mui/material"
 import { 
   Visibility, 
@@ -620,24 +621,24 @@ export default function SignInPage() {
       </Container>
 
       {/* Styles CSS pour les animations */}
-      <style jsx global>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(25, 118, 210, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
+      <GlobalStyles
+        styles={{
+          '@keyframes shake': {
+            '0%, 100%': { transform: 'translateX(0)' },
+            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+            '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' }
+          },
+          '@keyframes pulse': {
+            '0%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.7)' },
+            '70%': { boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)' },
+            '100%': { boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)' }
+          },
+          '@keyframes float': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-10px)' }
+          }
+        }}
+      />
     </Box>
   )
 }

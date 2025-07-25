@@ -7,11 +7,22 @@ export type UserRole =
   | 'LABORANTIN';
 
 
+
+// Interface mise à jour pour gérer les fichiers existants
 export interface FileWithMetadata {
-  file: File
+  file: File | null  // Peut être null pour les fichiers existants
   id: string
   uploadProgress?: number
   error?: string
-  uploadStatus?: 'pending' | 'uploading' | 'completed' | 'error'
-  fileContent?: string // Base64 content
+  uploadStatus?: 'pending' | 'uploading' | 'completed' | 'error' | 'cancelled'
+  fileContent?: string
+  // Pour les fichiers existants
+  existingFile?: {
+    fileName: string
+    fileUrl: string
+    filePath?: string
+    fileSize?: number
+    fileType?: string
+    uploadedAt?: string
+  }
 }

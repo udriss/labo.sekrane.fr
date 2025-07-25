@@ -9,17 +9,10 @@ import {
 import {
   CloudUpload, Delete, InsertDriveFile, Image,
   PictureAsPdf, Description, Clear, CheckCircle, Error as ErrorIcon,
-  Cancel
+  Cancel, AttachFile
 } from '@mui/icons-material'
+import { FileWithMetadata } from '@/types/global'
 
-interface FileWithMetadata {
-  file: File
-  id: string
-  uploadProgress?: number
-  error?: string
-  uploadStatus?: 'pending' | 'uploading' | 'completed' | 'error' | 'cancelled'
-  fileContent?: string // URL du fichier après upload
-}
 
 interface FileUploadSectionProps {
   files: FileWithMetadata[]
@@ -51,86 +44,68 @@ export function FileUploadSection({
   const [dragOver, setDragOver] = useState(false)
   const [activeUploads, setActiveUploads] = useState<Record<string, XMLHttpRequest>>({})
 
-  const handleFileSelection = (selectedFiles: FileList | null) => {
-    if (!selectedFiles) return
 
-    const newFiles: FileWithMetadata[] = []
-    const errors: string[] = []
 
-    Array.from(selectedFiles).forEach((file) => {
-      // Vérifier le nombre de fichiers
-      if (files.length + newFiles.length >= maxFiles) {
-        errors.push(`Maximum ${maxFiles} fichiers autorisés`)
-        return
-      }
+const getFileIcon = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase() || ''
+  
+  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
+    return <Image color="success" />
+  } else if (extension === 'pdf') {
+    return <PictureAsPdf color="error" />
+  } else if (['doc', 'docx'].includes(extension)) {
+    return <Description color="info" />
+  }
+  
+  return <InsertDriveFile />
+}
 
-      // Vérifier la taille
-      if (file.size > maxSizePerFile * 1024 * 1024) {
-        errors.push(`${file.name} dépasse la taille maximale de ${maxSizePerFile}MB`)
-        return
-      }
-
-      // Vérifier le type
-      const extension = `.${file.name.split('.').pop()?.toLowerCase()}`
-      if (!acceptedTypes.some(type => extension === type)) {
-        errors.push(`${file.name} n'est pas un type de fichier accepté`)
-        return
-      }
-
-      // Vérifier les doublons
-      if (files.some(f => f.file.name === file.name)) {
-        errors.push(`${file.name} est déjà ajouté`)
-        return
-      }
-
-      newFiles.push({
-        file,
-        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        uploadProgress: 0,
-        uploadStatus: 'pending'
-      })
-    })
-
-    if (errors.length > 0) {
-      alert(errors.join('\n'))
+const formatFileSize = (bytes: number): string => {
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+}
+  // Fonction helper pour obtenir le nom du fichier
+  const getFileName = (fileItem: FileWithMetadata): string => {
+    if (fileItem.file) {
+      return fileItem.file.name
     }
-
-    if (newFiles.length > 0) {
-      onFilesChange([...files, ...newFiles])
+    if (fileItem.existingFile) {
+      return fileItem.existingFile.fileName
     }
+    return 'Fichier inconnu'
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    handleFileSelection(e.dataTransfer.files)
-  }
-
-  const handleFileInput = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.multiple = true
-    input.accept = acceptedTypes.join(',')
-    input.onchange = (e) => {
-      const target = e.target as HTMLInputElement
-      handleFileSelection(target.files)
+  // Fonction helper pour obtenir la taille du fichier
+  const getFileSize = (fileItem: FileWithMetadata): number => {
+    if (fileItem.file) {
+      return fileItem.file.size
     }
-    input.click()
+    if (fileItem.existingFile?.fileSize) {
+      return fileItem.existingFile.fileSize
+    }
+    return 0
   }
 
- 
-  // Fonction uploadToServer complète avec gestion des XHR
+  // Fonction helper pour vérifier si c'est un fichier existant
+  const isExistingFile = (fileItem: FileWithMetadata): boolean => {
+    return !fileItem.file && !!fileItem.existingFile
+  }
+
+  // Upload seulement pour les nouveaux fichiers
   const uploadToServer = async (fileItem: FileWithMetadata) => {
+    // Ne pas uploader les fichiers existants
+    if (isExistingFile(fileItem)) {
+      return
+    }
+
+    // Vérifier que le fichier existe
+    if (!fileItem.file) {
+      console.error('Pas de fichier à uploader:', fileItem)
+      updateFileProgress(fileItem.id, 0, 'error', undefined, 'Fichier invalide')
+      return
+    }
+
     try {
       updateFileProgress(fileItem.id, 0, 'uploading')
 
@@ -205,22 +180,10 @@ export function FileUploadSection({
           reject(new Error('Upload annulé'))
         })
 
-        // Timeout après 5 minutes
-        xhr.timeout = 300000
-        xhr.addEventListener('timeout', () => {
-          setActiveUploads(prev => {
-            const { [fileItem.id]: _, ...rest } = prev
-            return rest
-          })
-          updateFileProgress(fileItem.id, 0, 'error', undefined, 'Délai d\'attente dépassé')
-          reject(new Error('Délai d\'attente dépassé'))
-        })
-
         xhr.open('POST', '/api/upload')
         xhr.send(formData)
       })
     } catch (error) {
-      // Nettoyer en cas d'erreur
       setActiveUploads(prev => {
         const { [fileItem.id]: _, ...rest } = prev
         return rest
@@ -255,21 +218,11 @@ export function FileUploadSection({
     )
   }
 
-  // Nettoyer les uploads actifs au démontage du composant
-  useEffect(() => {
-    return () => {
-      // Annuler tous les uploads actifs
-      Object.values(activeUploads).forEach(xhr => {
-        xhr.abort()
-      })
-    }
-  }, [])
-
-  // Upload automatique
+  // Upload automatique seulement pour les nouveaux fichiers
   useEffect(() => {
     if (autoUpload) {
       files
-        .filter(f => f.uploadStatus === 'pending')
+        .filter(f => !isExistingFile(f) && f.uploadStatus === 'pending')
         .forEach(async (fileItem) => {
           try {
             await uploadToServer(fileItem)
@@ -280,20 +233,102 @@ export function FileUploadSection({
     }
   }, [files, autoUpload])
 
-  // ... autres fonctions (handleFileSelection, handleDragOver, etc.) ...
+  // Fonction handleFileSelection avec vérifications
+  const handleFileSelection = (selectedFiles: FileList | null) => {
+    if (!selectedFiles) return
+
+  const newFiles: FileWithMetadata[] = []
+  const errors: string[] = []
+
+  Array.from(selectedFiles).forEach((file) => {
+    // Vérifier que le fichier existe
+    if (!file) {
+      errors.push('Fichier invalide détecté')
+      return
+    }
+
+    // Vérifier le nombre de fichiers
+    if (files.length + newFiles.length >= maxFiles) {
+      errors.push(`Maximum ${maxFiles} fichiers autorisés`)
+      return
+    }
+
+    // Vérifier la taille
+    if (file.size > maxSizePerFile * 1024 * 1024) {
+      errors.push(`${file.name} dépasse la taille maximale de ${maxSizePerFile}MB`)
+      return
+    }
+
+    // Vérifier le type
+    const extension = `.${file.name.split('.').pop()?.toLowerCase()}`
+    if (!acceptedTypes.some(type => extension === type)) {
+      errors.push(`${file.name} n'est pas un type de fichier accepté`)
+      return
+    }
+
+    // Vérifier les doublons
+    if (files.some(f => f.file && f.file.name === file.name)) {
+      errors.push(`${file.name} est déjà ajouté`)
+      return
+    }
+
+    newFiles.push({
+      file,
+      id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      uploadProgress: 0,
+      uploadStatus: 'pending'
+    })
+  })
+
+  if (errors.length > 0) {
+    alert(errors.join('\n'))
+  }
+
+  if (newFiles.length > 0) {
+    onFilesChange([...files, ...newFiles])
+  }
+}
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    handleFileSelection(e.dataTransfer.files)
+  }
+
+  const handleFileInput = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = true
+    input.accept = acceptedTypes.join(',')
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement
+      handleFileSelection(target.files)
+    }
+    input.click()
+  }
 
   const removeFile = (fileId: string) => {
-    // Annuler l'upload si en cours
-    if (files.find(f => f.id === fileId)?.uploadStatus === 'uploading') {
+    const fileItem = files.find(f => f.id === fileId)
+    if (fileItem && !isExistingFile(fileItem) && fileItem.uploadStatus === 'uploading') {
       cancelUpload(fileId)
     }
     onFilesChange(files.filter(f => f.id !== fileId))
   }
 
-  // Fonction pour réessayer un upload échoué
   const retryUpload = async (fileId: string) => {
     const fileItem = files.find(f => f.id === fileId)
-    if (fileItem && (fileItem.uploadStatus === 'error' || fileItem.uploadStatus === 'cancelled')) {
+    if (fileItem && !isExistingFile(fileItem) && 
+        (fileItem.uploadStatus === 'error' || fileItem.uploadStatus === 'cancelled')) {
       updateFileProgress(fileId, 0, 'pending')
       try {
         await uploadToServer(fileItem)
@@ -349,178 +384,194 @@ export function FileUploadSection({
         </Typography>
       </Card>
 
-      {/* Liste des fichiers avec boutons d'action */}
+      {/* Liste des fichiers */}
       {files.length > 0 && (
         <Stack spacing={1}>
-          {files.map((fileItem) => (
-            <Card 
-              key={fileItem.id} 
-              sx={{ 
-                p: 1.5,
-                borderLeft: 4,
-                borderColor: `${getStatusColor(fileItem.uploadStatus)}.main`,
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              <Box display="flex" alignItems="center" gap={1}>
-                {getFileIcon(fileItem.file.name)}
-                <Box flexGrow={1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="body2" noWrap>
-                      {fileItem.file.name}
-                    </Typography>
-                    {fileItem.uploadStatus === 'completed' && (
-                      <CheckCircle color="success" sx={{ fontSize: 16 }} />
-                    )}
-                    {fileItem.uploadStatus === 'error' && (
-                      <ErrorIcon color="error" sx={{ fontSize: 16 }} />
-                    )}
-                    {fileItem.uploadStatus === 'cancelled' && (
-                      <Cancel color="warning" sx={{ fontSize: 16 }} />
-                    )}
+          {files.map((fileItem) => {
+            const fileName = getFileName(fileItem)
+            const fileSize = getFileSize(fileItem)
+            const isExisting = isExistingFile(fileItem)
+
+            return (
+              <Card 
+                key={fileItem.id} 
+                sx={{ 
+                  p: 1.5,
+                  borderLeft: 4,
+                  borderColor: isExisting ? 'info.main' : `${getStatusColor(fileItem.uploadStatus)}.main`,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  bgcolor: isExisting ? 'info.50' : 'background.paper'
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  {getFileIcon(fileName)}
+                  <Box flexGrow={1}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="body2" noWrap>
+                        {fileName}
+                      </Typography>
+                      {isExisting && (
+                        <Chip 
+                          label="Existant" 
+                          size="small" 
+                          color="info" 
+                          variant="outlined"
+                          sx={{ height: 20 }}
+                        />
+                      )}
+                                            {!isExisting && fileItem.uploadStatus === 'completed' && (
+                        <CheckCircle color="success" sx={{ fontSize: 16 }} />
+                      )}
+                      {!isExisting && fileItem.uploadStatus === 'error' && (
+                        <ErrorIcon color="error" sx={{ fontSize: 16 }} />
+                      )}
+                      {!isExisting && fileItem.uploadStatus === 'cancelled' && (
+                        <Cancel color="warning" sx={{ fontSize: 16 }} />
+                      )}
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="caption" color="text.secondary">
+                        {fileSize > 0 ? formatFileSize(fileSize) : 'Taille inconnue'}
+                      </Typography>
+                      {!isExisting && fileItem.uploadStatus === 'uploading' && (
+                        <Typography variant="caption" color="primary">
+                          • Téléchargement {fileItem.uploadProgress}%
+                        </Typography>
+                      )}
+                      {!isExisting && fileItem.uploadStatus === 'completed' && (
+                        <Typography variant="caption" color="success.main">
+                          • Téléchargé
+                        </Typography>
+                      )}
+                      {!isExisting && fileItem.uploadStatus === 'error' && (
+                        <Typography variant="caption" color="error">
+                          • Erreur
+                        </Typography>
+                      )}
+                      {!isExisting && fileItem.uploadStatus === 'cancelled' && (
+                        <Typography variant="caption" color="warning.main">
+                          • Annulé
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatFileSize(fileItem.file.size)}
-                    </Typography>
-                    {fileItem.uploadStatus === 'uploading' && (
-                      <Typography variant="caption" color="primary">
-                        • Téléchargement {fileItem.uploadProgress}%
-                      </Typography>
+                  
+                  {/* Boutons d'action */}
+                  <Box display="flex" gap={0.5}>
+                    {/* Bouton annuler pour les uploads en cours */}
+                    {!isExisting && fileItem.uploadStatus === 'uploading' && (
+                      <Tooltip title="Annuler l'upload">
+                        <IconButton
+                          size="small"
+                          color="warning"
+                          onClick={() => cancelUpload(fileItem.id)}
+                        >
+                          <Cancel fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
-                    {fileItem.uploadStatus === 'completed' && (
-                      <Typography variant="caption" color="success.main">
-                        • Téléchargé
-                      </Typography>
+                    
+                    {/* Bouton réessayer pour les erreurs et annulations */}
+                    {!isExisting && (fileItem.uploadStatus === 'error' || fileItem.uploadStatus === 'cancelled') && (
+                      <Tooltip title="Réessayer">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => retryUpload(fileItem.id)}
+                        >
+                          <CloudUpload fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     )}
-                    {fileItem.uploadStatus === 'error' && (
-                      <Typography variant="caption" color="error">
-                        • Erreur
-                      </Typography>
-                    )}
-                    {fileItem.uploadStatus === 'cancelled' && (
-                      <Typography variant="caption" color="warning.main">
-                        • Annulé
-                      </Typography>
-                    )}
+                    
+                    {/* Bouton supprimer */}
+                    <Tooltip title="Supprimer">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => removeFile(fileItem.id)}
+                          disabled={!isExisting && fileItem.uploadStatus === 'uploading'}
+                        >
+                          <Clear fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Box>
                 
-                {/* Boutons d'action */}
-                <Box display="flex" gap={0.5}>
-                  {/* Bouton annuler pour les uploads en cours */}
-                  {fileItem.uploadStatus === 'uploading' && (
-                    <Tooltip title="Annuler l'upload">
-                      <IconButton
-                        size="small"
-                        color="warning"
-                        onClick={() => cancelUpload(fileItem.id)}
-                      >
-                        <Cancel fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  
-                  {/* Bouton réessayer pour les erreurs et annulations */}
-                  {(fileItem.uploadStatus === 'error' || fileItem.uploadStatus === 'cancelled') && (
-                    <Tooltip title="Réessayer">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => retryUpload(fileItem.id)}
-                      >
-                        <CloudUpload fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  
-                  {/* Bouton supprimer */}
-                  <Tooltip title="Supprimer">
-                    <span>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => removeFile(fileItem.id)}
-                        disabled={fileItem.uploadStatus === 'uploading'}
-                      >
-                        <Clear fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-              </Box>
-              
-              {/* Barre de progression */}
-              {fileItem.uploadStatus === 'uploading' && (
-                <Box sx={{ mt: 1, position: 'relative' }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={fileItem.uploadProgress || 0}
-                    sx={{
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: 'grey.200',
-                      '& .MuiLinearProgress-bar': {
+                {/* Barre de progression pour les nouveaux fichiers */}
+                {!isExisting && fileItem.uploadStatus === 'uploading' && (
+                  <Box sx={{ mt: 1, position: 'relative' }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={fileItem.uploadProgress || 0}
+                      sx={{
+                        height: 6,
                         borderRadius: 3,
-                        backgroundColor: 'primary.main'
+                        backgroundColor: 'grey.200',
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 3,
+                          backgroundColor: 'primary.main'
+                        }
+                      }}
+                    />
+                    {/* Affichage du pourcentage au centre */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'background.paper',
+                        px: 0.5,
+                        borderRadius: 1,
+                        boxShadow: 1
+                      }}
+                    >
+                      <Typography variant="caption" fontWeight="bold">
+                        {fileItem.uploadProgress}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                
+                {/* Affichage de l'erreur */}
+                {fileItem.error && (
+                  <Alert 
+                    severity={fileItem.uploadStatus === 'cancelled' ? 'warning' : 'error'}
+                    sx={{ 
+                      mt: 1, 
+                      py: 0,
+                      '& .MuiAlert-message': {
+                        fontSize: '0.75rem'
                       }
                     }}
-                  />
-                  {/* Affichage du pourcentage au centre */}
+                  >
+                    {fileItem.error}
+                  </Alert>
+                )}
+
+                {/* Overlay de progression pour l'effet visuel */}
+                {!isExisting && fileItem.uploadStatus === 'uploading' && (
                   <Box
                     sx={{
                       position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      bgcolor: 'background.paper',
-                      px: 0.5,
-                      borderRadius: 1,
-                      boxShadow: 1
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'primary.main',
+                      opacity: 0.05,
+                      width: `${fileItem.uploadProgress}%`,
+                      transition: 'width 0.3s ease'
                     }}
-                  >
-                    <Typography variant="caption" fontWeight="bold">
-                      {fileItem.uploadProgress}%
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-              
-              {/* Affichage de l'erreur */}
-              {fileItem.error && (
-                <Alert 
-                  severity={fileItem.uploadStatus === 'cancelled' ? 'warning' : 'error'}
-                  sx={{ 
-                    mt: 1, 
-                    py: 0,
-                    '& .MuiAlert-message': {
-                      fontSize: '0.75rem'
-                    }
-                  }}
-                >
-                  {fileItem.error}
-                </Alert>
-              )}
-
-                            {/* Overlay de progression pour l'effet visuel */}
-              {fileItem.uploadStatus === 'uploading' && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'primary.main',
-                    opacity: 0.05,
-                    width: `${fileItem.uploadProgress}%`,
-                    transition: 'width 0.3s ease'
-                  }}
-                />
-              )}
-            </Card>
-          ))}
+                  />
+                )}
+              </Card>
+            )
+          })}
         </Stack>
       )}
 
@@ -533,37 +584,46 @@ export function FileUploadSection({
       {/* Résumé du statut des uploads */}
       {files.length > 0 && (
         <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          {files.filter(f => f.uploadStatus === 'completed').length > 0 && (
+          {files.filter(f => isExistingFile(f)).length > 0 && (
+            <Chip
+              icon={<AttachFile />}
+              label={`${files.filter(f => isExistingFile(f)).length} fichier${files.filter(f => isExistingFile(f)).length > 1 ? 's' : ''} existant${files.filter(f => isExistingFile(f)).length > 1 ? 's' : ''}`}
+              color="info"
+              size="small"
+              variant="outlined"
+            />
+          )}
+          {files.filter(f => !isExistingFile(f) && f.uploadStatus === 'completed').length > 0 && (
             <Chip
               icon={<CheckCircle />}
-              label={`${files.filter(f => f.uploadStatus === 'completed').length} téléchargé${files.filter(f => f.uploadStatus === 'completed').length > 1 ? 's' : ''}`}
+              label={`${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'completed').length} téléchargé${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'completed').length > 1 ? 's' : ''}`}
               color="success"
               size="small"
               variant="outlined"
             />
           )}
-          {files.filter(f => f.uploadStatus === 'uploading').length > 0 && (
+          {files.filter(f => !isExistingFile(f) && f.uploadStatus === 'uploading').length > 0 && (
             <Chip
               icon={<CloudUpload />}
-              label={`${files.filter(f => f.uploadStatus === 'uploading').length} en cours`}
+              label={`${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'uploading').length} en cours`}
               color="primary"
               size="small"
               variant="outlined"
             />
           )}
-          {files.filter(f => f.uploadStatus === 'error').length > 0 && (
+          {files.filter(f => !isExistingFile(f) && f.uploadStatus === 'error').length > 0 && (
             <Chip
               icon={<ErrorIcon />}
-              label={`${files.filter(f => f.uploadStatus === 'error').length} erreur${files.filter(f => f.uploadStatus === 'error').length > 1 ? 's' : ''}`}
+              label={`${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'error').length} erreur${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'error').length > 1 ? 's' : ''}`}
               color="error"
               size="small"
               variant="outlined"
             />
           )}
-          {files.filter(f => f.uploadStatus === 'cancelled').length > 0 && (
+          {files.filter(f => !isExistingFile(f) && f.uploadStatus === 'cancelled').length > 0 && (
             <Chip
               icon={<Cancel />}
-              label={`${files.filter(f => f.uploadStatus === 'cancelled').length} annulé${files.filter(f => f.uploadStatus === 'cancelled').length > 1 ? 's' : ''}`}
+              label={`${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'cancelled').length} annulé${files.filter(f => !isExistingFile(f) && f.uploadStatus === 'cancelled').length > 1 ? 's' : ''}`}
               color="warning"
               size="small"
               variant="outlined"
@@ -573,7 +633,7 @@ export function FileUploadSection({
       )}
 
       {/* Actions globales si nécessaire */}
-      {files.some(f => f.uploadStatus === 'uploading') && (
+      {files.some(f => !isExistingFile(f) && f.uploadStatus === 'uploading') && (
         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="outlined"
@@ -582,7 +642,7 @@ export function FileUploadSection({
             onClick={() => {
               // Annuler tous les uploads en cours
               files
-                .filter(f => f.uploadStatus === 'uploading')
+                .filter(f => !isExistingFile(f) && f.uploadStatus === 'uploading')
                 .forEach(f => cancelUpload(f.id))
             }}
           >
@@ -591,7 +651,7 @@ export function FileUploadSection({
         </Box>
       )}
 
-      {files.some(f => f.uploadStatus === 'error' || f.uploadStatus === 'cancelled') && (
+      {files.some(f => !isExistingFile(f) && (f.uploadStatus === 'error' || f.uploadStatus === 'cancelled')) && (
         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="outlined"
@@ -600,7 +660,7 @@ export function FileUploadSection({
             onClick={() => {
               // Réessayer tous les échecs
               files
-                .filter(f => f.uploadStatus === 'error' || f.uploadStatus === 'cancelled')
+                .filter(f => !isExistingFile(f) && (f.uploadStatus === 'error' || f.uploadStatus === 'cancelled'))
                 .forEach(f => retryUpload(f.id))
             }}
           >
@@ -610,26 +670,4 @@ export function FileUploadSection({
       )}
     </Box>
   )
-}
-
-// Ajout des fonctions manquantes pour la gestion complète
-
-const getFileIcon = (fileName: string) => {
-  const extension = fileName.split('.').pop()?.toLowerCase() || ''
-  
-  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
-    return <Image color="success" />
-  } else if (extension === 'pdf') {
-    return <PictureAsPdf color="error" />
-  } else if (['doc', 'docx'].includes(extension)) {
-    return <Description color="info" />
-  }
-  
-  return <InsertDriveFile />
-}
-
-const formatFileSize = (bytes: number): string => {
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
 }

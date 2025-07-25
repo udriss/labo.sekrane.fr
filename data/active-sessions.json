@@ -1,9 +1,9 @@
 {
   "admin@labo.fr": {
-    "lastActivity": "2025-07-25T07:11:11.136Z",
-    "userName": "Administrateur",
+    "lastActivity": "2025-07-25T10:07:03.093Z",
+    "userName": "Administrateur Labo",
     "userRole": "ADMIN",
-    "ipAddress": "::ffff:127.0.0.1",
+    "ipAddress": "89.158.80.136",
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18."
   }
 }

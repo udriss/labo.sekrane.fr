@@ -12,7 +12,8 @@ import {
   alpha,
   IconButton,
   Fade,
-  Paper
+  Paper,
+  GlobalStyles
 } from "@mui/material"
 import {
   Science,
@@ -25,7 +26,7 @@ import {
   Warning,
   Psychology,
   Vaccines,
-  LocalFireDepartment
+  LocalFireDepartment,
 } from "@mui/icons-material"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -365,115 +366,89 @@ export default function NotFoundPage() {
       </Container>
 
       {/* Styles pour les animations */}
-      {/* Styles pour les animations */}
-      <style jsx global>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes glitch {
-          0%, 100% { 
-            clip-path: inset(0 0 0 0); 
+      <GlobalStyles
+        styles={{
+          '@keyframes spin': {
+            from: { transform: 'rotate(0deg)' },
+            to: { transform: 'rotate(360deg)' }
+          },
+          '@keyframes glitch': {
+            '0%, 100%': { 
+              clipPath: 'inset(0 0 0 0)' 
+            },
+            '20%': { 
+              clipPath: 'inset(20% 0 30% 0)' 
+            },
+            '40%': { 
+              clipPath: 'inset(50% 0 20% 0)' 
+            },
+            '60%': { 
+              clipPath: 'inset(10% 0 60% 0)' 
+            },
+            '80%': { 
+              clipPath: 'inset(80% 0 5% 0)' 
+            }
+          },
+          '@keyframes distort': {
+            '0%, 100%': { 
+              transform: 'skew(0deg) scale(1)' 
+            },
+            '20%': { 
+              transform: 'skew(-2deg) scale(1.01)' 
+            },
+            '40%': { 
+              transform: 'skew(1deg) scale(0.99)' 
+            },
+            '60%': { 
+              transform: 'skew(-1deg) scale(1.01)' 
+            },
+            '80%': { 
+              transform: 'skew(0.5deg) scale(0.99)' 
+            }
+          },
+          '@keyframes chromatic': {
+            '0%, 100%': {
+              textShadow: '0 0 0 transparent, 0 0 0 transparent'
+            },
+            '50%': {
+              textShadow: '-2px 0 #ff00ff, 2px 0 #00ffff'
+            }
+          },
+          '@keyframes flicker': {
+            '0%, 100%': { opacity: 1 },
+            '92%': { opacity: 1 },
+            '93%': { opacity: 0.6 },
+            '94%': { opacity: 1 },
+            '96%': { opacity: 0.8 },
+            '97%': { opacity: 1 }
+          },
+          '@keyframes scan': {
+            '0%': { transform: 'translateY(-100%)' },
+            '100%': { transform: 'translateY(100%)' }
+          },
+          '.scan-line': {
+            position: 'absolute',
+            width: '100%',
+            height: '2px',
+            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+            animation: 'scan 8s linear infinite',
+            pointerEvents: 'none'
+          },
+          '.static-noise': {
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.02,
+            zIndex: 1,
+            pointerEvents: 'none',
+            backgroundImage: 'repeating-radial-gradient(circle at 0 0, transparent 0, #ffffff 1px, transparent 1px, transparent 2px)',
+            backgroundSize: '3px 3px',
+            animation: 'flicker 5s linear infinite'
+          },
+          '.rgb-split': {
+            animation: 'chromatic 4s ease-in-out infinite'
           }
-          20% { 
-            clip-path: inset(20% 0 30% 0); 
-          }
-          40% { 
-            clip-path: inset(50% 0 20% 0); 
-          }
-          60% { 
-            clip-path: inset(10% 0 60% 0); 
-          }
-          80% { 
-            clip-path: inset(80% 0 5% 0); 
-          }
-        }
-
-        @keyframes distort {
-          0%, 100% { 
-            transform: skew(0deg) scale(1); 
-          }
-          20% { 
-            transform: skew(-2deg) scale(1.01); 
-          }
-          40% { 
-            transform: skew(1deg) scale(0.99); 
-          }
-          60% { 
-            transform: skew(-1deg) scale(1.01); 
-          }
-          80% { 
-            transform: skew(0.5deg) scale(0.99); 
-          }
-        }
-
-        @keyframes chromatic {
-          0%, 100% {
-            text-shadow: 
-              0 0 0 transparent,
-              0 0 0 transparent;
-          }
-          50% {
-            text-shadow: 
-              -2px 0 #ff00ff,
-              2px 0 #00ffff;
-          }
-        }
-
-        @keyframes flicker {
-          0%, 100% { opacity: 1; }
-          92% { opacity: 1; }
-          93% { opacity: 0.6; }
-          94% { opacity: 1; }
-          96% { opacity: 0.8; }
-          97% { opacity: 1; }
-        }
-
-        @keyframes scan {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-
-        /* Effet de ligne de scan */
-        .scan-line {
-          position: absolute;
-          width: 100%;
-          height: 2px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.1),
-            transparent
-          );
-          animation: scan 8s linear infinite;
-          pointer-events: none;
-        }
-
-        /* Effet de bruit statique */
-        .static-noise {
-          position: absolute;
-          inset: 0;
-          opacity: 0.02;
-          z-index: 1;
-          pointer-events: none;
-          background-image: 
-            repeating-radial-gradient(
-              circle at 0 0,
-              transparent 0,
-              #ffffff 1px,
-              transparent 1px,
-              transparent 2px
-            );
-          background-size: 3px 3px;
-          animation: flicker 5s linear infinite;
-        }
-
-        /* Effet RGB split sur le texte */
-        .rgb-split {
-          animation: chromatic 4s ease-in-out infinite;
-        }
-      `}</style>
+        }}
+      />
 
       {/* Overlay avec effet de scan */}
       <Box
@@ -494,6 +469,7 @@ export default function NotFoundPage() {
           zIndex: 3
         }}
       />
+
 
       {/* Effet de bruit statique */}
       <Box

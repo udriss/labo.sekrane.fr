@@ -5,8 +5,8 @@ import {
   Container, Typography, Box, Card, CardContent, CardActions, Button,
   Grid, Avatar, Chip, Alert, Paper, Stack, IconButton, Badge,
   Tab, Tabs, List, ListItem, ListItemText, Dialog, DialogTitle, 
-  DialogContent, DialogActions, TextField, FormControl, InputLabel,
-  Select, MenuItem, Switch, FormControlLabel, ListItemIcon, Divider,
+  DialogContent, DialogActions, TextField, GlobalStyles,
+  Select, MenuItem, Switch, FormControlLabel, ListItemIcon, Divider
 } from "@mui/material"
 import { 
   QrCodeScanner, CameraAlt, Close, CheckCircle, Error, Warning,
@@ -711,12 +711,14 @@ export default function ScannerPage() {
         </DialogActions>
       </Dialog>
 
-      <style jsx>{`
-        @keyframes scan {
-          0% { transform: translateY(-100%) }
-          100% { transform: translateY(100%) }
+      <GlobalStyles
+      styles={{
+        '@keyframes scan': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' }
         }
-      `}</style>
+      }}
+    />
     </Container>
   )
 }

@@ -101,7 +101,8 @@ const formatFileSize = (bytes?: number): string => {
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
 }
 
-// Composant pour afficher une carte de document - VERSION AMÉLIORÉE
+
+// Composant pour afficher une carte de document - VERSION CORRIGÉE
 const DocumentCard: React.FC<{ 
   document: DocumentFile,
   onOpenError?: (error: string) => void 
@@ -110,93 +111,93 @@ const DocumentCard: React.FC<{
   const fileInfo = getFileTypeInfo(fileType)
   const [isHovered, setIsHovered] = useState(false)
   
-const handleClick = async (e: React.MouseEvent) => {
-  e.preventDefault()
-  
-  if (document.fileUrl) {
-    try {
-      let urlToOpen = document.fileUrl
-      
-      // Si c'est un fichier local, construire l'URL complète via l'API
-      if (document.fileUrl.startsWith('/uploads/')) {
-        urlToOpen = `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
-      }
-      
-      // Ouvrir dans un nouvel onglet
-      const newWindow = window.open(urlToOpen, '_blank', 'noopener,noreferrer')
-      
-      // Vérifier si l'ouverture a été bloquée
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    if (document.fileUrl) {
+      try {
+        let urlToOpen = document.fileUrl
+        
+        // Si c'est un fichier local, construire l'URL complète via l'API
+        if (document.fileUrl.startsWith('/uploads/')) {
+          urlToOpen = `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
+        }
+        
+        // Ouvrir dans un nouvel onglet
+        const newWindow = window.open(urlToOpen, '_blank', 'noopener,noreferrer')
+        
+        // Vérifier si l'ouverture a été bloquée
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          if (onOpenError) {
+            onOpenError('Le navigateur a bloqué l\'ouverture du document. Veuillez autoriser les pop-ups pour ce site.')
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'ouverture du document:', error)
         if (onOpenError) {
-          onOpenError('Le navigateur a bloqué l\'ouverture du document. Veuillez autoriser les pop-ups pour ce site.')
+          onOpenError('Impossible d\'ouvrir le document. Veuillez réessayer.')
         }
       }
-    } catch (error) {
-      console.error('Erreur lors de l\'ouverture du document:', error)
+    } else {
       if (onOpenError) {
-        onOpenError('Impossible d\'ouvrir le document. Veuillez réessayer.')
+        onOpenError('L\'URL du document n\'est pas disponible.')
       }
     }
-  } else {
-    if (onOpenError) {
-      onOpenError('L\'URL du document n\'est pas disponible.')
-    }
   }
-}
 
-const handleDownload = async (e: React.MouseEvent) => {
-  e.stopPropagation()
-  
-  if (document.fileUrl) {
-    try {
-      // Si c'est un chemin local (commence par /uploads/)
-      if (document.fileUrl.startsWith('/uploads/')) {
-        const response = await fetch('/api/calendrier/files', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filePath: document.fileUrl,
-            fileName: document.fileName
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (document.fileUrl) {
+      try {
+        // Si c'est un chemin local (commence par /uploads/)
+        if (document.fileUrl.startsWith('/uploads/')) {
+          const response = await fetch('/api/calendrier/files', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              filePath: document.fileUrl,
+              fileName: document.fileName
+            })
           })
-        })
 
-        if (!response.ok) {
-          throw new Error('Erreur lors du téléchargement')
+          if (!response.ok) {
+            throw new Error('Erreur lors du téléchargement')
+          }
+
+          // Récupérer le blob
+          const blob = await response.blob()
+          
+          // Créer un lien de téléchargement
+          const url = window.URL.createObjectURL(blob)
+          const link = window.document.createElement('a')
+          link.href = url
+          link.download = document.fileName
+          window.document.body.appendChild(link)
+          link.click()
+          
+          // Nettoyer
+          window.URL.revokeObjectURL(url)
+          window.document.body.removeChild(link)
+        } else {
+          // Si c'est une URL externe, utiliser l'ancienne méthode
+          const link = window.document.createElement('a')
+          link.href = document.fileUrl
+          link.download = document.fileName
+          window.document.body.appendChild(link)
+          link.click()
+          window.document.body.removeChild(link)
         }
-
-        // Récupérer le blob
-        const blob = await response.blob()
-        
-        // Créer un lien de téléchargement
-        const url = window.URL.createObjectURL(blob)
-        const link = window.document.createElement('a')
-        link.href = url
-        link.download = document.fileName
-        window.document.body.appendChild(link)
-        link.click()
-        
-        // Nettoyer
-        window.URL.revokeObjectURL(url)
-        window.document.body.removeChild(link)
-      } else {
-        // Si c'est une URL externe, utiliser l'ancienne méthode
-        const link = window.document.createElement('a')
-        link.href = document.fileUrl
-        link.download = document.fileName
-        window.document.body.appendChild(link)
-        link.click()
-        window.document.body.removeChild(link)
-      }
-    } catch (error) {
-      console.error('Erreur lors du téléchargement:', error)
-      if (onOpenError) {
-        onOpenError('Impossible de télécharger le document.')
+      } catch (error) {
+        console.error('Erreur lors du téléchargement:', error)
+        if (onOpenError) {
+          onOpenError('Impossible de télécharger le document.')
+        }
       }
     }
   }
-}
 
   return (
     <Tooltip 
@@ -213,15 +214,29 @@ const handleDownload = async (e: React.MouseEvent) => {
             boxShadow: 4,
             transform: 'translateY(-2px)'
           },
-          cursor: document.fileUrl ? 'pointer' : 'default',
           opacity: document.fileUrl ? 1 : 0.7
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <CardActionArea 
+        {/* Retirer CardActionArea et utiliser un Box cliquable */}
+        <Box
           onClick={handleClick}
-          disabled={!document.fileUrl}
+          sx={{
+            cursor: document.fileUrl ? 'pointer' : 'default',
+            '&:focus': {
+              outline: '2px solid',
+              outlineColor: 'primary.main',
+              outlineOffset: -2,
+            }
+          }}
+          tabIndex={document.fileUrl ? 0 : -1}
+          role={document.fileUrl ? "button" : undefined}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              handleClick(e as any)
+            }
+          }}
         >
           <Box
             sx={{
@@ -264,7 +279,10 @@ const handleDownload = async (e: React.MouseEvent) => {
                 <Tooltip title="Télécharger" arrow>
                   <IconButton
                     size="small"
-                    onClick={handleDownload}
+                    onClick={(e) => {
+                      e.stopPropagation() // Empêcher le clic de se propager au Box parent
+                      handleDownload(e)
+                    }}
                     sx={{
                       bgcolor: 'background.paper',
                       boxShadow: 1,
@@ -310,7 +328,7 @@ const handleDownload = async (e: React.MouseEvent) => {
               </Typography>
             )}
           </CardContent>
-        </CardActionArea>
+        </Box>
       </Card>
     </Tooltip>
   )
