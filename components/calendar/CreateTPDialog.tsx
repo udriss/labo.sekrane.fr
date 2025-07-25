@@ -1,16 +1,20 @@
 // components/calendar/CreateTPDialog.tsx
+"use client"
+
 import React, { useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography, IconButton,
   Stepper, Step, StepLabel, StepContent, Button, TextField,
   Card, Chip, Autocomplete, useMediaQuery, useTheme,
-  Alert, Collapse  // Ajoutez ces imports
+  Alert, Collapse
 } from '@mui/material'
 import { 
   Add, Close, Upload, Class, Assignment, Save, Delete,
-  Warning  // Ajoutez Warning
+  Warning
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
+import { FileUploadSection } from './FileUploadSection'
+import { RichTextEditor } from './RichTextEditor'
 
 interface CreateTPDialogProps {
   open: boolean
@@ -44,13 +48,12 @@ export function CreateTPDialog({
   const [uploadMethod, setUploadMethod] = useState<'file' | 'manual' | 'preset' | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [dragOver, setDragOver] = useState(false)
-  
+  const [files, setFiles] = useState<any[]>([])
+  const [remarks, setRemarks] = useState('')
   
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    file: null as File | null,
     date: '',
     timeSlots: [{ date: '', startTime: '', endTime: '' }] as { date: string; startTime: string; endTime: string }[],
     classes: [] as string[],
@@ -59,26 +62,26 @@ export function CreateTPDialog({
   })
 
   const getOutsideBusinessHoursWarnings = () => {
-  const warnings: string[] = []
-  
-  formData.timeSlots.forEach((slot, index) => {
-    if (slot.startTime) {
-      const [startHour] = slot.startTime.split(':').map(Number)
-      if (startHour < 8) {
-        warnings.push(`Créneau ${index + 1} : début avant 8h00`)
-      }
-    }
+    const warnings: string[] = []
     
-    if (slot.endTime) {
-      const [endHour, endMinute] = slot.endTime.split(':').map(Number)
-      if (endHour > 19 || (endHour === 19 && endMinute > 0)) {
-        warnings.push(`Créneau ${index + 1} : fin après 19h00`)
+    formData.timeSlots.forEach((slot, index) => {
+      if (slot.startTime) {
+        const [startHour] = slot.startTime.split(':').map(Number)
+        if (startHour < 8) {
+          warnings.push(`Créneau ${index + 1} : début avant 8h00`)
+        }
       }
-    }
-  })
-  
-  return warnings
-}
+      
+      if (slot.endTime) {
+        const [endHour, endMinute] = slot.endTime.split(':').map(Number)
+        if (endHour > 19 || (endHour === 19 && endMinute > 0)) {
+          warnings.push(`Créneau ${index + 1} : fin après 19h00`)
+        }
+      }
+    })
+    
+    return warnings
+  }
 
   const handleStepNext = () => setActiveStep((prevStep) => prevStep + 1)
   const handleStepBack = () => setActiveStep((prevStep) => prevStep - 1)
@@ -91,10 +94,11 @@ export function CreateTPDialog({
     setActiveStep(0)
     setUploadMethod(null)
     setSelectedPreset(null)
+    setFiles([])
+    setRemarks('')
     setFormData({
       title: '',
       description: '',
-      file: null,
       date: '',
       timeSlots: [{ date: '', startTime: '', endTime: '' }],
       classes: [],
@@ -106,62 +110,6 @@ export function CreateTPDialog({
   const handleClose = () => {
     resetForm()
     onClose()
-  }
-
-  // Gestion des fichiers
-  const handleFileUpload = (file: File) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.oasis.opendocument.text',
-      'application/vnd.oasis.opendocument.presentation',
-      'text/plain',
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp'
-    ]
-    
-    if (allowedTypes.includes(file.type) || file.name.match(/\.(pdf|doc|docx|odt|odp|txt|jpg|jpeg|png|gif|webp)$/i)) {
-      handleFormDataChange('file', file)
-      handleFormDataChange('title', file.name.replace(/\.[^/.]+$/, ""))
-      setUploadMethod('file')
-    } else {
-      alert('Type de fichier non supporté. Veuillez choisir un PDF, document Word, image ou fichier texte.')
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    const files = e.dataTransfer.files
-    if (files.length > 0) {
-      handleFileUpload(files[0])
-    }
-  }
-
-  const openFileExplorer = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.pdf,.doc,.docx,.odt,.odp,.txt,.jpg,.jpeg,.png,.gif,.webp'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        handleFileUpload(file)
-      }
-    }
-    input.click()
   }
 
   const handlePresetSelect = (preset: any) => {
@@ -210,6 +158,15 @@ export function CreateTPDialog({
         }
       }
 
+      // Préparer les données des fichiers
+      const filesData = files.map(f => ({
+        fileName: f.file.name,
+        fileSize: f.file.size,
+        fileType: f.file.type,
+        uploadedAt: new Date().toISOString()
+        // Note: L'upload réel devrait être géré par l'API
+      }))
+
       const eventData = {
         title: formData.title,
         description: formData.description,
@@ -217,7 +174,8 @@ export function CreateTPDialog({
         classes: formData.classes,
         materials: formData.materials.map((m: any) => m.id),
         chemicals: formData.chemicals.map((c: any) => c.id),
-        ...(formData.file && { fileName: formData.file.name }),
+        files: filesData,
+        remarks: remarks,
         date: formData.timeSlots[0].date,
         timeSlots: formData.timeSlots.map(slot => ({
           startTime: slot.startTime,
@@ -240,6 +198,7 @@ export function CreateTPDialog({
       onSuccess()
     } catch (error) {
       console.error('Erreur lors de la création de l\'événement:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la création')
     } finally {
       setLoading(false)
     }
@@ -286,34 +245,23 @@ export function CreateTPDialog({
                     sx={{ 
                       p: 2, 
                       cursor: 'pointer',
-                      border: uploadMethod === 'file' ? '2px solid' : dragOver ? '2px dashed' : '1px solid',
-                      borderColor: uploadMethod === 'file' ? 'primary.main' : dragOver ? 'primary.light' : 'divider',
+                      border: uploadMethod === 'manual' ? '2px solid' : '1px solid',
+                      borderColor: uploadMethod === 'manual' ? 'primary.main' : 'divider',
                       '&:hover': { borderColor: 'primary.main' },
                       flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 8px)' },
-                      minWidth: { xs: 'auto', sm: '250px' },
-                      backgroundColor: dragOver ? 'primary.light' : 'inherit',
-                      opacity: dragOver ? 0.8 : 1,
-                      transition: 'all 0.2s ease'
+                      minWidth: { xs: 'auto', sm: '250px' }
                     }}
-                    onClick={openFileExplorer}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
+                    onClick={() => setUploadMethod('manual')}
                   >
                     <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                      <Upload color={uploadMethod === 'file' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
-                      <Typography variant="h6">Importer un fichier TP</Typography>
+                      <Assignment color={uploadMethod === 'manual' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
+                      <Typography variant="h6">Création manuelle</Typography>
                       <Typography variant="body2" color="text.secondary" textAlign="center">
-                        {formData.file ? formData.file.name : 
-                         dragOver ? "Déposez votre fichier ici" :
-                         "Cliquez ou glissez-déposez votre fichier"}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" textAlign="center">
-                        PDF, Word, Images, OpenDocument acceptés
+                        Saisissez manuellement les informations du TP
                       </Typography>
                     </Box>
                   </Card>
-                  
+
                   <Card 
                     sx={{ 
                       p: 2, 
@@ -334,27 +282,6 @@ export function CreateTPDialog({
                       </Typography>
                     </Box>
                   </Card>
-                  
-                  <Card 
-                    sx={{ 
-                      p: 2, 
-                      cursor: 'pointer',
-                      border: uploadMethod === 'manual' ? '2px solid' : '1px solid',
-                      borderColor: uploadMethod === 'manual' ? 'primary.main' : 'divider',
-                      '&:hover': { borderColor: 'primary.main' },
-                      flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 8px)' },
-                      minWidth: { xs: 'auto', sm: '250px' }
-                    }}
-                    onClick={() => setUploadMethod('manual')}
-                  >
-                    <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                      <Assignment color={uploadMethod === 'manual' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
-                      <Typography variant="h6">Création manuelle</Typography>
-                      <Typography variant="body2" color="text.secondary" textAlign="center">
-                        Saisissez manuellement les informations du TP
-                      </Typography>
-                    </Box>
-                  </Card>
                 </Box>
               </Box>
 
@@ -363,7 +290,7 @@ export function CreateTPDialog({
                   <Typography variant="h6" sx={{ mb: 2 }}>Choisir un TP Preset</Typography>
                   <Box sx={{ 
                     display: 'grid', 
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fill, minmax(300px, 1fr))' }, 
+                                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fill, minmax(300px, 1fr))' }, 
                     gap: 2, 
                     maxHeight: '400px', 
                     overflowY: 'auto' 
@@ -434,7 +361,6 @@ export function CreateTPDialog({
                   variant="contained"
                   onClick={handleStepNext}
                   disabled={!uploadMethod || 
-                           (uploadMethod === 'file' && !formData.file) || 
                            (uploadMethod === 'manual' && !formData.title) || 
                            (uploadMethod === 'preset' && !selectedPreset)}
                 >
@@ -444,24 +370,92 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 2: Date et heure */}
-        <Step>
-        <StepLabel>
-            <Typography variant="h6">Date et heure</Typography>
-        </StepLabel>
-        <StepContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Définissez quand aura lieu cette séance TP
-            </Typography>
-            
-            <Box display="flex" flexDirection="column" gap={3}>
-            <Box>
-                {/* Code existant pour les créneaux horaires */}
+          {/* Nouvelle Étape 2: Remarques */}
+          <Step>
+            <StepLabel>
+              <Typography variant="h6">Remarques</Typography>
+            </StepLabel>
+            <StepContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Ajoutez des remarques ou informations supplémentaires pour cette séance
+              </Typography>
+              
+              <RichTextEditor
+                value={remarks}
+                onChange={setRemarks}
+                placeholder="Ajoutez des remarques, instructions spéciales, notes de sécurité..."
+              />
+
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button onClick={handleStepBack}>
+                  Retour
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleStepNext}
+                >
+                  Continuer
+                </Button>
+              </Box>
+            </StepContent>
+          </Step>
+
+          {/* Étape 3: Date et heure (anciennement étape 2) */}
+          <Step>
+            <StepLabel>
+              <Typography variant="h6">Date et heure</Typography>
+            </StepLabel>
+            <StepContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Définissez quand aura lieu cette séance TP
+              </Typography>
+              
+              <Box display="flex" flexDirection="column" gap={3}>
+                <Box>
+                  {/* En-tête avec le bouton d'ajout */}
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Créneaux horaires
+                    </Typography>
+                    <Button
+                      startIcon={<Add />}
+                      onClick={addTimeSlot}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Ajouter un créneau
+                    </Button>
+                  </Box>
+
+                  {/* Liste des créneaux */}
                   {formData.timeSlots.map((slot, index) => (
-                    <Box key={index} mb={2}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Créneau {index + 1}
-                      </Typography>
+                    <Box 
+                      key={index} 
+                      mb={2}
+                      sx={{
+                        p: 2,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        bgcolor: 'background.default'
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                        <Typography variant="body2" color="text.secondary">
+                          Créneau {index + 1}
+                        </Typography>
+                        {formData.timeSlots.length > 1 && (
+                          <IconButton
+                            color="error"
+                            onClick={() => removeTimeSlot(index)}
+                            size="small"
+                            sx={{ ml: 'auto' }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                      
                       <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
                         <DatePicker
                           label="Date du TP"
@@ -474,13 +468,7 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '100%', sm: 140 } },
-                              onClick: (e: any) => {
-                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                  const button = e.currentTarget.querySelector('button')
-                                  if (button) button.click()
-                                }
-                              }
+                              sx: { minWidth: { xs: '100%', sm: 200 } }
                             }
                           }}
                         />
@@ -497,13 +485,7 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '48%', sm: 120 } },
-                              onClick: (e: any) => {
-                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                  const button = e.currentTarget.querySelector('button')
-                                  if (button) button.click()
-                                }
-                              }
+                              sx: { minWidth: { xs: '48%', sm: 120 } }
                             }
                           }}
                         />
@@ -520,81 +502,75 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '48%', sm: 120 } },
-                              onClick: (e: any) => {
-                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                  const button = e.currentTarget.querySelector('button')
-                                  if (button) button.click()
-                                }
-                              }
+                              sx: { minWidth: { xs: '48%', sm: 120 } }
                             }
                           }}
                         />
-                        {formData.timeSlots.length > 1 && (
-                          <IconButton
-                            color="error"
-                            onClick={() => removeTimeSlot(index)}
-                            size="small"
-                          >
-                            <Delete />
-                          </IconButton>
-                        )}
                       </Box>
                     </Box>
                   ))}
-            </Box>
 
-            {/* Ajoutez cet avertissement après la section des créneaux */}
-            <Collapse in={getOutsideBusinessHoursWarnings().length > 0}>
-                <Alert 
-                severity="warning" 
-                icon={<Warning />}
-                sx={{ 
-                    borderRadius: 2,
-                    '& .MuiAlert-icon': {
-                    fontSize: '1.5rem'
-                    }
-                }}
+                  {/* Message informatif si plusieurs créneaux */}
+                  {formData.timeSlots.length > 1 && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="body2">
+                        {formData.timeSlots.length} créneaux seront créés pour cette séance TP.
+                      </Typography>
+                    </Alert>
+                  )}
+                </Box>
+
+                {/* Avertissement heures hors établissement */}
+                <Collapse in={getOutsideBusinessHoursWarnings().length > 0}>
+                  <Alert 
+                    severity="warning" 
+                    icon={<Warning />}
+                    sx={{ 
+                      borderRadius: 2,
+                      '& .MuiAlert-icon': {
+                        fontSize: '1.5rem'
+                      }
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight="bold" gutterBottom>
+                      Attention : notre établissement est fermé !
+                    </Typography>
+                    <Typography variant="body2" component="div">
+                      Votre séance TP est programmée en dehors des heures d'ouverture de notre établissement (08:00 - 19:00) :
+                      <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                        {getOutsideBusinessHoursWarnings().map((warning, index) => (
+                          <li key={index}>
+                            <Typography variant="body2" component="span">
+                              {warning}
+                            </Typography>
+                          </li>
+                        ))}
+                      </Box>
+                    </Typography>
+                  </Alert>
+                </Collapse>
+              </Box>
+
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button onClick={handleStepBack}>
+                  Retour
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleStepNext}
+                  disabled={formData.timeSlots.some(slot => 
+                    !slot.startTime || 
+                    !slot.endTime || 
+                    !slot.date
+                  )}
                 >
-                <Typography variant="body2" fontWeight="bold" gutterBottom>
-                    Attention : notre établissement est fermé !
-                </Typography>
-                <Typography variant="body2" component="div">
-                    Votre séance TP est programmée en dehors des heures d'ouverture de notre établissement (08:00 - 19:00) :
-                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
-                    {getOutsideBusinessHoursWarnings().map((warning, index) => (
-                        <li key={index}>
-                        <Typography variant="body2" component="span">
-                            {warning}
-                        </Typography>
-                        </li>
-                    ))}
-                    </Box>
-                </Typography>
-                </Alert>
-            </Collapse>
-            </Box>
+                  Continuer
+                </Button>
+              </Box>
+            </StepContent>
+          </Step>
 
-            <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-            <Button onClick={handleStepBack}>
-                Retour
-            </Button>
-            <Button
-                variant="contained"
-                onClick={handleStepNext}
-                disabled={formData.timeSlots.some(slot => 
-                !slot.startTime || 
-                !slot.endTime || 
-                !slot.date
-                )}
-            >
-                Continuer
-            </Button>
-            </Box>
-        </StepContent>
-        </Step>
-
-          {/* Étape 3: Classes concernées */}
+          {/* Étape 4: Classes concernées (anciennement étape 3) */}
           <Step>
             <StepLabel>
               <Typography variant="h6">Classes concernées</Typography>
@@ -620,9 +596,9 @@ export function CreateTPDialog({
                     setCustomClasses(prev => [...prev, ...newCustom])
                     
                     for (const newClass of newCustom) {
-                        await saveNewClass(newClass)
+                      await saveNewClass(newClass)
                     }
-}
+                  }
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -632,19 +608,16 @@ export function CreateTPDialog({
                     helperText="Vous pouvez taper pour ajouter une nouvelle classe"
                   />
                 )}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((option, index) => (
-                      <Chip
-                        variant="outlined"
-                        label={option}
-                        key={index}
-                        color={userClasses.includes(option) ? "primary" : "secondary"}
-                        sx={{ m: 0.25 }}
-                      />
-                    ))}
-                  </Box>
-                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      variant="outlined"
+                      label={option}
+                      {...getTagProps({ index })}
+                      color={userClasses.includes(option) ? "primary" : "secondary"}
+                    />
+                  ))
+                }
               />
 
               <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
@@ -662,7 +635,7 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 4: Matériel nécessaire */}
+          {/* Étape 5: Matériel nécessaire (anciennement étape 4) */}
           <Step>
             <StepLabel>
               <Typography variant="h6">Matériel nécessaire</Typography>
@@ -679,7 +652,7 @@ export function CreateTPDialog({
                   if (typeof option === 'string') return option;
                   return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
                 }}
-                value={formData.materials}
+                                value={formData.materials}
                 onChange={(_, newValue) => handleFormDataChange('materials', newValue || [])}
                 renderInput={(params) => (
                   <TextField
@@ -688,18 +661,15 @@ export function CreateTPDialog({
                     placeholder="Choisir le matériel..."
                   />
                 )}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((option: any, index) => (
-                      <Chip
-                        variant="outlined"
-                        label={`${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`}
-                        key={index}
-                        sx={{ m: 0.25 }}
-                      />
-                    ))}
-                  </Box>
-                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option: any, index) => (
+                    <Chip
+                      variant="outlined"
+                      label={`${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`}
+                      {...getTagProps({ index })}
+                    />
+                  ))
+                }
                 isOptionEqualToValue={(option: any, value: any) => {
                   return option.id === value.id;
                 }}
@@ -719,7 +689,7 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 5: Produits chimiques */}
+          {/* Étape 6: Produits chimiques (anciennement étape 5) */}
           <Step>
             <StepLabel>
               <Typography variant="h6">Produits chimiques</Typography>
@@ -751,7 +721,6 @@ export function CreateTPDialog({
                       variant="outlined"
                       label={`${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`}
                       {...getTagProps({ index })}
-                      key={index}
                     />
                   ))
                 }
@@ -760,20 +729,52 @@ export function CreateTPDialog({
                 }}
               />
 
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button onClick={handleStepBack}>
+                  Retour
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleStepNext}
+                >
+                  Continuer
+                </Button>
+              </Box>
+            </StepContent>
+          </Step>
+
+          {/* Nouvelle Étape 7: Documents joints */}
+          <Step>
+            <StepLabel>
+              <Typography variant="h6">Documents joints</Typography>
+            </StepLabel>
+            <StepContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Ajoutez les documents relatifs à cette séance TP (protocoles, fiches de sécurité, etc.)
+              </Typography>
+
+              <FileUploadSection
+                files={files}
+                onFilesChange={setFiles}
+                maxFiles={5}
+                maxSizePerFile={10}
+                acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif']}
+              />
+
               {getOutsideBusinessHoursWarnings().length > 0 && (
                 <Alert 
-                    severity="warning" 
-                    icon={<Warning />}
-                    sx={{ 
-                    mb: 2,
+                  severity="warning" 
+                  icon={<Warning />}
+                  sx={{ 
+                    mt: 2,
                     borderRadius: 2
-                    }}
+                  }}
                 >
-                    <Typography variant="body2">
+                  <Typography variant="body2">
                     Rappel : Cette séance TP est programmée en dehors des heures d'ouverture de l'établissement (8h00 - 19h00).
-                    </Typography>
+                  </Typography>
                 </Alert>
-                )}
+              )}
 
               <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
                 <Button onClick={handleStepBack}>

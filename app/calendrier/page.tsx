@@ -32,6 +32,7 @@ import { CalendarEvent } from '@/types/calendar'
 import { useCalendarData } from '@/lib//hooks/useCalendarData'
 import { useCalendarEvents } from '@/lib//hooks/useCalendarEvents'
 import { useReferenceData } from '@/lib//hooks/useReferenceData'
+import { UserRole } from "@/types/global";
 
 
 const TAB_INDICES = {
@@ -44,7 +45,7 @@ export default function CalendarPage() {
   const { data: session, status } = useSession()
   
   // États principaux
-  const [userRole, setUserRole] = useState<'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO'>('TEACHER')
+  const [userRole, setUserRole] = useState<UserRole>('TEACHER')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [tabValue, setTabValue] = useState(0)
@@ -139,40 +140,46 @@ export default function CalendarPage() {
   }
 
   // Handler pour sauvegarder les modifications
-const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
-  if (!eventToEdit) return
+  const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
+    if (!eventToEdit) return
 
-  try {
-    const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...eventToEdit,
-        ...updatedEvent
+    try {
+      const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...eventToEdit,
+          ...updatedEvent
+        })
       })
-    })
 
-    if (!response.ok) {
-      throw new Error('Erreur lors de la modification')
+      if (!response.ok) {
+        throw new Error('Erreur lors de la modification')
+      }
+
+      const result = await response.json()
+      
+      // Afficher un message de succès avec le nombre de créneaux créés
+      if (result.createdEvents && result.createdEvents.length > 0) {
+        console.log(`Événement modifié et ${result.createdEvents.length} créneaux supplémentaires créés`)
+      } else {
+        console.log('Événement modifié avec succès')
+      }
+
+      // Rafraîchir la liste des événements
+      await fetchEvents()
+      
+      // Fermer le dialogue et réinitialiser
+      setEditDialogOpen(false)
+      setEventToEdit(null)
+      
+    } catch (error) {
+      console.error('Erreur lors de la modification:', error)
+      alert('Erreur lors de la modification de l\'événement')
     }
-
-    // Rafraîchir la liste des événements
-    await fetchEvents()
-    
-    // Fermer le dialogue et réinitialiser
-    setEditDialogOpen(false)
-    setEventToEdit(null)
-    
-    // Afficher un message de succès (optionnel)
-    console.log('Événement modifié avec succès')
-    
-  } catch (error) {
-    console.error('Erreur lors de la modification:', error)
-    alert('Erreur lors de la modification de l\'événement')
   }
-}
 
 // Handler pour supprimer un événement
 const handleEventDelete = async (event: CalendarEvent) => {

@@ -3,9 +3,10 @@ import React from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import { Add, EventNote } from '@mui/icons-material'
 import { useMediaQuery, useTheme } from '@mui/material'
+import { UserRole } from "@/types/global";
 
 interface CalendarHeaderProps {
-  userRole: 'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO'
+  userRole: UserRole
   onCreateTP: () => void
   onCreateLaborantin: () => void
 }

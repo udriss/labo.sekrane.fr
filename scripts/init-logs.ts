@@ -80,3 +80,6 @@ if (require.main === module) {
 }
 
 export { initializeLogs };
+
+
+// npx tsx scripts/init-logs.ts

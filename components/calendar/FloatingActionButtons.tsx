@@ -2,9 +2,10 @@
 import React, { useState } from 'react'
 import { Fab, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material'
 import { Add, Class, EventNote } from '@mui/icons-material'
+import { UserRole } from "@/types/global";
 
 interface FloatingActionButtonsProps {
-  userRole: 'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO'
+  userRole: UserRole
   onCreateTP: () => void
   onCreateLaborantin: () => void
 }

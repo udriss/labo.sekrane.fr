@@ -1,6 +1,14 @@
 // types/calendar.ts
 export type EventType = 'TP' | 'MAINTENANCE' | 'INVENTORY' | 'OTHER'
 
+export interface FileInfo {
+  fileName: string
+  fileUrl: string
+  fileSize?: number
+  fileType?: string
+  uploadedAt?: string
+}
+
 export interface CalendarEvent {
   id: string
   title: string
@@ -25,9 +33,12 @@ export interface CalendarEvent {
     quantity?: number
     unit?: string
   })[]
-  fileName?: string | null
+  fileName?: string | null  // Garder pour la rétrocompatibilité
+  fileUrl?: string | null   // Ajouter pour la rétrocompatibilité
+  files?: FileInfo[]        // Nouveau champ pour la gestion multiple
+  remarks?: string | null   // Nouveau champ pour les remarques avec formatage
   createdBy?: string | null 
-  modifiedBy?: Array<[string, ...string[]]>  // [userId, date1, date2, ...]
+  modifiedBy?: Array<[string, ...string[]]>
   createdAt?: string
   updatedAt?: string
 }

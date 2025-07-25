@@ -1,7 +1,9 @@
-import { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import * as bcrypt from "bcryptjs"
-import { prisma } from "@/lib/db/prisma"
+// lib/auth.ts
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { UserService } from "@/lib/services/userService";
+import { UserRole } from "@/types/global";
+
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -9,68 +11,89 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember Me", type: "text" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log("Identifiants manquants")
-          return null
+          console.log("Identifiants manquants");
+          return null;
         }
 
         try {
-          // Recherche de l'utilisateur - le modèle User est mappé sur la table users
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email
-            }
-          })
+          // Vérifier l'utilisateur avec le service JSON
+          const user = await UserService.verifyPassword(
+            credentials.email,
+            credentials.password
+          );
 
           if (!user) {
-            console.log("Utilisateur non trouvé :", credentials.email)
-            return null
+            console.log("Authentification échouée pour :", credentials.email);
+            return null;
           }
 
-          // Vérification du mot de passe
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          // Vérifier que l'utilisateur est actif
+          if (!user.isActive) {
+            console.log("Compte désactivé pour :", credentials.email);
+            return null;
+          }
+
+          console.log("Authentification réussie pour :", user.email);
           
-          if (!isPasswordValid) {
-            console.log("Mot de passe invalide pour l'utilisateur :", credentials.email)
-            return null
-          }
-
-          console.log("Authentification réussie pour l'utilisateur :", user.email)
           return {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role
-          }
+            role: user.role as UserRole, // Assurer le type correct
+            associatedClasses: user.associatedClasses,
+            customClasses: user.customClasses,
+            siteConfig: user.siteConfig
+          };
         } catch (error) {
-          console.error("Erreur lors de l'authentification :", error)
-          return null
+          console.error("Erreur lors de l'authentification :", error);
+          return null;
         }
       }
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 jours par défaut
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = user.role
+        token.userId = user.id;
+        token.role = user.role as UserRole; // Assurer le type correct
+        token.name = user.name;
+        token.email = user.email;
+        token.associatedClasses = user.associatedClasses;
+        token.customClasses = user.customClasses;
+        token.siteConfig = user.siteConfig;
       }
-      return token
+
+      // Permettre la mise à jour du token lors de la mise à jour de la session
+      if (trigger === "update" && session) {
+        return { ...token, ...session };
+      }
+
+      return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub!
-        session.user.role = token.role
+        session.user.id = token.userId as string;
+        session.user.role = token.role as UserRole; // Assurer le type correct ici (ligne 83)
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.associatedClasses = token.associatedClasses as string[] | undefined;
+        session.user.customClasses = token.customClasses as string[] | undefined;
+        session.user.siteConfig = token.siteConfig;
       }
-      return session
+      return session;
     }
   },
   pages: {
     signIn: "/auth/signin"
-  }
-}
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};

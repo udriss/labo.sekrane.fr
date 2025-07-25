@@ -1,16 +1,17 @@
 // components/calendar/RoleSelector.tsx
 import React from 'react'
 import { Box, Chip } from '@mui/material'
+import { UserRole } from '@/types/global'
 
 interface RoleSelectorProps {
-  currentRole: 'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO'
-  onRoleChange: (role: 'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO') => void
+  currentRole: UserRole
+  onRoleChange: (role: UserRole) => void
 }
 
 export function RoleSelector({ currentRole, onRoleChange }: RoleSelectorProps) {
-  const roles: Array<'TEACHER' | 'LABORANTIN' | 'ADMIN' | 'ADMINLABO'> = ['TEACHER', 'LABORANTIN', 'ADMIN', 'ADMINLABO']
+  const roles: UserRole[] = ['TEACHER', 'LABORANTIN', 'ADMIN', 'ADMINLABO']
 
-  const handleRoleChange = (role: typeof roles[number]) => {
+  const handleRoleChange = (role: UserRole) => {
     onRoleChange(role)
     localStorage.setItem('userRole', role)
   }

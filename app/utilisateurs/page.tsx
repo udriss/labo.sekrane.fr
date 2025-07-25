@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { UserRole } from "@/types/global";
 
 import {
   Container,
@@ -45,22 +46,12 @@ import {
 } from "@mui/icons-material";
 import { useSession } from "next-auth/react";
 import { useClasses } from "@/lib/hooks/useClasses";
-import { ca } from "date-fns/locale";
-
-// Enum Role défini localement
-enum Role {
-  ADMIN = "ADMIN",
-  ADMINLABO = "ADMINLABO",
-  TEACHER = "TEACHER",
-  STUDENT = "STUDENT",
-  LABORANTIN = "LABORANTIN"
-}
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  role: UserRole;
   isActive: boolean;
   createdAt: string;
   associatedClasses?: string[];  // Classes prédéfinies
@@ -71,7 +62,7 @@ interface UserFormData {
   name: string;
   email: string;
   password?: string;
-  role: Role;
+  role: UserRole;
   selectedClasses: string[];
 }
 
@@ -90,7 +81,7 @@ export default function UsersPage() {
   const [profileData, setProfileData] = useState<UserFormData>({
     name: "",
     email: "",
-    role: Role.STUDENT,
+    role: "STUDENT" as UserRole,
     selectedClasses: []
   });
   const [newClassName, setNewClassName] = useState("");
@@ -100,7 +91,7 @@ export default function UsersPage() {
     name: "",
     email: "",
     password: "",
-    role: Role.STUDENT,
+    role: "STUDENT" as UserRole,
     selectedClasses: []
   });
 
@@ -146,7 +137,7 @@ export default function UsersPage() {
       setProfileData({
         name: userData.name || "",
         email: userData.email || "",
-        role: userData.role as Role,
+        role: userData.role as UserRole,
         selectedClasses: allClasses
       });
     } catch (error) {
@@ -169,34 +160,34 @@ export default function UsersPage() {
     }
   }, [session?.user?.id]);
 
-  const getRoleColor = (role: Role) => {
+  const getRoleColor = (role: UserRole) => {
     switch (role) {
-      case Role.ADMIN:
+      case "ADMIN":
         return "error";
-      case Role.TEACHER:
+      case "TEACHER":
         return "primary";
-      case Role.LABORANTIN:
+      case "LABORANTIN":
         return "secondary";
-      case Role.STUDENT:
+      case "STUDENT":
         return "success";
-      case Role.ADMINLABO:
+      case "ADMINLABO":
         return "warning";
       default:
         return "default";
     }
   };
 
-  const getRoleLabel = (role: Role) => {
+  const getRoleLabel = (role: UserRole) => {
     switch (role) {
-      case Role.ADMIN:
+      case "ADMIN":
         return "Administrateur";
-      case Role.ADMINLABO:
+      case "ADMINLABO":
         return "Administrateur de Laboratoire";
-      case Role.TEACHER:
+      case "TEACHER":
         return "Enseignant";
-      case Role.LABORANTIN:
+      case "LABORANTIN":
         return "Laborantin";
-      case Role.STUDENT:
+      case "STUDENT":
         return "Étudiant";
       default:
         return role;
@@ -320,7 +311,7 @@ export default function UsersPage() {
         name: "",
         email: "",
         password: "",
-        role: Role.STUDENT,
+        role: "STUDENT" as UserRole,
         selectedClasses: []
       });
       await fetchUsers();
@@ -416,7 +407,7 @@ export default function UsersPage() {
   };
 
   return (
-        <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -443,7 +434,7 @@ export default function UsersPage() {
                 name: "",
                 email: "",
                 password: "",
-                role: Role.STUDENT,
+                role: "STUDENT" as UserRole,
                 selectedClasses: []
               });
               setOpenDialog(true);
@@ -493,7 +484,7 @@ export default function UsersPage() {
               >
                 Modifier
               </Button>
-            ) : (
+              ) : (
               <Stack direction="row" spacing={1}>
                 <Button
                   variant="outlined"
@@ -548,8 +539,8 @@ export default function UsersPage() {
                         <Box>
                           <Typography variant="h6">{session?.user?.name}</Typography>
                           <Chip
-                            label={getRoleLabel(session?.user?.role as Role)}
-                            color={getRoleColor(session?.user?.role as Role) as any}
+                            label={getRoleLabel(session?.user?.role as UserRole)}
+                            color={getRoleColor(session?.user?.role as UserRole) as any}
                             size="small"
                           />
                         </Box>
@@ -595,7 +586,7 @@ export default function UsersPage() {
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           Rôle
                         </Typography>
-                        <Typography variant="body1">{getRoleLabel(session?.user?.role as Role)}</Typography>
+                        <Typography variant="body1">{getRoleLabel(session?.user?.role as UserRole)}</Typography>
                       </Box>
 
                       {editingProfile && (
@@ -767,7 +758,7 @@ export default function UsersPage() {
                     <Stack spacing={2}>
                       <Box display="flex" alignItems="center" gap={2}>
                         <Avatar sx={{ bgcolor: getRoleColor(user.role) + '.main' }}>
-                          {user.role === Role.ADMIN ? <AdminPanelSettings /> : <Person />}
+                          {user.role === "ADMIN" ? <AdminPanelSettings /> : <Person />}
                         </Avatar>
                         <Box sx={{ flexGrow: 1 }}>
                           <Typography variant="subtitle1" fontWeight="bold">
@@ -822,7 +813,7 @@ export default function UsersPage() {
                         />
                       </Stack>
 
-                                            <Box>
+                      <Box>
                         <Typography variant="caption" color="text.secondary">
                           Classes:
                         </Typography>
@@ -886,13 +877,13 @@ export default function UsersPage() {
                 label="Rôle"
                 select
                 value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value as Role})}
+                onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
               >
-                <MenuItem value={Role.ADMIN}>Administrateur</MenuItem>
-                <MenuItem value={Role.ADMINLABO}>Administrateur de Laboratoire</MenuItem>
-                <MenuItem value={Role.TEACHER}>Enseignant</MenuItem>
-                <MenuItem value={Role.LABORANTIN}>Laborantin</MenuItem>
-                <MenuItem value={Role.STUDENT}>Étudiant</MenuItem>
+                <MenuItem value="ADMIN">Administrateur</MenuItem>
+                <MenuItem value="ADMINLABO">Administrateur de Laboratoire</MenuItem>
+                <MenuItem value="TEACHER">Enseignant</MenuItem>
+                <MenuItem value="LABORANTIN">Laborantin</MenuItem>
+                <MenuItem value="STUDENT">Étudiant</MenuItem>
               </TextField>
               
               <FormControl fullWidth>
@@ -978,7 +969,7 @@ export default function UsersPage() {
                 name: "",
                 email: "",
                 password: "",
-                role: Role.STUDENT,
+                role: "STUDENT" as UserRole,
                 selectedClasses: []
               });
             }}>
@@ -997,4 +988,3 @@ export default function UsersPage() {
     </Container>
   );
 }
-                
