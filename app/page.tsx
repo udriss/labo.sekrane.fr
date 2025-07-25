@@ -560,10 +560,10 @@ useEffect(() => {
                   }}
                 >
                   <Image
-                    src="/logo.png"
+                    src="/logo_2.png"
                     alt="Logo"
-                    width={50}
-                    height={50}
+                    width={150}
+                    height={150}
                   />
                 </Avatar>
                 <Box>

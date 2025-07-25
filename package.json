@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 8006 --turbopack",
+    "dev": "next dev -p 3000 --turbopack",
     "build": "next build",
     "start": "next start -p 8006",
-    "lint": "next lint",
-    "postinstall": "prisma generate && npm run init-logs"
+    "lint": "next lint"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

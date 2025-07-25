@@ -88,7 +88,7 @@ export default function SignInPage() {
         <Box sx={{ display: "flex", justifyContent: "center", mb: 2, position: "relative" }}>
             {/* Background image behind the title */}
             <img
-                src="/logo_medium.png"
+                src="/logo_2.png"
                 alt="Labo Logo"
                 style={{
                     position: "absolute",

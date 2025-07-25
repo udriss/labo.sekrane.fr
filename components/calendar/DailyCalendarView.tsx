@@ -1,7 +1,11 @@
 // components/calendar/DailyCalendarView.tsx
 import React from 'react'
-import { Box, Typography, IconButton, Card, CardContent, Chip, Stack } from '@mui/material'
-import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material'
+import { 
+  Box, Typography, IconButton, Card, CardContent, Chip, Stack 
+} from '@mui/material'
+import { 
+  ChevronLeft, ChevronRight, Today, Edit, Delete 
+} from '@mui/icons-material'
 import { format, addDays, subDays, isSameDay, startOfDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent } from '@/types/calendar'
@@ -11,13 +15,19 @@ interface DailyCalendarViewProps {
   setCurrentDate: (date: Date) => void
   events: CalendarEvent[]
   onEventClick: (event: CalendarEvent) => void
+  onEventEdit?: (event: CalendarEvent) => void
+  onEventDelete?: (event: CalendarEvent) => void
+  canEditEvent?: (event: CalendarEvent) => boolean
 }
 
 export default function DailyCalendarView({ 
   currentDate, 
   setCurrentDate, 
   events, 
-  onEventClick 
+  onEventClick,
+  onEventEdit,
+  onEventDelete,
+  canEditEvent
 }: DailyCalendarViewProps) {
   const dayEvents = events.filter(event => 
     isSameDay(new Date(event.startDate), currentDate)
@@ -96,38 +106,124 @@ export default function DailyCalendarView({
           <Stack spacing={2}>
             {dayEvents
               .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-              .map((event) => (
-                <Card 
-                  key={event.id}
-                  onClick={() => onEventClick(event)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="start">
-                      <Box flex={1}>
-                        <Typography variant="h6" gutterBottom>
-                          {event.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {format(new Date(event.startDate), 'HH:mm')} - {format(new Date(event.endDate), 'HH:mm')}
-                        </Typography>
-                        {event.class && (
-                          <Chip 
-                            label={event.class} 
-                            size="small" 
-                            sx={{ mt: 1 }}
-                          />
-                        )}
+              .map((event) => {
+                const showActions = canEditEvent && canEditEvent(event)
+                
+                return (
+                  <Card 
+                    key={event.id}
+                    sx={{ 
+                      cursor: 'pointer',
+                      position: 'relative',
+                      '&:hover': {
+                        boxShadow: 3,
+                        '& .event-actions': {
+                          opacity: 1
+                        }
+                      }
+                    }}
+                    onClick={(e) => {
+                      // Empêcher le clic sur les boutons de déclencher l'ouverture du détail
+                      if ((e.target as HTMLElement).closest('.MuiIconButton-root')) {
+                        return
+                      }
+                      onEventClick(event)
+                    }}
+                  >
+                    <CardContent>
+                      {/* Boutons d'action */}
+                      {showActions && (
+                        <Box
+                          className="event-actions"
+                          sx={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            display: 'flex',
+                            gap: 0.5,
+                            opacity: 1,
+                            transition: 'opacity 0.2s',
+                            zIndex: 2
+                          }}
+                        >
+                          {onEventEdit && (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onEventEdit(event)
+                              }}
+                              sx={{
+                                bgcolor: 'background.paper',
+                                boxShadow: 1,
+                                '&:hover': {
+                                  bgcolor: 'primary.light'
+                                }
+                              }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          )}
+                          {onEventDelete && (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onEventDelete(event)
+                              }}
+                              sx={{
+                                bgcolor: 'background.paper',
+                                boxShadow: 1,
+                                '&:hover': {
+                                  bgcolor: 'error.light'
+                                }
+                              }}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          )}
+                        </Box>
+                      )}
+
+                      <Box display="flex" justifyContent="space-between" alignItems="start">
+                        <Box flex={1} pr={showActions ? 10 : 0}>
+                          <Typography variant="h6" gutterBottom>
+                            {event.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {format(new Date(event.startDate), 'HH:mm')} - {format(new Date(event.endDate), 'HH:mm')}
+                          </Typography>
+                          {event.description && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              {event.description}
+                            </Typography>
+                          )}
+                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                            {event.class && (
+                              <Chip 
+                                label={event.class} 
+                                size="small"
+                              />
+                            )}
+                            {event.location && (
+                              <Chip 
+                                label={event.location} 
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Stack>
+                        </Box>
+                        <Chip 
+                          label={event.type} 
+                          size="small" 
+                          color={event.type === 'TP' ? 'primary' : 'secondary'}
+                        />
                       </Box>
-                      <Chip 
-                        label={event.type} 
-                        size="small" 
-                        color="primary"
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
           </Stack>
         )}
       </Box>

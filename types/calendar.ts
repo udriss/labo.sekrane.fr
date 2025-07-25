@@ -10,6 +10,7 @@ export interface CalendarEvent {
   type: EventType
   class?: string | null
   room?: string | null
+  location?: string | null
   materials?: (string | {
     id?: string
     name?: string
@@ -25,6 +26,8 @@ export interface CalendarEvent {
     unit?: string
   })[]
   fileName?: string | null
+  createdBy?: string | null 
+  modifiedBy?: Array<[string, ...string[]]>  // [userId, date1, date2, ...]
   createdAt?: string
   updatedAt?: string
 }

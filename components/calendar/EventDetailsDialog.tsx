@@ -2,20 +2,31 @@
 
 "use client"
 
-import React from 'react'
-import { 
-  Dialog, DialogTitle, DialogContent, DialogActions, 
-  Button, Box, Grid, Typography, Chip, Stack, Divider
-} from '@mui/material'
+import React, { useState, useEffect } from 'react'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Science, Schedule, Assignment, EventAvailable } from '@mui/icons-material'
+import { 
+  Dialog, DialogTitle, DialogContent, DialogActions, 
+  Button, Box, Grid, Typography, Chip, Stack, Divider,
+  IconButton, Skeleton,
+  Avatar,
+} from '@mui/material'
+import {
+  Timeline, TimelineItem, TimelineSeparator,
+  TimelineDot, TimelineConnector, TimelineContent,
+  TimelineOppositeContent
+} from '@mui/lab'
+
+
+import { Science, Schedule, Assignment, EventAvailable, Edit, Delete, History, Person } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
 
 interface EventDetailsDialogProps {
   open: boolean
   event: CalendarEvent | null
   onClose: () => void
+  onEdit?: (event: CalendarEvent) => void
+  onDelete?: (event: CalendarEvent) => void
 }
 
 // Définition corrigée de EVENT_TYPES
@@ -29,8 +40,20 @@ const EVENT_TYPES = {
 const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({ 
   open, 
   event, 
-  onClose 
+  onClose,
+  onEdit,
+  onDelete 
 }) => {
+
+  const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [creatorInfo, setCreatorInfo] = useState<{id: string, name: string, email: string} | null>(null)
+  const [timelineData, setTimelineData] = useState<Array<{
+    userId: string,
+    userName: string,
+    date: string,
+    isConsecutive: boolean
+  }>>([])
   const getEventTypeInfo = (type: EventType) => {
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
   }
@@ -53,18 +76,162 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     return hours
   }
 
+useEffect(() => {
+  const fetchUsersAndPrepareTimeline = async () => {
+    if (!event) return
+
+    // Réinitialiser la timeline si pas de modifications
+    if (!event.modifiedBy || event.modifiedBy.length === 0) {
+      setTimelineData([])
+      return
+    }
+
+    setLoadingUsers(true)
+    try {
+      // Collecter tous les userIds (modificateurs + créateur)
+      const userIds: string[] = []
+      
+      // Ajouter les IDs des modificateurs
+      if (event.modifiedBy && event.modifiedBy.length > 0) {
+        event.modifiedBy.forEach(entry => userIds.push(entry[0]))
+      }
+      
+      // Ajouter l'ID du créateur s'il existe
+      if (event.createdBy) {
+        userIds.push(event.createdBy)
+      }
+      
+      // Récupérer les infos de tous les utilisateurs
+      if (userIds.length > 0) {
+        const response = await fetch('/api/utilisateurs/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userIds: [...new Set(userIds)] }) // Enlever les doublons
+        })
+
+        if (response.ok) {
+          const users = await response.json()
+          setUsersInfo(users)
+          
+          // Stocker les infos du créateur
+          if (event.createdBy && users[event.createdBy]) {
+            setCreatorInfo(users[event.createdBy])
+          }
+          
+          // Préparer les données pour la timeline
+          if (event.modifiedBy && event.modifiedBy.length > 0) {
+            const allModifications: Array<{
+              userId: string, 
+              userName: string,
+              date: string,
+              isConsecutive: boolean
+            }> = []
+            
+            // Créer une entrée pour chaque modification
+            event.modifiedBy.forEach(([userId, ...dates]) => {
+              const userName = users[userId]?.name || 
+                              users[userId]?.email || 
+                              `Utilisateur ${userId}`
+              
+              dates.forEach(date => {
+                // Vérifier si la date est valide
+                try {
+                  const d = new Date(date)
+                  if (!isNaN(d.getTime())) {
+                    allModifications.push({ userId, userName, date, isConsecutive: false })
+                  }
+                } catch {
+                  // Ignorer les dates invalides
+                }
+              })
+            })
+            
+            // Trier par date
+            allModifications.sort((a, b) => 
+              new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
+            
+            // Marquer les modifications consécutives du même utilisateur
+            for (let i = 1; i < allModifications.length; i++) {
+              if (allModifications[i].userId === allModifications[i - 1].userId) {
+                allModifications[i].isConsecutive = true
+              }
+            }
+            
+            setTimelineData(allModifications)
+          } else {
+            setTimelineData([])
+          }
+        }
+      } else {
+        setTimelineData([])
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des utilisateurs:', error)
+      setTimelineData([])
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  if (open && event) {
+    fetchUsersAndPrepareTimeline()
+  }
+}, [event, open])
+
+  // Ajoutez une fonction helper pour formater les dates en toute sécurité
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Date invalide'
+      }
+      return format(date, 'dd MMM yyyy HH:mm', { locale: fr })
+    } catch (error) {
+      return 'Date invalide'
+    }
+  }
+
   if (!event) return null
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Détails de la séance</Typography>
-          <Chip 
-            label={getEventTypeInfo(event.type).label} 
-            color="primary" 
-            size="small"
-          />
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="h6">Détails de la séance</Typography>
+            <Chip 
+              label={getEventTypeInfo(event.type).label} 
+              color="primary" 
+              size="small"
+            />
+          </Box>
+          <Box display="flex" gap={1}>
+            {onEdit && (
+              <IconButton
+                onClick={() => {
+                  onEdit(event)
+                  onClose()
+                }}
+                size="small"
+                color="primary"
+              >
+                <Edit />
+              </IconButton>
+            )}
+            {onDelete && (
+              <IconButton
+                onClick={() => {
+                  onDelete(event)
+                  onClose()
+                }}
+                size="small"
+                color="error"
+              >
+                <Delete />
+              </IconButton>
+            )}
+          </Box>
         </Box>
       </DialogTitle>
       <DialogContent>
@@ -200,24 +367,157 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               </Box>
             </>
           )}
-
+        </Stack>
           {/* Métadonnées */}
-          {(event.createdAt || event.updatedAt) && (
+          <Divider sx = {{ my: 2 }} />
+          {/* Historique des modifications */}
+          {timelineData.length > 0 && (
             <>
-              <Divider />
               <Box>
-                <Typography variant="caption" color="text.secondary">
-                  {event.createdAt && `Créé le ${formatDateTime(event.createdAt)}`}
-                  {event.createdAt && event.updatedAt && ' • '}
-                  {event.updatedAt && `Modifié le ${formatDateTime(event.updatedAt)}`}
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <History /> Historique des modifications
+                </Typography>
+                
+            {loadingUsers ? (
+              <Stack spacing={2}>
+                <Skeleton variant="circular" width={40} height={40} />
+                <Skeleton variant="text" width="60%" />
+                <Skeleton variant="text" width="40%" />
+                <Skeleton variant="text" width="50%" />
+              </Stack>
+            ) : (
+            <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
+            {timelineData.map((item, index) => (
+              <TimelineItem 
+                key={index}
+                sx={{
+                  // Réduire l'espacement vertical si l'item est consécutif
+                  minHeight: item.isConsecutive ? 40 : 60,
+                  '&::before': {
+                    flex: 0,
+                    padding: 0,
+                  }
+                }}
+              >
+                <TimelineOppositeContent
+                  sx={{ 
+                    m: 'auto 0',
+                    py: item.isConsecutive ? 0.1 : 0.5
+                  }}
+                  align={index % 2 === 0 ? "right" : "left"}
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  {formatDate(item.date)}
+                </TimelineOppositeContent>
+                
+                <TimelineSeparator>
+                  {index > 0 && <TimelineConnector sx={{ 
+                    bgcolor: item.isConsecutive ? 'grey.300' : 'grey.400',
+                    // Réduire la hauteur du connecteur pour les items consécutifs
+                    height: item.isConsecutive ? '10px' : '20px'
+                  }} />}
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {!item.isConsecutive && (
+                      <Avatar
+                        sx={{ 
+                          bgcolor: 'primary.main', 
+                          width: 24, 
+                          height: 24, 
+                          fontSize: '0.75rem' 
+                        }}
+                      >
+                        <Person sx={{ fontSize: 16, color: 'white' }} />
+                      </Avatar>
+                    )}
+                    {item.isConsecutive && (
+                      <TimelineDot 
+                        color={index === timelineData.length - 1 ? "primary" : "grey"}
+                        variant="outlined"
+                        sx={{ 
+                          width: 10,
+                          height: 10,
+                          margin: 0,  // Enlever les marges par défaut
+                          transition: 'all 0.3s'
+                        }}
+                      />
+                    )}
+                  </Box>
+                  
+                  {index < timelineData.length - 1 && 
+                  <TimelineConnector sx={{ 
+                    bgcolor: timelineData[index + 1]?.isConsecutive ? 'grey.300' : 'grey.400',
+                    // Réduire la hauteur si le prochain item est consécutif
+                    height: timelineData[index + 1]?.isConsecutive ? '5px' : '20px'
+                  }} />}
+                </TimelineSeparator>
+                
+                <TimelineContent sx={{ 
+                  py: item.isConsecutive ? 0.1 : 0.5,
+                  px: 2 
+                }}>
+                  {!item.isConsecutive ? (
+                    <Typography variant="body2" component="span" fontWeight="medium">
+                      {item.userName}
+                    </Typography>
+                  ) : (
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ fontStyle: 'italic' }}
+                    >
+                      Modification supplémentaire
+                    </Typography>
+                  )}
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+            </Timeline>
+            )}
+              </Box>
+            </>
+          )}
+
+          {/* Métadonnées de création */}
+          {event.createdBy && (
+            <>
+              <Box>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Ajouté par {creatorInfo ? (creatorInfo.name || creatorInfo.email) : event.createdBy}
+                  {event.createdAt && ` le ${formatDateTime(event.createdAt)}`}
                 </Typography>
               </Box>
             </>
           )}
-        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Fermer</Button>
+        {onEdit && (
+          <Button 
+            onClick={() => {
+              onEdit(event)
+              onClose()
+            }}
+            variant="outlined"
+            startIcon={<Edit />}
+          >
+            Modifier
+          </Button>
+        )}
+        {onDelete && (
+          <Button 
+            onClick={() => {
+              onDelete(event)
+              onClose()
+            }}
+            variant="outlined"
+            color="error"
+            startIcon={<Delete />}
+          >
+            Supprimer
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   )

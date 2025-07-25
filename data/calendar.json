@@ -28,7 +28,8 @@
           "quantity": 50,
           "unit": "mL"
         }
-      ]
+      ],
+      "modifiedBy": []
     },
     {
       "id": "EVENT_003",
@@ -49,50 +50,145 @@
       "chemicals": [],
       "fileName": null,
       "createdAt": "2025-01-15T14:00:00Z",
-      "updatedAt": "2025-01-15T14:00:00Z"
+      "updatedAt": "2025-01-15T14:00:00Z",
+      "modifiedBy": []
     },
     {
-      "id": "EVENT_TEST_TODAY",
-      "title": "TP Test - Aujourd'hui",
-      "description": "Séance de test ajoutée automatiquement pour vérifier l'affichage.",
-      "startDate": "2025-07-23T09:00:00Z",
-      "endDate": "2025-07-23T11:00:00Z",
+      "id": "EVENT_1753395738973_mggjzkroc",
+      "title": "TEST 3 superposé",
+      "description": "",
+      "startDate": "2025-07-23T11:00:00.000Z",
+      "endDate": "2025-07-23T12:00:00.000Z",
       "type": "TP",
-      "class": "Test",
-      "room": "Laboratoire Test",
-      "materials": [
-        {
-          "id": "MAT_TEST_001",
-          "name": "Tube à essai",
-          "quantity": 2
-        }
-      ],
-      "chemicals": [
-        {
-          "id": "CHEM_TEST_001",
-          "name": "Eau",
-          "quantity": 10,
-          "unit": "mL"
-        }
-      ],
-      "fileName": null,
-      "createdAt": "2025-07-23T08:00:00Z",
-      "updatedAt": "2025-07-23T08:00:00Z"
-    },
-    {
-      "id": "EVENT_1753380583503_cn1u6n63z",
-      "title": "Maintenance de matériel",
-      "description": null,
-      "startDate": "2025-07-23T01:00:00.000Z",
-      "endDate": "2025-07-23T15:00:00.000Z",
-      "type": "MAINTENANCE",
-      "class": null,
-      "room": null,
+      "class": "1ère ES",
+      "room": "",
       "materials": [],
       "chemicals": [],
       "fileName": null,
-      "createdAt": "2025-07-24T18:09:43.503Z",
-      "updatedAt": "2025-07-24T18:09:43.503Z"
+      "createdAt": "2025-07-24T22:22:18.973Z",
+      "updatedAt": "2025-07-25T04:49:26.686Z",
+      "column": 1,
+      "totalColumns": 2,
+      "visualStartDate": "2025-07-23T11:00:00.000Z",
+      "visualEndDate": "2025-07-23T12:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": false,
+      "endsAfterSchedule": false,
+      "location": "",
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-25T04:03:10.079Z",
+          "2025-07-25T04:03:23.251Z",
+          "2025-07-25T04:07:14.535Z",
+          "2025-07-25T04:49:26.686Z"
+        ]
+      ]
+    },
+    {
+      "id": "EVENT_1753396512814_kkvgwjy8t",
+      "title": "Événement laboratoire",
+      "description": "TP INVERSÉ",
+      "startDate": "2025-07-23T16:00:00.000Z",
+      "endDate": "2025-07-23T17:00:00.000Z",
+      "type": "AUTRE",
+      "class": "",
+      "room": "",
+      "materials": [],
+      "chemicals": [],
+      "fileName": null,
+      "createdAt": "2025-07-24T22:35:12.814Z",
+      "updatedAt": "2025-07-25T04:53:33.259Z",
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-25T04:53:16.172Z",
+          "2025-07-25T04:53:33.259Z"
+        ]
+      ],
+      "column": 1,
+      "totalColumns": 2,
+      "visualStartDate": "2025-07-23T16:00:00.000Z",
+      "visualEndDate": "2025-07-23T17:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": false,
+      "endsAfterSchedule": false,
+      "location": ""
+    },
+    {
+      "id": "EVENT_1753417869029_s8r6f4ygm",
+      "title": "TEST PERMI",
+      "description": "",
+      "startDate": "2025-07-24T10:00:00.000Z",
+      "endDate": "2025-07-24T12:00:00.000Z",
+      "type": "TP",
+      "class": "Terminale ES",
+      "room": "",
+      "location": "",
+      "materials": [
+        "EQUIP_1753254176990_5y8n3pivf"
+      ],
+      "chemicals": [],
+      "equipment": [],
+      "fileName": null,
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-25T04:48:37.440Z",
+          "2025-07-25T04:48:44.574Z",
+          "2025-07-25T04:52:38.883Z"
+        ]
+      ],
+      "createdAt": "2025-07-25T04:31:09.029Z",
+      "updatedAt": "2025-07-25T04:52:38.883Z",
+      "column": 0,
+      "totalColumns": 1,
+      "visualStartDate": "2025-07-24T10:00:00.000Z",
+      "visualEndDate": "2025-07-24T12:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": false,
+      "endsAfterSchedule": false
+    },
+    {
+      "id": "EVENT_1753419121798_minxsqb8c",
+      "title": "Maintenance de matériel",
+      "description": "",
+      "startDate": "2025-07-23T01:00:00.000Z",
+      "endDate": "2025-07-23T19:00:00.000Z",
+      "type": "MAINTENANCE",
+      "class": "",
+      "room": "",
+      "location": "",
+      "materials": [],
+      "chemicals": [],
+      "equipment": [
+        "EQUIP_1753254105873_vjm5cl4wd"
+      ],
+      "fileName": null,
+      "notes": null,
+      "createdBy": "USER_001",
+      "createdAt": "2025-07-25T04:52:01.798Z",
+      "updatedAt": "2025-07-25T04:57:24.585Z",
+      "column": 0,
+      "totalColumns": 2,
+      "visualStartDate": "2025-07-23T06:00:00.000Z",
+      "visualEndDate": "2025-07-23T17:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": true,
+      "endsAfterSchedule": true,
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-25T04:52:22.998Z",
+          "2025-07-25T04:57:24.585Z"
+        ]
+      ]
     }
   ]
 }

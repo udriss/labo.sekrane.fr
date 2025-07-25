@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { withAudit } from '@/lib/api/with-audit'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth';
 
 const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
 
@@ -62,6 +64,11 @@ export async function GET(request: NextRequest) {
 // POST - Envelopper car c'est une création
 export const POST = withAudit(
   async (request: NextRequest) => {
+    // Récupérer la session pour obtenir l'utilisateur actuel
+    const session = await getServerSession(authOptions)
+    const userEmail = session?.user?.email
+    const userId = session?.user?.id
+
     const body = await request.json()
     const { 
       title, 
@@ -74,7 +81,11 @@ export const POST = withAudit(
       classes,
       materials,
       chemicals,
-      fileName
+      fileName,
+      location,
+      room,
+      notes,
+      equipment
     } = body
 
     // Validation des données
@@ -89,7 +100,7 @@ export const POST = withAudit(
     let eventsToCreate = []
 
     if (date && timeSlots && Array.isArray(timeSlots)) {
-      // Nouveau format
+      // Nouveau format pour les TP avec créneaux multiples
       for (const slot of timeSlots) {
         if (!slot.startTime || !slot.endTime) {
           return NextResponse.json(
@@ -109,16 +120,21 @@ export const POST = withAudit(
           endDate: endDateTime.toISOString(),
           type: type || 'TP',
           class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
-          room: null,
+          room: room || null,
+          location: location || null,
           materials: materials || [],
           chemicals: chemicals || [],
+          equipment: equipment || [],
           fileName: fileName || null,
+          notes: notes || null,
+          createdBy: userId || null,
+          modifiedBy: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
       }
     } else if (startDate && endDate) {
-      // Ancien format
+      // Ancien format ou événements laborantin
       eventsToCreate.push({
         id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         title,
@@ -127,10 +143,14 @@ export const POST = withAudit(
         endDate: new Date(endDate).toISOString(),
         type: type || 'TP',
         class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
-        room: null,
+        room: room || null,
+        location: location || null,
         materials: materials || [],
         chemicals: chemicals || [],
+        equipment: equipment || [],
         fileName: fileName || null,
+        notes: notes || null,
+        createdBy: userId || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
@@ -170,6 +190,11 @@ export const POST = withAudit(
 // PUT - Envelopper car c'est une modification
 export const PUT = withAudit(
   async (request: NextRequest) => {
+    const session = await getServerSession(authOptions)
+    const userEmail = session?.user?.email
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
     
@@ -180,10 +205,9 @@ export const PUT = withAudit(
       )
     }
 
-    const body = await request.json()
     const calendarData = await readCalendarFile()
-    
     const eventIndex = calendarData.events.findIndex((event: any) => event.id === eventId)
+    
     if (eventIndex === -1) {
       return NextResponse.json(
         { error: 'Événement non trouvé' },
@@ -191,11 +215,54 @@ export const PUT = withAudit(
       )
     }
 
+    const event = calendarData.events[eventIndex]
+
+    // Vérifier les permissions
+    const canEdit = userRole === 'ADMIN' || 
+                   userRole === 'ADMINLABO' || 
+                   event.createdBy === userId
+
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'Vous n\'avez pas la permission de modifier cet événement' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+
+    
+
+
+
+    // Gérer le tableau modifiedBy avec le nouveau format
+    const currentModifiedBy: Array<[string, ...string[]]> = event.modifiedBy || []
+    const modificationDate = new Date().toISOString()
+    
+    // Trouver si l'utilisateur a déjà modifié
+    const userIndex = currentModifiedBy.findIndex((entry: [string, ...string[]]) => entry[0] === userId)
+    
+    let updatedModifiedBy: Array<[string, ...string[]]>
+    if (userIndex >= 0 && userId) {
+      // L'utilisateur existe déjà, ajouter la nouvelle date
+      updatedModifiedBy = [...currentModifiedBy]
+      // Créer un nouveau tuple correctement typé
+      const existingEntry = currentModifiedBy[userIndex]
+      const [existingUserId, ...existingDates] = existingEntry
+      updatedModifiedBy[userIndex] = [existingUserId, ...existingDates, modificationDate] as [string, ...string[]]
+    } else if (userId) {
+      // Nouvel utilisateur, créer une nouvelle entrée
+      updatedModifiedBy = [...currentModifiedBy, [userId, modificationDate]]
+    } else {
+      updatedModifiedBy = currentModifiedBy
+    }
+
     // Mettre à jour l'événement
     const updatedEvent = {
-      ...calendarData.events[eventIndex],
+      ...event,
       ...body,
-      updatedAt: new Date().toISOString()
+      modifiedBy: updatedModifiedBy,
+      updatedAt: modificationDate
     }
     
     calendarData.events[eventIndex] = updatedEvent
@@ -208,13 +275,22 @@ export const PUT = withAudit(
     entity: 'event',
     action: 'UPDATE',
     extractEntityIdFromResponse: (response) => response?.id,
-    extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined
+    extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
+    customDetails: (req, response) => ({
+      modifiedByCount: response?.modifiedBy?.length || 0
+    })
   }
 )
 
 // DELETE - Envelopper car c'est une suppression
 export const DELETE = withAudit(
   async (request: NextRequest) => {
+    // Récupérer la session pour vérifier les permissions
+    const session = await getServerSession(authOptions)
+    const userEmail = session?.user?.email
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
     
@@ -232,6 +308,20 @@ export const DELETE = withAudit(
       return NextResponse.json(
         { error: 'Événement non trouvé' },
         { status: 404 }
+      )
+    }
+
+    const event = calendarData.events[eventIndex]
+
+    // Vérifier les permissions
+    const canDelete = userRole === 'ADMIN' || 
+                     userRole === 'ADMINLABO' || 
+                     event.createdBy === userId
+
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: 'Vous n\'avez pas la permission de supprimer cet événement' },
+        { status: 403 }
       )
     }
 
