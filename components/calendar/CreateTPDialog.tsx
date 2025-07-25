@@ -468,7 +468,13 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '100%', sm: 200 } }
+                              sx: { minWidth: { xs: '100%', sm: 200 } },
+                              onClick: (e: any) => {
+                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                  const button = e.currentTarget.querySelector('button')
+                                  if (button) button.click()
+                                }
+                              }
                             }
                           }}
                         />
@@ -485,7 +491,13 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '48%', sm: 120 } }
+                              sx: { minWidth: { xs: '48%', sm: 120 } },
+                              onClick: (e: any) => {
+                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                  const button = e.currentTarget.querySelector('button')
+                                  if (button) button.click()
+                                }
+                              }
                             }
                           }}
                         />
@@ -502,7 +514,13 @@ export function CreateTPDialog({
                           slotProps={{
                             textField: { 
                               size: "small",
-                              sx: { minWidth: { xs: '48%', sm: 120 } }
+                              sx: { minWidth: { xs: '100%', sm: 120 } },
+                              onClick: (e: any) => {
+                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                  const button = e.currentTarget.querySelector('button')
+                                  if (button) button.click()
+                                }
+                              }
                             }
                           }}
                         />

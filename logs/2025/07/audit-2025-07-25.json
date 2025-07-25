@@ -22980,5 +22980,1853 @@
       "duration": 7
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "676b1c21-becf-46dc-85f5-cd0f7c42eb19",
+    "timestamp": "2025-07-25T06:42:44.839Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 46,
+        "timestamp": "2025-07-25T06:42:44.839Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425764793_h0bgxjil2",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 46
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1bf2cd98-bcd4-45e5-9367-209f840468b6",
+    "timestamp": "2025-07-25T06:42:45.169Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-25T06:42:45.169Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425765163_khpupt597",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c24f23b6-f575-461c-aaad-40a98188f12c",
+    "timestamp": "2025-07-25T06:43:31.711Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-25T06:43:31.711Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425811705_tvb1egx65",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "60e6ceea-18e5-4baa-ac40-e42ab56e37ce",
+    "timestamp": "2025-07-25T06:44:53.059Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-25T06:44:53.059Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425893054_r4nedt1ks",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f0a1958f-1e2e-47f3-8e6a-5c67eef0d851",
+    "timestamp": "2025-07-25T06:45:50.935Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-25T06:45:50.935Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425950929_8bhap8syp",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7c56f2df-d69f-46fe-b86e-cb7e29a7ab7f",
+    "timestamp": "2025-07-25T06:46:24.263Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-25T06:46:24.263Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753425984257_dmx26y449",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8c6aaefd-1623-470b-8d57-dae215f764e8",
+    "timestamp": "2025-07-25T06:46:52.792Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-25T06:46:52.792Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426012785_ad9yu33z4",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "aae1aee9-33ba-4f9b-b268-1fb94c4d3b65",
+    "timestamp": "2025-07-25T06:47:36.155Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-25T06:47:36.155Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426056149_ostqvfyh2",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "610ee725-1e1b-4ad9-b3b7-f7aafba22e79",
+    "timestamp": "2025-07-25T06:48:05.398Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-25T06:48:05.398Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426085391_pzlmf9iiz",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "76a1c1d9-8fec-4e3e-a362-c16de59fa3c2",
+    "timestamp": "2025-07-25T06:48:35.224Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-25T06:48:35.224Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426115219_x2ahtgkbt",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "efb1e10c-1f24-4188-aa62-4671df27d496",
+    "timestamp": "2025-07-25T06:49:03.230Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-25T06:49:03.230Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426143223_76lxy3cry",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b28af950-0eb0-4c4c-95b1-7ab7ae20c802",
+    "timestamp": "2025-07-25T06:49:13.018Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-25T06:49:13.018Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426153013_gw8oabpnr",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "26f939df-0827-480f-9c58-858284dea1de",
+    "timestamp": "2025-07-25T06:50:08.239Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-25T06:50:08.239Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426208234_vg5we5q0y",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a513599c-b9f9-4ce0-a0ad-ea8eddb35974",
+    "timestamp": "2025-07-25T06:52:34.631Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-25T06:52:34.631Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426354627_w2do2nwrp",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "530664be-fa87-44fb-ad74-a25e626ce548",
+    "timestamp": "2025-07-25T06:52:43.653Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-25T06:52:43.653Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426363645_9srtexko9",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "191447ba-f2d7-4ba4-ad5d-285c320d02ec",
+    "timestamp": "2025-07-25T06:52:49.238Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-25T06:52:49.238Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426369230_mp47i6aej",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "acbc6083-85c0-4ea3-b54c-1360654668a0",
+    "timestamp": "2025-07-25T06:52:52.326Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 58,
+        "timestamp": "2025-07-25T06:52:52.326Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426372268_y4m806tfy",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 58
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "88eb36b8-8004-44f4-b790-7837a4a6e121",
+    "timestamp": "2025-07-25T06:52:52.675Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T06:52:52.675Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426372672_duz69wu9y",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0c1809e2-db0f-4243-bcbe-e01f16d45a2c",
+    "timestamp": "2025-07-25T06:53:55.777Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-07-25T06:53:55.776Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426435764_ngl22wrka",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a73cd79b-ea2f-44dd-96de-f768aeca4684",
+    "timestamp": "2025-07-25T06:53:56.142Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-07-25T06:53:56.142Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426436131_0znn1fpi8",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8a6afee3-c17b-420b-af05-268e8d6b5119",
+    "timestamp": "2025-07-25T06:53:56.479Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-25T06:53:56.479Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426436469_sbpk9688n",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8205e4e0-bb2e-4ed9-be25-741ed69fe90d",
+    "timestamp": "2025-07-25T06:53:56.839Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-25T06:53:56.839Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426436835_pqpx3ii0g",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "187928f1-6771-4139-b238-45b904a505ae",
+    "timestamp": "2025-07-25T06:58:25.917Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-07-25T06:58:25.917Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426705908_e11ly0cj8",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "002d6f90-2ada-43c3-b113-abab42f34d7d",
+    "timestamp": "2025-07-25T06:59:42.645Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-25T06:59:42.645Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753426782638_qkz5vea54",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
   }
 ]
