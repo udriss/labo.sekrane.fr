@@ -5,3 +5,13 @@ export type UserRole =
   | 'STUDENT'
   | 'ADMINLABO'
   | 'LABORANTIN';
+
+
+export interface FileWithMetadata {
+  file: File
+  id: string
+  uploadProgress?: number
+  error?: string
+  uploadStatus?: 'pending' | 'uploading' | 'completed' | 'error'
+  fileContent?: string // Base64 content
+}

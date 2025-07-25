@@ -317,6 +317,47 @@
       "endsAfterDay": false,
       "startsBeforeSchedule": false,
       "endsAfterSchedule": false
+    },
+    {
+      "id": "EVENT_1753430033201_rku7baq89",
+      "title": "TP",
+      "description": null,
+      "startDate": "2025-07-24T10:00:00.000Z",
+      "endDate": "2025-07-24T11:00:00.000Z",
+      "type": "TP",
+      "class": "Terminale ES",
+      "room": null,
+      "location": null,
+      "materials": [],
+      "chemicals": [],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [
+        {
+          "fileName": "1750771252984.jpeg",
+          "fileSize": 87534,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-25T07:53:52.943Z"
+        },
+        {
+          "fileName": "C12_4_sons_1.png",
+          "fileSize": 15532,
+          "fileType": "image/png",
+          "uploadedAt": "2025-07-25T07:53:52.943Z"
+        },
+        {
+          "fileName": "C3_accu_2.jpg",
+          "fileSize": 87406,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-25T07:53:52.943Z"
+        }
+      ],
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [],
+      "createdAt": "2025-07-25T07:53:53.201Z",
+      "updatedAt": "2025-07-25T07:53:53.201Z"
     }
   ]
 }

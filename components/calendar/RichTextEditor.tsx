@@ -275,7 +275,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
           padding: 2,
           outline: 'none',
           minHeight: 250,
-          '& p.is-editor-empty:first-child::before': {
+          '& p.is-editor-empty:first-of-type::before': {
             color: 'text.secondary',
             content: 'attr(data-placeholder)',
             float: 'left',

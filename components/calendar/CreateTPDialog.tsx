@@ -6,15 +6,17 @@ import {
   Dialog, DialogTitle, DialogContent, Box, Typography, IconButton,
   Stepper, Step, StepLabel, StepContent, Button, TextField,
   Card, Chip, Autocomplete, useMediaQuery, useTheme,
-  Alert, Collapse
+  Alert, Collapse, Stack
 } from '@mui/material'
 import { 
   Add, Close, Upload, Class, Assignment, Save, Delete,
-  Warning
+  Warning, CloudUpload, InsertDriveFile, Clear
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
+import { FileWithMetadata } from '@/types/global'
+
 
 interface CreateTPDialogProps {
   open: boolean
@@ -25,7 +27,7 @@ interface CreateTPDialogProps {
   userClasses: string[]
   customClasses: string[]
   setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
-  saveNewClass: (className: string) => Promise<boolean>
+  saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
   tpPresets: any[]
 }
 
@@ -48,8 +50,9 @@ export function CreateTPDialog({
   const [uploadMethod, setUploadMethod] = useState<'file' | 'manual' | 'preset' | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [files, setFiles] = useState<any[]>([])
+  const [files, setFiles] = useState<FileWithMetadata[]>([])
   const [remarks, setRemarks] = useState('')
+  const [dragOver, setDragOver] = useState(false)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -60,6 +63,17 @@ export function CreateTPDialog({
     materials: [] as any[],
     chemicals: [] as any[]
   })
+
+  // Correction du style pour RichTextEditor
+  const richTextEditorStyles = {
+    '& p.is-editor-empty:first-of-type::before': {
+      color: 'text.secondary',
+      content: 'attr(data-placeholder)',
+      float: 'left',
+      height: 0,
+      pointerEvents: 'none',
+    }
+  }
 
   const getOutsideBusinessHoursWarnings = () => {
     const warnings: string[] = []
@@ -85,6 +99,11 @@ export function CreateTPDialog({
 
   const handleStepNext = () => setActiveStep((prevStep) => prevStep + 1)
   const handleStepBack = () => setActiveStep((prevStep) => prevStep - 1)
+  
+  // Permettre la navigation libre entre les steps
+  const handleStepClick = (stepIndex: number) => {
+    setActiveStep(stepIndex)
+  }
 
   const handleFormDataChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -96,6 +115,7 @@ export function CreateTPDialog({
     setSelectedPreset(null)
     setFiles([])
     setRemarks('')
+    setDragOver(false)
     setFormData({
       title: '',
       description: '',
@@ -148,61 +168,76 @@ export function CreateTPDialog({
     })
   }
 
-  const handleCreateCalendarEvent = async () => {
-    try {
-      setLoading(true)
 
-      for (const slot of formData.timeSlots) {
-        if (!slot.date || !slot.startTime || !slot.endTime) {
-          throw new Error("Date, heure de début ou heure de fin manquante pour un créneau.")
-        }
+const handleCreateCalendarEvent = async () => {
+  try {
+    setLoading(true)
+
+    for (const slot of formData.timeSlots) {
+      if (!slot.date || !slot.startTime || !slot.endTime) {
+        throw new Error("Date, heure de début ou heure de fin manquante pour un créneau.")
       }
+    }
 
-      // Préparer les données des fichiers
-      const filesData = files.map(f => ({
+    // Préparer les données des fichiers avec le contenu uploadé
+    const filesData = files
+      .filter(f => f.uploadStatus === 'completed')
+      .map(f => ({
         fileName: f.file.name,
         fileSize: f.file.size,
         fileType: f.file.type,
+        fileUrl: f.fileContent, // fileContent contient maintenant l'URL retournée par le serveur
         uploadedAt: new Date().toISOString()
-        // Note: L'upload réel devrait être géré par l'API
       }))
 
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        type: 'TP',
-        classes: formData.classes,
-        materials: formData.materials.map((m: any) => m.id),
-        chemicals: formData.chemicals.map((c: any) => c.id),
-        files: filesData,
-        remarks: remarks,
-        date: formData.timeSlots[0].date,
-        timeSlots: formData.timeSlots.map(slot => ({
-          startTime: slot.startTime,
-          endTime: slot.endTime
-        }))
-      }
-
-      const response = await fetch('/api/calendrier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erreur lors de la création des événements')
-      }
-      
-      handleClose()
-      onSuccess()
-    } catch (error) {
-      console.error('Erreur lors de la création de l\'événement:', error)
-      alert(error instanceof Error ? error.message : 'Erreur lors de la création')
-    } finally {
-      setLoading(false)
+    // Vérifier si tous les fichiers sont uploadés
+    const uploadingFiles = files.filter(f => f.uploadStatus === 'uploading')
+    if (uploadingFiles.length > 0) {
+      throw new Error("Veuillez attendre la fin du téléchargement de tous les fichiers.")
     }
+
+    // Vérifier s'il y a des erreurs d'upload
+    const errorFiles = files.filter(f => f.uploadStatus === 'error')
+    if (errorFiles.length > 0) {
+      throw new Error(`Erreur lors du téléchargement de ${errorFiles.length} fichier(s). Veuillez les supprimer ou réessayer.`)
+    }
+
+    const eventData = {
+      title: formData.title || 'TP',
+      description: formData.description,
+      type: 'TP',
+      classes: formData.classes,
+      materials: formData.materials.map((m: any) => m.id),
+      chemicals: formData.chemicals.map((c: any) => c.id),
+      files: filesData,
+      remarks: remarks,
+      date: formData.timeSlots[0].date,
+      timeSlots: formData.timeSlots.map(slot => ({
+        startTime: slot.startTime,
+        endTime: slot.endTime
+      }))
+    }
+
+    const response = await fetch('/api/calendrier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Erreur lors de la création des événements')
+    }
+    
+    handleClose()
+    onSuccess()
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'événement:', error)
+    alert(error instanceof Error ? error.message : 'Erreur lors de la création')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <Dialog
@@ -228,10 +263,17 @@ export function CreateTPDialog({
       </DialogTitle>
       
       <DialogContent>
-        <Stepper activeStep={activeStep} orientation="vertical">
+        <Stepper 
+          activeStep={activeStep} 
+          orientation="vertical"
+          nonLinear
+        >
           {/* Étape 1: Méthode de création */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(0)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Méthode d'ajout</Typography>
             </StepLabel>
             <StepContent>
@@ -241,6 +283,32 @@ export function CreateTPDialog({
               
               <Box display="flex" flexDirection="column" gap={2}>
                 <Box display="flex" gap={2} flexWrap="wrap">
+                  {/* Carte pour l'import de fichier */}
+                  <Card 
+                    sx={{ 
+                      p: 2, 
+                      cursor: 'pointer',
+                      border: uploadMethod === 'file' ? '2px solid' : '1px solid',
+                      borderColor: uploadMethod === 'file' ? 'primary.main' : 'divider',
+                      '&:hover': { borderColor: 'primary.main' },
+                      flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 8px)' },
+                      minWidth: { xs: 'auto', sm: '250px' }
+                    }}
+                    onClick={() => setUploadMethod('file')}
+                  >
+                    <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                      <CloudUpload color={uploadMethod === 'file' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
+                      <Typography variant="h6">Importer des fichiers TP</Typography>
+                      <Typography variant="body2" color="text.secondary" textAlign="center">
+                        {files.length > 0 ? `${files.length} fichier${files.length > 1 ? 's' : ''} sélectionné${files.length > 1 ? 's' : ''}` : 
+                         "Cliquez pour sélectionner"}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" textAlign="center">
+                        PDF, Word, Images acceptés • Max 5 fichiers
+                      </Typography>
+                    </Box>
+                  </Card>
+
                   <Card 
                     sx={{ 
                       p: 2, 
@@ -275,7 +343,7 @@ export function CreateTPDialog({
                     onClick={() => setUploadMethod('preset')}
                   >
                     <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                      <Class color={uploadMethod === 'preset' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
+                                            <Class color={uploadMethod === 'preset' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
                       <Typography variant="h6">TP Preset</Typography>
                       <Typography variant="body2" color="text.secondary" textAlign="center">
                         Utiliser un modèle de TP prédéfini
@@ -285,12 +353,26 @@ export function CreateTPDialog({
                 </Box>
               </Box>
 
+              {/* Utilisation de FileUploadSection pour l'upload de fichiers */}
+              {uploadMethod === 'file' && (
+                <Box sx={{ mt: 3 }}>
+                  <FileUploadSection
+                    files={files}
+                    onFilesChange={setFiles}
+                    maxFiles={5}
+                    maxSizePerFile={10}
+                    acceptedTypes={['.pdf', '.doc', '.docx', '.odt', '.jpg',
+                       '.jpeg', '.png', '.gif', '.txt', '.svg', ]}
+                  />
+                </Box>
+              )}
+
               {uploadMethod === 'preset' && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="h6" sx={{ mb: 2 }}>Choisir un TP Preset</Typography>
                   <Box sx={{ 
                     display: 'grid', 
-                                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fill, minmax(300px, 1fr))' }, 
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fill, minmax(300px, 1fr))' }, 
                     gap: 2, 
                     maxHeight: '400px', 
                     overflowY: 'auto' 
@@ -336,33 +418,20 @@ export function CreateTPDialog({
                 </Box>
               )}
 
-              {uploadMethod === 'manual' && (
-                <Box sx={{ mt: 3 }}>
-                  <TextField
-                    fullWidth
-                    label="Titre du TP"
-                    value={formData.title}
-                    onChange={(e) => handleFormDataChange('title', e.target.value)}
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Description"
-                    multiline
-                    rows={4}
-                    value={formData.description}
-                    onChange={(e) => handleFormDataChange('description', e.target.value)}
-                  />
-                </Box>
-              )}
-
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="contained"
-                  onClick={handleStepNext}
+                  onClick={() => {
+                    // Pour manual, passer directement à l'étape 2
+                    if (uploadMethod === 'manual') {
+                      setActiveStep(1)
+                    } else {
+                      handleStepNext()
+                    }
+                  }}
                   disabled={!uploadMethod || 
-                           (uploadMethod === 'manual' && !formData.title) || 
-                           (uploadMethod === 'preset' && !selectedPreset)}
+                           (uploadMethod === 'preset' && !selectedPreset) ||
+                           (uploadMethod === 'file' && files.length === 0)}
                 >
                   Continuer
                 </Button>
@@ -370,21 +439,44 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Nouvelle Étape 2: Remarques */}
+          {/* Étape 2: Description et Remarques */}
           <Step>
-            <StepLabel>
-              <Typography variant="h6">Remarques</Typography>
+            <StepLabel
+              onClick={() => handleStepClick(1)}
+              sx={{ cursor: 'pointer' }}
+            >
+              <Typography variant="h6">Description et remarques</Typography>
             </StepLabel>
             <StepContent>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Ajoutez des remarques ou informations supplémentaires pour cette séance
+                Ajoutez une description et des remarques pour cette séance
               </Typography>
               
-              <RichTextEditor
-                value={remarks}
-                onChange={setRemarks}
-                placeholder="Ajoutez des remarques, instructions spéciales, notes de sécurité..."
-              />
+              {/* Champ description pour le mode manuel */}
+              {uploadMethod === 'manual' && (
+                <TextField
+                  fullWidth
+                  label="Description du TP"
+                  multiline
+                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => handleFormDataChange('description', e.target.value)}
+                  sx={{ mb: 3 }}
+                  placeholder="Décrivez brièvement le contenu et les objectifs du TP..."
+                />
+              )}
+              
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+                Remarques supplémentaires
+              </Typography>
+              
+              <Box sx={richTextEditorStyles}>
+                <RichTextEditor
+                  value={remarks}
+                  onChange={setRemarks}
+                  placeholder="Ajoutez des remarques, instructions spéciales, notes de sécurité..."
+                />
+              </Box>
 
               <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
                 <Button onClick={handleStepBack}>
@@ -400,9 +492,12 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 3: Date et heure (anciennement étape 2) */}
+          {/* Étape 3: Date et heure */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(2)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Date et heure</Typography>
             </StepLabel>
             <StepContent>
@@ -412,7 +507,6 @@ export function CreateTPDialog({
               
               <Box display="flex" flexDirection="column" gap={3}>
                 <Box>
-                  {/* En-tête avec le bouton d'ajout */}
                   <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                     <Typography variant="subtitle1" fontWeight="bold">
                       Créneaux horaires
@@ -427,7 +521,6 @@ export function CreateTPDialog({
                     </Button>
                   </Box>
 
-                  {/* Liste des créneaux */}
                   {formData.timeSlots.map((slot, index) => (
                     <Box 
                       key={index} 
@@ -528,7 +621,6 @@ export function CreateTPDialog({
                     </Box>
                   ))}
 
-                  {/* Message informatif si plusieurs créneaux */}
                   {formData.timeSlots.length > 1 && (
                     <Alert severity="info" sx={{ mt: 2 }}>
                       <Typography variant="body2">
@@ -538,7 +630,6 @@ export function CreateTPDialog({
                   )}
                 </Box>
 
-                {/* Avertissement heures hors établissement */}
                 <Collapse in={getOutsideBusinessHoursWarnings().length > 0}>
                   <Alert 
                     severity="warning" 
@@ -588,9 +679,12 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 4: Classes concernées (anciennement étape 3) */}
+          {/* Étape 4: Classes concernées */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(3)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Classes concernées</Typography>
             </StepLabel>
             <StepContent>
@@ -611,10 +705,20 @@ export function CreateTPDialog({
                     !userClasses.includes(c) && !customClasses.includes(c)
                   )
                   if (newCustom.length > 0) {
-                    setCustomClasses(prev => [...prev, ...newCustom])
+                    const successfulClasses: string[] = []
                     
                     for (const newClass of newCustom) {
-                      await saveNewClass(newClass)
+                      const result = await saveNewClass(newClass, 'custom')
+                      if (result.success) {
+                        successfulClasses.push(newClass)
+                      } else {
+                        console.error(`Erreur lors de l'ajout de la classe "${newClass}":`, result.error)
+                      }
+                    }
+                    
+                    // N'ajouter que les classes créées avec succès
+                    if (successfulClasses.length > 0) {
+                      setCustomClasses(prev => [...prev, ...successfulClasses])
                     }
                   }
                 }}
@@ -626,16 +730,19 @@ export function CreateTPDialog({
                     helperText="Vous pouvez taper pour ajouter une nouvelle classe"
                   />
                 )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((option, index) => (
                     <Chip
-                      variant="outlined"
-                      label={option}
-                      {...getTagProps({ index })}
-                      color={userClasses.includes(option) ? "primary" : "secondary"}
+                    key={option}
+                    variant="outlined"
+                    label={option}
+                    color={userClasses.includes(option) ? "primary" : "secondary"}
+                    sx={{ m: 0.5 }}
                     />
-                  ))
-                }
+                  ))}
+                  </Box>
+                )}
               />
 
               <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
@@ -653,9 +760,12 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 5: Matériel nécessaire (anciennement étape 4) */}
+          {/* Étape 5: Matériel nécessaire */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(4)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Matériel nécessaire</Typography>
             </StepLabel>
             <StepContent>
@@ -670,7 +780,7 @@ export function CreateTPDialog({
                   if (typeof option === 'string') return option;
                   return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
                 }}
-                                value={formData.materials}
+                value={formData.materials}
                 onChange={(_, newValue) => handleFormDataChange('materials', newValue || [])}
                 renderInput={(params) => (
                   <TextField
@@ -680,13 +790,17 @@ export function CreateTPDialog({
                   />
                 )}
                 renderTags={(value, getTagProps) =>
-                  value.map((option: any, index) => (
-                    <Chip
-                      variant="outlined"
-                      label={`${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`}
-                      {...getTagProps({ index })}
-                    />
-                  ))
+                  value.map((option: any, index) => {
+                    const { key, ...chipProps } = getTagProps({ index })
+                    return (
+                      <Chip
+                        key={key}
+                        variant="outlined"
+                        label={`${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`}
+                        {...chipProps}
+                      />
+                    )
+                  })
                 }
                 isOptionEqualToValue={(option: any, value: any) => {
                   return option.id === value.id;
@@ -707,9 +821,12 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Étape 6: Produits chimiques (anciennement étape 5) */}
+          {/* Étape 6: Produits chimiques */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(5)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Produits chimiques</Typography>
             </StepLabel>
             <StepContent>
@@ -734,13 +851,17 @@ export function CreateTPDialog({
                   />
                 )}
                 renderTags={(value, getTagProps) =>
-                  value.map((option: any, index) => (
-                    <Chip
-                      variant="outlined"
-                      label={`${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`}
-                      {...getTagProps({ index })}
-                    />
-                  ))
+                  value.map((option: any, index) => {
+                    const { key, ...chipProps } = getTagProps({ index })
+                    return (
+                      <Chip
+                        key={key}
+                        variant="outlined"
+                        label={`${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`}
+                        {...chipProps}
+                      />
+                    )
+                  })
                 }
                 isOptionEqualToValue={(option: any, value: any) => {
                   return option.id === value.id;
@@ -761,9 +882,12 @@ export function CreateTPDialog({
             </StepContent>
           </Step>
 
-          {/* Nouvelle Étape 7: Documents joints */}
+          {/* Étape 7: Documents joints */}
           <Step>
-            <StepLabel>
+            <StepLabel
+              onClick={() => handleStepClick(6)}
+              sx={{ cursor: 'pointer' }}
+            >
               <Typography variant="h6">Documents joints</Typography>
             </StepLabel>
             <StepContent>

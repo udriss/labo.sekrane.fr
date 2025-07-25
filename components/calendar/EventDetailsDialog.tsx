@@ -14,6 +14,9 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
+  Tooltip,
+  Snackbar,
+  Alert as MuiAlert
 } from '@mui/material'
 import {
   Timeline, TimelineItem, TimelineSeparator,
@@ -24,7 +27,7 @@ import {
 import { 
   Science, Schedule, Assignment, EventAvailable, Edit, Delete, 
   History, Person, PictureAsPdf, Description, Image, 
-  InsertDriveFile, OpenInNew 
+  InsertDriveFile, OpenInNew, Download
 } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
 
@@ -52,13 +55,6 @@ const EVENT_TYPES = {
   OTHER: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
 }
 
-// Nouvelle interface pour les documents
-interface DocumentFile {
-  fileName: string
-  fileUrl?: string
-  fileType?: string
-}
-
 // Fonction pour déterminer le type de fichier
 const getFileType = (fileName: string): string => {
   const extension = fileName.split('.').pop()?.toLowerCase() || ''
@@ -75,27 +71,27 @@ const getFileType = (fileName: string): string => {
 
 // Fonction pour obtenir l'icône et la couleur selon le type
 const getFileTypeInfo = (fileType: string) => {
-  switch (fileType) {
-    case 'image':
-      return { icon: <Image sx={{ fontSize: 40 }} />, color: '#4caf50', label: 'Image' }
-    case 'pdf':
-      return { icon: <PictureAsPdf sx={{ fontSize: 40 }} />, color: '#f44336', label: 'PDF' }
-    case 'doc':
-      return { icon: <Description sx={{ fontSize: 40 }} />, color: '#2196f3', label: 'Document' }
-    default:
-      return { icon: <InsertDriveFile sx={{ fontSize: 40 }} />, color: '#757575', label: 'Fichier' }
+  if (fileType.includes('image')) {
+    return { icon: <Image sx={{ fontSize: 40 }} />, color: '#4caf50', label: 'Image' }
   }
+  if (fileType === 'pdf') {
+    return { icon: <PictureAsPdf sx={{ fontSize: 40 }} />, color: '#f44336', label: 'PDF' }
+  }
+  if (fileType.includes('doc')) {
+    return { icon: <Description sx={{ fontSize: 40 }} />, color: '#2196f3', label: 'Document' }
+  }
+  return { icon: <InsertDriveFile sx={{ fontSize: 40 }} />, color: '#757575', label: 'Fichier' }
 }
 
 const formatDateTime = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, "dd/MM/yyyy HH:mm", { locale: fr })
-  }
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return format(dateObj, "dd/MM/yyyy HH:mm", { locale: fr })
+}
 
 const formatTime = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, "HH:mm", { locale: fr })
-  }
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return format(dateObj, "HH:mm", { locale: fr })
+}
 
 // Fonction pour formater la taille du fichier
 const formatFileSize = (bytes?: number): string => {
@@ -105,100 +101,218 @@ const formatFileSize = (bytes?: number): string => {
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
 }
 
-// Composant pour afficher une carte de document - VERSION CORRIGÉE
-const DocumentCard: React.FC<{ document: DocumentFile }> = ({ document }) => {
+// Composant pour afficher une carte de document - VERSION AMÉLIORÉE
+const DocumentCard: React.FC<{ 
+  document: DocumentFile,
+  onOpenError?: (error: string) => void 
+}> = ({ document, onOpenError }) => {
   const fileType = document.fileType || getFileType(document.fileName)
   const fileInfo = getFileTypeInfo(fileType)
+  const [isHovered, setIsHovered] = useState(false)
   
-  const handleClick = () => {
-    if (document.fileUrl) {
-      window.open(document.fileUrl, '_blank')
+const handleClick = async (e: React.MouseEvent) => {
+  e.preventDefault()
+  
+  if (document.fileUrl) {
+    try {
+      let urlToOpen = document.fileUrl
+      
+      // Si c'est un fichier local, construire l'URL complète via l'API
+      if (document.fileUrl.startsWith('/uploads/')) {
+        urlToOpen = `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
+      }
+      
+      // Ouvrir dans un nouvel onglet
+      const newWindow = window.open(urlToOpen, '_blank', 'noopener,noreferrer')
+      
+      // Vérifier si l'ouverture a été bloquée
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        if (onOpenError) {
+          onOpenError('Le navigateur a bloqué l\'ouverture du document. Veuillez autoriser les pop-ups pour ce site.')
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ouverture du document:', error)
+      if (onOpenError) {
+        onOpenError('Impossible d\'ouvrir le document. Veuillez réessayer.')
+      }
+    }
+  } else {
+    if (onOpenError) {
+      onOpenError('L\'URL du document n\'est pas disponible.')
     }
   }
+}
+
+const handleDownload = async (e: React.MouseEvent) => {
+  e.stopPropagation()
   
-  
-  
-    
-  
+  if (document.fileUrl) {
+    try {
+      // Si c'est un chemin local (commence par /uploads/)
+      if (document.fileUrl.startsWith('/uploads/')) {
+        const response = await fetch('/api/calendrier/files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filePath: document.fileUrl,
+            fileName: document.fileName
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du téléchargement')
+        }
+
+        // Récupérer le blob
+        const blob = await response.blob()
+        
+        // Créer un lien de téléchargement
+        const url = window.URL.createObjectURL(blob)
+        const link = window.document.createElement('a')
+        link.href = url
+        link.download = document.fileName
+        window.document.body.appendChild(link)
+        link.click()
+        
+        // Nettoyer
+        window.URL.revokeObjectURL(url)
+        window.document.body.removeChild(link)
+      } else {
+        // Si c'est une URL externe, utiliser l'ancienne méthode
+        const link = window.document.createElement('a')
+        link.href = document.fileUrl
+        link.download = document.fileName
+        window.document.body.appendChild(link)
+        link.click()
+        window.document.body.removeChild(link)
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error)
+      if (onOpenError) {
+        onOpenError('Impossible de télécharger le document.')
+      }
+    }
+  }
+}
 
   return (
-    <Card 
-      sx={{ 
-        maxWidth: 200, 
-        boxShadow: 2,
-        transition: 'all 0.3s',
-        '&:hover': {
-          boxShadow: 4,
-          transform: 'translateY(-2px)'
-        },
-        cursor: document.fileUrl ? 'pointer' : 'default'
-      }}
+    <Tooltip 
+      title={document.fileUrl ? "Cliquez pour ouvrir dans un nouvel onglet" : "Document non disponible"} 
+      arrow
+      placement="top"
     >
-      <CardActionArea 
-        onClick={handleClick}
-        disabled={!document.fileUrl}
+      <Card 
+        sx={{ 
+          maxWidth: 200, 
+          boxShadow: 2,
+          transition: 'all 0.3s',
+          '&:hover': {
+            boxShadow: 4,
+            transform: 'translateY(-2px)'
+          },
+          cursor: document.fileUrl ? 'pointer' : 'default',
+          opacity: document.fileUrl ? 1 : 0.7
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <Box
-          sx={{
-            height: 120,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: `${fileInfo.color}15`,
-            position: 'relative'
-          }}
+        <CardActionArea 
+          onClick={handleClick}
+          disabled={!document.fileUrl}
         >
-          <Box sx={{ color: fileInfo.color }}>
-            {fileInfo.icon}
-          </Box>
-          {document.fileUrl && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                bgcolor: 'background.paper',
-                borderRadius: '50%',
-                padding: 0.5,
-                boxShadow: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <OpenInNew fontSize="small" sx={{ fontSize: 16, color: 'text.secondary' }} />
-            </Box>
-          )}
-        </Box>
-        <CardContent sx={{ p: 1.5 }}>
-          <Typography variant="caption" color="text.secondary" display="block">
-            {fileInfo.label}
-            {document.fileSize && ` • ${formatFileSize(document.fileSize)}`}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontWeight: 500
+          <Box
+            sx={{
+              height: 120,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: `${fileInfo.color}15`,
+              position: 'relative'
             }}
-            title={document.fileName}
           >
-            {document.fileName}
-          </Typography>
-          {document.uploadedAt && (
-            <Typography 
-              variant="caption" 
-              color="text.secondary" 
-              sx={{ fontSize: '0.65rem' }}
-            >
-              {formatDateTime(document.uploadedAt)}
+            <Box sx={{ color: fileInfo.color }}>
+              {fileInfo.icon}
+            </Box>
+            {document.fileUrl && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  display: 'flex',
+                  gap: 0.5,
+                  opacity: isHovered ? 1 : 0.8,
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                <Box
+                  sx={{
+                    bgcolor: 'background.paper',
+                    borderRadius: '50%',
+                    padding: 0.5,
+                    boxShadow: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <OpenInNew fontSize="small" sx={{ fontSize: 16, color: 'primary.main' }} />
+                </Box>
+                <Tooltip title="Télécharger" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={handleDownload}
+                    sx={{
+                      bgcolor: 'background.paper',
+                      boxShadow: 1,
+                      width: 28,
+                      height: 28,
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                        color: 'primary.contrastText'
+                      }
+                    }}
+                  >
+                    <Download fontSize="small" sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+          </Box>
+          <CardContent sx={{ p: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" display="block">
+              {fileInfo.label}
+              {document.fileSize && ` • ${formatFileSize(document.fileSize)}`}
             </Typography>
-          )}
-        </CardContent>
-      </CardActionArea>
-    </Card>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontWeight: 500,
+                color: document.fileUrl ? 'text.primary' : 'text.disabled'
+              }}
+              title={document.fileName}
+            >
+              {document.fileName}
+            </Typography>
+            {document.uploadedAt && (
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ fontSize: '0.65rem' }}
+              >
+                {formatDateTime(document.uploadedAt)}
+              </Typography>
+            )}
+          </CardContent>
+        </CardActionArea>
+      </Card>
+    </Tooltip>
   )
 }
 
@@ -219,14 +333,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     date: string,
     isConsecutive: boolean
   }>>([])
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const getEventTypeInfo = (type: EventType) => {
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
   }
-
-
-
-
 
   const calculateDuration = () => {
     if (!event) return 0
@@ -265,9 +376,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     
     return documents
   }
-
-
-
 
   useEffect(() => {
     const fetchUsersAndPrepareTimeline = async () => {
@@ -372,7 +480,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     }
   }, [event, open])
 
-  // Ajoutez une fonction helper pour formater les dates en toute sécurité
+  // Fonction helper pour formater les dates en toute sécurité
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
@@ -447,18 +555,18 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
           {/* Informations temporelles */}
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size = {{ xs: 12, sm: 6 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Date et heure
               </Typography>
               <Typography variant="body1">
-                                📅 {formatDateTime(event.startDate)}
+                📅 {formatDateTime(event.startDate)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 jusqu'à {formatTime(event.endDate)}
               </Typography>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size = {{ xs: 12, sm: 6 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Durée
               </Typography>
@@ -474,7 +582,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               <Divider />
               <Grid container spacing={2}>
                 {event.class && (
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid size = {{ xs: 12, sm: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Classe
                     </Typography>
@@ -484,7 +592,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                   </Grid>
                 )}
                 {event.room && (
-                  <Grid size={{ xs: 12, sm: 6 }}>
+                  <Grid size = {{ xs: 12, sm: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Salle
                     </Typography>
@@ -508,7 +616,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                 </Typography>
                 <Grid container spacing={2}>
                   {event.materials && event.materials.length > 0 && (
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size = {{ xs: 12, sm: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Matériel ({event.materials.length})
                       </Typography>
@@ -526,7 +634,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     </Grid>
                   )}
                   {event.chemicals && event.chemicals.length > 0 && (
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size = {{ xs: 12, sm: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Produits chimiques ({event.chemicals.length})
                       </Typography>
@@ -548,13 +656,35 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
             </>
           )}
 
+          {/* Remarques */}
+          {event.remarks && (
+            <>
+              <Divider />
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Remarques
+                </Typography>
+                <Box 
+                  sx={{ 
+                    p: 2, 
+                    bgcolor: 'grey.50', 
+                    borderRadius: 1,
+                    '& p': { margin: 0 },
+                    '& ul, & ol': { marginTop: 0, marginBottom: 0 }
+                  }}
+                  dangerouslySetInnerHTML={{ __html: event.remarks }}
+                />
+              </Box>
+            </>
+          )}
+
           {/* Documents joints - Section améliorée */}
           {documents.length > 0 && (
             <>
               <Divider />
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  Documents joints
+                  Documents joints ({documents.length})
                 </Typography>
                 <Stack 
                   direction="row" 
@@ -577,7 +707,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                 >
                   {documents.map((doc, index) => (
                     <Box key={index} sx={{ flexShrink: 0 }}>
-                      <DocumentCard document={doc} />
+                      <DocumentCard 
+                        document={doc} 
+                        onOpenError={setErrorMessage}
+                      />
                     </Box>
                   ))}
                 </Stack>
@@ -609,7 +742,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                       <TimelineItem 
                         key={index}
                         sx={{
-                          // Réduire l'espacement vertical si l'item est consécutif
                           minHeight: item.isConsecutive ? 40 : 60,
                           '&::before': {
                             flex: 0,
@@ -632,7 +764,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                         <TimelineSeparator>
                           {index > 0 && <TimelineConnector sx={{ 
                             bgcolor: item.isConsecutive ? 'grey.300' : 'grey.400',
-                            // Réduire la hauteur du connecteur pour les items consécutifs
                             height: item.isConsecutive ? '10px' : '20px'
                           }} />}
 
@@ -653,10 +784,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                               <TimelineDot 
                                 color={index === timelineData.length - 1 ? "primary" : "grey"}
                                 variant="outlined"
-                                sx={{ 
+                                                                sx={{ 
                                   width: 10,
                                   height: 10,
-                                  margin: 0,  // Enlever les marges par défaut
+                                  margin: 0,
                                   transition: 'all 0.3s'
                                 }}
                               />
@@ -666,7 +797,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                           {index < timelineData.length - 1 && 
                           <TimelineConnector sx={{ 
                             bgcolor: timelineData[index + 1]?.isConsecutive ? 'grey.300' : 'grey.400',
-                            // Réduire la hauteur si le prochain item est consécutif
                             height: timelineData[index + 1]?.isConsecutive ? '5px' : '20px'
                           }} />}
                         </TimelineSeparator>
@@ -710,6 +840,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
           )}
         </Stack>
       </DialogContent>
+      
       <DialogActions>
         <Button onClick={onClose}>Fermer</Button>
         {onEdit && (
@@ -738,6 +869,22 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
           </Button>
         )}
       </DialogActions>
+
+      {/* Snackbar pour les messages d'erreur */}
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <MuiAlert 
+          onClose={() => setErrorMessage(null)} 
+          severity="error" 
+          sx={{ width: '100%' }}
+        >
+          {errorMessage}
+        </MuiAlert>
+      </Snackbar>
     </Dialog>
   )
 }

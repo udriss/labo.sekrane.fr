@@ -7,7 +7,62 @@ import { withAudit } from '@/lib/api/with-audit'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth';
 
+import { writeFile, mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
+
+
 const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
+
+async function saveFileToDisk(fileData: {
+  userId: string
+  fileName: string
+  fileContent?: string // Base64 ou URL data
+  fileBuffer?: Buffer
+}): Promise<string> {
+  try {
+    // Créer le dossier uploads s'il n'existe pas
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'calendar')
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true })
+    }
+
+    // Générer un nom de fichier unique
+    const timestamp = Date.now()
+    const randomString = Math.random().toString(36).substring(2, 8)
+    const fileExtension = path.extname(fileData.fileName)
+    const safeFileName = `${timestamp}_${randomString}${fileExtension}`
+    const filePath = path.join(uploadDir, safeFileName)
+
+    // Sauvegarder le fichier
+    if (fileData.fileBuffer) {
+      await writeFile(filePath, fileData.fileBuffer)
+    } else if (fileData.fileContent) {
+      // Si c'est une data URL, extraire le contenu base64
+      const base64Data = fileData.fileContent.replace(/^data:.*,/, '')
+      const buffer = Buffer.from(base64Data, 'base64')
+      await writeFile(filePath, buffer)
+    }
+
+    // Retourner le chemin relatif pour l'URL
+    return `/uploads/calendar/${fileData.userId}/${safeFileName}`
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde du fichier:', error)
+    throw error
+  }
+}
+
+// Fonction helper pour obtenir le type de fichier
+function getFileTypeFromName(fileName: string): string {
+  const extension = fileName.split('.').pop()?.toLowerCase() || ''
+  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
+    return 'image/' + extension
+  } else if (extension === 'pdf') {
+    return 'pdf'
+  } else if (['doc', 'docx', 'odt'].includes(extension)) {
+    return 'msword'
+  }
+  return 'other'
+}
 
 // Fonction pour lire le fichier calendrier
 async function readCalendarFile() {
@@ -20,19 +75,7 @@ async function readCalendarFile() {
   }
 }
 
-// Fonction helper pour déterminer le type de fichier
-function getFileTypeFromName(name: string): string {
-  const extension = name.split('.').pop()?.toLowerCase() || ''
-  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
-    return 'image'
-  } else if (extension === 'pdf') {
-    return 'pdf'
-  } else if (['doc', 'docx', 'odt'].includes(extension)) {
-    return 'doc'
-  } else {
-    return 'other'
-  }
-}
+
 
 // Fonction pour écrire dans le fichier calendrier
 async function writeCalendarFile(data: any) {
@@ -76,10 +119,8 @@ export async function GET(request: NextRequest) {
 }
 
 
-// POST - Envelopper car c'est une création
 export const POST = withAudit(
   async (request: NextRequest) => {
-    // Récupérer la session pour obtenir l'utilisateur actuel
     const session = await getServerSession(authOptions)
     const userEmail = session?.user?.email
     const userId = session?.user?.id
@@ -96,44 +137,86 @@ export const POST = withAudit(
       classes,
       materials,
       chemicals,
-      fileName,     // Garder pour la rétrocompatibilité
-      fileUrl,      // Garder pour la rétrocompatibilité
-      fileSize,     // Garder pour la rétrocompatibilité
-      files,        // Nouveau champ pour les fichiers multiples
+      fileName,
+      fileUrl,
+      fileSize,
+      files,
+      remarks,  // Ajouter remarks
       location,
       room,
       notes,
       equipment
     } = body
 
-    // Validation des données
-    if (!title) {
+    if (classes && !Array.isArray(classes)) {
       return NextResponse.json(
-        { error: 'Le titre est requis' },
+        { error: 'Il faut au moins une classe' },
         { status: 400 }
       )
     }
 
-    // Fonction helper pour préparer les fichiers
-    const prepareFiles = () => {
+    // Fonction pour préparer et sauvegarder les fichiers
+    const prepareAndSaveFiles = async () => {
       const filesList = []
       
       // Nouveau format avec array files
       if (files && Array.isArray(files) && files.length > 0) {
-        return files.map(file => ({
-          fileName: file.fileName,
-          fileUrl: file.fileUrl,
-          fileSize: file.fileSize || 0,
-          fileType: file.fileType || getFileTypeFromName(file.fileName),
-          uploadedAt: file.uploadedAt || new Date().toISOString()
-        }))
+        for (const file of files) {
+          try {
+            let savedFileUrl = file.fileUrl
+
+            // Si le fichier contient du contenu (base64), le sauvegarder
+            if (file.fileContent) {
+              savedFileUrl = await saveFileToDisk({
+                userId: userId ?? 'TEMP_USER',
+                fileName: file.fileName,
+                fileContent: file.fileContent
+              })
+            }
+            // Si c'est une data URL, la sauvegarder aussi
+            else if (file.fileUrl && file.fileUrl.startsWith('data:')) {
+              savedFileUrl = await saveFileToDisk({
+                userId: userId ?? 'TEMP_USER',
+                fileName: file.fileName,
+                fileContent: file.fileUrl
+              })
+            }
+
+            filesList.push({
+              fileName: file.fileName,
+              fileUrl: savedFileUrl,
+              filePath: savedFileUrl, // Ajouter le chemin du fichier
+              fileSize: file.fileSize || 0,
+              fileType: file.fileType || getFileTypeFromName(file.fileName),
+              uploadedAt: file.uploadedAt || new Date().toISOString()
+            })
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
+            // Continuer avec les autres fichiers même si un échoue
+          }
+        }
       }
       
       // Ancien format avec fileName unique (rétrocompatibilité)
-      if (fileName) {
+      if (fileName && !files) {
+        let savedFileUrl = fileUrl
+        
+        if (fileUrl && fileUrl.startsWith('data:')) {
+          try {
+            savedFileUrl = await saveFileToDisk({
+              userId: userId ?? 'TEMP_USER',
+              fileName: fileName,
+              fileContent: fileUrl
+            })
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
+          }
+        }
+        
         filesList.push({
           fileName: fileName,
-          fileUrl: fileUrl || '',
+          fileUrl: savedFileUrl || '',
+          filePath: savedFileUrl || '',
           fileSize: fileSize || 0,
           fileType: getFileTypeFromName(fileName),
           uploadedAt: new Date().toISOString()
@@ -145,6 +228,7 @@ export const POST = withAudit(
 
     // Support du nouveau format (date + timeSlots) et de l'ancien format
     let eventsToCreate = []
+    const savedFiles = await prepareAndSaveFiles()
 
     if (date && timeSlots && Array.isArray(timeSlots)) {
       // Nouveau format pour les TP avec créneaux multiples
@@ -161,7 +245,7 @@ export const POST = withAudit(
 
         eventsToCreate.push({
           id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          title,
+          title: title || 'TP',
           description: description || null,
           startDate: startDateTime.toISOString(),
           endDate: endDateTime.toISOString(),
@@ -172,9 +256,10 @@ export const POST = withAudit(
           materials: materials || [],
           chemicals: chemicals || [],
           equipment: equipment || [],
-          fileName: fileName || null,      // Garder pour la rétrocompatibilité
-          fileUrl: fileUrl || null,        // Ajouter pour la rétrocompatibilité
-          files: prepareFiles(),           // Nouveau champ
+          fileName: fileName || null,
+          fileUrl: fileUrl || null,
+          files: savedFiles,
+          remarks: remarks || null,  // Ajouter les remarques
           notes: notes || null,
           createdBy: userId || null,
           modifiedBy: [],
@@ -186,7 +271,7 @@ export const POST = withAudit(
       // Ancien format ou événements laborantin
       eventsToCreate.push({
         id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        title,
+        title: title || 'TP',
         description: description || null,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
@@ -197,9 +282,10 @@ export const POST = withAudit(
         materials: materials || [],
         chemicals: chemicals || [],
         equipment: equipment || [],
-        fileName: fileName || null,      // Garder pour la rétrocompatibilité
-        fileUrl: fileUrl || null,        // Ajouter pour la rétrocompatibilité
-        files: prepareFiles(),           // Nouveau champ
+        fileName: fileName || null,
+        fileUrl: fileUrl || null,
+        files: savedFiles,
+        remarks: remarks || null,
         notes: notes || null,
         createdBy: userId || null,
         modifiedBy: [],
@@ -240,7 +326,7 @@ export const POST = withAudit(
   }
 )
 
-// PUT - Envelopper car c'est une modification
+// PUT - Version améliorée avec gestion des fichiers
 export const PUT = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions)
@@ -284,70 +370,101 @@ export const PUT = withAudit(
 
     const body = await request.json()
     
-    // Vérifier si on doit créer des créneaux supplémentaires
     const { 
       additionalTimeSlots, 
-      files,        // Nouveau champ pour les fichiers
-      fileName,     // Pour la rétrocompatibilité
-      fileUrl,      // Pour la rétrocompatibilité
-      fileSize,     // Pour la rétrocompatibilité
+      files,
+      fileName,
+      fileUrl,
+      fileSize,
       ...eventUpdates 
     } = body
     
-    // Gérer le tableau modifiedBy avec le nouveau format
+    // Gérer le tableau modifiedBy
     const currentModifiedBy: Array<[string, ...string[]]> = event.modifiedBy || []
     const modificationDate = new Date().toISOString()
     
-    // Trouver si l'utilisateur a déjà modifié
     const userIndex = currentModifiedBy.findIndex((entry: [string, ...string[]]) => entry[0] === userId)
     
     let updatedModifiedBy: Array<[string, ...string[]]>
     if (userIndex >= 0 && userId) {
-      // L'utilisateur existe déjà, ajouter la nouvelle date
       updatedModifiedBy = [...currentModifiedBy]
       const existingEntry = currentModifiedBy[userIndex]
       const [existingUserId, ...existingDates] = existingEntry
       updatedModifiedBy[userIndex] = [existingUserId, ...existingDates, modificationDate] as [string, ...string[]]
     } else if (userId) {
-      // Nouvel utilisateur, créer une nouvelle entrée
       updatedModifiedBy = [...currentModifiedBy, [userId, modificationDate]]
     } else {
       updatedModifiedBy = currentModifiedBy
     }
 
-    // Préparer les fichiers si fournis
+    // Préparer et sauvegarder les nouveaux fichiers
     let filesUpdate = {}
     
-    // Si on reçoit le nouveau format files
     if (files !== undefined) {
       if (Array.isArray(files)) {
-        filesUpdate = {
-          files: files.map(file => ({
-            fileName: file.fileName,
-            fileUrl: file.fileUrl,
-            fileSize: file.fileSize || 0,
-            fileType: file.fileType || getFileTypeFromName(file.fileName),
-            uploadedAt: file.uploadedAt || new Date().toISOString()
-          }))
+        const savedFiles = []
+        
+        for (const file of files) {
+          try {
+            // Si c'est un nouveau fichier avec du contenu
+                       // Si c'est un nouveau fichier avec du contenu
+            if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
+              const savedFileUrl = await saveFileToDisk({
+                userId: userId ?? 'TEMP_USER',
+                fileName: file.fileName,
+                fileContent: file.fileContent || file.fileUrl
+              })
+              
+              savedFiles.push({
+                fileName: file.fileName,
+                fileUrl: savedFileUrl,
+                filePath: savedFileUrl,
+                fileSize: file.fileSize || 0,
+                fileType: file.fileType || getFileTypeFromName(file.fileName),
+                uploadedAt: file.uploadedAt || new Date().toISOString()
+              })
+            } else {
+              // Fichier existant, on le garde
+              savedFiles.push(file)
+            }
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
+          }
         }
+        
+        filesUpdate = { files: savedFiles }
       } else {
-        // Si files est null ou vide, on supprime les fichiers
         filesUpdate = { files: [] }
       }
     }
     
-    // Si on reçoit l'ancien format fileName (rétrocompatibilité)
+    // Gérer l'ancien format fileName (rétrocompatibilité)
     if (fileName !== undefined) {
       eventUpdates.fileName = fileName
       if (fileUrl !== undefined) {
         eventUpdates.fileUrl = fileUrl
       }
-      // Convertir en nouveau format si pas déjà de files
+      
       if (files === undefined && fileName) {
+        let savedFileUrl = fileUrl
+        
+        if (fileUrl && fileUrl.startsWith('data:')) {
+          try {
+            savedFileUrl = await saveFileToDisk({
+              userId: userId ?? 'TEMP_USER',
+              fileName: fileName,
+              fileContent: fileUrl
+            })
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
+          }
+        }
+        
         filesUpdate = {
           files: [{
             fileName: fileName,
-            fileUrl: fileUrl || '',
+            fileUrl: savedFileUrl || '',
+            filePath: savedFileUrl || '',
             fileSize: fileSize || 0,
             fileType: getFileTypeFromName(fileName),
             uploadedAt: new Date().toISOString()
@@ -371,10 +488,9 @@ export const PUT = withAudit(
     const createdEvents = []
     
     if (additionalTimeSlots && Array.isArray(additionalTimeSlots) && additionalTimeSlots.length > 0) {
-      // Créer de nouveaux événements pour chaque créneau supplémentaire
       for (const slot of additionalTimeSlots) {
         if (!slot.date || !slot.startTime || !slot.endTime) {
-          continue // Ignorer les créneaux invalides
+          continue
         }
         
         const startDateTime = new Date(`${slot.date}T${slot.startTime}`)
@@ -393,15 +509,15 @@ export const PUT = withAudit(
           materials: updatedEvent.materials || [],
           chemicals: updatedEvent.chemicals || [],
           equipment: updatedEvent.equipment || [],
-          fileName: updatedEvent.fileName,  // Garder pour la rétrocompatibilité
-          fileUrl: updatedEvent.fileUrl,    // Garder pour la rétrocompatibilité
-          files: updatedEvent.files || [],  // Copier les fichiers
+          fileName: updatedEvent.fileName,
+          fileUrl: updatedEvent.fileUrl,
+          files: updatedEvent.files || [],
+          remarks: updatedEvent.remarks || null,
           notes: updatedEvent.notes,
           createdBy: userId || null,
           modifiedBy: [],
           createdAt: modificationDate,
           updatedAt: modificationDate,
-          // Ajouter une référence à l'événement parent
           parentEventId: eventId
         }
         
@@ -410,10 +526,8 @@ export const PUT = withAudit(
       }
     }
     
-    // Sauvegarder le fichier
     await writeCalendarFile(calendarData)
     
-    // Retourner l'événement mis à jour et les événements créés
     const response = {
       updatedEvent,
       createdEvents,
@@ -422,7 +536,7 @@ export const PUT = withAudit(
         : 'Événement modifié avec succès'
     }
     
-        return NextResponse.json(response)
+    return NextResponse.json(response)
   },
   {
     module: 'CALENDAR',
@@ -438,6 +552,8 @@ export const PUT = withAudit(
     })
   }
 )
+
+
 
 // DELETE - Envelopper car c'est une suppression
 export const DELETE = withAudit(

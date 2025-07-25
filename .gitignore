@@ -54,3 +54,6 @@ sync_mieldelune_to_aidem.sh
 
 # Local development data
 /data
+
+# Uploads
+/public/uploads/
