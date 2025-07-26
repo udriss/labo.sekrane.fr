@@ -1,13 +1,101 @@
 // lib/services/equipmentService.ts
 
 export const equipmentService = {
+  
+
   async submitEquipment(formData: any, selectedCategory: string, selectedItem: any, getAllEquipmentTypes: () => any[]) {
+    // Vérifier si c'est un équipement personnalisé sans ID
+    const isNewCustomEquipment = selectedItem?.isCustom && !selectedItem?.id;
+    
+    if (isNewCustomEquipment) {
+      const selectedType = getAllEquipmentTypes().find((t: any) => t.id === selectedCategory);
+      if (!selectedType) {
+        throw new Error("Catégorie non trouvée");
+      }
+
+      // Générer un ID unique pour le nouvel équipement
+      const newItemId = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`;
+
+      // Créer le nouvel item avec l'ID généré
+      const newItem = {
+        id: newItemId,
+        name: formData.name || selectedItem.name, // Utiliser le nom du formulaire
+        svg: selectedItem.svg || '/svg/default.svg',
+        volumes: formData.volume ? [formData.volume] : (selectedItem.volumes || []),
+        isCustom: true
+      };
+
+      // Dans submitEquipment, après avoir créé le type
+      const typeResponse = await fetch('/api/equipment-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: selectedCategory,
+          newItem: newItem
+        })
+      });
+
+      if (!typeResponse.ok) {
+        const error = await typeResponse.json();
+        throw new Error(error.error || "Erreur lors de la création du type d'équipement");
+      }
+
+      const typeResult = await typeResponse.json();
+      // Utiliser l'ID retourné par l'API
+      const generatedId = typeResult.itemId || newItemId;
+
+
+      // Créer l'équipement dans l'inventaire avec l'ID généré
+      const dataToSubmit = {
+        name: formData.name || selectedItem.name,
+        equipmentTypeId: generatedId,
+        quantity: formData.quantity || 1,
+        volume: formData.volume || null,
+        model: formData.model || null,
+        serialNumber: formData.serialNumber || null,
+        location: formData.location || null,
+        room: formData.room || null,
+        supplier: formData.supplier || null,
+        purchaseDate: formData.purchaseDate || null,
+        notes: formData.notes || null
+      };
+
+      const response = await fetch("/api/equipement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSubmit)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erreur lors de l'ajout");
+      }
+      
+      const result = await response.json();
+      // Marquer comme nouvel équipement personnalisé pour le dialog de continuation
+      result.isNewCustom = true;
+      return result;
+    }
+
+    // Pour un équipement existant (custom ou non) qui a déjà un ID
+    const equipmentTypeId = formData.equipmentTypeId || selectedItem?.id;
+    
+    if (!equipmentTypeId) {
+      throw new Error("ID du type d'équipement manquant");
+    }
+
     const dataToSubmit = {
       name: formData.name,
-      equipmentTypeId: formData.equipmentTypeId,
-      quantity: formData.quantity,
-      volume: formData.volume,
-      isCustom: selectedCategory.startsWith('CUSTOM')
+      equipmentTypeId: equipmentTypeId,
+      quantity: formData.quantity || 1,
+      volume: formData.volume || null,
+      model: formData.model || null,
+      serialNumber: formData.serialNumber || null,
+      location: formData.location || null,
+      room: formData.room || null,
+      supplier: formData.supplier || null,
+      purchaseDate: formData.purchaseDate || null,
+      notes: formData.notes || null
     };
 
     console.log("Données à soumettre:", dataToSubmit);
@@ -18,11 +106,12 @@ export const equipmentService = {
       body: JSON.stringify(dataToSubmit)
     });
     
-    if (!response.ok) throw new Error("Erreur lors de l'ajout");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Erreur lors de l'ajout");
+    }
     
-    const newEquipment = await response.json();
-    
-    return newEquipment;
+    return await response.json();
   },
 
   async editEquipment(equipmentId: string, equipmentData: any) {
@@ -140,14 +229,9 @@ export const equipmentService = {
     return response;
   },
 
-  async saveEditedItem(selectedManagementCategory: string, selectedManagementItem: any, editingItemData: any) {
-    const updatedItem = {
-      ...selectedManagementItem,
-      name: editingItemData.name,
-      volumes: editingItemData.volumes
-    };
 
-    const targetCategory = editingItemData.targetCategory || selectedManagementCategory;
+  async saveEditedItem(selectedManagementCategory: string, selectedManagementItem: any, updatedItem: any) {
+    const targetCategory = updatedItem.targetCategory || selectedManagementCategory;
     const isCategoryChange = targetCategory !== selectedManagementCategory;
 
     if (isCategoryChange) {

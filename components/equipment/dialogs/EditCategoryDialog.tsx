@@ -81,11 +81,10 @@ export const EditCategoryDialog = ({
         <Button 
           onClick={onUpdateCategory}
           variant="contained"
+          color="success"
           disabled={!categoryName.trim() || categoryName === originalName}
           sx={{ 
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+            fontWeight: 'bold',
           }}
         >
           Sauvegarder

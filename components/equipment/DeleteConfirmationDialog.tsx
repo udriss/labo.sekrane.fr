@@ -70,8 +70,10 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
         </Box>
       </DialogTitle>
       
-      <DialogContent>
-        <DialogContentText>
+      <DialogContent 
+          >
+        <DialogContentText
+        >
           Êtes-vous sûr de vouloir supprimer {isCategory ? 'la catégorie' : 'l\'équipement'} <strong>"{title}"</strong> ?
         </DialogContentText>
         
@@ -86,7 +88,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
                 <ListItem key={index} sx={{ py: 0.5 }}>
                   <ListItemText 
                     primary={item}
-                    primaryTypographyProps={{ variant: 'body2' }}
+                    slotProps={{ primary: { variant: 'body2' } }}
                   />
                 </ListItem>
               ))}

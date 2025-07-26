@@ -1,4 +1,7 @@
+// lib/hooks/useEquipmentDialogs.ts
+
 import { useState } from 'react';
+import { EditingItemData } from '@/types/equipment'
 
 export const useEquipmentDialogs = () => {
   // États pour l'édition d'équipement
@@ -32,12 +35,21 @@ export const useEquipmentDialogs = () => {
   const [selectedManagementCategory, setSelectedManagementCategory] = useState<string>('');
   const [selectedManagementItem, setSelectedManagementItem] = useState<any>(null);
   const [editItemDialog, setEditItemDialog] = useState(false);
-  const [editingItemData, setEditingItemData] = useState({
+  const [editingItemData, setEditingItemData] = useState<EditingItemData>({
     name: '',
-    volumes: [] as string[],
+    volumes: [],
     newVolume: '',
-    targetCategory: ''
-  });
+    resolutions: [],
+    newResolution: '',
+    tailles: [],
+    newTaille: '',
+    materiaux: [],
+    newMateriau: '',
+    targetCategory: '',
+    customFields: {},
+    newCustomFieldName: '',
+    newCustomFieldValue: ''
+  })
 
   const handleEditEquipment = (equipment: any) => {
     setEditingEquipment(equipment);

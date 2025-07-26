@@ -18,6 +18,7 @@
             "500 mL",
             "1 L"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -32,6 +33,7 @@
             "1 L",
             "2 L"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -46,6 +48,7 @@
             "1 L",
             "2 L"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -58,6 +61,7 @@
             "20 mL",
             "25 mL"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -72,6 +76,7 @@
             "500 mL",
             "1 L"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -86,6 +91,7 @@
             "500 mL",
             "1 L"
           ],
+          "customFields": {},
           "isCustom": true
         },
         {
@@ -100,15 +106,19 @@
             "500 mL",
             "1 L"
           ],
+          "customFields": {},
           "isCustom": true
         },
         {
+          "id": "CUSTOM_1753288440076_verrerie_test",
           "name": "Verrerie TEST",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": true
         },
         {
+          "id": "CUSTOM_1753288440076_erlenmeyer_custom",
           "name": "ErlenmeyerEEE",
           "svg": "/svg/default.svg",
           "volumes": [
@@ -123,6 +133,7 @@
             "1 L",
             "2 L"
           ],
+          "customFields": {},
           "isCustom": true
         }
       ]
@@ -145,6 +156,11 @@
             "25 mL",
             "50 mL"
           ],
+          "resolutions": [
+            "0.1 mL",
+            "0.01 mL"
+          ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -156,6 +172,7 @@
             "25 mL",
             "50 mL"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -171,6 +188,7 @@
             "500 mL",
             "1L"
           ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -178,6 +196,13 @@
           "name": "Balance",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "resolutions": [
+            "0.1 g",
+            "0.01 g",
+            "0.001 g",
+            "0.0001 g"
+          ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -185,6 +210,12 @@
           "name": "Pied à coulisse",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "tailles": [
+            "150 mm",
+            "200 mm",
+            "300 mm"
+          ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -192,6 +223,13 @@
           "name": "Thermomètre",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {
+            "plage": [
+              "-10°C à 110°C",
+              "-50°C à 300°C",
+              "0°C à 100°C"
+            ]
+          },
           "isCustom": false
         }
       ]
@@ -207,6 +245,7 @@
           "name": "Bec Bunsen",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -214,6 +253,13 @@
           "name": "Plaque chauffante",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {
+            "température_max": [
+              "300°C",
+              "350°C",
+              "400°C"
+            ]
+          },
           "isCustom": false
         },
         {
@@ -221,6 +267,13 @@
           "name": "Manteau chauffant",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "tailles": [
+            "250 mL",
+            "500 mL",
+            "1 L",
+            "2 L"
+          ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -228,6 +281,7 @@
           "name": "Bain-marie",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": false
         }
       ]
@@ -243,6 +297,7 @@
           "name": "Lunettes de protection",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -250,6 +305,18 @@
           "name": "Gants",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "tailles": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ],
+          "materiaux": [
+            "Latex",
+            "Nitrile",
+            "Vinyle"
+          ],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -257,6 +324,7 @@
           "name": "Hotte aspirante",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": false
         },
         {
@@ -264,26 +332,46 @@
           "name": "Douche de sécurité",
           "svg": "/svg/default.svg",
           "volumes": [],
+          "customFields": {},
           "isCustom": false
         }
       ]
     },
     {
       "id": "CUSTOM_1753288440076",
-      "name": "TEST CATA CHANGE",
+      "name": "TEST CATA NOUVELLE",
       "svg": "/svg/default.svg",
       "ownerId": "USER_001",
       "items": [
         {
-          "name": "Exemple",
-          "svg": "/svg/default.svg"
+          "id": "CUSTOM_1753288440076_item1",
+          "name": "azazaz",
+          "svg": "/svg/default.svg",
+          "volumes": [],
+          "customFields": {},
+          "isCustom": true
         },
         {
-          "name": "azazaz",
+          "id": "CUSTOM_1753288440076_item2",
+          "name": "azazaz2",
+          "svg": "/svg/default.svg",
+          "volumes": [
+            "250 mL"
+          ],
+          "customFields": {},
+          "isCustom": true,
+          "resolutions": [],
+          "tailles": [],
+          "materiaux": []
+        },
+        {
+          "id": "CUSTOM_1753288440076_item3",
+          "name": "azazaz3",
           "svg": "/svg/default.svg",
           "volumes": [
             "N/A"
           ],
+          "customFields": {},
           "isCustom": true
         }
       ],

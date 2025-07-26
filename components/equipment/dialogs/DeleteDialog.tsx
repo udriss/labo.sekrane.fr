@@ -29,11 +29,13 @@ export const DeleteDialog = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderRadius: 3
+      slotProps={{
+        paper: {
+          sx: {
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            borderRadius: 3
+          }
         }
       }}
     >
@@ -49,9 +51,10 @@ export const DeleteDialog = ({
           p: 2, 
           backgroundColor: 'rgba(255,255,255,0.1)', 
           border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 2
+          borderRadius: 2,
+          color: 'white',
         }}>
-          <Typography variant="body1" gutterBottom>
+          <Typography variant="body1" fontWeight="bold" gutterBottom>
             Êtes-vous sûr de vouloir supprimer "{equipmentToDelete?.name}" ?
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>

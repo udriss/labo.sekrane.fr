@@ -106,6 +106,20 @@ export const POST = withAudit(
         )
       }
 
+      // Si equipmentTypeId n'est pas défini, on ne peut pas encore créer dans l'inventaire
+      // Cela arrive pour un nouvel équipement personnalisé
+      if (!data.equipmentTypeId) {
+        // Retourner une réponse temporaire sans créer dans l'inventaire
+        return NextResponse.json({ 
+          materiel: {
+            name: data.name,
+            quantity: data.quantity || 1,
+            volume: data.volume || null,
+            temporary: true // Indiquer que c'est temporaire, en attente de création du type
+          }
+        })
+      }
+
       // Vérifier que le type d'équipement existe
       const types = await readEquipmentTypes()
       let foundItem = null
@@ -129,7 +143,7 @@ export const POST = withAudit(
 
       // Créer le nouvel équipement
       const newEquipment = {
-        id: `EQUIP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`,
         name: data.name,
         equipmentTypeId: data.equipmentTypeId,
         model: data.model || null,

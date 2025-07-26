@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { EquipmentFormData } from '@/types/equipment';
+import { EquipmentFormData, EquipmentItem } from '@/types/equipment';
 
 export const useEquipmentForm = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -38,16 +38,25 @@ export const useEquipmentForm = () => {
     handleNext();
   };
 
-  const handleItemSelect = (item: any) => {
-    setSelectedItem(item);
-    setFormData(prev => ({ 
-      ...prev, 
-      name: item.name,
-      volume: item.volumes && item.volumes.length > 0 ? item.volumes[0] : '',
-      equipmentTypeId: item.id
-    }));
-    handleNext();
-  };
+  const handleItemSelect = (item: EquipmentItem) => {
+    setSelectedItem(item)
+    
+    // Si c'est un équipement custom sans ID, permettre la modification du nom
+    if (item.isCustom && !item.id) {
+      setFormData(prev => ({
+        ...prev,
+        name: '', // Nom vide pour permettre la saisie
+        equipmentTypeId: '' // Pas d'ID car il n'existe pas encore
+      }))
+    } else {
+      // Pour tout équipement avec un ID (custom ou non)
+      setFormData(prev => ({
+        ...prev,
+        name: item.name,
+        equipmentTypeId: item.id || ''
+      }))
+    }
+  }
 
   const handleFormChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

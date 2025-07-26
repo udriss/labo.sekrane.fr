@@ -691,23 +691,28 @@ export function EquipmentAddTab({
 
       {/* Boutons de navigation */}
       <Stack direction="row" justifyContent="space-between" sx={{ mt: 3 }}>
+          <Button color="error" 
+          variant="outlined" 
+          onClick={onReset}
+          disabled={activeStep === 0}
+          >
+            Recommencer
+          </Button>
+        
+        <Stack direction="row" spacing={2}>
         <Button
           disabled={activeStep === 0}
           onClick={() => setActiveStep(activeStep - 1)}
         >
           Précédent
         </Button>
-        
-        <Stack direction="row" spacing={2}>
-          <Button onClick={onReset}>
-            Recommencer
-          </Button>
           
           {activeStep === steps.length - 1 ? (
             <Button
               variant="contained"
               onClick={onSubmit}
               disabled={loading}
+              color="success"
             >
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </Button>

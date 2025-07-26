@@ -79,6 +79,7 @@ export async function GET() {
   }
 }
 
+
 export const POST = withAudit(
   async (request: NextRequest) => {
     const body = await request.json()
@@ -136,22 +137,32 @@ export const POST = withAudit(
       const existingCategory = equipmentTypes.types.find((t: any) => t.id === categoryId)
       
       if (existingCategory) {
+        // S'assurer que l'item a un ID
+        if (!newItem.id) {
+          newItem.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
+        }
+        
+        // Vérifier que l'item n'existe pas déjà
         const itemExists = existingCategory.items.some((i: any) => i.name === newItem.name)
         if (!itemExists) {
           let finalItem = { ...newItem, isCustom: true }
-          if (categoryId === 'GLASSWARE' && (!newItem.volumes || newItem.volumes.length === 0 || newItem.volumes[0] === 'N/A')) {
+          
+          // Gestion spéciale pour la verrerie
+          if (categoryId === 'GLASSWARE' && (!newItem.volumes || newItem.volumes.length === 0 || newItem.volumes[0] === 'VIDE')) {
             finalItem.volumes = ["1 mL", "5 mL", "10 mL", "25 mL", "50 mL", "100 mL", "250 mL", "500 mL", "1 L", "2 L"]
           }
           
           existingCategory.items.push(finalItem)
           
           await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
+          
           return NextResponse.json({ 
             success: true, 
             message: 'Équipement ajouté à la catégorie',
             action: 'add-to-category',
             itemName: finalItem.name,
-            categoryName: existingCategory.name
+            categoryName: existingCategory.name,
+            itemId: finalItem.id // Retourner l'ID généré
           })
         } else {
           return NextResponse.json({ error: 'Cet équipement existe déjà dans cette catégorie' }, { status: 400 })
@@ -171,18 +182,25 @@ export const POST = withAudit(
       const uncategorizedId = await ensureUncategorizedExists(equipmentTypes)
       const uncategorizedCategory = equipmentTypes.types.find((t: any) => t.id === uncategorizedId)
       
+      // S'assurer que l'item a un ID
+      if (!newItemWithoutCategory.id) {
+        newItemWithoutCategory.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
+      }
+      
       const itemExists = uncategorizedCategory.items.some((i: any) => i.name === newItemWithoutCategory.name)
       if (!itemExists) {
         const finalItem = { ...newItemWithoutCategory, isCustom: true }
         uncategorizedCategory.items.push(finalItem)
         
         await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
+        
         return NextResponse.json({ 
           success: true, 
           message: 'Équipement ajouté à "Sans catégorie"', 
           categoryId: uncategorizedId,
           action: 'add-uncategorized',
-          itemName: finalItem.name
+          itemName: finalItem.name,
+          itemId: finalItem.id // Retourner l'ID généré
         })
       } else {
         return NextResponse.json({ error: 'Cet équipement existe déjà dans "Sans catégorie"' }, { status: 400 })
@@ -199,17 +217,28 @@ export const POST = withAudit(
     
     if (existingType) {
       if (item && !createEmpty) {
+        // S'assurer que l'item a un ID
+        if (!item.id) {
+          item.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
+        }
+        
         const itemExists = existingType.items.some((i: any) => i.name === item.name)
         if (!itemExists) {
-          existingType.items.push(item)
+          existingType.items.push({ ...item, isCustom: true })
         }
       }
     } else {
       const newType = {
         ...type,
         isCustom: true,
-        items: createEmpty ? [] : [item]
+        items: createEmpty ? [] : [{ ...item, isCustom: true }]
       }
+      
+      // S'assurer que les items ont des IDs
+      if (newType.items.length > 0 && !newType.items[0].id) {
+        newType.items[0].id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
+      }
+      
       equipmentTypes.types.push(newType)
     }
 
@@ -219,7 +248,8 @@ export const POST = withAudit(
       success: true,
       action: existingType ? 'add-to-existing' : 'create-category',
       categoryName: type.name,
-      itemName: item?.name
+      itemName: item?.name,
+      itemId: item?.id // Retourner l'ID généré
     })
   },
   {
@@ -230,7 +260,8 @@ export const POST = withAudit(
       operationType: response?.action || 'unknown',
       itemName: response?.itemName,
       categoryName: response?.categoryName || response?.sourceCategory,
-      targetCategory: response?.targetCategory
+      targetCategory: response?.targetCategory,
+      itemId: response?.itemId
     })
   }
 )

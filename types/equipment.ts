@@ -1,4 +1,4 @@
-// lib/services/equipmentService.ts
+// lib/services/equipment.ts
 
 export interface EquipmentType {
   id: string
@@ -9,12 +9,33 @@ export interface EquipmentType {
   items: EquipmentItem[]
 }
 
+
 export interface EquipmentItem {
   id?: string
   name: string
   svg: string
   volumes: string[]
+  resolutions?: string[]
+  tailles?: string[]
+  materiaux?: string[]
+  customFields?: { [key: string]: string[] } // Pour les champs personnalisés
   isCustom?: boolean
+}
+
+export interface EditingItemData {
+  name: string
+  volumes: string[]
+  newVolume: string
+  resolutions: string[]
+  newResolution: string
+  tailles: string[]
+  newTaille: string
+  materiaux: string[]
+  newMateriau: string
+  targetCategory: string
+  customFields: { [key: string]: string[] }
+  newCustomFieldName: string
+  newCustomFieldValue: string
 }
 
 export interface EquipmentFormData {

@@ -54,7 +54,7 @@ import { useUsers } from '@/lib/hooks/useUsers';
 import { equipmentService } from "@/lib/services/equipmentService"
 
 // Import des types
-import { EquipmentType, EquipmentItem } from "@/types/equipment"
+import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment"
 
 export default function EquipmentPage() {
   const [tabValue, setTabValue] = useState(0)
@@ -84,6 +84,113 @@ export default function EquipmentPage() {
     const savedViewMode = config.materialsViewMode || 'cards'
     setViewModeState(savedViewMode)
   }, [config.materialsViewMode])
+
+
+  // Gestionnaires pour l'édition des items de gestion
+const handleAddVolumeToEditingItem = (value?: string) => {
+    const volumeToAdd = value || dialogs.editingItemData.newVolume
+    if (volumeToAdd.trim() && !dialogs.editingItemData.volumes.includes(volumeToAdd)) {
+      dialogs.setEditingItemData((prev: EditingItemData) => ({
+        ...prev,
+        volumes: [...prev.volumes, volumeToAdd.trim()],
+        newVolume: ''
+      }))
+    }
+  }
+  const handleRemoveVolumeFromEditingItem = (volumeToRemove: string) => {
+    dialogs.setEditingItemData((prev: EditingItemData) => ({
+      ...prev,
+      volumes: prev.volumes.filter(v => v !== volumeToRemove)
+    }))
+  }
+
+  // Handler pour les résolutions
+const handleAddResolutionToEditingItem = (value?: string) => {
+    const resolutionToAdd = value || dialogs.editingItemData.newResolution
+    if (resolutionToAdd.trim() && !dialogs.editingItemData.resolutions?.includes(resolutionToAdd)) {
+      dialogs.setEditingItemData((prev: EditingItemData) => ({
+        ...prev,
+        resolutions: [...(prev.resolutions || []), resolutionToAdd.trim()],
+        newResolution: ''
+      }))
+    }
+  }
+
+const handleRemoveResolutionFromEditingItem = (resolutionToRemove: string) => {
+    dialogs.setEditingItemData((prev: EditingItemData) => ({
+      ...prev,
+      resolutions: prev.resolutions.filter(r => r !== resolutionToRemove)
+    }))
+  }
+
+// Handler pour les tailles
+const handleAddTailleToEditingItem = (value?: string) => {
+    const tailleToAdd = value || dialogs.editingItemData.newTaille
+    if (tailleToAdd.trim() && !dialogs.editingItemData.tailles?.includes(tailleToAdd)) {
+      dialogs.setEditingItemData((prev: EditingItemData) => ({
+        ...prev,
+        tailles: [...(prev.tailles || []), tailleToAdd.trim()],
+        newTaille: ''
+      }))
+    }
+  }
+
+const handleRemoveTailleFromEditingItem = (tailleToRemove: string) => {
+    dialogs.setEditingItemData((prev: EditingItemData) => ({
+      ...prev,
+      tailles: prev.tailles.filter(t => t !== tailleToRemove)
+    }))
+  }
+
+// Handler pour les matériaux
+const handleAddMateriauToEditingItem = (value?: string) => {
+    const materiauToAdd = value || dialogs.editingItemData.newMateriau
+    if (materiauToAdd.trim() && !dialogs.editingItemData.materiaux?.includes(materiauToAdd)) {
+      dialogs.setEditingItemData((prev: EditingItemData) => ({
+        ...prev,
+        materiaux: [...(prev.materiaux || []), materiauToAdd.trim()],
+        newMateriau: ''
+      }))
+    }
+  }
+
+const handleRemoveMateriauFromEditingItem = (materiauToRemove: string) => {
+    dialogs.setEditingItemData((prev: EditingItemData) => ({
+      ...prev,
+      materiaux: prev.materiaux.filter(m => m !== materiauToRemove)
+    }))
+  }
+
+
+// Handler pour les champs personnalisés
+const handleAddCustomFieldToEditingItem = () => {
+    if (dialogs.editingItemData.newCustomFieldName.trim() && dialogs.editingItemData.newCustomFieldValue.trim()) {
+      const fieldName = dialogs.editingItemData.newCustomFieldName.trim()
+      const fieldValue = dialogs.editingItemData.newCustomFieldValue.trim()
+      
+      dialogs.setEditingItemData((prev: EditingItemData) => ({
+        ...prev,
+        customFields: {
+          ...prev.customFields,
+          [fieldName]: [...(prev.customFields[fieldName] || []), fieldValue]
+        },
+        newCustomFieldName: '',
+        newCustomFieldValue: ''
+      }))
+    }
+  }
+
+const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
+    dialogs.setEditingItemData((prev: EditingItemData) => {
+      const newCustomFields = { ...prev.customFields }
+      delete newCustomFields[fieldName]
+      return {
+        ...prev,
+        customFields: newCustomFields
+      }
+    })
+  }
+
 
   // Gestionnaire pour changer de vue
   const handleViewModeChange = (
@@ -228,6 +335,11 @@ export default function EquipmentPage() {
   // Gestionnaire pour la soumission avec gestion des onglets
   const handleSubmitWithTabSwitch = async () => {
     try {
+      console.log('=== DEBUG handleSubmitWithTabSwitch ===');
+      console.log('formData:', form.formData);
+      console.log('selectedCategory:', form.selectedCategory);
+      console.log('selectedItem:', form.selectedItem);
+      
       const newEquipment = await equipmentService.submitEquipment(
         form.formData,
         form.selectedCategory,
@@ -235,8 +347,12 @@ export default function EquipmentPage() {
         equipmentData.getAllEquipmentTypes
       )
       
-      if (form.selectedItem?.name === 'Équipement personnalisé') {
-        dialogs.setNewlyCreatedItem(newEquipment)
+      // Utiliser isNewCustom retourné par submitEquipment
+      if (newEquipment.isNewCustom || (form.selectedItem?.isCustom && !form.selectedItem?.id)) {
+        dialogs.setNewlyCreatedItem({
+          ...newEquipment.materiel,
+          category: form.selectedCategory
+        })
         dialogs.setContinueDialog(true)
       } else {
         form.handleReset()
@@ -246,6 +362,7 @@ export default function EquipmentPage() {
       await equipmentData.fetchEquipment()
       await equipmentData.loadEquipmentTypes()
     } catch (error) {
+      console.error('Erreur dans handleSubmitWithTabSwitch:', error)
       equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de l'ajout")
     }
   }
@@ -412,32 +529,26 @@ export default function EquipmentPage() {
     dialogs.setNewlyCreatedItem(null)
   }
 
-  // Gestionnaires pour l'édition des items de gestion
-  const handleAddVolumeToEditingItem = () => {
-    if (dialogs.editingItemData.newVolume.trim()) {
-      dialogs.setEditingItemData(prev => ({
-        ...prev,
-        volumes: [...prev.volumes, prev.newVolume.trim()],
-        newVolume: ''
-      }))
-    }
-  }
 
-  const handleRemoveVolumeFromEditingItem = (volumeToRemove: string) => {
-    dialogs.setEditingItemData(prev => ({
-      ...prev,
-      volumes: prev.volumes.filter(v => v !== volumeToRemove)
-    }))
-  }
 
   const handleSaveEditedItem = async () => {
     if (!dialogs.selectedManagementItem || !dialogs.selectedManagementCategory) return
 
     try {
+      const updatedItem = {
+        ...dialogs.selectedManagementItem,
+        name: dialogs.editingItemData.name,
+        volumes: dialogs.editingItemData.volumes,
+        resolutions: dialogs.editingItemData.resolutions,
+        tailles: dialogs.editingItemData.tailles,
+        materiaux: dialogs.editingItemData.materiaux,
+        customFields: dialogs.editingItemData.customFields
+      }
+
       const result = await equipmentService.saveEditedItem(
         dialogs.selectedManagementCategory,
         dialogs.selectedManagementItem,
-        dialogs.editingItemData
+        updatedItem
       )
 
       await equipmentData.loadEquipmentTypes()
@@ -555,6 +666,14 @@ export default function EquipmentPage() {
             users={users}
             onEditCategory={handleEditCategory}
             onDeleteCategory={handleDeleteCategory}
+            onAddResolutionToEditingItem={handleAddResolutionToEditingItem}
+            onRemoveResolutionFromEditingItem={handleRemoveResolutionFromEditingItem}
+            onAddTailleToEditingItem={handleAddTailleToEditingItem}
+            onRemoveTailleFromEditingItem={handleRemoveTailleFromEditingItem}
+            onAddMateriauToEditingItem={handleAddMateriauToEditingItem}
+            onRemoveMateriauFromEditingItem={handleRemoveMateriauFromEditingItem}
+            onAddCustomFieldToEditingItem={handleAddCustomFieldToEditingItem}
+            onRemoveCustomFieldFromEditingItem={handleRemoveCustomFieldFromEditingItem}
           />
       </TabPanel>
 
@@ -812,178 +931,6 @@ export default function EquipmentPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog de modification d'équipement preset */}
-      <Dialog
-        open={dialogs.editItemDialog}
-        onClose={() => {
-          dialogs.setEditItemDialog(false)
-          dialogs.setSelectedManagementItem(null)
-        }}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Settings />
-            <Typography variant="h6">
-              Modifier {dialogs.selectedManagementItem?.name}
-            </Typography>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent sx={{ pt: 3 }}>
-          <Stack spacing={3}>
-            {/* Nom de l'équipement */}
-            <TextField
-              fullWidth
-              label="Nom de l'équipement"
-              value={dialogs.editingItemData.name}
-              onChange={(e) => dialogs.setEditingItemData(prev => ({
-                ...prev,
-                name: e.target.value
-              }))}
-              sx={{
-                '& .MuiInputLabel-root': { color: 'white' },
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' }
-                }
-              }}
-            />
-
-            {/* Sélecteur de catégorie */}
-            <FormControl 
-              fullWidth
-              sx={{
-                '& .MuiInputLabel-root': { color: 'white' },
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: 'white' }
-                },
-                '& .MuiSvgIcon-root': { color: 'white' }
-              }}
-            >
-              <InputLabel>Catégorie</InputLabel>
-              <Select
-                value={dialogs.editingItemData.targetCategory}
-                label="Catégorie"
-                onChange={(e) => dialogs.setEditingItemData(prev => ({
-                  ...prev,
-                  targetCategory: e.target.value
-                }))}
-              >
-                {equipmentData.getAllCategories().map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar src={category.svg} sx={{ width: 24, height: 24 }} />
-                      {category.name}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Gestion des volumes */}
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2, color: 'white' }}>
-                Volumes disponibles
-              </Typography>
-              
-              {/* Volumes existants */}
-              {dialogs.editingItemData.volumes.length > 0 && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {dialogs.editingItemData.volumes.map((volume, index) => (
-                    <Chip
-                      key={index}
-                      label={volume}
-                      onDelete={() => handleRemoveVolumeFromEditingItem(volume)}
-                      deleteIcon={<Delete />}
-                      sx={{
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        color: 'white',
-                        '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' }
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
-
-              {/* Ajouter un nouveau volume */}
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TextField
-                  label="Nouveau volume"
-                  value={dialogs.editingItemData.newVolume}
-                  onChange={(e) => dialogs.setEditingItemData(prev => ({
-                    ...prev,
-                    newVolume: e.target.value
-                  }))}
-                  placeholder="Ex: 250ml, 10cm, 1kg..."
-                  sx={{
-                    flex: 1,
-                    '& .MuiInputLabel-root': { color: 'white' },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'white',
-                      '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                      '&.Mui-focused fieldset': { borderColor: 'white' }
-                    }
-                  }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddVolumeToEditingItem()}
-                />
-                <Button
-                  onClick={handleAddVolumeToEditingItem}
-                  variant="contained"
-                  sx={{
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
-                  }}
-                >
-                  Ajouter
-                </Button>
-              </Stack>
-            </Box>
-          </Stack>
-        </DialogContent>
-        
-        <DialogActions sx={{ p: 0, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-          <Button
-            onClick={() => {
-              dialogs.setEditItemDialog(false)
-              dialogs.setSelectedManagementItem(null)
-            }}
-            sx={{ color: 'rgba(255,255,255,0.7)' }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSaveEditedItem}
-            variant="contained"
-            sx={{ 
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              color: 'white',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
-              fontWeight: 'bold'
-            }}
-            startIcon={<Save />}
-            disabled={!dialogs.editingItemData.name.trim()}
-          >
-            Sauvegarder
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Dialog d'édition d'un équipement de l'inventaire */}
       <Dialog
@@ -1018,7 +965,7 @@ export default function EquipmentPage() {
           </Box>
         </DialogTitle>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent sx={{ p: 3 }}>
           <Stack spacing={3}>
             {/* Nom de l'équipement */}
             <TextField
@@ -1059,7 +1006,7 @@ export default function EquipmentPage() {
                   onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
                 >
                   <MenuItem value="">
-                    <em>Aucun volume spécifié</em>
+                    <em>Aucun volume</em>
                   </MenuItem>
                   {getAvailableVolumes(dialogs.editingEquipment.equipmentTypeId).map((volume) => (
                     <MenuItem key={volume} value={volume}>
@@ -1178,7 +1125,7 @@ export default function EquipmentPage() {
             )}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 0, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
           <Button
             onClick={() => {
               dialogs.setOpenEditDialog(false)
@@ -1192,12 +1139,10 @@ export default function EquipmentPage() {
             onClick={handleSaveEdit}
             variant="contained"
             sx={{ 
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              color: 'white',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
               fontWeight: 'bold'
             }}
             startIcon={<Save />}
+            color="success"
             disabled={!dialogs.editingEquipment?.name?.trim()}
           >
             Sauvegarder

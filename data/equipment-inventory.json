@@ -63,11 +63,28 @@
       "status": "AVAILABLE",
       "createdAt": "2025-07-23T07:59:28.959Z",
       "updatedAt": "2025-07-23T07:59:28.959Z"
+    },
+    {
+      "id": "EQ1753504250379QWT87_CUSTOM",
+      "name": "azazaz",
+      "equipmentTypeId": "CUSTOM_1753288440076",
+      "model": null,
+      "serialNumber": null,
+      "quantity": 11,
+      "minQuantity": 1,
+      "volume": null,
+      "location": null,
+      "room": null,
+      "notes": null,
+      "purchaseDate": null,
+      "status": "AVAILABLE",
+      "createdAt": "2025-07-26T04:30:50.379Z",
+      "updatedAt": "2025-07-26T04:30:50.379Z"
     }
   ],
   "stats": {
-    "total": 3,
-    "available": 3,
+    "total": 4,
+    "available": 4,
     "inUse": 0,
     "maintenance": 0,
     "outOfOrder": 0

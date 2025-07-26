@@ -69,7 +69,7 @@ export const NewCategoryDialog = ({
           variant="contained"
           disabled={!categoryName.trim()}
         >
-          Créer
+          Ajouter
         </Button>
       </DialogActions>
     </Dialog>

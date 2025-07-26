@@ -44,7 +44,8 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
     ],
     "DELETE": [
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
     ]
   },
   "dates": {
