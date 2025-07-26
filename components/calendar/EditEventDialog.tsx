@@ -5,17 +5,20 @@ import React, { useState, useEffect } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, IconButton,
   TextField, Button, FormControl, InputLabel, Select, MenuItem,
-  Autocomplete, Chip, Alert, Collapse, Stack, Divider
+  Autocomplete, Chip, Alert, Collapse, Stack, Divider, InputAdornment
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
   Add, Delete 
 } from '@mui/icons-material'
+import DeleteIcon from '@mui/icons-material/Delete'
+import AddIcon from '@mui/icons-material/Add'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { CalendarEvent, EventType } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
+import { calculateChemicalsForecast } from '@/lib/utils/calculateForecastStock'
 
 interface EditEventDialogProps {
   open: boolean
@@ -47,6 +50,10 @@ export function EditEventDialog({
   const [showMultipleSlots, setShowMultipleSlots] = useState(false)
   const [files, setFiles] = useState<any[]>([])
   const [remarks, setRemarks] = useState('')
+  const [materialInputValue, setMaterialInputValue] = useState('')
+  const [chemicalInputValue, setChemicalInputValue] = useState('')
+  const [chemicalsWithForecast, setChemicalsWithForecast] = useState<any[]>([])
+
   const [timeSlots, setTimeSlots] = useState<Array<{
     date: Date | null;
     startTime: string;
@@ -78,6 +85,36 @@ export function EditEventDialog({
         ? new Date(event.endDate) 
         : event.endDate
 
+      // Préparer les matériels avec quantités
+      const materialsWithQuantities = event.materials?.map((mat: any) => {
+        // Si c'est déjà un objet avec quantité
+        if (typeof mat === 'object' && mat.quantity) {
+          return mat
+        }
+        // Si c'est un ID, chercher dans la liste des matériels
+        const foundMaterial = materials.find(m => m.id === mat)
+        if (foundMaterial) {
+          return { ...foundMaterial, quantity: 1 }
+        }
+        // Si c'est un objet matériel sans quantité
+        return { ...mat, quantity: 1 }
+      }) || []
+
+      // Préparer les produits chimiques avec quantités
+      const chemicalsWithQuantities = event.chemicals?.map((chem: any) => {
+        // Si c'est déjà un objet avec quantité demandée
+        if (typeof chem === 'object' && chem.requestedQuantity) {
+          return chem
+        }
+        // Si c'est un ID, chercher dans la liste des produits chimiques
+        const foundChemical = chemicals.find(c => c.id === chem)
+        if (foundChemical) {
+          return { ...foundChemical, requestedQuantity: 1 }
+        }
+        // Si c'est un objet chimique sans quantité demandée
+        return { ...chem, requestedQuantity: 1 }
+      }) || []
+
       setFormData({
         title: event.title || '',
         description: event.description || '',
@@ -88,8 +125,8 @@ export function EditEventDialog({
         endTime: format(endDate, 'HH:mm'),
         class: event.class || '',
         room: event.room || '',
-        materials: event.materials || [],
-        chemicals: event.chemicals || [],
+        materials: materialsWithQuantities,
+        chemicals: chemicalsWithQuantities,
         location: event.location || ''
       })
 
@@ -125,7 +162,19 @@ export function EditEventDialog({
       // Réinitialiser le mode multi-créneaux
       setShowMultipleSlots(false)
     }
-  }, [event])
+  }, [event, materials, chemicals])
+
+  // useEffect pour calculer le stock prévisionnel
+useEffect(() => {
+  const loadChemicalsWithForecast = async () => {
+    const chemicalsData = await calculateChemicalsForecast(chemicals, event?.id)
+    setChemicalsWithForecast(chemicalsData)
+  }
+  
+  if (chemicals.length > 0) {
+    loadChemicalsWithForecast()
+  }
+}, [chemicals, event?.id])
 
   // Gestion des créneaux
   const addTimeSlot = () => {
@@ -215,6 +264,15 @@ export function EditEventDialog({
       }
     }
 
+    // Vérifier les quantités de produits chimiques
+    const insufficientChemicals = formData.chemicals.filter(c => 
+      c.requestedQuantity > (c.quantity || 0)
+    )
+    if (insufficientChemicals.length > 0) {
+      alert('Certains produits chimiques ont des quantités insuffisantes en stock.')
+      return
+    }
+
     setLoading(true)
     try {
       // Préparer les fichiers
@@ -227,13 +285,30 @@ export function EditEventDialog({
             fileSize: f.file.size,
             fileType: f.file.type,
             uploadedAt: new Date().toISOString()
-            // Note: L'upload réel du fichier devrait être géré par l'API
           }
         }
       }).filter(Boolean)
 
+      // Préparer les matériels avec quantités
+      const materialsData = formData.materials.map((m) => ({
+        id: m.id,
+        name: m.itemName || m.name || '',
+        quantity: m.quantity || 1,
+        isCustom: m.isCustom || false,
+        volume: m.volume || null
+      }))
+
+      // Préparer les produits chimiques avec quantités
+      const chemicalsData = formData.chemicals.map((c) => ({
+        id: c.id,
+        name: c.name || '',
+        requestedQuantity: c.requestedQuantity || 1,
+        unit: c.unit || '',
+        quantity: c.quantity || 0
+      }))
+
       if (showMultipleSlots && formData.type === 'TP' && timeSlots.length > 1) {
-        // Mode multi-créneaux : mettre à jour le premier et créer les autres
+        // Mode multi-créneaux
         const firstSlot = timeSlots[0]
         const additionalSlots = timeSlots.slice(1).map(slot => ({
           date: slot.date ? format(slot.date, 'yyyy-MM-dd') : '',
@@ -258,8 +333,8 @@ export function EditEventDialog({
             endDate: endDateTime,
             class: formData.class,
             room: formData.room,
-            materials: formData.materials,
-            chemicals: formData.chemicals,
+            materials: materialsData,
+            chemicals: chemicalsData,
             location: formData.location,
             files: filesData,
             remarks: remarks,
@@ -269,7 +344,7 @@ export function EditEventDialog({
           await onSave(updatedEvent)
         }
       } else {
-        // Mode simple : mise à jour normale
+        // Mode simple
         const startDateTime = new Date(formData.startDate!)
         startDateTime.setHours(parseInt(formData.startTime.split(':')[0]))
         startDateTime.setMinutes(parseInt(formData.startTime.split(':')[1]))
@@ -291,8 +366,8 @@ export function EditEventDialog({
           endDate: endDateTime,
           class: formData.class,
           room: formData.room,
-          materials: formData.materials,
-          chemicals: formData.chemicals,
+          materials: materialsData,
+          chemicals: chemicalsData,
           location: formData.location,
           files: filesData,
           remarks: remarks
@@ -317,7 +392,7 @@ export function EditEventDialog({
 
   return (
     <Dialog
-      open={open}
+          open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
@@ -342,7 +417,7 @@ export function EditEventDialog({
             <Select
               value={formData.type}
               label="Type d'événement"
-                            onChange={(e) => {
+              onChange={(e) => {
                 const newType = e.target.value as EventType
                 setFormData({ ...formData, type: newType })
                 // Réinitialiser le mode multi-créneaux si on change de type
@@ -655,54 +730,409 @@ export function EditEventDialog({
             />
           )}
 
-          {/* Matériel */}
+          {/* Matériel avec gestion des quantités */}
           {(formData.type === 'TP' || formData.type === 'MAINTENANCE') && (
-            <Autocomplete
-              multiple
-              options={materials}
-              getOptionLabel={(option: any) => {
-                if (typeof option === 'string') return option
-                return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`
-              }}
-              value={formData.materials}
-              onChange={(_, newValue) => setFormData({ ...formData, materials: newValue || [] })}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Matériel"
-                  placeholder="Sélectionnez le matériel..."
+            <>
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Matériel nécessaire
+                </Typography>
+                
+                {/* Autocomplete pour ajouter du matériel */}
+                <Autocomplete
+                  freeSolo
+                  options={materials}
+                  getOptionLabel={(option) => {
+                    if (typeof option === 'string') return option
+                    return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`
+                  }}
+                  value={null}
+                  inputValue={materialInputValue || ''}
+                  onInputChange={(event, newInputValue) => {
+                    setMaterialInputValue(newInputValue)
+                  }}
+                  onChange={(_, newValue) => {
+                    if (typeof newValue === 'string') return
+                    
+                    if (newValue && !formData.materials.some((m) => 
+                      (m.itemName || m.name) === (newValue.itemName || newValue.name)
+                    )) {
+                      setFormData({ 
+                        ...formData, 
+                        materials: [
+                          ...formData.materials,
+                          { ...newValue, quantity: 1 }
+                        ]
+                      })
+                      setMaterialInputValue('')
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Ajouter du matériel"
+                      placeholder="Rechercher ou créer..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
+                          e.preventDefault()
+                          const trimmedValue = materialInputValue.trim()
+                          if (!formData.materials.some(m => (m.itemName || m.name) === trimmedValue)) {
+                            const customMaterial = {
+                              id: `custom_${Date.now()}`,
+                              itemName: trimmedValue,
+                              name: trimmedValue,
+                              isCustom: true,
+                              quantity: 1
+                            }
+                            
+                            setFormData({ 
+                              ...formData, 
+                              materials: [
+                                ...formData.materials,
+                                customMaterial
+                              ]
+                            })
+                            setMaterialInputValue('')
+                          }
+                        }
+                      }}
+                      InputProps={{
+                        ...params.
+                                                InputProps,
+                        endAdornment: (
+                          <>
+                            {params.InputProps.endAdornment}
+                            {materialInputValue && materialInputValue.trim() && (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => {
+                                    const trimmedValue = materialInputValue.trim()
+                                    if (!formData.materials.some(m => 
+                                      (m.itemName || m.name) === trimmedValue
+                                    )) {
+                                      const customMaterial = {
+                                        id: `custom_${Date.now()}`,
+                                        itemName: trimmedValue,
+                                        name: trimmedValue,
+                                        isCustom: true,
+                                        quantity: 1
+                                      }
+                                      
+                                      setFormData({ 
+                                        ...formData, 
+                                        materials: [
+                                          ...formData.materials,
+                                          customMaterial
+                                        ]
+                                      })
+                                      setMaterialInputValue('')
+                                      ;(document.activeElement as HTMLElement)?.blur()
+                                    }
+                                  }}
+                                  edge="end"
+                                  sx={{ mr: -1 }}
+                                >
+                                  <AddIcon />
+                                </IconButton>
+                              </InputAdornment>
+                            )}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => 
+                    (option.itemName || option.name) === (value.itemName || value.name)
+                  }
+                  filterOptions={(options, state) => {
+                    const selectedNames = formData.materials.map(m => m.itemName || m.name)
+                    const availableOptions = options.filter(option => {
+                      const optionName = option.itemName || option.name
+                      return !selectedNames.includes(optionName)
+                    })
+                    
+                    const uniqueByName = new Map()
+                    availableOptions.forEach(option => {
+                      const optionName = option.itemName || option.name
+                      if (!uniqueByName.has(optionName)) {
+                        uniqueByName.set(optionName, option)
+                      }
+                    })
+                    
+                    const uniqueOptions = Array.from(uniqueByName.values())
+                    
+                    if (state.inputValue) {
+                      return uniqueOptions.filter(option => {
+                        const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase()
+                        return label.includes(state.inputValue.toLowerCase())
+                      })
+                    }
+                    
+                    return uniqueOptions
+                  }}
                 />
-              )}
-              isOptionEqualToValue={(option: any, value: any) => {
-                return option.id === value.id
-              }}
-            />
+
+                {/* Liste du matériel sélectionné avec quantités */}
+                {formData.materials.length > 0 && (
+                  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {formData.materials.map((material, index) => (
+                      <Box
+                        key={`${material.itemName || material.name}-${index}`}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper'
+                        }}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" component="div">
+                            {material.itemName || material.name || 'Matériel'}
+                            {material.volume && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                {' '}({material.volume})
+                              </Typography>
+                            )}
+                            {material.isCustom && (
+                              <Chip 
+                                label="Personnalisé" 
+                                size="small" 
+                                color="primary" 
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </Typography>
+                        </Box>
+
+                        <TextField
+                          label="Quantité"
+                          type="number"
+                          value={material.quantity || 1}
+                          onChange={(e) => {
+                            const newQuantity = parseInt(e.target.value) || 1
+                            const updatedMaterials = [...formData.materials]
+                            updatedMaterials[index] = { ...material, quantity: newQuantity }
+                            setFormData({ ...formData, materials: updatedMaterials })
+                          }}
+                          inputProps={{ min: 1 }}
+                          sx={{ width: 100 }}
+                          size="small"
+                        />
+
+                        <IconButton
+                          onClick={() => {
+                            const updatedMaterials = formData.materials.filter((_, i) => i !== index)
+                            setFormData({ ...formData, materials: updatedMaterials })
+                          }}
+                          color="error"
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </>
           )}
 
-          {/* Produits chimiques */}
+          {/* Produits chimiques avec gestion des quantités */}
           {formData.type === 'TP' && (
-            <Autocomplete
-              multiple
-              options={chemicals}
-              getOptionLabel={(option: any) => {
-                if (typeof option === 'string') return option
-                return `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`
-              }}
-              value={formData.chemicals}
-              onChange={(_, newValue) => setFormData({ ...formData, chemicals: newValue || [] })}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Produits chimiques"
-                  placeholder="Sélectionnez les produits chimiques..."
+            <>
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Produits chimiques
+                </Typography>
+                
+                {/* Autocomplete pour ajouter des produits chimiques */}
+                <Autocomplete
+                  options={chemicalsWithForecast}
+                  getOptionLabel={(option) => {
+                    if (typeof option === 'string') return option
+                    const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity
+                    return `${option.name || 'Produit chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`
+                  }}
+                  value={null}
+                  inputValue={chemicalInputValue || ''}
+                  onInputChange={(event, newInputValue) => {
+                    setChemicalInputValue(newInputValue)
+                  }}
+                  onChange={(_, newValue) => {
+                    if (newValue && !formData.chemicals.some((c) => c.name === newValue.name)) {
+                      setFormData({ 
+                        ...formData, 
+                        chemicals: [
+                          ...formData.chemicals,
+                          { ...newValue, requestedQuantity: 1 }
+                        ]
+                      })
+                      setChemicalInputValue('')
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Ajouter un produit chimique"
+                      placeholder="Rechercher et sélectionner..."
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="body2">
+                          {option.name}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Stock actuel: {option.quantity}{option.unit}
+                          </Typography>
+                          <Typography 
+                            variant="caption" 
+                            color={option.forecastQuantity < option.minQuantity ? 'error' : 'text.secondary'}
+                          >
+                            Stock prévu: {option.forecastQuantity?.toFixed(1)}{option.unit}
+                            {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit})`}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </li>
+                  )}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                  filterOptions={(options, state) => {
+                    const selectedNames = formData.chemicals.map(c => c.name)
+                    const availableOptions = options.filter(option => 
+                      !selectedNames.includes(option.name)
+                    )
+                    
+                    const uniqueByName = new Map()
+                    availableOptions.forEach(option => {
+                      if (!uniqueByName.has(option.name)) {
+                        uniqueByName.set(option.name, option)
+                      }
+                    })
+                    
+                    const uniqueOptions = Array.from(uniqueByName.values())
+                    
+                    if (state.inputValue) {
+                      return uniqueOptions.filter(option => {
+                        const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase()
+                        return label.includes(state.inputValue.toLowerCase())
+                      })
+                    }
+                    
+                    return uniqueOptions
+                  }}
                 />
+
+                {/* Liste des produits chimiques sélectionnés avec quantités */}
+              {formData.chemicals.length > 0 && (
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {formData.chemicals.map((chemical, index) => {
+                    // Trouver les informations de prévision pour ce produit
+                    const chemicalWithForecast = chemicalsWithForecast.find(c => c.id === chemical.id) || chemical
+                    const currentForecast = chemicalWithForecast.forecastQuantity - (chemical.requestedQuantity || 0)
+                    
+                    return (
+                      <Box
+                        key={chemical.id || index}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper'
+                        }}
+                      >
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2">
+                            {chemical.name || 'Produit chimique'}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Stock actuel: {chemical.quantity || 0}{chemical.unit || ''}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              color={currentForecast < 0 ? 'error' : 'success.main'}
+                            >
+                              Après commande: {currentForecast.toFixed(1)}{chemical.unit || ''}
+                            </Typography>
+                            {chemicalWithForecast.totalRequested > 0 && (
+                              <Typography variant="caption" color="warning.main">
+                                (Autres demandes: {chemicalWithForecast.totalRequested}{chemical.unit})
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+
+                        <TextField
+                          label={`Quantité (${chemical.unit || 'unité'})`}
+                          type="number"
+                          value={chemical.requestedQuantity || 1}
+                          onChange={(e) => {
+                            const newQuantity = parseFloat(e.target.value) || 1
+                            const updatedChemicals = [...formData.chemicals]
+                            updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
+                            setFormData({ ...formData, chemicals: updatedChemicals })
+                          }}
+                          inputProps={{ 
+                            min: 0.1,
+                            step: 0.1,
+                            max: chemicalWithForecast.forecastQuantity || chemical.quantity || undefined
+                          }}
+                          sx={{ width: 130 }}
+                          size="small"
+                          error={chemical.requestedQuantity > chemicalWithForecast.forecastQuantity}
+                          helperText={
+                            chemical.requestedQuantity > chemicalWithForecast.forecastQuantity
+                              ? 'Stock insuffisant' 
+                              : ''
+                          }
+                        />
+
+                        <IconButton
+                          onClick={() => {
+                            const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
+                            setFormData({ ...formData, chemicals: updatedChemicals })
+                          }}
+                          color="error"
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    )
+                  })}
+                </Box>
               )}
-              isOptionEqualToValue={(option: any, value: any) => {
-                return option.id === value.id
-              }}
-            />
+              </Box>
+                  {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
+    {formData.chemicals.some(c => {
+      const forecast = chemicalsWithForecast.find(cf => cf.id === c.id)
+      return forecast && (forecast.forecastQuantity - c.requestedQuantity) < (forecast.minQuantity || 0)
+    }) && (
+      <Alert severity="warning" sx={{ mt: 2 }}>
+        <Typography variant="body2" fontWeight="bold">
+          Attention : Stock faible
+        </Typography>
+        <Typography variant="body2">
+          Certains produits chimiques seront en dessous de leur stock minimum après cette commande.
+        </Typography>
+      </Alert>
+    )}
+            </>
           )}
-                    {/* Section de gestion des fichiers multiples */}
+
+          {/* Section de gestion des fichiers multiples */}
           <Box>
             <Typography variant="subtitle1" gutterBottom>
               Documents joints
@@ -726,7 +1156,7 @@ export function EditEventDialog({
           variant="contained"
           onClick={handleSave}
           startIcon={<Save />}
-          disabled={loading}
+          disabled={loading || formData.chemicals.some(c => c.requestedQuantity > (c.quantity || 0))}
         >
           {loading ? 'Enregistrement...' : 'Enregistrer'}
         </Button>

@@ -271,6 +271,7 @@ export const PUT = withAudit(
   async (request: NextRequest) => {
     const body = await request.json()
     const { categoryId, itemName, updatedItem } = body
+    console.log('PUT request body:', body)
     
     const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
     const equipmentTypes = JSON.parse(data)

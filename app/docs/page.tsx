@@ -1,3 +1,5 @@
+// app/docs/page.tsx
+
 "use client"
 
 import { useState } from "react"
@@ -13,7 +15,8 @@ import {
   Person, Dashboard, Search, CheckCircle, Info, Warning,
   ArrowForward, PlayCircle, BookmarkBorder, Security,
   Groups, School, QrCodeScanner, Speed, Support,
-  Lightbulb, MenuBook, Code, GitHub, Email
+  Lightbulb, MenuBook, Code, GitHub, Email, Category,
+  Add, Edit, Tune, ViewList, ViewModule
 } from "@mui/icons-material"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -303,11 +306,11 @@ export default function DocsPage() {
                 </Step>
 
                 <Step>
-                  <StepLabel>Ajouter votre premier équipement</StepLabel>
+                  <StepLabel>Personnaliser vos catégories d'équipement</StepLabel>
                   <StepContent>
                     <Typography variant="body2" paragraph>
-                      Commencez par inventorier votre matériel de laboratoire. 
-                      Utilisez le scanner QR ou ajoutez manuellement.
+                      Commencez par créer vos propres catégories et types d'équipements
+                      adaptés à votre laboratoire. Utilisez l'onglet "Gérer les types".
                     </Typography>
                     <Stack direction="row" spacing={1}>
                       <Button size="small" onClick={() => setActiveStep(1)}>
@@ -350,7 +353,7 @@ export default function DocsPage() {
                   <StepLabel>Planifier dans le calendrier</StepLabel>
                   <StepContent>
                     <Typography variant="body2" paragraph>
-                      Organisez vos séances dans le calendrier interactif.
+                                            Organisez vos séances dans le calendrier interactif.
                       Assignez les classes et réservez le matériel nécessaire.
                     </Typography>
                     <Stack direction="row" spacing={1}>
@@ -379,7 +382,7 @@ export default function DocsPage() {
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid size={{ xs: 12, md: 6, lg: 3 }}>
                 <FeatureCard
-                                    icon={<Science color="primary" />}
+                  icon={<Science color="primary" />}
                   title="Gestion des produits chimiques"
                   description="Inventaire intelligent avec alertes d'expiration, suivi des stocks et détection de doublons"
                 />
@@ -388,7 +391,7 @@ export default function DocsPage() {
                 <FeatureCard
                   icon={<Inventory color="primary" />}
                   title="Matériel de laboratoire"
-                  description="Cataloguez et localisez tout votre équipement avec gestion des quantités en temps réel"
+                  description="Cataloguez et localisez tout votre équipement avec gestion avancée des caractéristiques"
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6, lg: 3 }}>
@@ -407,14 +410,16 @@ export default function DocsPage() {
               </Grid>
             </Grid>
 
-            {/* Conseils de démarrage */}
-            <Alert severity="info" sx={{ mb: 3 }}>
+            {/* Nouveautés */}
+            <Alert severity="success" sx={{ mb: 3 }}>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                💡 Conseil de pro
+                🆕 Nouvelles fonctionnalités
               </Typography>
               <Typography variant="body2">
-                Commencez par inventorier votre matériel le plus utilisé. Cela vous permettra de créer 
-                rapidement vos premiers TP et de tester toutes les fonctionnalités du système.
+                • Gestion avancée des équipements : résolutions, tailles, matériaux et champs personnalisés<br />
+                • Catégories personnalisées pour organiser votre matériel selon vos besoins<br />
+                • Import de fichiers amélioré avec suggestions intelligentes<br />
+                • Interface de gestion des types d'équipements entièrement repensée
               </Typography>
             </Alert>
           </Box>
@@ -508,7 +513,7 @@ export default function DocsPage() {
                   <Box>
                     <Typography variant="h6">Module Matériel</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Inventaire et gestion des équipements
+                      Inventaire et gestion avancée des équipements
                     </Typography>
                   </Box>
                 </Box>
@@ -516,33 +521,40 @@ export default function DocsPage() {
               <AccordionDetails>
                 <Stack spacing={3}>
                   <Typography variant="body1">
-                    Le module matériel offre une gestion complète de vos équipements de laboratoire.
+                    Le module matériel offre une gestion complète et personnalisable de vos équipements.
                   </Typography>
                   
                   <Box>
                     <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                      Points clés :
+                      🚀 Nouvelles fonctionnalités :
                     </Typography>
                     <List dense>
                       <ListItem>
                         <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
                         <ListItemText 
-                          primary="Catalogue personnalisable"
-                          secondary="Créez vos propres catégories et types d'équipements"
+                          primary="Gestion multi-attributs"
+                          secondary="Volumes, résolutions, tailles, matériaux - adaptés à chaque type d'équipement"
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
                         <ListItemText 
-                          primary="Localisation précise"
-                          secondary="Par salle et emplacement spécifique (armoire, étagère...)"
+                          primary="Champs personnalisés"
+                          secondary="Créez vos propres champs pour des besoins spécifiques (certifications, compatibilités...)"
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
                         <ListItemText 
-                          primary="Gestion des volumes"
-                          secondary="Pour la verrerie : 250ml, 500ml, 1L..."
+                          primary="Catégories personnalisées"
+                          secondary="Organisez votre matériel selon VOS besoins avec des catégories sur mesure"
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
+                        <ListItemText 
+                          primary="Suggestions intelligentes"
+                          secondary="Listes déroulantes pré-remplies contextuelles pour chaque type d'équipement"
                         />
                       </ListItem>
                     </List>
@@ -551,7 +563,90 @@ export default function DocsPage() {
                   <Alert severity="info">
                     <Typography variant="body2">
                       <strong>Astuce :</strong> Utilisez l'onglet "Gérer les types" pour personnaliser 
-                      complètement votre catalogue d'équipements selon vos besoins spécifiques.
+                      complètement votre catalogue. Vous pouvez créer des catégories personnalisées 
+                      et définir précisément les attributs de chaque équipement.
+                    </Typography>
+                  </Alert>
+
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                      📝 Exemple de gestion avancée :
+                    </Typography>
+                    <Typography variant="body2" component="div">
+                      Pour une pipette graduée :
+                      <ul>
+                        <li><strong>Volumes :</strong> 1 mL, 5 mL, 10 mL, 25 mL</li>
+                        <li><strong>Résolution :</strong> ± 0.01 mL</li>
+                        <li><strong>Matériau :</strong> Verre borosilicate</li>
+                        <li><strong>Champ personnalisé :</strong> Certification : ISO 8655</li>
+                      </ul>
+                    </Typography>
+                  </Paper>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Avatar sx={{ bgcolor: 'warning.main' }}>
+                    <Category />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6">Gestion des Types d'Équipement</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Personnalisation complète du catalogue
+                    </Typography>
+                  </Box>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={3}>
+                  <Typography variant="body1">
+                    Interface dédiée pour personnaliser entièrement votre catalogue d'équipements.
+                  </Typography>
+                  
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Capacités de personnalisation :
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                          <Stack spacing={1}>
+                            <ViewModule color="primary" />
+                            <Typography variant="subtitle2" fontWeight="bold">
+                              Catégories standard
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Modifiez les équipements prédéfinis : ajoutez des volumes, 
+                              des résolutions, des matériaux...
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                          <Stack spacing={1}>
+                            <Add color="secondary" />
+                            <Typography variant="subtitle2" fontWeight="bold">
+                              Catégories personnalisées
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Créez vos propres catégories avec icônes et équipements 
+                              spécifiques à vos besoins
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  <Alert severity="warning">
+                    <Typography variant="body2">
+                      <strong>Note :</strong> Les modifications apportées aux types d'équipements 
+                      s'appliquent immédiatement à tout le système. Les administrateurs peuvent 
+                      voir qui a créé chaque catégorie personnalisée.
                     </Typography>
                   </Alert>
                 </Stack>
@@ -562,7 +657,7 @@ export default function DocsPage() {
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Box display="flex" alignItems="center" gap={2}>
                   <Avatar sx={{ bgcolor: 'warning.main' }}>
-                    <Assignment />
+                                        <Assignment />
                   </Avatar>
                   <Box>
                     <Typography variant="h6">Module Cahiers de TP</Typography>
@@ -624,6 +719,18 @@ export default function DocsPage() {
                       </Grid>
                     </Grid>
                   </Box>
+
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      🔗 Association intelligente du matériel :
+                    </Typography>
+                    <Typography variant="body2" paragraph>
+                      Le système détecte automatiquement les équipements mentionnés dans vos protocoles 
+                      et vous propose de les associer. Avec les nouvelles fonctionnalités, vous pouvez 
+                      même spécifier précisément les caractéristiques requises (volume de bécher, 
+                      résolution de balance, etc.).
+                    </Typography>
+                  </Box>
                 </Stack>
               </AccordionDetails>
             </Accordion>
@@ -683,7 +790,8 @@ export default function DocsPage() {
                   <Alert severity="warning">
                     <Typography variant="body2">
                       <strong>Important :</strong> Les réservations de matériel sont automatiques 
-                      lors de la création d'une séance. Le système vérifie les disponibilités.
+                      lors de la création d'une séance. Le système vérifie les disponibilités en 
+                      tenant compte des quantités et des caractéristiques spécifiques.
                     </Typography>
                   </Alert>
                 </Stack>
@@ -721,7 +829,7 @@ export default function DocsPage() {
                         </ListItem>
                         <ListItem>
                           <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
-                                                    <ListItemText primary="Configuration système" />
+                          <ListItemText primary="Configuration système" />
                         </ListItem>
                         <ListItem>
                           <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
@@ -734,6 +842,10 @@ export default function DocsPage() {
                         <ListItem>
                           <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
                           <ListItemText primary="Gestion des salles" />
+                        </ListItem>
+                        <ListItem>
+                          <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
+                          <ListItemText primary="Création de catégories globales" />
                         </ListItem>
                       </List>
                     </Stack>
@@ -774,7 +886,11 @@ export default function DocsPage() {
                         </ListItem>
                         <ListItem>
                           <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
-                          <ListItemText primary="Classes personnalisées" />
+                          <ListItemText primary="Catégories personnalisées" />
+                        </ListItem>
+                        <ListItem>
+                          <ListItemIcon><CheckCircle fontSize="small" /></ListItemIcon>
+                          <ListItemText primary="Personnalisation des équipements" />
                         </ListItem>
                       </List>
                     </Stack>
@@ -823,7 +939,8 @@ export default function DocsPage() {
             <Alert severity="info" sx={{ mt: 3 }}>
               <Typography variant="body2">
                 <strong>Note :</strong> Les permissions sont cumulatives. Un administrateur possède 
-                toutes les permissions d'un enseignant et d'un étudiant.
+                toutes les permissions d'un enseignant et d'un étudiant. Les catégories personnalisées 
+                créées par un enseignant sont visibles par son créateur et les administrateurs.
               </Typography>
             </Alert>
           </Box>
@@ -874,8 +991,22 @@ export default function DocsPage() {
                   <ListItem>
                     <ListItemIcon><Lightbulb color="success" /></ListItemIcon>
                     <ListItemText 
-                      primary="Structurez vos catégories"
-                      secondary="Créez des catégories logiques pour retrouver rapidement votre matériel"
+                      primary="Personnalisez votre catalogue"
+                      secondary="Créez des catégories et types d'équipements adaptés à votre laboratoire"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><Lightbulb color="success" /></ListItemIcon>
+                    <ListItemText 
+                      primary="Utilisez les champs personnalisés"
+                      secondary="Ajoutez des informations spécifiques : certifications, compatibilités, etc."
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><Lightbulb color="success" /></ListItemIcon>
+                    <ListItemText 
+                      primary="Exploitez les suggestions"
+                      secondary="Les listes déroulantes contextuelles accélèrent la saisie"
                     />
                   </ListItem>
                   <ListItem>
@@ -883,13 +1014,6 @@ export default function DocsPage() {
                     <ListItemText 
                       primary="Planifiez à l'avance"
                       secondary="Utilisez le calendrier pour anticiper les besoins en matériel"
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon><Lightbulb color="success" /></ListItemIcon>
-                    <ListItemText 
-                      primary="Réutilisez les TP presets"
-                      secondary="Gagnez du temps en créant des modèles pour vos TP récurrents"
                     />
                   </ListItem>
                 </List>
@@ -900,6 +1024,13 @@ export default function DocsPage() {
                   💡 Astuces d'utilisation
                 </Typography>
                 <List>
+                  <ListItem>
+                    <ListItemIcon><Lightbulb color="info" /></ListItemIcon>
+                    <ListItemText 
+                      primary="Multi-sélection dans les listes"
+                                            secondary="Les nouveaux champs permettent la sélection multiple avec ajout de valeurs personnalisées"
+                    />
+                  </ListItem>
                   <ListItem>
                     <ListItemIcon><Lightbulb color="info" /></ListItemIcon>
                     <ListItemText 
@@ -919,6 +1050,13 @@ export default function DocsPage() {
                     <ListItemText 
                       primary="Exploitez le drag & drop"
                       secondary="Glissez-déposez vos fichiers directement dans les zones d'import"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemIcon><Lightbulb color="info" /></ListItemIcon>
+                    <ListItemText 
+                      primary="Dupliquez pour gagner du temps"
+                      secondary="Utilisez la fonction de duplication pour créer rapidement des équipements similaires"
                     />
                   </ListItem>
                 </List>
@@ -959,7 +1097,25 @@ export default function DocsPage() {
                 <AccordionDetails>
                   <Typography variant="body2">
                     Oui ! Dans le module Matériel, accédez à l'onglet "Gérer les types" pour 
-                    créer vos propres catégories et types d'équipements personnalisés.
+                    créer vos propres catégories et types d'équipements personnalisés. Vous pouvez 
+                    définir tous les attributs nécessaires : volumes, résolutions, tailles, matériaux 
+                    et même créer des champs personnalisés.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography fontWeight="bold">
+                    Comment fonctionnent les champs personnalisés ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2">
+                    Les champs personnalisés vous permettent d'ajouter des informations spécifiques 
+                    à vos équipements. Lors de la modification d'un type d'équipement, créez un champ 
+                    (ex: "Certification") et ajoutez plusieurs valeurs possibles. Ces champs apparaîtront 
+                    ensuite lors de l'ajout d'équipements de ce type.
                   </Typography>
                 </AccordionDetails>
               </Accordion>
@@ -975,6 +1131,37 @@ export default function DocsPage() {
                     Le système détecte automatiquement les doublons potentiels lors de l'ajout 
                     d'un nouveau produit (par nom, formule ou numéro CAS). Vous pouvez alors 
                     choisir de fusionner ou créer quand même.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography fontWeight="bold">
+                    Les catégories personnalisées sont-elles partagées ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2">
+                    Les catégories personnalisées sont visibles par leur créateur et les administrateurs. 
+                    Un administrateur peut modifier ou supprimer toute catégorie personnalisée. Les autres 
+                    enseignants ne voient que les catégories standard et leurs propres créations.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography fontWeight="bold">
+                    Comment utiliser les suggestions intelligentes ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2">
+                    Lors de l'ajout d'attributs (volumes, résolutions, etc.), cliquez sur le champ 
+                    pour voir les suggestions contextuelles. Ces suggestions sont adaptées au type 
+                    d'équipement. Vous pouvez sélectionner plusieurs valeurs ou ajouter vos propres 
+                    valeurs personnalisées.
                   </Typography>
                 </AccordionDetails>
               </Accordion>
@@ -1046,7 +1233,7 @@ export default function DocsPage() {
                     <Button 
                       variant="outlined" 
                       startIcon={<Code />}
-                      href="https://github.com/lims/issues"
+                      href="https://github.com/udriss"
                       target="_blank"
                     >
                       GitHub Issues
@@ -1062,6 +1249,58 @@ export default function DocsPage() {
                 info-bulles. Survolez les icônes et boutons pour obtenir plus d'informations !
               </Typography>
             </Alert>
+
+            {/* Guide rapide des nouveautés */}
+            <Paper variant="outlined" sx={{ p: 3, mt: 3, bgcolor: 'action.hover' }}>
+              <Typography variant="h6" gutterBottom fontWeight="bold">
+                🆕 Guide des nouvelles fonctionnalités
+              </Typography>
+              
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                    Gestion avancée des équipements
+                  </Typography>
+                  <Typography variant="body2">
+                    • <strong>Volumes :</strong> Spécifiez les capacités disponibles (250 mL, 1 L...)<br />
+                    • <strong>Résolutions :</strong> Précision des instruments de mesure (±0.01 mL, 0.001 g...)<br />
+                    • <strong>Tailles :</strong> Dimensions physiques (10x10 cm, Ø15 mm...)<br />
+                    • <strong>Matériaux :</strong> Composition (Verre borosilicate, Inox 316L...)
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                    Catégories personnalisées
+                  </Typography>
+                  <Typography variant="body2">
+                    Créez vos propres catégories d'équipements avec icônes personnalisées. 
+                    Organisez votre matériel selon vos besoins spécifiques.
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                    Champs personnalisés
+                  </Typography>
+                  <Typography variant="body2">
+                    Ajoutez des informations spécifiques à vos équipements : certifications, 
+                    compatibilités, normes... avec support de valeurs multiples.
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold" color="primary">
+                    Interface de sélection multiple
+                  </Typography>
+                  <Typography variant="body2">
+                    Nouvelle interface permettant de sélectionner plusieurs valeurs dans des 
+                    listes déroulantes tout en gardant la possibilité d'ajouter des valeurs 
+                    personnalisées.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
           </Box>
         </TabPanel>
       </Paper>
@@ -1078,4 +1317,3 @@ export default function DocsPage() {
     </Container>
   )
 }
-

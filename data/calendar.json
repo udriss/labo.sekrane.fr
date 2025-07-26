@@ -84,6 +84,120 @@
       "modifiedBy": [],
       "createdAt": "2025-07-25T09:31:29.950Z",
       "updatedAt": "2025-07-25T09:31:29.950Z"
+    },
+    {
+      "id": "EVENT_1753520859061_noliphv0c",
+      "title": "TP",
+      "description": null,
+      "startDate": "2025-07-23T09:00:00.000Z",
+      "endDate": "2025-07-23T15:00:00.000Z",
+      "type": "TP",
+      "class": "Terminale STI2D",
+      "room": null,
+      "location": null,
+      "materials": [
+        {
+          "id": "custom_1753520586286",
+          "quantity": 7
+        },
+        {
+          "id": "custom_1753520638590",
+          "quantity": 1
+        },
+        {
+          "id": "custom_1753520745898",
+          "quantity": 1
+        },
+        {
+          "id": "custom_1753520781149",
+          "quantity": 1
+        }
+      ],
+      "chemicals": [
+        "cmde6xhsd00023i0wdveshe9a",
+        "cmdd5kp7e00091f0vu9dnoyxp"
+      ],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [
+        {
+          "fileName": "1750771252984.jpeg",
+          "fileUrl": "/uploads/calendar/1753520808094_xobjbp_1750771252984.jpeg",
+          "filePath": "/uploads/calendar/1753520808094_xobjbp_1750771252984.jpeg",
+          "fileSize": 87534,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-26T09:07:38.851Z"
+        }
+      ],
+      "remarks": null,
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [],
+      "createdAt": "2025-07-26T09:07:39.061Z",
+      "updatedAt": "2025-07-26T09:07:39.061Z"
+    },
+    {
+      "id": "EVENT_1753521563610_mvoqy3u5y",
+      "title": "Administrateur",
+      "description": null,
+      "startDate": "2025-07-25T07:00:00.000Z",
+      "endDate": "2025-07-25T10:00:00.000Z",
+      "type": "TP",
+      "class": "Terminale ES",
+      "room": null,
+      "location": null,
+      "materials": [
+        {
+          "id": "EQUIP_1753254176990_5y8n3pivf",
+          "name": "Bécher",
+          "quantity": 5,
+          "isCustom": false,
+          "volume": "25 mL"
+        },
+        {
+          "id": "custom_1753521546089",
+          "name": "qlhfqdf",
+          "quantity": 5,
+          "isCustom": true,
+          "volume": null
+        }
+      ],
+      "chemicals": [
+        {
+          "id": "CHEM_1753281415835_r9jcjfi6k",
+          "name": "Acide chlorhydrique",
+          "requestedQuantity": 1,
+          "unit": "g",
+          "quantity": 2632.6
+        },
+        {
+          "id": "cmdd5kp9i000d1f0v6dbeh3gi",
+          "name": "Acétone",
+          "requestedQuantity": 1,
+          "unit": "mL",
+          "quantity": 3514.7
+        }
+      ],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [
+        {
+          "fileName": "Capture d’écran 2025-07-12 à 18.48.51.png",
+          "fileUrl": "/uploads/calendar/1753521560884_auex6i_Capture_d__cran_2025-07-12___18.48.51.png",
+          "filePath": "/uploads/calendar/1753521560884_auex6i_Capture_d__cran_2025-07-12___18.48.51.png",
+          "fileSize": 60831,
+          "fileType": "image/png",
+          "uploadedAt": "2025-07-26T09:19:23.408Z"
+        }
+      ],
+      "remarks": null,
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [],
+      "createdAt": "2025-07-26T09:19:23.610Z",
+      "updatedAt": "2025-07-26T09:19:23.610Z"
     }
   ]
 }

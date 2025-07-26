@@ -26,7 +26,7 @@ import {
   Tooltip,
   CardActions,
 } from "@mui/material"
-import { Settings, Save, Delete, Person, Edit } from "@mui/icons-material"
+import { Settings, Save, Delete, Person, Edit, Add } from "@mui/icons-material"
 import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment"
 import { getPresetSuggestions } from '@/data/equipment-presets'
 import { MultiSelectInput } from '@/components/equipment/multi-select-input'
@@ -38,38 +38,24 @@ interface EquipmentManagementTabProps {
   setSelectedManagementItem: (item: EquipmentItem | null) => void
   editItemDialog: boolean
   setEditItemDialog: (open: boolean) => void
-  editingItemData: {
-    name: string
-    volumes: string[]
-    newVolume: string
-    resolutions: string[]
-    newResolution: string
-    tailles: string[]
-    newTaille: string
-    materiaux: string[]
-    newMateriau: string
-    targetCategory: string
-    customFields: { [key: string]: string[] }
-    newCustomFieldName: string
-    newCustomFieldValue: string
-  }
-  setEditingItemData: (data: any) => void
+  editingItemData: EditingItemData  // Remplacé ici
+  setEditingItemData: React.Dispatch<React.SetStateAction<EditingItemData>>  // Type complet
   equipmentTypes: EquipmentType[]
   onSaveEditedItem: () => void
-  onAddVolumeToEditingItem: () => void
+  onAddVolumeToEditingItem: (value?: string) => void  // Ajout du paramètre optionnel
   onRemoveVolumeFromEditingItem: (volume: string) => void
   getAllCategories: () => EquipmentType[]
   currentUser?: any
   users?: any[]
   onEditCategory?: (categoryId: string) => void
   onDeleteCategory?: (categoryId: string) => void
-  onAddResolutionToEditingItem: () => void
+  onAddResolutionToEditingItem: (value?: string) => void  // Ajout du paramètre optionnel
   onRemoveResolutionFromEditingItem: (resolution: string) => void
-  onAddTailleToEditingItem: () => void
+  onAddTailleToEditingItem: (value?: string) => void  // Ajout du paramètre optionnel
   onRemoveTailleFromEditingItem: (taille: string) => void
-  onAddMateriauToEditingItem: () => void
+  onAddMateriauToEditingItem: (value?: string) => void  // Ajout du paramètre optionnel
   onRemoveMateriauFromEditingItem: (materiau: string) => void
-  onAddCustomFieldToEditingItem: () => void
+  onAddCustomFieldToEditingItem: (fieldName: string, values: string[]) => void  // Signature mise à jour
   onRemoveCustomFieldFromEditingItem: (fieldName: string) => void
 }
 
@@ -121,110 +107,257 @@ export function EquipmentManagementTab({
 
   return (
     <>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Gérer les types d'équipement
-        </Typography>
-        
+      <Paper elevation={3} sx={{ p: 3 }}>        
         {!selectedManagementCategory ? (
           // Affichage des catégories
           <Box>
-            <Typography variant="h6" sx={{ mb: 3 }}>
-              Sélectionnez une catégorie à modifier :
-            </Typography>
-            <Grid container spacing={2}>
-            {getAllCategories().map((category) => (
-              <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card 
-                  sx={{ 
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    position: 'relative',
-                    '&:hover': { 
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4 
-                    }
-                  }}
-                  onClick={() => setSelectedManagementCategory(category.id)}
-                >
-                  {/* Ajouter l'overline pour les catégories custom */}
-                  {category.isCustom && (
-                    <Typography
-                      variant="overline"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        left: 8,
-                        right: 8,
-                        color: 'text.secondary',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        fontSize: '0.7rem'
-                      }}
-                    >
-                      <Person fontSize="inherit" />
-                      par {getOwnerName(category.ownerId)}
-                    </Typography>
+            {(() => {
+              const presetCategories = getAllCategories().filter(c => !c.isCustom)
+              const customCategories = getAllCategories().filter(c => c.isCustom)
+              
+              return (
+                <>
+                  {/* Section Catégories Standard */}
+                  <Box sx={{ mb: 5 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 2, 
+                      mb: 3,
+                      pb: 1,
+                      borderBottom: '2px solid',
+                      borderColor: 'primary.main'
+                    }}>
+                      <Avatar sx={{ 
+                        bgcolor: 'primary.main', 
+                        width: 32, 
+                        height: 32,
+                        fontSize: '1rem'
+                      }}>
+                        📦
+                      </Avatar>
+                      <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                        Catégories standard
+                      </Typography>
+                      <Chip 
+                        label={`${presetCategories.length} catégories`} 
+                        size="small" 
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
+                    
+                    <Grid container spacing={2}>
+                      {presetCategories.map((category) => (
+                        <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                          <Card 
+                            sx={{ 
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              position: 'relative',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              '&:hover': { 
+                                transform: 'translateY(-2px)',
+                                boxShadow: 4,
+                                borderColor: 'primary.main'
+                              }
+                            }}
+                            onClick={() => setSelectedManagementCategory(category.id)}
+                          >
+                            <CardContent sx={{ textAlign: 'center', pt: 2 }}>
+                              <Avatar 
+                                src={category.svg} 
+                                sx={{ 
+                                  width: 64, 
+                                  height: 64, 
+                                  mx: 'auto', 
+                                  mb: 2,
+                                  bgcolor: 'primary.light'
+                                }} 
+                              />
+                              <Typography variant="h6" gutterBottom>
+                                {category.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {category.items?.length || 0} équipements
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+
+                  {/* Séparateur visuel */}
+{/* Séparateur visuel */}
+{customCategories.length > 0 && (
+<Divider sx={{ my: 4 }}>
+  <Box sx={{ 
+    my: 5, 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    gap: 2
+  }}>
+    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+  </Box>
+</Divider>
+)}
+                  {/* Section Catégories Personnalisées */}
+                  {customCategories.length > 0 && (
+                    <Box>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        mb: 3,
+                        pb: 1,
+                        borderBottom: '2px solid',
+                        borderColor: 'secondary.main'
+                      }}>
+                        <Avatar sx={{ 
+                          bgcolor: 'secondary.main', 
+                          width: 32, 
+                          height: 32,
+                          fontSize: '1rem'
+                        }}>
+                          🔧
+                        </Avatar>
+                        <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 600 }}>
+                          Catégories personnalisées
+                        </Typography>
+                        <Chip 
+                          label={`${customCategories.length} catégories`} 
+                          size="small" 
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      </Box>
+                      
+                      <Grid container spacing={2}>
+                        {customCategories.map((category) => (
+                          <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                            <Card 
+                              sx={{ 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                position: 'relative',
+                                border: 1,
+                                borderColor: 'secondary.main',
+                                bgcolor: 'action.hover',
+                                '&:hover': { transform: 'scale(1.025)' },
+                              }}
+                              onClick={() => setSelectedManagementCategory(category.id)}
+                            >
+                              <Box sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                color: 'black',
+                                py: 0.5,
+                                px: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                fontSize: '0.75rem'
+                              }}>
+                                <Person fontSize="inherit" />
+                                <Typography variant="caption" sx={{ color: 'inherit' }}>
+                                  par {getOwnerName(category.ownerId)}
+                                </Typography>
+                              </Box>
+                              
+                              <CardContent sx={{ textAlign: 'center', pt: 5 }}>
+                                <Avatar 
+                                  src={category.svg} 
+                                  sx={{ 
+                                    width: 64, 
+                                    height: 64, 
+                                    mx: 'auto', 
+                                    mb: 2,
+                                    bgcolor: 'secondary.light',
+                                    filter: 'opacity(0.9)'
+                                  }} 
+                                />
+                                <Typography 
+                                  variant="h6" 
+                                  gutterBottom
+                                  sx={{ fontStyle: 'italic', color: 'secondary.dark' }}
+                                >
+                                  {category.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {category.items?.length || 0} équipements
+                                </Typography>
+                              </CardContent>
+                              
+                              {canModifyCategory(category) && (
+                                <CardActions sx={{ 
+                                  justifyContent: 'center', 
+                                  pb: 1,
+                                  bgcolor: 'rgba(0,0,0,0.02)',
+                                  borderTop: '1px solid',
+                                  borderColor: 'divider'
+                                }}>
+                                  <Tooltip title="Modifier la catégorie">
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEditCategory?.(category.id)
+                                      }}
+                                      sx={{ color: 'secondary.main' }}
+                                    >
+                                      <Edit fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Supprimer la catégorie">
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDeleteCategory?.(category.id)
+                                      }}
+                                      sx={{ color: 'error.main' }}
+                                    >
+                                      <Delete fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </CardActions>
+                              )}
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
                   )}
-                  
-                  <CardContent sx={{ textAlign: 'center', pt: category.isCustom ? 4 : 2 }}>
-                    <Avatar 
-                      src={category.svg} 
-                      sx={{ 
-                        width: 64, 
-                        height: 64, 
-                        mx: 'auto', 
-                        mb: 2,
-                        bgcolor: category.isCustom ? 'secondary.light' : 'primary.light',
-                        filter: category.isCustom ? 'opacity(0.8)' : 'none'
-                      }} 
-                    />
-                    <Typography 
-                      variant="h6" 
-                      gutterBottom
-                      sx={{ fontStyle: category.isCustom ? 'italic' : 'normal' }}
-                    >
-                      {category.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {category.items?.length || 0} équipements
-                    </Typography>
-                  </CardContent>
-                  
-                  {/* Actions conditionnelles pour les catégories custom */}
-                  {category.isCustom && canModifyCategory(category) && (
-                    <CardActions sx={{ justifyContent: 'center', pb: 1 }}>
-                      <Tooltip title="Modifier la catégorie">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onEditCategory?.(category.id)
-                          }}
-                          sx={{ color: 'primary.main' }}
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Supprimer la catégorie">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteCategory?.(category.id)
-                          }}
-                          sx={{ color: 'error.main' }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </CardActions>
+
+                  {/* Message si aucune catégorie personnalisée */}
+                  {customCategories.length === 0 && (
+                    <Box sx={{ 
+                      mt: 5,
+                      p: 4,
+                      textAlign: 'center',
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      bgcolor: 'action.hover'
+                    }}>
+                      <Typography variant="body1" color="text.secondary" gutterBottom>
+                        Aucune catégorie personnalisée créée
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Créez vos propres catégories depuis l'onglet "Ajouter"
+                      </Typography>
+                    </Box>
                   )}
-                </Card>
-              </Grid>
-            ))}
-            </Grid>
+                </>
+              )
+            })()}
           </Box>
         ) : (
           // Affichage des équipements de la catégorie sélectionnée
@@ -259,7 +392,7 @@ export function EquipmentManagementTab({
                       </Typography>
                       <Grid container spacing={2} sx={{ mb: 3 }}>
                         {presetItems.map((item: EquipmentItem, index: number) => (
-                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                             <Card 
                               sx={{ 
                                 cursor: 'pointer',
@@ -284,7 +417,7 @@ export function EquipmentManagementTab({
                                   targetCategory: selectedManagementCategory,
                                   customFields: { ...(item.customFields || {}) },
                                   newCustomFieldName: '',
-                                  newCustomFieldValue: ''
+                                  newCustomFieldValues: ['']
                                 })
                                 setEditItemDialog(true)
                               }}
@@ -348,7 +481,7 @@ export function EquipmentManagementTab({
                       </Typography>
                       <Grid container spacing={2}>
                         {customItems.map((item: EquipmentItem, index: number) => (
-                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                             <Card 
                               sx={{ 
                                 cursor: 'pointer',
@@ -374,7 +507,7 @@ export function EquipmentManagementTab({
                                   targetCategory: selectedManagementCategory,
                                   customFields: { ...(item.customFields || {}) },
                                   newCustomFieldName: '',
-                                  newCustomFieldValue: ''
+                                  newCustomFieldValues: ['']
                                 })
                                 setEditItemDialog(true)
                               }}
@@ -468,7 +601,7 @@ export function EquipmentManagementTab({
               fullWidth
               label="Nom de l'équipement"
               value={editingItemData.name}
-              onChange={(e) => setEditingItemData((prev: any) => ({
+              onChange={(e) => setEditingItemData((prev: EditingItemData) => ({
                 ...prev,
                 name: e.target.value
               }))}
@@ -501,7 +634,7 @@ export function EquipmentManagementTab({
               <Select
                 value={editingItemData.targetCategory}
                 label="Catégorie"
-                onChange={(e) => setEditingItemData((prev: any) => ({
+                onChange={(e) => setEditingItemData((prev: EditingItemData) => ({
                   ...prev,
                   targetCategory: e.target.value
                 }))}
@@ -520,7 +653,7 @@ export function EquipmentManagementTab({
             {/* Gestion des volumes */}
             <MultiSelectInput
               label="Volumes disponibles"
-              placeholder="Ex: 250 mL, 10 cm, 1 kg..."
+              placeholder="Ex : 250 mL, 10 cm³, 1 gal..."
               suggestions={getPresetSuggestions('volumes', selectedManagementItem?.name, 
                 getAllCategories().find(c => c.id === selectedManagementCategory)?.name
               )}
@@ -535,7 +668,7 @@ export function EquipmentManagementTab({
             {/* Gestion des résolutions */}
             <MultiSelectInput
               label="Résolutions/Précisions"
-              placeholder="Ex: 0.01g, 0.1°C, ±0.5%..."
+              placeholder="Ex : 0.01g, 0.1°C, ± 0.5%..."
               suggestions={getPresetSuggestions('resolutions', selectedManagementItem?.name,
                 getAllCategories().find(c => c.id === selectedManagementCategory)?.name
               )}
@@ -613,33 +746,16 @@ export function EquipmentManagementTab({
               ))}
 
               {/* Ajouter un nouveau champ personnalisé */}
-              <Stack spacing={1}>
-                <TextField
-                  label="Nom du champ"
-                  value={editingItemData.newCustomFieldName}
-                  onChange={(e) => setEditingItemData((prev: any) => ({
-                    ...prev,
-                    newCustomFieldName: e.target.value
-                  }))}
-                  placeholder="Ex: Certification, Compatibilité..."
-                  sx={{
-                    '& .MuiInputLabel-root': { color: 'white' },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'white',
-                      '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                      '&.Mui-focused fieldset': { borderColor: 'white' }
-                    }
-                  }}
-                />
-                <Stack direction="row" spacing={1}>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={1} alignItems="center">
                   <TextField
-                    label="Valeur"
-                    value={editingItemData.newCustomFieldValue}
-                    onChange={(e) => setEditingItemData((prev: any) => ({
+                    label="Nom du champ"
+                    value={editingItemData.newCustomFieldName}
+                    onChange={(e) => setEditingItemData((prev: EditingItemData) => ({
                       ...prev,
-                      newCustomFieldValue: e.target.value
+                      newCustomFieldName: e.target.value
                     }))}
+                    placeholder="Ex: Certification, Compatibilité..."
                     sx={{
                       flex: 1,
                       '& .MuiInputLabel-root': { color: 'white' },
@@ -650,20 +766,126 @@ export function EquipmentManagementTab({
                         '&.Mui-focused fieldset': { borderColor: 'white' }
                       }
                     }}
-                    onKeyDown={(e) => e.key === 'Enter' && onAddCustomFieldToEditingItem()}
                   />
                   <Button
-                    onClick={onAddCustomFieldToEditingItem}
+                    onClick={() => {
+                      // Ajouter toutes les valeurs non vides
+                      const validValues = editingItemData.newCustomFieldValues.filter(v => v.trim())
+                      if (editingItemData.newCustomFieldName.trim() && validValues.length > 0) {
+                        onAddCustomFieldToEditingItem(editingItemData.newCustomFieldName, validValues)
+                        // Réinitialiser
+                        setEditingItemData((prev: EditingItemData) => ({
+                          ...prev,
+                          newCustomFieldName: '',
+                          newCustomFieldValues: ['']
+                        }))
+                      }
+                    }}
                     variant="contained"
+                    disabled={
+                      !editingItemData.newCustomFieldName.trim() || 
+                      !editingItemData.newCustomFieldValues.some(v => v.trim())
+                    }
                     sx={{
                       backgroundColor: 'rgba(255,255,255,0.2)',
                       color: 'white',
                       '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
                     }}
-                            disabled={!editingItemData.newCustomFieldName.trim() || !editingItemData.newCustomFieldValue.trim()}
                   >
                     Ajouter
                   </Button>
+                </Stack>
+
+                {/* Champs de valeurs multiples */}
+                <Stack spacing={1}>
+                  {editingItemData.newCustomFieldValues.map((value, index) => (
+                    <Stack key={index} direction="row" spacing={1} alignItems="center">
+                      <TextField
+                        label={`Valeur ${index + 1}`}
+                        value={value}
+                        onChange={(e) => {
+                          const newValues = [...editingItemData.newCustomFieldValues]
+                          newValues[index] = e.target.value
+                          setEditingItemData((prev: EditingItemData) => ({
+                            ...prev,
+                            newCustomFieldValues: newValues
+                          }))
+                        }}
+                        placeholder="Entrez une valeur..."
+                        sx={{
+                          flex: 1,
+                          '& .MuiInputLabel-root': { color: 'white' },
+                          '& .MuiOutlinedInput-root': {
+                            color: 'white',
+                            '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                            '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
+                            '&.Mui-focused fieldset': { borderColor: 'white' }
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            // Si c'est le dernier champ et qu'il n'est pas vide, ajouter un nouveau
+                            if (index === editingItemData.newCustomFieldValues.length - 1 && value.trim()) {
+                              setEditingItemData((prev: EditingItemData) => ({
+                                ...prev,
+                                newCustomFieldValues: [...prev.newCustomFieldValues, '']
+                              }))
+                            }
+                          }
+                        }}
+                      />
+                      
+                      {/* Bouton pour supprimer (seulement s'il y a plus d'un champ) */}
+                      <IconButton
+                        onClick={() => {
+                          if (editingItemData.newCustomFieldValues.length > 1) {
+                            const newValues = editingItemData.newCustomFieldValues.filter((_, i) => i !== index)
+                            setEditingItemData((prev: EditingItemData) => ({
+                              ...prev,
+                              newCustomFieldValues: newValues
+                            }))
+                          }
+                        }}
+                        disabled={editingItemData.newCustomFieldValues.length === 1}
+                        sx={{
+                          color: editingItemData.newCustomFieldValues.length === 1 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)',
+                          '&:hover': { 
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            color: 'rgba(255,255,255,0.9)'
+                          }
+                        }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                      
+                      {/* Bouton pour ajouter un nouveau champ */}
+                      <IconButton
+                        onClick={() => {
+                          // Ajouter un nouveau champ après celui-ci
+                          const newValues = [...editingItemData.newCustomFieldValues]
+                          newValues.splice(index + 1, 0, '')
+                          setEditingItemData((prev: EditingItemData) => ({
+                            ...prev,
+                            newCustomFieldValues: newValues
+                          }))
+                          }}
+                          sx={(theme) => ({
+                            backgroundColor: `${theme.palette.success.light}CC`, // CC = ~80% opacity
+                            color: 'white',
+                            fontWeight: 'bold',
+                            '&:hover': { 
+                            backgroundColor: `${theme.palette.success.dark}CC`,
+                            color: 'white',
+                            opacity: 1
+                            }
+                          })}
+                          >
+                        {/* Icône Add avec traits plus épais */}
+                        <Add fontSize="small"  />
+                      </IconButton>
+                    </Stack>
+                  ))}
                 </Stack>
               </Stack>
             </Box>

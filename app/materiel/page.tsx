@@ -163,22 +163,19 @@ const handleRemoveMateriauFromEditingItem = (materiauToRemove: string) => {
 
 
 // Handler pour les champs personnalisés
-const handleAddCustomFieldToEditingItem = () => {
-    if (dialogs.editingItemData.newCustomFieldName.trim() && dialogs.editingItemData.newCustomFieldValue.trim()) {
-      const fieldName = dialogs.editingItemData.newCustomFieldName.trim()
-      const fieldValue = dialogs.editingItemData.newCustomFieldValue.trim()
-      
-      dialogs.setEditingItemData((prev: EditingItemData) => ({
-        ...prev,
-        customFields: {
-          ...prev.customFields,
-          [fieldName]: [...(prev.customFields[fieldName] || []), fieldValue]
-        },
-        newCustomFieldName: '',
-        newCustomFieldValue: ''
-      }))
-    }
+const handleAddCustomFieldToEditingItem = (fieldName: string, values: string[]) => {
+  if (fieldName.trim() && values.length > 0) {
+    dialogs.setEditingItemData((prev: EditingItemData) => ({
+      ...prev,
+      customFields: {
+        ...prev.customFields,
+        [fieldName]: [...(prev.customFields[fieldName] || []), ...values]
+      },
+      newCustomFieldName: '',
+      newCustomFieldValues: ['']
+    }))
   }
+}
 
 const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     dialogs.setEditingItemData((prev: EditingItemData) => {
@@ -536,13 +533,15 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
     try {
       const updatedItem = {
-        ...dialogs.selectedManagementItem,
-        name: dialogs.editingItemData.name,
-        volumes: dialogs.editingItemData.volumes,
-        resolutions: dialogs.editingItemData.resolutions,
-        tailles: dialogs.editingItemData.tailles,
-        materiaux: dialogs.editingItemData.materiaux,
-        customFields: dialogs.editingItemData.customFields
+      ...dialogs.selectedManagementItem, // Conserver les propriétés existantes comme l'ID
+      name: dialogs.editingItemData.name,
+      volumes: dialogs.editingItemData.volumes,
+      resolutions: dialogs.editingItemData.resolutions,
+      tailles: dialogs.editingItemData.tailles,
+      materiaux: dialogs.editingItemData.materiaux,
+      customFields: dialogs.editingItemData.customFields, // Important : inclure les champs personnalisés
+      svg: dialogs.selectedManagementItem.svg || '/svg/default.svg',
+      isCustom: dialogs.selectedManagementItem.isCustom
       }
 
       const result = await equipmentService.saveEditedItem(
@@ -617,6 +616,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
           users={users}
           onEditCategory={handleEditCategory}
           onDeleteCategory={handleDeleteCategory}
+          getAllCategories={equipmentData.getAllCategories}
         />
       </TabPanel>
 

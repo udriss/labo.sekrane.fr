@@ -515,6 +515,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
   const documents = getDocuments()
 
+  console.log('Event details:', event)
+  
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>

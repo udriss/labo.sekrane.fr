@@ -356,23 +356,46 @@
           "name": "azazaz2",
           "svg": "/svg/default.svg",
           "volumes": [
-            "250 mL"
+            "250 mL",
+            "1 L",
+            "500 mL",
+            "100 mL",
+            "10 mL"
           ],
-          "customFields": {},
+          "customFields": {
+            "Mon champ perso": [
+              "TA"
+            ],
+            "azaz": [
+              "azaz",
+              "azaz"
+            ]
+          },
           "isCustom": true,
-          "resolutions": [],
-          "tailles": [],
-          "materiaux": []
+          "resolutions": [
+            "± 0.001"
+          ],
+          "tailles": [
+            "5 cm",
+            "10 cm",
+            "30 cm"
+          ],
+          "materiaux": [
+            "Verre",
+            "Plastique",
+            "Métal"
+          ]
         },
         {
           "id": "CUSTOM_1753288440076_item3",
           "name": "azazaz3",
           "svg": "/svg/default.svg",
-          "volumes": [
-            "N/A"
-          ],
+          "volumes": [],
           "customFields": {},
-          "isCustom": true
+          "isCustom": true,
+          "resolutions": [],
+          "tailles": [],
+          "materiaux": []
         }
       ],
       "isCustom": true

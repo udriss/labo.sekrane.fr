@@ -49,8 +49,24 @@ export function MultiSelectInput({
 }: MultiSelectInputProps) {
   const [open, setOpen] = useState(false)
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([])
+    const [textFieldWidth, setTextFieldWidth] = useState<number>(0)
   const anchorRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const textFieldRef = useRef<HTMLDivElement>(null)
+
+  // Observer les changements de taille du TextField
+  useEffect(() => {
+    const updateWidth = () => {
+      if (textFieldRef.current) {
+        setTextFieldWidth(textFieldRef.current.offsetWidth)
+      }
+    }
+
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
 
   // Mettre à jour les suggestions sélectionnées quand les valeurs changent
   useEffect(() => {
@@ -121,6 +137,7 @@ export function MultiSelectInput({
       {/* Input avec dropdown */}
       <Stack direction="row" spacing={1} alignItems="center" ref={anchorRef}>
         <TextField
+          ref={textFieldRef}
           inputRef={inputRef}
           label={`Nouveau ${label.toLowerCase()}`}
           value={newValue}
@@ -172,13 +189,37 @@ export function MultiSelectInput({
             '& .MuiInputAdornment-root': { color: 'white' }
           }}
         />
-        
-        {/* Dropdown de suggestions */}
+        <Button
+          onClick={handleAddCustomValue}
+          variant="contained"
+          disabled={!newValue.trim() || values.includes(newValue.trim())}
+          startIcon={
+            <Add
+          color={
+            !newValue.trim() || values.includes(newValue.trim())
+              ? 'error'
+              : 'success'
+          }
+            />
+          }
+          sx={{
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+          }}
+        >
+          Ajouter
+        </Button>
+      </Stack>
+
+      {/* Dropdown de suggestions */}
       <Popper
         open={open}
         anchorEl={anchorRef.current}
         placement="bottom-start"
-        style={{ width: anchorRef.current?.offsetWidth, zIndex: 1300 }}
+        style={{ 
+          width: textFieldWidth > 0 ? textFieldWidth : 'auto', 
+          zIndex: 1300 }}
         modifiers={[
           {
             name: 'offset',
@@ -188,7 +229,7 @@ export function MultiSelectInput({
           },
         ]}
       >
-      <ClickAwayListener onClickAway={handleClickAway}>
+        <ClickAwayListener onClickAway={handleClickAway}>
           <Paper
             elevation={8}
             sx={{
@@ -205,7 +246,7 @@ export function MultiSelectInput({
                   <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
                     {newValue 
                       ? `${displaySuggestions.length} suggestions trouvées` 
-                      : 'Suggestions disponibles'} 
+                      : 'Suggestions disponibles '} 
                     (cliquez pour ajouter)
                   </Typography>
                 </ListItem>
@@ -217,18 +258,27 @@ export function MultiSelectInput({
                       onClick={() => handleToggleSuggestion(suggestion)}
                       selected={isSelected}
                     >
-                      <ListItemIcon>
-                        <Checkbox
-                          edge="start"
-                          checked={isSelected}
-                          tabIndex={-1}
-                          disableRipple
-                          size="small"
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <Add 
+                          fontSize="small" 
+                          color={
+                            'success'
+                          }
+                          sx={{ 
+                            opacity: isSelected ? 0.5 : 1
+                          }} 
                         />
                       </ListItemIcon>
                       <ListItemText 
                         primary={suggestion}
-                        slotProps={{ primary: { variant: 'body2' } }}
+                        slotProps={{ 
+                          primary: { 
+                            variant: 'body2',
+                            sx: { 
+                              color: isSelected ? 'text.disabled' : 'text.primary'
+                            }
+                          } 
+                        }}
                       />
                     </ListItemButton>
                   )
@@ -241,7 +291,7 @@ export function MultiSelectInput({
                     <>
                       Aucune suggestion trouvée pour "{newValue}"
                       <br />
-                      Appuyez sur Entrée ou cliquez sur "Ajouter" pour ajouter cette valeur
+                      Appuyez sur Entrée ou cliquez sur "Ajouter" pour créer cette valeur
                     </>
                   ) : (
                     'Toutes les suggestions sont déjà sélectionnées'
@@ -252,23 +302,6 @@ export function MultiSelectInput({
           </Paper>
         </ClickAwayListener>
       </Popper>
-      <Box sx={{ flexShrink: 0 }}>
-      </Box>
-        <Button
-          onClick={handleAddCustomValue}
-          variant="contained"
-          color='success'
-          disabled={!newValue.trim() || values.includes(newValue.trim())}
-          startIcon={<Add />}
-          sx={{
-            fontWeight: 'bold',
-          }}
-        >
-          Ajouter
-        </Button>
-      </Stack>
-
-
     </Box>
   )
 }

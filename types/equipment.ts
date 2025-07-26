@@ -35,7 +35,7 @@ export interface EditingItemData {
   targetCategory: string
   customFields: { [key: string]: string[] }
   newCustomFieldName: string
-  newCustomFieldValue: string
+  newCustomFieldValues: string[]
 }
 
 export interface EquipmentFormData {
@@ -46,12 +46,15 @@ export interface EquipmentFormData {
   quantity: number
   volume?: string
   customVolume?: string
-  resolution?: string
   location?: string
   room?: string
   supplier?: string
   purchaseDate?: string
   notes?: string
+  resolution?: string
+  taille?: string
+  materiau?: string
+  customFields?: { [key: string]: string }
 }
 
 export interface RoomLocation {

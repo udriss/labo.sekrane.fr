@@ -6,16 +6,17 @@ import {
   Dialog, DialogTitle, DialogContent, Box, Typography, IconButton,
   Stepper, Step, StepLabel, StepContent, Button, TextField,
   Card, Chip, Autocomplete, useMediaQuery, useTheme,
-  Alert, Collapse, Stack
+  Alert, Collapse, Stack, InputAdornment
 } from '@mui/material'
 import { 
   Add, Close, Upload, Class, Assignment, Save, Delete,
-  Warning, CloudUpload, InsertDriveFile, Clear
+  Warning, CloudUpload, InsertDriveFile, Clear,
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
+import { useSession } from "next-auth/react"
 
 
 interface CreateTPDialogProps {
@@ -53,7 +54,9 @@ export function CreateTPDialog({
   const [files, setFiles] = useState<FileWithMetadata[]>([])
   const [remarks, setRemarks] = useState('')
   const [dragOver, setDragOver] = useState(false)
-  
+  const [materialInputValue, setMaterialInputValue] = useState('');
+  const [chemicalInputValue, setChemicalInputValue] = useState('');
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -74,6 +77,8 @@ export function CreateTPDialog({
       pointerEvents: 'none',
     }
   }
+
+  const { data: session } = useSession();
 
   const getOutsideBusinessHoursWarnings = () => {
     const warnings: string[] = []
@@ -168,7 +173,6 @@ export function CreateTPDialog({
     })
   }
 
-
 const handleCreateCalendarEvent = async () => {
   try {
     setLoading(true)
@@ -186,7 +190,7 @@ const handleCreateCalendarEvent = async () => {
         fileName: f.file!.name,
         fileSize: f.file!.size,
         fileType: f.file!.type,
-        fileUrl: f.fileContent, // fileContent contient maintenant l'URL retournée par le serveur
+        fileUrl: f.fileContent,
         uploadedAt: new Date().toISOString()
       }))
 
@@ -202,21 +206,35 @@ const handleCreateCalendarEvent = async () => {
       throw new Error(`Erreur lors du téléchargement de ${errorFiles.length} fichier(s). Veuillez les supprimer ou réessayer.`)
     }
 
-    const eventData = {
-      title: formData.title || 'TP',
-      description: formData.description,
-      type: 'TP',
-      classes: formData.classes,
-      materials: formData.materials.map((m: any) => m.id),
-      chemicals: formData.chemicals.map((c: any) => c.id),
-      files: filesData,
-      remarks: remarks,
-      date: formData.timeSlots[0].date,
-      timeSlots: formData.timeSlots.map(slot => ({
-        startTime: slot.startTime,
-        endTime: slot.endTime
-      }))
-    }
+const eventData = {
+  title: formData.title || session?.user?.name || 'Séance TP',
+  description: formData.description,
+  type: 'TP',
+  classes: formData.classes,
+  // Envoyer l'objet complet pour les matériels
+  materials: formData.materials.map((m) => ({
+    id: m.id,
+    name: m.itemName || m.name || '',
+    quantity: m.quantity || 1,
+    isCustom: m.isCustom || false,
+    volume: m.volume || null
+  })),
+  // Envoyer l'objet complet pour les produits chimiques
+  chemicals: formData.chemicals.map((c) => ({
+    id: c.id,
+    name: c.name || '',
+    requestedQuantity: c.requestedQuantity || 1,
+    unit: c.unit || '',
+    quantity: c.quantity || 0  // Stock disponible
+  })),
+  files: filesData,
+  remarks: remarks,
+  date: formData.timeSlots[0].date,
+  timeSlots: formData.timeSlots.map(slot => ({
+    startTime: slot.startTime,
+    endTime: slot.endTime
+  }))
+}
 
     const response = await fetch('/api/calendrier', {
       method: 'POST',
@@ -238,7 +256,6 @@ const handleCreateCalendarEvent = async () => {
     setLoading(false)
   }
 }
-
   return (
     <Dialog
       open={open}
@@ -246,8 +263,10 @@ const handleCreateCalendarEvent = async () => {
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{
-        sx: { minHeight: isMobile ? '100%' : '500px' }
+      slotProps={{
+        paper: {
+          sx: { minHeight: isMobile ? '100%' : '500px' }
+        }
       }}
     >
       <DialogTitle>
@@ -761,126 +780,432 @@ const handleCreateCalendarEvent = async () => {
           </Step>
 
           {/* Étape 5: Matériel nécessaire */}
-          <Step>
-            <StepLabel
-              onClick={() => handleStepClick(4)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <Typography variant="h6">Matériel nécessaire</Typography>
-            </StepLabel>
-            <StepContent>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Sélectionnez le matériel qui sera utilisé pendant cette séance
-              </Typography>
+<Step>
+  <StepLabel
+    onClick={() => handleStepClick(4)}
+    sx={{ cursor: 'pointer' }}
+  >
+    <Typography variant="h6">Matériel nécessaire</Typography>
+  </StepLabel>
+  <StepContent>
+    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      Sélectionnez le matériel qui sera utilisé pendant cette séance
+    </Typography>
 
-              <Autocomplete
-                multiple
-                options={materials}
-                getOptionLabel={(option: any) => {
-                  if (typeof option === 'string') return option;
-                  return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
-                }}
-                value={formData.materials}
-                onChange={(_, newValue) => handleFormDataChange('materials', newValue || [])}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Matériel"
-                    placeholder="Choisir le matériel..."
-                  />
+    {/* Autocomplete pour sélectionner le matériel */}
+    <Autocomplete
+      freeSolo // Permet d'entrer du texte libre
+      options={materials}
+      getOptionLabel={(option) => {
+        if (typeof option === 'string') return option;
+        return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
+      }}
+      value={null}
+      inputValue={materialInputValue || ''}
+      onInputChange={(event, newInputValue, reason) => {
+        if (reason !== 'reset') {
+          setMaterialInputValue(newInputValue);
+        }
+      }}
+      onChange={(_, newValue) => {
+        if (typeof newValue === 'string') {
+          // Si c'est une string (texte libre), ne rien faire ici
+          return;
+        }
+        
+        if (newValue && !formData.materials.some((m) => 
+          (m.itemName || m.name) === (newValue.itemName || newValue.name)
+        )) {
+          handleFormDataChange('materials', [
+            ...formData.materials,
+            { ...newValue, quantity: 1 }
+          ]);
+          setMaterialInputValue('');
+        }
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Ajouter du matériel"
+          placeholder="Rechercher ou créer..."
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
+              e.preventDefault();
+              const trimmedValue = materialInputValue.trim();
+              if (!formData.materials.some(m => (m.itemName || m.name) === trimmedValue)) {
+                const customMaterial = {
+                  id: `custom_${Date.now()}`,
+                  itemName: trimmedValue,
+                  name: trimmedValue,
+                  isCustom: true,
+                  quantity: 1
+                };
+                
+                handleFormDataChange('materials', [
+                  ...formData.materials,
+                  customMaterial
+                ]);
+                setMaterialInputValue('');
+              }
+            }
+            }}
+            slotProps={{
+            input: {
+              ...params.InputProps,
+              endAdornment: (
+              <>
+                {params.InputProps.endAdornment}
+                {materialInputValue && materialInputValue.trim() && (
+                <InputAdornment position="end">
+                  <IconButton
+                  size="small"
+                  onClick={() => {
+                    const trimmedValue = materialInputValue.trim();
+                    if (!formData.materials.some(m => 
+                      (m.itemName || m.name) === trimmedValue
+                    )) {
+                      const customMaterial = {
+                        id: `custom_${Date.now()}`,
+                        itemName: trimmedValue,
+                        name: trimmedValue,
+                        isCustom: true,
+                        quantity: 1
+                      };
+                      
+                      handleFormDataChange('materials', [
+                        ...formData.materials,
+                        customMaterial
+                      ]);
+                      setMaterialInputValue('');
+                      
+                      // Retirer le focus du TextField
+                      (document.activeElement as HTMLElement)?.blur();
+                    }
+                  }}
+                  edge="end"
+                  sx={{ mr: -1,
+                    "&:hover": {
+                    color: 'success.main',
+                    borderColor: 'primary.main',
+                    borderRadius: '0%',
+                    } 
+                  }}
+                  >
+                  <Add />
+                  <Typography variant="body2" color="text.secondary">
+                    Ajouter "{materialInputValue}"
+                  </Typography>
+                  </IconButton>
+                </InputAdornment>
                 )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option: any, index) => {
-                    const { key, ...chipProps } = getTagProps({ index })
-                    return (
-                      <Chip
-                        key={key}
-                        variant="outlined"
-                        label={`${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`}
-                        {...chipProps}
-                      />
-                    )
-                  })
-                }
-                isOptionEqualToValue={(option: any, value: any) => {
-                  return option.id === value.id;
+              </>
+              ),
+            }
+            }}
+          />
+          )}
+          isOptionEqualToValue={(option, value) => 
+          (option.itemName || option.name) === (value.itemName || value.name)
+          }
+      // Filtrer pour n'afficher que les éléments uniques par nom
+      filterOptions={(options, state) => {
+        // Obtenir les noms déjà sélectionnés
+        const selectedNames = formData.materials.map(m => m.itemName || m.name);
+        
+        // Filtrer les options non sélectionnées
+        const availableOptions = options.filter(option => {
+          const optionName = option.itemName || option.name;
+          return !selectedNames.includes(optionName);
+        });
+        
+        // Créer un Map pour garder uniquement la première occurrence de chaque nom
+        const uniqueByName = new Map();
+        availableOptions.forEach(option => {
+          const optionName = option.itemName || option.name;
+          if (!uniqueByName.has(optionName)) {
+            uniqueByName.set(optionName, option);
+          }
+        });
+        
+        // Convertir le Map en array
+        const uniqueOptions = Array.from(uniqueByName.values());
+        
+        // Appliquer le filtre de recherche
+        if (state.inputValue) {
+          const filtered = uniqueOptions.filter(option => {
+            const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase();
+            return label.includes(state.inputValue.toLowerCase());
+          });
+          
+          // Si aucun résultat et qu'il y a du texte, suggérer de créer
+          if (filtered.length === 0 && state.inputValue.trim()) {
+            return [];
+          }
+          
+          return filtered;
+        }
+        
+        return uniqueOptions;
+      }}
+      renderOption={(props, option) => (
+        <li {...props}>
+          {option.itemName || option.name || 'Matériel'}
+          {option.volume && ` (${option.volume})`}
+        </li>
+      )}
+      noOptionsText={
+        materialInputValue && materialInputValue.trim() 
+          ? "Aucun matériel trouvé. Cliquez sur + pour créer"
+          : "Aucun matériel disponible"
+      }
+    />
+
+    {/* Liste du matériel sélectionné avec quantités */}
+    {formData.materials.length > 0 && (
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+          Matériel sélectionné :
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {formData.materials.map((material, index) => (
+            <Box
+              key={`${material.itemName || material.name}-${index}`}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                backgroundColor: 'background.paper'
+              }}
+            >
+              {/* Nom du matériel */}
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" component="div">
+                  {material.itemName || material.name || 'Matériel'}
+                  {material.volume && (
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      {' '}({material.volume})
+                    </Typography>
+                  )}
+                  {material.isCustom && (
+                    <Chip 
+                      label="Personnalisé" 
+                      size="small" 
+                      color="primary" 
+                      sx={{ ml: 1 }}
+                    />
+                  )}
+                </Typography>
+              </Box>
+
+              {/* Input pour la quantité */}
+              <TextField
+                label="Quantité"
+                type="number"
+                value={material.quantity || 1}
+                onChange={(e) => {
+                  const newQuantity = parseInt(e.target.value) || 1;
+                  const updatedMaterials = [...formData.materials];
+                  updatedMaterials[index] = { ...material, quantity: newQuantity };
+                  handleFormDataChange('materials', updatedMaterials);
                 }}
+                inputProps={{ min: 1 }}
+                sx={{ width: 120 }}
+                size="small"
               />
 
-              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                <Button onClick={handleStepBack}>
-                  Retour
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleStepNext}
-                >
-                  Continuer
-                </Button>
-              </Box>
-            </StepContent>
-          </Step>
+              {/* Bouton supprimer */}
+              <IconButton
+                onClick={() => {
+                  const updatedMaterials = formData.materials.filter((_, i) => i !== index);
+                  handleFormDataChange('materials', updatedMaterials);
+                }}
+                color="error"
+                size="small"
+              >
+                <Delete />
+              </IconButton>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    )}
+
+    <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+      <Button onClick={handleStepBack}>
+        Retour
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleStepNext}
+      >
+        Continuer
+      </Button>
+    </Box>
+  </StepContent>
+</Step>
 
           {/* Étape 6: Produits chimiques */}
-          <Step>
-            <StepLabel
-              onClick={() => handleStepClick(5)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <Typography variant="h6">Produits chimiques</Typography>
-            </StepLabel>
-            <StepContent>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Sélectionnez les produits chimiques qui seront utilisés
-              </Typography>
+<Step>
+  <StepLabel
+    onClick={() => handleStepClick(5)}
+    sx={{ cursor: 'pointer' }}
+  >
+    <Typography variant="h6">Produits chimiques</Typography>
+  </StepLabel>
+  <StepContent>
+    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      Sélectionnez les produits chimiques qui seront utilisés
+    </Typography>
 
-              <Autocomplete
-                multiple
-                options={chemicals}
-                getOptionLabel={(option: any) => {
-                  if (typeof option === 'string') return option;
-                  return `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`;
+    {/* Autocomplete pour sélectionner les produits chimiques */}
+    <Autocomplete
+      options={chemicals}
+      getOptionLabel={(option) => {
+        if (typeof option === 'string') return option;
+        return `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`;
+      }}
+      value={null} // Toujours null pour permettre de nouvelles sélections
+      inputValue={chemicalInputValue || ''} // Contrôler la valeur du TextField
+      onInputChange={(event, newInputValue) => {
+        setChemicalInputValue(newInputValue);
+      }}
+      onChange={(_, newValue) => {
+        if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
+          // Ajouter le produit chimique avec une quantité par défaut
+          handleFormDataChange('chemicals', [
+            ...formData.chemicals,
+            { ...newValue, requestedQuantity: 1 }
+          ]);
+          // Réinitialiser le champ de recherche
+          setChemicalInputValue('');
+        }
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Ajouter un produit chimique"
+          placeholder="Rechercher et sélectionner..."
+        />
+      )}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+      // Filtrer pour n'afficher que les éléments uniques non déjà sélectionnés
+      filterOptions={(options, state) => {
+        const selectedIds = formData.chemicals.map(c => c.id);
+        const filtered = options.filter(option => !selectedIds.includes(option.id));
+        
+        // Supprimer les doublons basés sur l'ID
+        const uniqueOptions = filtered.reduce((acc, current) => {
+          const exists = acc.find((item: { id: string }) => item.id === current.id);
+          if (!exists) {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
+        
+        // Appliquer le filtre de recherche
+        if (state.inputValue) {
+          return uniqueOptions.filter((option: { name?: string; quantity?: number; unit?: string }) => {
+            const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase();
+            return label.includes(state.inputValue.toLowerCase());
+          });
+        }
+        
+        return uniqueOptions;
+      }}
+    />
+
+    {/* Liste des produits chimiques sélectionnés avec quantités */}
+    {formData.chemicals.length > 0 && (
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+          Produits chimiques sélectionnés :
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {formData.chemicals.map((chemical, index) => (
+            <Box
+              key={chemical.id || index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                backgroundColor: 'background.paper'
+              }}
+            >
+              {/* Nom du produit chimique */}
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1">
+                  {chemical.name || 'Produit chimique'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Stock disponible: {chemical.quantity || 0}{chemical.unit || ''}
+                </Typography>
+              </Box>
+
+              {/* Input pour la quantité demandée */}
+              <TextField
+                label={`Quantité (${chemical.unit || 'unité'})`}
+                type="number"
+                value={chemical.requestedQuantity || 1}
+                onChange={(e) => {
+                  const newQuantity = parseFloat(e.target.value) || 1;
+                  const updatedChemicals = [...formData.chemicals];
+                  updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity };
+                  handleFormDataChange('chemicals', updatedChemicals);
                 }}
-                value={formData.chemicals}
-                onChange={(_, newValue) => handleFormDataChange('chemicals', newValue || [])}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Produits chimiques"
-                    placeholder="Choisir les produits chimiques..."
-                  />
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option: any, index) => {
-                    const { key, ...chipProps } = getTagProps({ index })
-                    return (
-                      <Chip
-                        key={key}
-                        variant="outlined"
-                        label={`${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`}
-                        {...chipProps}
-                      />
-                    )
-                  })
+                inputProps={{ 
+                  min: 0.1,
+                  step: 0.1,
+                  max: chemical.quantity || undefined
+                }}
+                sx={{ width: 150 }}
+                size="small"
+                error={chemical.requestedQuantity > (chemical.quantity || 0)}
+                helperText={
+                  chemical.requestedQuantity > (chemical.quantity || 0) 
+                    ? 'Quantité insuffisante' 
+                    : ''
                 }
-                isOptionEqualToValue={(option: any, value: any) => {
-                  return option.id === value.id;
-                }}
               />
 
-              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                <Button onClick={handleStepBack}>
-                  Retour
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleStepNext}
-                >
-                  Continuer
-                </Button>
-              </Box>
-            </StepContent>
-          </Step>
+              {/* Bouton supprimer */}
+              <IconButton
+                onClick={() => {
+                  const updatedChemicals = formData.chemicals.filter((_, i) => i !== index);
+                  handleFormDataChange('chemicals', updatedChemicals);
+                }}
+                color="error"
+                size="small"
+              >
+                <Delete />
+              </IconButton>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    )}
+
+    <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+      <Button onClick={handleStepBack}>
+        Retour
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleStepNext}
+        disabled={formData.chemicals.some(c => c.requestedQuantity > (c.quantity || 0))}
+      >
+        Continuer
+      </Button>
+    </Box>
+  </StepContent>
+</Step>
 
           {/* Étape 7: Documents joints */}
           <Step>

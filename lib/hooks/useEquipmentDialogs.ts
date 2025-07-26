@@ -48,7 +48,7 @@ export const useEquipmentDialogs = () => {
     targetCategory: '',
     customFields: {},
     newCustomFieldName: '',
-    newCustomFieldValue: ''
+    newCustomFieldValues: ['']
   })
 
   const handleEditEquipment = (equipment: any) => {

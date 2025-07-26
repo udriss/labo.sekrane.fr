@@ -37,7 +37,8 @@ import {
   LocationOn,
   Edit,
   Delete,
-  Person
+  Person,
+  Settings
 } from "@mui/icons-material"
 import { EquipmentType, EquipmentItem, EquipmentFormData } from "@/types/equipment"
 
@@ -62,6 +63,7 @@ interface EquipmentAddTabProps {
   users?: any[] // Ajouter la liste des utilisateurs
   onEditCategory?: (categoryId: string) => void
   onDeleteCategory?: (categoryId: string) => void
+  getAllCategories: () => EquipmentType[]
 }
 
 export function EquipmentAddTab({
@@ -84,7 +86,8 @@ export function EquipmentAddTab({
   currentUser,
   users = [],
   onEditCategory,
-  onDeleteCategory
+  onDeleteCategory,
+  getAllCategories,
 }: EquipmentAddTabProps) {
   const steps = [
     {
@@ -129,6 +132,9 @@ export function EquipmentAddTab({
     const owner = users.find(user => user.id === ownerId)
     return owner?.name || 'Inconnu'
   }
+
+  const presetCategories = getAllCategories().filter(c => !c.isCustom)
+              const customCategories = getAllCategories().filter(c => c.isCustom)
 
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
@@ -200,17 +206,40 @@ export function EquipmentAddTab({
         {/* Étape 0: Sélection de catégorie */}
         {activeStep === 0 && (
           <Box>
-            <Typography variant="h5" gutterBottom>Choisir une catégorie</Typography>
             
             {/* Catégories standard */}
             {getStandardCategories().length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                  📦 Catégories standard
-                </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 2, 
+                      mb: 3,
+                      pb: 1,
+                      borderBottom: '2px solid',
+                      borderColor: 'primary.main'
+                    }}>
+                      <Avatar sx={{ 
+                        bgcolor: 'primary.main', 
+                        width: 32, 
+                        height: 32,
+                        fontSize: '1rem'
+                      }}>
+                        📦
+                      </Avatar>
+                      <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                        Catégories standard
+                      </Typography>
+                      <Chip 
+                        label={`${presetCategories.length} catégories`} 
+                        size="small" 
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
                 <Grid container spacing={3}>
                   {getStandardCategories().map((category) => (
-                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                       <Card 
                         sx={{ 
                           cursor: 'pointer',
@@ -242,22 +271,54 @@ export function EquipmentAddTab({
 
             {/* Divider si on a les deux types */}
             {getStandardCategories().length > 0 && getCustomCategories().length > 0 && (
-              <Divider sx={{ my: 4 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Catégories personnalisées
-                </Typography>
-              </Divider>
+            <Divider sx={{ my: 4 }}>
+              <Box sx={{ 
+                my: 5, 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'divider' }} />
+              </Box>
+            </Divider>
             )}
 
             {/* Catégories personnalisées */}
             {getCustomCategories().length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
-                  🔧 Catégories personnalisées
-                </Typography>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        mb: 3,
+                        pb: 1,
+                        borderBottom: '2px solid',
+                        borderColor: 'secondary.main'
+                      }}>
+                        <Avatar sx={{ 
+                          bgcolor: 'secondary.main', 
+                          width: 32, 
+                          height: 32,
+                          fontSize: '1rem'
+                        }}>
+                          🔧
+                        </Avatar>
+                        <Typography variant="h6" sx={{ color: 'secondary.main', fontWeight: 600 }}>
+                          Catégories personnalisées
+                        </Typography>
+                        <Chip 
+                          label={`${customCategories.length} catégories`} 
+                          size="small" 
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      </Box>
                 <Grid container spacing={3}>
                   {getCustomCategories().map((category) => (
-                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                       <Card 
                         sx={{ 
                           cursor: 'pointer',
@@ -469,7 +530,7 @@ export function EquipmentAddTab({
                   }
                 />
                 
-                {/* Sélection de volume pour la verrerie et équipement de mesure */}
+                {/* Sélection de volume */}
                 {selectedItem?.volumes && selectedItem.volumes.length > 0 && (
                   <Autocomplete
                     freeSolo
@@ -483,7 +544,7 @@ export function EquipmentAddTab({
                       <TextField
                         {...params}
                         fullWidth
-                        label="Volume"
+                        label="Volume/Capacité"
                         margin="normal"
                         placeholder="Choisissez un volume ou saisissez le vôtre"
                         helperText="Sélectionnez dans la liste ou tapez une valeur personnalisée"
@@ -494,16 +555,69 @@ export function EquipmentAddTab({
                   />
                 )}
 
-                {/* Champ résolution pour les appareils de mesure */}
-                {selectedCategory === 'MEASURING' && (
-                  <TextField
-                    fullWidth
-                    label="Résolution de l'appareil"
+                {/* Champ résolution */}
+                {selectedItem?.resolutions && selectedItem.resolutions.length > 0 && (
+                  <Autocomplete
+                    freeSolo
+                    options={selectedItem.resolutions}
                     value={formData.resolution || ''}
-                    onChange={(e) => onFormChange('resolution', e.target.value)}
-                    margin="normal"
-                    placeholder="ex: 0.1mg, 0.01ml, 0.1°C"
-                    helperText="Précision de l'appareil de mesure"
+                    onChange={(_, newValue) => onFormChange('resolution', newValue)}
+                    onInputChange={(_, newValue) => onFormChange('resolution', newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        label="Résolution/Précision"
+                        margin="normal"
+                        placeholder="ex: 0.1mg, 0.01ml, 0.1°C"
+                        helperText="Précision de l'appareil"
+                      />
+                    )}
+                    noOptionsText="Tapez votre résolution personnalisée"
+                  />
+                )}
+
+                {/* Champ taille/dimension */}
+                {selectedItem?.tailles && selectedItem.tailles.length > 0 && (
+                  <Autocomplete
+                    freeSolo
+                    options={selectedItem.tailles}
+                    value={formData.taille || ''}
+                    onChange={(_, newValue) => onFormChange('taille', newValue)}
+                    onInputChange={(_, newValue) => onFormChange('taille', newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        label="Taille/Dimension"
+                        margin="normal"
+                        placeholder="ex: 10x10cm, Ø15mm, L:50cm"
+                        helperText="Dimensions de l'équipement"
+                      />
+                    )}
+                    noOptionsText="Tapez vos dimensions personnalisées"
+                  />
+                )}
+
+                {/* Champ matériau */}
+                {selectedItem?.materiaux && selectedItem.materiaux.length > 0 && (
+                  <Autocomplete
+                    freeSolo
+                    options={selectedItem.materiaux}
+                    value={formData.materiau || ''}
+                    onChange={(_, newValue) => onFormChange('materiau', newValue)}
+                    onInputChange={(_, newValue) => onFormChange('materiau', newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        label="Matériau"
+                        margin="normal"
+                        placeholder="ex: Verre borosilicate, Inox 316L..."
+                        helperText="Matériau de fabrication"
+                      />
+                    )}
+                    noOptionsText="Tapez votre matériau personnalisé"
                   />
                 )}
 
@@ -535,6 +649,49 @@ export function EquipmentAddTab({
               </Grid>
               
               <Grid size={{ xs: 12, md: 6 }}>
+                {/* Section Champs personnalisés si disponibles */}
+                {selectedItem?.customFields && Object.keys(selectedItem.customFields).length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Settings /> Champs personnalisés
+                    </Typography>
+                    
+                    {Object.entries(selectedItem.customFields).map(([fieldName, fieldValues]) => (
+                      <Autocomplete
+                        key={fieldName}
+                        freeSolo
+                        options={fieldValues}
+                        value={formData.customFields?.[fieldName] || ''}
+                        onChange={(_, newValue) => {
+                          const updatedCustomFields = {
+                            ...formData.customFields,
+                            [fieldName]: newValue
+                          }
+                          onFormChange('customFields', updatedCustomFields)
+                        }}
+                        onInputChange={(_, newValue) => {
+                          const updatedCustomFields = {
+                            ...formData.customFields,
+                            [fieldName]: newValue
+                          }
+                          onFormChange('customFields', updatedCustomFields)
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            label={fieldName}
+                            margin="normal"
+                            placeholder={`Sélectionnez ou saisissez ${fieldName.toLowerCase()}`}
+                            helperText={`Valeurs disponibles: ${fieldValues.join(', ')}`}
+                          />
+                        )}
+                        noOptionsText={`Tapez votre ${fieldName.toLowerCase()} personnalisé`}
+                      />
+                    ))}
+                  </Box>
+                )}
+
                 <Typography variant="h6" gutterBottom sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Home /> Localisation
                 </Typography>
