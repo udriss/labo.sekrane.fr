@@ -56,6 +56,15 @@ export async function GET(request: NextRequest) {
     const inventory = await readChemicalsInventory()
     let chemicals = inventory.chemicals
 
+    // S'assurer que chaque chemical a une quantityPrevision
+    chemicals = chemicals.map((chemical: any) => ({
+      ...chemical,
+      // Si quantityPrevision n'existe pas, l'initialiser avec la quantité actuelle
+      quantityPrevision: chemical.quantityPrevision !== undefined 
+        ? chemical.quantityPrevision 
+        : chemical.quantity
+    }))
+
     // Appliquer les filtres
     if (search) {
       const searchLower = search.toLowerCase()
@@ -99,7 +108,7 @@ export const POST = withAudit(
     
     // Créer le nouveau produit chimique
     const newChemical = {
-      id: `CHEM_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `CHEM_INV_${Array.from({ length: 12 }, () => Math.floor(Math.random() * 36).toString(36).toUpperCase()).join('')}`,
       name: body.name,
       formula: body.formula || null,
       molfile: null,

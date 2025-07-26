@@ -654,7 +654,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     </Grid>
                   )}
                   {event.chemicals && event.chemicals.length > 0 && (
-                    <Grid size = {{ xs: 12, sm: 6 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Produits chimiques ({event.chemicals.length})
                       </Typography>
@@ -665,7 +665,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                                 ? chemical 
                                 : (chemical.name || 'Produit')}
                             {typeof chemical === 'object' && chemical.formula && ` (${chemical.formula})`}
-                            {typeof chemical === 'object' && chemical.quantity && ` - ${chemical.quantity}${chemical.unit || ''}`}
+                            {typeof chemical === 'object' && chemical.requestedQuantity && (
+                              <Typography component="span" color="primary.main">
+                                {` - ${chemical.requestedQuantity}${chemical.unit || ''} demandé(s)`}
+                              </Typography>
+                            )}
                           </Typography>
                         ))}
                       </Stack>

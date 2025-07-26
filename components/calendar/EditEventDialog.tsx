@@ -5,11 +5,12 @@ import React, { useState, useEffect } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, IconButton,
   TextField, Button, FormControl, InputLabel, Select, MenuItem,
-  Autocomplete, Chip, Alert, Collapse, Stack, Divider, InputAdornment
+  Autocomplete, Chip, Alert, Collapse, Stack, Divider, InputAdornment,
+  ClickAwayListener, Tooltip
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
-  Add, Delete 
+  Add, Delete, InfoOutlined
 } from '@mui/icons-material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
@@ -18,7 +19,7 @@ import { CalendarEvent, EventType } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
-import { calculateChemicalsForecast } from '@/lib/utils/calculateForecastStock'
+
 
 interface EditEventDialogProps {
   open: boolean
@@ -53,6 +54,7 @@ export function EditEventDialog({
   const [materialInputValue, setMaterialInputValue] = useState('')
   const [chemicalInputValue, setChemicalInputValue] = useState('')
   const [chemicalsWithForecast, setChemicalsWithForecast] = useState<any[]>([])
+  const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
 
   const [timeSlots, setTimeSlots] = useState<Array<{
     date: Date | null;
@@ -164,17 +166,7 @@ export function EditEventDialog({
     }
   }, [event, materials, chemicals])
 
-  // useEffect pour calculer le stock prévisionnel
-useEffect(() => {
-  const loadChemicalsWithForecast = async () => {
-    const chemicalsData = await calculateChemicalsForecast(chemicals, event?.id)
-    setChemicalsWithForecast(chemicalsData)
-  }
-  
-  if (chemicals.length > 0) {
-    loadChemicalsWithForecast()
-  }
-}, [chemicals, event?.id])
+
 
   // Gestion des créneaux
   const addTimeSlot = () => {
@@ -990,13 +982,13 @@ useEffect(() => {
                         </Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
                           <Typography variant="caption" color="text.secondary">
-                            Stock actuel: {option.quantity}{option.unit}
+                            Stock actuel : {option.quantity}{option.unit}
                           </Typography>
                           <Typography 
                             variant="caption" 
                             color={option.forecastQuantity < option.minQuantity ? 'error' : 'text.secondary'}
                           >
-                            Stock prévu: {option.forecastQuantity?.toFixed(1)}{option.unit}
+                            Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit}
                             {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit})`}
                           </Typography>
                         </Box>
@@ -1031,104 +1023,248 @@ useEffect(() => {
                 />
 
                 {/* Liste des produits chimiques sélectionnés avec quantités */}
-              {formData.chemicals.length > 0 && (
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {formData.chemicals.map((chemical, index) => {
-                    // Trouver les informations de prévision pour ce produit
-                    const chemicalWithForecast = chemicalsWithForecast.find(c => c.id === chemical.id) || chemical
-                    const currentForecast = chemicalWithForecast.forecastQuantity - (chemical.requestedQuantity || 0)
-                    
-                    return (
-                      <Box
-                        key={chemical.id || index}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          p: 1.5,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          backgroundColor: 'background.paper'
-                        }}
-                      >
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="body2">
-                            {chemical.name || 'Produit chimique'}
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Stock actuel: {chemical.quantity || 0}{chemical.unit || ''}
+                {formData.chemicals.length > 0 && (
+                  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {formData.chemicals.map((chemical, index) => {
+                      // Créer une clé unique pour ce chemical
+                      const tooltipKey = `formChemical-${chemical.id || index}`
+                      const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
+                      
+                      // Utiliser quantityPrevision si disponible, sinon quantity
+                      const availableStock = chemical.quantityPrevision !== undefined 
+                        ? chemical.quantityPrevision 
+                        : (chemical.quantity || 0)
+                      
+                      const stockAfterRequest = availableStock - (chemical.requestedQuantity || 0)
+                      
+                      const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
+                        setTooltipStates(prev => ({
+                          ...prev,
+                          [tooltipKey]: {
+                            ...tooltipOpen,
+                            [type]: !tooltipOpen[type]
+                          }
+                        }))
+                      }
+                      
+                      return (
+                        <Box
+                          key={chemical.id || index}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            p: 1.5,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            backgroundColor: 'background.paper'
+                          }}
+                        >
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2">
+                              {chemical.name || 'Produit chimique'}
                             </Typography>
-                            <Typography 
-                              variant="caption" 
-                              color={currentForecast < 0 ? 'error' : 'success.main'}
-                            >
-                              Après commande: {currentForecast.toFixed(1)}{chemical.unit || ''}
-                            </Typography>
-                            {chemicalWithForecast.totalRequested > 0 && (
-                              <Typography variant="caption" color="warning.main">
-                                (Autres demandes: {chemicalWithForecast.totalRequested}{chemical.unit})
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
+                              {/* Stock actuel */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
+                                </Typography>
+                                <ClickAwayListener onClickAway={() => {
+                                  if (tooltipOpen.actual) handleTooltipToggle('actual')
+                                }}>
+                                  <div>
+                                    <Tooltip 
+                                      title="Quantité physique actuellement disponible dans l'inventaire"
+                                      arrow
+                                      open={tooltipOpen.actual}
+                                      onClose={() => {
+                                        if (tooltipOpen.actual) handleTooltipToggle('actual')
+                                      }}
+                                      disableHoverListener
+                                      disableFocusListener
+                                      disableTouchListener
+                                    >
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleTooltipToggle('actual')}
+                                        sx={{ p: 0.25 }}
+                                      >
+                                        <InfoOutlined sx={{ fontSize: 14 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </div>
+                                </ClickAwayListener>
+                              </Box>
 
-                        <TextField
-                          label={`Quantité (${chemical.unit || 'unité'})`}
-                          type="number"
-                          value={chemical.requestedQuantity || 1}
-                          onChange={(e) => {
-                            const newQuantity = parseFloat(e.target.value) || 1
-                            const updatedChemicals = [...formData.chemicals]
-                            updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
-                            setFormData({ ...formData, chemicals: updatedChemicals })
-                          }}
-                          inputProps={{ 
-                            min: 0.1,
-                            step: 0.1,
-                            max: chemicalWithForecast.forecastQuantity || chemical.quantity || undefined
-                          }}
-                          sx={{ width: 130 }}
-                          size="small"
-                          error={chemical.requestedQuantity > chemicalWithForecast.forecastQuantity}
-                          helperText={
-                            chemical.requestedQuantity > chemicalWithForecast.forecastQuantity
+                              {/* Stock prévisionnel */}
+                              {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Typography variant="caption" color="warning.main">
+                                    Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
+                                  </Typography>
+                                  <ClickAwayListener onClickAway={() => {
+                                    if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                                  }}>
+                                    <div>
+                                      <Tooltip 
+                                        title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
+                                        arrow
+                                        open={tooltipOpen.prevision}
+                                        onClose={() => {
+                                          if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                                        }}
+                                        disableHoverListener
+                                        disableFocusListener
+                                        disableTouchListener
+                                      >
+                                        <IconButton 
+                                          size="small" 
+                                          onClick={() => handleTooltipToggle('prevision')}
+                                          sx={{ p: 0.25 }}
+                                        >
+                                          <InfoOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    </div>
+                                  </ClickAwayListener>
+                                </Box>
+                              )}
+
+                              {/* Stock après ce TP */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography 
+                                  variant="caption" 
+                                  color={stockAfterRequest < 0 ? 'error' : stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 'success.main'}
+                                >
+                                  Après ce TP EDIT : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
+                                </Typography>
+                                <ClickAwayListener onClickAway={() => {
+                                  if (tooltipOpen.after) handleTooltipToggle('after')
+                                }}>
+                                  <div>
+                                    <Tooltip 
+                                      title={
+                                        stockAfterRequest < 0 
+                                          ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
+                                          : stockAfterRequest < (chemical.minQuantity || 0)
+                                          ? "Attention : le stock passera sous le seuil minimum recommandé"
+                                          : "Stock restant après validation de ce TP"
+                                      }
+                                      arrow
+                                      open={tooltipOpen.after}
+                                      onClose={() => {
+                                        if (tooltipOpen.after) handleTooltipToggle('after')
+                                      }}
+                                      disableHoverListener
+                                      disableFocusListener
+                                      disableTouchListener
+                                    >
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleTooltipToggle('after')}
+                                        sx={{ p: 0.25 }}
+                                      >
+                                        <InfoOutlined 
+                                          sx={{ 
+                                            fontSize: 14,
+                                            color: stockAfterRequest < 0 ? 'error.main' : 
+                                                  stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                                  'success.main'
+                                          }} 
+                                        />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </div>
+                                </ClickAwayListener>
+                              </Box>
+                            </Box>
+                          </Box>
+
+                          <TextField
+                            label={`Quantité (${chemical.unit || 'unité'})`}
+                            type="number"
+                            value={chemical.requestedQuantity || 1}
+                            onChange={(e) => {
+                              const newQuantity = parseFloat(e.target.value) || 1
+                              const updatedChemicals = [...formData.chemicals]
+                              updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
+                              setFormData({ ...formData, chemicals: updatedChemicals })
+                            }}
+                            slotProps={{
+                              htmlInput: {
+                              min: 0.1,
+                              step: 0.1,
+                              max: availableStock
+                              }
+                            }}
+                            sx={{ width: 130 }}
+                            size="small"
+                            error={chemical.requestedQuantity > availableStock}
+                            helperText={
+                              chemical.requestedQuantity > availableStock
                               ? 'Stock insuffisant' 
                               : ''
-                          }
-                        />
+                            }
+                            />
 
-                        <IconButton
-                          onClick={() => {
-                            const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
-                            setFormData({ ...formData, chemicals: updatedChemicals })
-                          }}
-                          color="error"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    )
-                  })}
-                </Box>
-              )}
+                          <IconButton
+                            onClick={() => {
+                              const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
+                              setFormData({ ...formData, chemicals: updatedChemicals })
+                            }}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                )}
               </Box>
-                  {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
-    {formData.chemicals.some(c => {
-      const forecast = chemicalsWithForecast.find(cf => cf.id === c.id)
-      return forecast && (forecast.forecastQuantity - c.requestedQuantity) < (forecast.minQuantity || 0)
-    }) && (
-      <Alert severity="warning" sx={{ mt: 2 }}>
-        <Typography variant="body2" fontWeight="bold">
-          Attention : Stock faible
-        </Typography>
-        <Typography variant="body2">
-          Certains produits chimiques seront en dessous de leur stock minimum après cette commande.
-        </Typography>
-      </Alert>
-    )}
+              {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
+              {formData.chemicals.some(c => {
+                const availableStock = c.quantityPrevision !== undefined 
+                  ? c.quantityPrevision 
+                  : (c.quantity || 0)
+                const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+                return stockAfterRequest < (c.minQuantity || 0)
+              }) && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Attention : Stock faible
+                  </Typography>
+                  <Typography variant="body2">
+                    Certains produits chimiques seront en dessous de leur stock minimum après ce TP.
+                  </Typography>
+                  {/* Optionnel : Afficher les détails des produits concernés */}
+                  <Box sx={{ mt: 1 }}>
+                    {formData.chemicals
+                      .filter(c => {
+                        const availableStock = c.quantityPrevision !== undefined 
+                          ? c.quantityPrevision 
+                          : (c.quantity || 0)
+                        const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+                        return stockAfterRequest < (c.minQuantity || 0)
+                      })
+                      .map((c, index) => {
+                        const availableStock = c.quantityPrevision !== undefined 
+                          ? c.quantityPrevision 
+                          : (c.quantity || 0)
+                        const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+                        return (
+                          <Typography key={index} variant="caption" color="warning.dark" component="div">
+                            • {c.name}: {stockAfterRequest.toFixed(1)}{c.unit} restants (minimum: {c.minQuantity || 0}{c.unit})
+                          </Typography>
+                        )
+                      })
+                    }
+                  </Box>
+                </Alert>
+              )}
             </>
           )}
 

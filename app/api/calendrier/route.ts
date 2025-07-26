@@ -11,7 +11,91 @@ import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 
 
+// Ajouter ces interfaces au début du fichier
+interface Chemical {
+  id: string
+  name: string
+  quantity?: number
+  requestedQuantity?: number
+  unit?: string
+  quantityPrevision?: number
+  minQuantity?: number
+}
+
+interface ChemicalInventoryFile {
+  chemicals: ChemicalInventory[]
+  stats: {
+    total: number
+    inStock: number
+    lowStock: number
+    expired: number
+    expiringSoon: number
+  }
+}
+
+
+
+interface ChemicalInventory {
+  id: string
+  name: string
+  formula?: string
+  molfile?: string | null
+  casNumber?: string
+  barcode?: string
+  quantity: number
+  unit: string
+  minQuantity: number
+  concentration?: number | null
+  purity?: number | null
+  purchaseDate?: string | null
+  expirationDate?: string | null
+  openedDate?: string | null
+  storage?: string
+  room?: string
+  cabinet?: string
+  shelf?: string
+  hazardClass?: string | null
+  sdsFileUrl?: string | null
+  supplierId?: string | null
+  batchNumber?: string | null
+  orderReference?: string | null
+  status: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  supplier?: string
+  location?: string
+  quantityPrevision?: number
+}
+
+interface Event {
+  id: string
+  title: string
+  description?: string | null
+  startDate: string
+  endDate: string
+  type: string
+  class?: string | null
+  room?: string | null
+  location?: string | null
+  materials?: any[]
+  chemicals?: Chemical[]
+  equipment?: any[]
+  fileName?: string | null
+  fileUrl?: string | null
+  files?: any[]
+  remarks?: string | null
+  notes?: string | null
+  createdBy?: string | null  // Changé de string | undefined à string | null
+  modifiedBy?: any[]
+  createdAt: string
+  updatedAt: string
+  parentEventId?: string 
+  [key: string]: any
+}
+
 const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
+const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 
 async function saveFileToDisk(fileData: {
   userId: string
@@ -75,6 +159,51 @@ async function readCalendarFile() {
   }
 }
 
+// Nouvelle fonction pour lire le fichier chemicals inventory
+async function readChemicalsInventoryFile(): Promise<ChemicalInventory[]> {
+  try {
+    const data = await fs.readFile(CHEMICALS_INVENTORY_FILE, 'utf-8')
+    const parsed: ChemicalInventoryFile = JSON.parse(data)
+    
+    return parsed.chemicals || []
+  } catch (error) {
+    console.error('Erreur lecture fichier chemicals-inventory:', error)
+    return []
+  }
+}
+
+// Fonction pour enrichir les événements avec les données de stock
+async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
+  const chemicalsData = await readChemicalsInventoryFile()
+  
+  // Créer un map des produits chimiques pour un accès rapide
+  const chemicalsMap = new Map<string, ChemicalInventory>(
+    chemicalsData.map((chem: ChemicalInventory) => [chem.id, chem])
+  )
+  
+  // Enrichir chaque événement
+  return events.map((event: Event) => ({
+    ...event,
+    chemicals: event.chemicals?.map((chemical: Chemical) => {
+      const chemicalInventory = chemicalsMap.get(chemical.id)
+      
+      // Si on trouve le produit chimique dans l'inventaire
+      if (chemicalInventory) {
+        return {
+          ...chemical,
+          // Ajouter les données du stock depuis chemicals-inventory
+          quantity: chemicalInventory.quantity || chemical.quantity,
+          quantityPrevision: chemicalInventory.quantityPrevision,
+          minQuantity: chemicalInventory.minQuantity,
+          unit: chemicalInventory.unit || chemical.unit
+        }
+      }
+      
+      // Si on ne trouve pas le produit, retourner tel quel
+      return chemical
+    }) || []
+  }))
+}
 
 
 // Fonction pour écrire dans le fichier calendrier
@@ -108,7 +237,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    return NextResponse.json(events)
+    // Enrichir les événements avec les données de stock
+    const enrichedEvents = await enrichEventsWithChemicalData(events)
+
+    return NextResponse.json(enrichedEvents)
   } catch (error) {
     console.error('Erreur API calendar:', error)
     return NextResponse.json(
@@ -310,8 +442,11 @@ export const POST = withAudit(
     
     // Sauvegarder le fichier
     await writeCalendarFile(calendarData)
-    
-    return NextResponse.json(newEvents.length === 1 ? newEvents[0] : newEvents, { status: 201 })
+
+    // Enrichir les nouveaux événements avec les données de stock avant de les retourner
+    const enrichedNewEvents = await enrichEventsWithChemicalData(newEvents)
+
+    return NextResponse.json(enrichedNewEvents.length === 1 ? enrichedNewEvents[0] : enrichedNewEvents, { status: 201 })
   },
   {
     module: 'CALENDAR',
@@ -528,11 +663,15 @@ export const PUT = withAudit(
     
     await writeCalendarFile(calendarData)
     
+    // Enrichir les événements avant de les retourner
+    const enrichedUpdatedEvent = (await enrichEventsWithChemicalData([updatedEvent]))[0]
+    const enrichedCreatedEvents = await enrichEventsWithChemicalData(createdEvents)
+
     const response = {
-      updatedEvent,
-      createdEvents,
-      message: createdEvents.length > 0 
-        ? `Événement modifié et ${createdEvents.length} créneaux supplémentaires ajoutés`
+      updatedEvent: enrichedUpdatedEvent,
+      createdEvents: enrichedCreatedEvents,
+      message: enrichedCreatedEvents.length > 0 
+        ? `Événement modifié et ${enrichedCreatedEvents.length} créneaux supplémentaires ajoutés`
         : 'Événement modifié avec succès'
     }
     
@@ -602,9 +741,12 @@ export const DELETE = withAudit(
     const deletedEvent = calendarData.events.splice(eventIndex, 1)[0]
     await writeCalendarFile(calendarData)
     
+    // Enrichir l'événement supprimé avant de le retourner
+    const enrichedDeletedEvent = (await enrichEventsWithChemicalData([deletedEvent]))[0]
+
     return NextResponse.json({ 
       message: 'Événement supprimé', 
-      event: deletedEvent 
+      event: enrichedDeletedEvent 
     })
   },
   {

@@ -12,12 +12,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 6180.5
@@ -29,7 +29,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -103,7 +103,7 @@
       "ip": "::ffff:127.0.0.1",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753366249782_rfw4aa52m",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 4
     },
@@ -122,12 +122,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "CHEM_1753281415835_r9jcjfi6k"
+      "entityId": "CHEM_INV_A2ZF1BSLZBW8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/CHEM_1753281415835_r9jcjfi6k/",
+        "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
         "query": {},
         "body": {
           "quantity": 2632.6
@@ -139,7 +139,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "CHEM_1753281415835_r9jcjfi6k",
+            "id": "CHEM_INV_A2ZF1BSLZBW8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -211,7 +211,7 @@
       "ip": "::ffff:127.0.0.1",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753366277895_vwxpf6gf8",
-      "path": "/api/chemicals/CHEM_1753281415835_r9jcjfi6k/",
+      "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
       "method": "PUT",
       "duration": 4
     },
@@ -4030,12 +4030,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 23594.6
@@ -4047,7 +4047,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4121,7 +4121,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382251996_pocm30iv1",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 4
     },
@@ -4140,12 +4140,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 51324
@@ -4157,7 +4157,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4231,7 +4231,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382346221_whalctgxd",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 3
     },
@@ -4250,12 +4250,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 94663.7
@@ -4267,7 +4267,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4341,7 +4341,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382392753_oyj0hwaq1",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 3
     },
@@ -4360,12 +4360,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 28537.2
@@ -4377,7 +4377,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4451,7 +4451,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382394837_qukuc0i39",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 2
     },
@@ -4470,12 +4470,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 8174.4
@@ -4487,7 +4487,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4561,7 +4561,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382395530_eoc05ssx9",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 2
     },
@@ -4580,12 +4580,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 1609.9
@@ -4597,7 +4597,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4671,7 +4671,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382396147_nv17kmst8",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 4
     },
@@ -4690,12 +4690,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 372.2
@@ -4707,7 +4707,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4781,7 +4781,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382396680_sbd41gcz7",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 3
     },
@@ -4800,12 +4800,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 84.7
@@ -4817,7 +4817,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -4891,7 +4891,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382397578_l5hm2zraq",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 2
     },
@@ -4910,12 +4910,12 @@
       "type": "UPDATE",
       "module": "CHEMICALS",
       "entity": "chemical",
-      "entityId": "cmdd5kp7e00091f0vu9dnoyxp"
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
     },
     "details": {
       "request": {
         "method": "PUT",
-        "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
         "query": {},
         "body": {
           "quantity": 158.2
@@ -4927,7 +4927,7 @@
         "data": {
           "message": "Chemical updated successfully",
           "chemical": {
-            "id": "cmdd5kp7e00091f0vu9dnoyxp",
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
             "name": "Acide chlorhydrique",
             "formula": "HCl",
             "molfile": null,
@@ -5001,7 +5001,7 @@
       "ip": "89.158.80.136",
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
       "requestId": "api_1753382493127_4bajuigtv",
-      "path": "/api/chemicals/cmdd5kp7e00091f0vu9dnoyxp/",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
       "method": "PUT",
       "duration": 3
     },

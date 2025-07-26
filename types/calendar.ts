@@ -32,6 +32,8 @@ export interface CalendarEvent {
     formula?: string
     quantity?: number
     unit?: string
+    quantityPrevision?: number
+    requestedQuantity?: number
   })[]
   fileName?: string | null  // Garder pour la rétrocompatibilité
   fileUrl?: string | null   // Ajouter pour la rétrocompatibilité

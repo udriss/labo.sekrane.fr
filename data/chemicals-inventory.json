@@ -1,7 +1,7 @@
 {
   "chemicals": [
     {
-      "id": "cmde6xhsd00023i0wdveshe9a",
+      "id": "CHEM_INV_0RZP4BADZOGZ",
       "name": "Acide nitrique",
       "formula": "HNO₃",
       "molfile": null,
@@ -29,10 +29,11 @@
       "createdAt": "2025-07-22T07:05:47.245Z",
       "updatedAt": "2025-07-23T08:52:48.121Z",
       "supplier": "",
-      "location": "Hotte de synthèse"
+      "location": "Hotte de synthèse",
+      "quantityPrevision": 2.4000000000000004
     },
     {
-      "id": "cmdd5kp9i000d1f0v6dbeh3gi",
+      "id": "CHEM_INV_02ZP4BCDZ3G4",
       "name": "Acétone",
       "formula": "C₃H₆O",
       "molfile": null,
@@ -63,7 +64,7 @@
       "location": "Armoire solvants"
     },
     {
-      "id": "cmdd5kp9g000b1f0vt29bi7tc",
+      "id": "CHEM_INV_V2ZP6BCGZDJ4",
       "name": "Éthanol",
       "formula": "C₂H₅OH",
       "molfile": null,
@@ -94,7 +95,7 @@
       "location": "Armoire solvants"
     },
     {
-      "id": "cmdd5kp7e00091f0vu9dnoyxp",
+      "id": "CHEM_INV_V2ZP1BCQZDY8",
       "name": "Acide chlorhydrique",
       "formula": "HCl",
       "molfile": null,
@@ -166,7 +167,7 @@
       }
     },
     {
-      "id": "CHEM_1753260845051_ihujsf1zc",
+      "id": "CHEM_INV_A2ZP1BSQZBY8",
       "name": "Sulfate de cuivre pentahydraté",
       "formula": "CuSO₄·5H₂O",
       "molfile": null,
@@ -196,7 +197,7 @@
       "supplier": null
     },
     {
-      "id": "CHEM_1753281415835_r9jcjfi6k",
+      "id": "CHEM_INV_A2ZF1BSLZBW8",
       "name": "Acide chlorhydrique",
       "formula": "HCl",
       "molfile": null,
@@ -224,11 +225,41 @@
       "createdAt": "2025-07-23T14:36:55.835Z",
       "updatedAt": "2025-07-24T14:11:17.898Z",
       "supplier": null
+    },
+    {
+      "id": "CHEM_INV_0RUP4BADFOGF",
+      "name": "Acide phosphorique",
+      "formula": "H₃PO₄",
+      "molfile": null,
+      "casNumber": "7664-38-2",
+      "barcode": null,
+      "quantity": 2000,
+      "unit": "mL",
+      "minQuantity": null,
+      "concentration": null,
+      "purity": null,
+      "purchaseDate": null,
+      "expirationDate": null,
+      "openedDate": null,
+      "storage": "",
+      "room": "Salle de TP A",
+      "cabinet": null,
+      "shelf": null,
+      "hazardClass": null,
+      "sdsFileUrl": null,
+      "supplierId": null,
+      "batchNumber": null,
+      "orderReference": null,
+      "status": "IN_STOCK",
+      "notes": null,
+      "createdAt": "2025-07-26T14:41:46.376Z",
+      "updatedAt": "2025-07-26T14:41:46.376Z",
+      "supplier": null
     }
   ],
   "stats": {
-    "total": 7,
-    "inStock": 7,
+    "total": 8,
+    "inStock": 8,
     "lowStock": 0,
     "expired": 0,
     "expiringSoon": 0
