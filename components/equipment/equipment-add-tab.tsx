@@ -1,3 +1,5 @@
+// components/equipment/equipment-add-tab.tsx
+
 import { useState, useEffect } from "react"
 import {
   Box,
@@ -20,9 +22,23 @@ import {
   Stack,
   Divider,
   Avatar,
-  Chip
+  Chip,
+  IconButton,
+  CardActions,
+  Tooltip
 } from "@mui/material"
-import { Add, Check, Science, Category, Numbers, Home, LocationOn } from "@mui/icons-material"
+import { 
+  Add, 
+  Check, 
+  Science, 
+  Category, 
+  Numbers, 
+  Home, 
+  LocationOn,
+  Edit,
+  Delete,
+  Person
+} from "@mui/icons-material"
 import { EquipmentType, EquipmentItem, EquipmentFormData } from "@/types/equipment"
 
 interface EquipmentAddTabProps {
@@ -42,6 +58,10 @@ interface EquipmentAddTabProps {
   onSubmit: () => void
   onReset: () => void
   loading: boolean
+  currentUser?: any // Ajouter l'utilisateur actuel
+  users?: any[] // Ajouter la liste des utilisateurs
+  onEditCategory?: (categoryId: string) => void
+  onDeleteCategory?: (categoryId: string) => void
 }
 
 export function EquipmentAddTab({
@@ -60,7 +80,11 @@ export function EquipmentAddTab({
   onFormChange,
   onSubmit,
   onReset,
-  loading
+  loading,
+  currentUser,
+  users = [],
+  onEditCategory,
+  onDeleteCategory
 }: EquipmentAddTabProps) {
   const steps = [
     {
@@ -85,7 +109,26 @@ export function EquipmentAddTab({
     }
   ]
 
-  const getAllCategories = () => equipmentTypes
+  // Séparer les catégories standard et custom
+  const getStandardCategories = () => equipmentTypes.filter(type => !type.isCustom)
+  const getCustomCategories = () => equipmentTypes.filter(type => type.isCustom)
+
+  // Vérifier si l'utilisateur peut modifier/supprimer une catégorie
+  const canModifyCategory = (category: EquipmentType) => {
+    if (!currentUser) return false
+    return (
+      category.ownerId === currentUser.id || 
+      currentUser.role === 'ADMIN' || 
+      currentUser.role === 'ADMINLABO'
+    )
+  }
+
+  // Obtenir le nom du propriétaire
+  const getOwnerName = (ownerId?: string) => {
+    if (!ownerId || ownerId === 'SYSTEM') return 'Système'
+    const owner = users.find(user => user.id === ownerId)
+    return owner?.name || 'Inconnu'
+  }
 
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
@@ -112,8 +155,6 @@ export function EquipmentAddTab({
                 </Box>
               }
               onClick={() => {
-                // Permettre la navigation vers les étapes précédentes
-                // et vers l'étape suivante si on a les données nécessaires
                 if (index < activeStep || 
                     (index === 1 && selectedCategory) ||
                     (index === 2 && selectedItem) ||
@@ -160,35 +201,147 @@ export function EquipmentAddTab({
         {activeStep === 0 && (
           <Box>
             <Typography variant="h5" gutterBottom>Choisir une catégorie</Typography>
-            <Grid container spacing={3}>
-              {getAllCategories().map((category) => (
-                <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Card 
-                    sx={{ 
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'scale(1.05)' },
-                      border: selectedCategory === category.id ? 2 : 1,
-                      borderColor: selectedCategory === category.id ? 'primary.main' : 'divider'
-                    }}
-                    onClick={() => onCategorySelect(category.id)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="120"
-                      image={category.svg}
-                      alt={category.name}
-                      sx={{ objectFit: 'contain', p: 2 }}
-                    />
-                    <CardContent>
-                      <Typography variant="h6" textAlign="center">
-                        {category.name}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+            
+            {/* Catégories standard */}
+            {getStandardCategories().length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                  📦 Catégories standard
+                </Typography>
+                <Grid container spacing={3}>
+                  {getStandardCategories().map((category) => (
+                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Card 
+                        sx={{ 
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': { transform: 'scale(1.05)' },
+                          border: selectedCategory === category.id ? 2 : 1,
+                          borderColor: selectedCategory === category.id ? 'primary.main' : 'divider'
+                        }}
+                        onClick={() => onCategorySelect(category.id)}
+                      >
+                        <CardMedia
+                          component="img"
+                          height="120"
+                          image={category.svg}
+                          alt={category.name}
+                          sx={{ objectFit: 'contain', p: 2 }}
+                        />
+                        <CardContent>
+                          <Typography variant="h6" textAlign="center">
+                            {category.name}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </>
+            )}
+
+            {/* Divider si on a les deux types */}
+            {getStandardCategories().length > 0 && getCustomCategories().length > 0 && (
+              <Divider sx={{ my: 4 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Catégories personnalisées
+                </Typography>
+              </Divider>
+            )}
+
+            {/* Catégories personnalisées */}
+            {getCustomCategories().length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
+                  🔧 Catégories personnalisées
+                </Typography>
+                <Grid container spacing={3}>
+                  {getCustomCategories().map((category) => (
+                    <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                      <Card 
+                        sx={{ 
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': { transform: 'scale(1.05)' },
+                          border: selectedCategory === category.id ? 2 : 1,
+                          borderColor: selectedCategory === category.id ? 'secondary.main' : 'divider',
+                          bgcolor: 'action.hover',
+                          position: 'relative'
+                        }}
+                        onClick={() => onCategorySelect(category.id)}
+                      >
+                        {/* Overline avec le nom du créateur */}
+                        <Typography
+                          variant="overline"
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            right: 8,
+                            color: 'text.secondary',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            fontSize: '0.7rem'
+                          }}
+                        >
+                          <Person fontSize="inherit" />
+                          par {getOwnerName(category.ownerId)}
+                        </Typography>
+
+                        <CardMedia
+                          component="img"
+                          height="120"
+                          image={category.svg}
+                          alt={category.name}
+                          sx={{ 
+                            objectFit: 'contain', 
+                            p: 2,
+                            mt: 3, // Espace pour l'overline
+                            filter: 'opacity(0.8)'
+                          }}
+                        />
+                        <CardContent>
+                          <Typography variant="h6" textAlign="center" sx={{ fontStyle: 'italic' }}>
+                            {category.name}
+                          </Typography>
+                        </CardContent>
+                        
+                        {/* Actions si l'utilisateur peut modifier */}
+                        {canModifyCategory(category) && (
+                          <CardActions sx={{ justifyContent: 'center', pb: 1 }}>
+                            <Tooltip title="Modifier la catégorie">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onEditCategory?.(category.id)
+                                }}
+                                sx={{ color: 'primary.main' }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                                                        <Tooltip title="Supprimer la catégorie">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onDeleteCategory?.(category.id)
+                                }}
+                                sx={{ color: 'error.main' }}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </CardActions>
+                        )}
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+            )}
           </Box>
         )}
 
@@ -196,11 +349,12 @@ export function EquipmentAddTab({
         {activeStep === 1 && selectedCategory && (
           <Box>
             <Typography variant="h5" gutterBottom>
-              Choisir un équipement - {getAllCategories().find(t => t.id === selectedCategory)?.name}
+              Choisir un équipement - {equipmentTypes.find(t => t.id === selectedCategory)?.name}
             </Typography>
             
             {(() => {
-              const allItems = equipmentTypes.find((t: EquipmentType) => t.id === selectedCategory)?.items || []
+              const category = equipmentTypes.find((t: EquipmentType) => t.id === selectedCategory)
+              const allItems = category?.items || []
               const presetItems = allItems.filter((item: EquipmentItem) => !item.isCustom)
               const customItems = allItems.filter((item: EquipmentItem) => item.isCustom)
               
@@ -280,6 +434,15 @@ export function EquipmentAddTab({
                         ))}
                       </Grid>
                     </>
+                  )}
+
+                  {/* Message si aucun équipement */}
+                  {allItems.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body1" color="text.secondary">
+                        Aucun équipement dans cette catégorie
+                      </Typography>
+                    </Box>
                   )}
                 </>
               )
@@ -460,15 +623,6 @@ export function EquipmentAddTab({
                 
                 <TextField
                   fullWidth
-                  label="Localisation précise"
-                  value={formData.location || ''}
-                  onChange={(e) => onFormChange('location', e.target.value)}
-                  margin="normal"
-                  placeholder="Ex: Paillasse 2, Armoire A, etc."
-                />
-                
-                <TextField
-                  fullWidth
                   label="Fournisseur"
                   value={formData.supplier || ''}
                   onChange={(e) => onFormChange('supplier', e.target.value)}
@@ -513,7 +667,7 @@ export function EquipmentAddTab({
                   <Typography><strong>Quantité:</strong> {formData.quantity}</Typography>
                   {formData.volume && <Typography><strong>Volume:</strong> {formData.volume}</Typography>}
                   {formData.resolution && <Typography><strong>Résolution:</strong> {formData.resolution}</Typography>}
-                </Grid>
+                  </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="h6" gutterBottom>Détails techniques</Typography>
                   {formData.model && <Typography><strong>Modèle:</strong> {formData.model}</Typography>}

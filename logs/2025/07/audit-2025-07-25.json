@@ -48159,5 +48159,1500 @@
       "duration": 10
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "c72e8dab-c286-47f6-a173-f60a38060f92",
+    "timestamp": "2025-07-25T22:33:11.607Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:33:11.607Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753482791604_0x25ic4dx",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5ca623f0-01e8-4c75-955a-93a9ebc867af",
+    "timestamp": "2025-07-25T22:37:12.856Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:37:12.856Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483032852_k6fqni6v4",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "37d1d81d-2cb5-48f1-9c27-defc82128a70",
+    "timestamp": "2025-07-25T22:37:27.989Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:37:27.989Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483047987_usv5neqn0",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bdbc7861-166a-409f-ba35-26b25289e2cf",
+    "timestamp": "2025-07-25T22:38:05.824Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:38:05.824Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483085821_2q9turwcm",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "50acc61b-7485-408c-9175-07e4030a4308",
+    "timestamp": "2025-07-25T22:38:11.917Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:38:11.917Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483091915_gc1ua2ytp",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4113f25c-67c1-4ab8-910c-8617237afd47",
+    "timestamp": "2025-07-25T22:38:58.818Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:38:58.818Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483138816_ku56n6l8c",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4b033cea-b09f-4f26-89e7-a0d9ec3b0d6d",
+    "timestamp": "2025-07-25T22:39:54.958Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:39:54.958Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483194956_kzdrigw4f",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3af876d6-7860-454f-8528-a58e78d78a2e",
+    "timestamp": "2025-07-25T22:40:32.786Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:40:32.786Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483232783_mgqqnpuvl",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "dcf5d3e5-3309-411b-a550-138560ff9124",
+    "timestamp": "2025-07-25T22:42:00.423Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:42:00.423Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483320420_vss0x6mw1",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bb2acb0f-7493-4ce3-92ac-ced16ce126a0",
+    "timestamp": "2025-07-25T22:43:01.150Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-25T22:43:01.150Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483381147_71el7wzvv",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c576bf84-0041-4310-8d42-c62bbf5d19b2",
+    "timestamp": "2025-07-25T22:45:20.674Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:45:20.674Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483520672_ypl45vkor",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e1fe7d81-5e9b-457f-a82c-47640ce74e46",
+    "timestamp": "2025-07-25T22:45:47.710Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:45:47.710Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483547708_8kb347z5j",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5269901d-b6c6-4ffc-8aed-07880b5b8eea",
+    "timestamp": "2025-07-25T22:45:49.228Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "USER_001",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:01.060Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "list",
+              "theme": "light",
+              "language": "fr",
+              "notifications": {
+                "email": true,
+                "push": false
+              },
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-24T19:34:33.091Z"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ]
+          },
+          {
+            "id": "USER_002",
+            "email": "teacher@labo.fr",
+            "name": "Professeur Martin",
+            "role": "TEACHER",
+            "isActive": true,
+            "createdAt": "2025-01-01T00:00:00Z",
+            "updatedAt": "2025-07-24T09:05:03.295Z",
+            "siteConfig": {
+              "materialsViewMode": "list",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": [
+              "Mine"
+            ]
+          },
+          {
+            "id": "USER_003",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-10T00:00:00Z",
+            "updatedAt": "2025-07-24T08:21:14.250Z",
+            "siteConfig": {
+              "materialsViewMode": "cards",
+              "chemicalsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-25T22:45:49.228Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753483549226_yseyxemj0",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
   }
 ]

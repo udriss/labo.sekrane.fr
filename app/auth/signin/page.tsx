@@ -41,6 +41,7 @@ import {
   ErrorOutline
 } from "@mui/icons-material"
 import { motion } from "framer-motion"
+import TextAlign from "@tiptap/extension-text-align"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
@@ -364,16 +365,19 @@ export default function SignInPage() {
                   error={emailError}
                   helperText={emailError ? "Format d'email invalide" : ""}
                   disabled={loading}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email color={emailError ? "error" : "action"} />
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email color={emailError ? "error" : "action"} />
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                   sx={{
+                    textAlign: 'center',
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
+                      borderRadius: 2, // Border radius externe
                       transition: 'all 0.3s',
                       '&:hover': {
                         transform: 'translateY(-2px)',
@@ -383,6 +387,12 @@ export default function SignInPage() {
                         transform: 'translateY(-2px)',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                       }
+                    },
+                    // Ajoutez cette partie pour styliser l'input interne
+                    '& .MuiInputBase-input': {
+                      borderRadius: 2, // Border radius de l'input interne (ajustez selon vos besoins)
+                      backgroundColor: 'rgba(0, 0, 0, 0.02)', // Optionnel : fond légèrement différent
+                      padding: '12px 8px', // Optionnel : ajuster le padding interne
                     }
                   }}
                 />
@@ -398,26 +408,28 @@ export default function SignInPage() {
                   autoComplete="current-password"
                   error={passwordError}
                   disabled={loading}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock color={passwordError ? "error" : "action"} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={togglePasswordVisibility}
-                          edge="end"
-                          size="small"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock color={passwordError ? "error" : "action"} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={togglePasswordVisibility}
+                            edge="end"
+                            size="small"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
-                                    sx={{
+                  sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
                       transition: 'all 0.3s',
@@ -428,7 +440,13 @@ export default function SignInPage() {
                       '&.Mui-focused': {
                         transform: 'translateY(-2px)',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-                      }
+                      },
+                      // Ajoutez cette partie pour styliser l'input interne
+                    '& .MuiInputBase-input': {
+                      borderRadius: 1, // Border radius de l'input interne (ajustez selon vos besoins)
+                      backgroundColor: 'rgba(0, 0, 0, 0.02)', // Optionnel : fond légèrement différent
+                      padding: '12px 8px', // Optionnel : ajuster le padding interne
+                    }
                     }
                   }}
                 />

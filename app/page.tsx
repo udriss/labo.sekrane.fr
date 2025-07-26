@@ -456,53 +456,79 @@ useEffect(() => {
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
         <div>
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              p: 6, 
-              borderRadius: 4,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
-            }}
-          >
-            <Box sx={{ mb: 4 }}>
-              <Image
-                src="/logo_2.png"
-                alt="Logo Laboratoire"
-                width={120}
-                height={120}
-                style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}
-              />
-            </Box>
-            <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-              LIMS - Laboratoire de Chimie
-            </Typography>
-            <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
-              Système de gestion intégré pour laboratoire
-            </Typography>
-            <Button 
-              variant="contained" 
-              size="large"
-              onClick={() => signIn()}
-              sx={{ 
-                bgcolor: 'white',
-                color: '#667eea',
-                px: 4,
-                py: 1.5,
-                fontSize: '1.1rem',
-                borderRadius: 3,
-                textTransform: 'none',
-                fontWeight: 600,
-                '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-                }
-              }}
-            >
-              Se connecter
-            </Button>
-          </Paper>
+<Paper 
+  elevation={0} 
+  sx={{ 
+    p: 6, 
+    borderRadius: 4,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    position: 'relative',
+    overflow: 'hidden'
+  }}
+>
+  {/* Logo en arrière-plan */}
+  <Box
+    sx={{
+      position: 'absolute',
+      top: '0%',
+      left: '0',
+      right: '0',
+      margin: '0 auto',
+      transform: 'translate(0%, 0%)',
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 1, // Ajustez l'opacité selon vos besoins
+      zIndex: 0,
+    }}
+  >
+    <Image
+      src="/logo_2.png"
+      alt="Logo Laboratoire"
+      fill
+      style={{ 
+        objectFit: 'contain',
+        top: '0%',
+        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))'
+      }}
+    />
+  </Box>
+
+  {/* Contenu au premier plan */}
+  <Box sx={{ position: 'relative', zIndex: 1 }}>
+    <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+      LIMS - Laboratoire de Chimie
+    </Typography>
+    <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
+      Système de gestion intégré pour laboratoire
+    </Typography>
+    <Button 
+      variant="contained" 
+      size="large"
+      onClick={() => signIn()}
+      sx={{ 
+        bgcolor: 'white',
+        color: '#667eea',
+        px: 4,
+        py: 1.5,
+        fontSize: '1.1rem',
+        borderRadius: 3,
+        textTransform: 'none',
+        fontWeight: 600,
+        '&:hover': {
+          bgcolor: 'rgba(255,255,255,0.9)',
+          transform: 'translateY(-2px)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+        }
+      }}
+    >
+      Se connecter
+    </Button>
+  </Box>
+</Paper>
         </div>
       </Container>
     );

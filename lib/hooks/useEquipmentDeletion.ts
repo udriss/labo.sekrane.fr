@@ -1,3 +1,5 @@
+// lib/hooks/useEquipmentDeletion.ts
+
 'use client'
 
 import { useState } from 'react'
@@ -10,6 +12,8 @@ interface DeleteState {
   itemName: string | null
   title: string
   relatedItems: string[]
+  inventoryUsage?: number // Ajouter cette ligne
+  onConfirm?: (deleteItems?: boolean) => void // Ajouter cette ligne
 }
 
 interface DuplicateState {
@@ -26,9 +30,11 @@ export const useEquipmentDeletion = () => {
     categoryId: null,
     itemName: null,
     title: '',
-    relatedItems: []
+    relatedItems: [],
+    inventoryUsage: 0,
+    onConfirm: undefined
   })
-  
+
   const [duplicateState, setDuplicateState] = useState<DuplicateState>({
     isOpen: false,
     newItem: null,
@@ -38,7 +44,28 @@ export const useEquipmentDeletion = () => {
   
   const [loading, setLoading] = useState(false)
 
-  // Fonctions pour la suppression
+  // Nouvelle fonction openDeletionDialog générique
+  const openDeletionDialog = (params: {
+    type: 'category' | 'item'
+    id: string
+    title: string
+    relatedItems?: string[]
+    inventoryUsage?: number
+    onConfirm: (deleteItems?: boolean) => void
+  }) => {
+    setDeleteState({
+      isOpen: true,
+      type: params.type,
+      categoryId: params.type === 'category' ? params.id : null,
+      itemName: params.type === 'item' ? params.title : null,
+      title: params.title,
+      relatedItems: params.relatedItems || [],
+      inventoryUsage: params.inventoryUsage || 0,
+      onConfirm: params.onConfirm
+    })
+  }
+
+  // Fonctions pour la suppression (conserver pour la compatibilité)
   const openCategoryDeletion = (categoryId: string, categoryName: string, relatedItems: string[] = []) => {
     setDeleteState({
       isOpen: true,
@@ -46,7 +73,9 @@ export const useEquipmentDeletion = () => {
       categoryId,
       itemName: null,
       title: categoryName,
-      relatedItems
+      relatedItems,
+      inventoryUsage: 0,
+      onConfirm: undefined
     })
   }
 
@@ -57,7 +86,9 @@ export const useEquipmentDeletion = () => {
       categoryId,
       itemName,
       title: itemName,
-      relatedItems: []
+      relatedItems: [],
+      inventoryUsage: 0,
+      onConfirm: undefined
     })
   }
 
@@ -68,12 +99,31 @@ export const useEquipmentDeletion = () => {
       categoryId: null,
       itemName: null,
       title: '',
-      relatedItems: []
+      relatedItems: [],
+      inventoryUsage: 0,
+      onConfirm: undefined
     })
   }
 
-  const confirmDeletion = async () => {
-    if (!deleteState.type || !deleteState.categoryId) return
+  // Modifier confirmDeletion pour accepter le paramètre deleteItems
+  const confirmDeletion = async (deleteItems?: boolean) => {
+    // Si on a une fonction onConfirm personnalisée, l'utiliser
+    if (deleteState.onConfirm) {
+      setLoading(true)
+      try {
+        await deleteState.onConfirm(deleteItems)
+        closeDeletionDialog()
+        return true
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error)
+        return false
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    // Sinon, utiliser l'ancienne logique
+    if (!deleteState.type || !deleteState.categoryId) return false
 
     setLoading(true)
     try {
@@ -146,6 +196,7 @@ export const useEquipmentDeletion = () => {
     // État de suppression
     deleteState,
     loading,
+    openDeletionDialog, // Ajouter cette ligne
     openCategoryDeletion,
     openItemDeletion,
     closeDeletionDialog,

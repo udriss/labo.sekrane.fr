@@ -1,3 +1,4 @@
+// components/equipment/DeleteConfirmationDialog.tsx
 'use client'
 
 import React from 'react'
@@ -13,18 +14,22 @@ import {
   List,
   ListItem,
   ListItemText,
-  Chip
+  Chip,
+  FormControlLabel,
+  Checkbox,
+  Alert
 } from '@mui/material'
 import { Warning, Delete, Cancel } from '@mui/icons-material'
 
 interface DeleteConfirmationDialogProps {
   open: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: (deleteItems?: boolean) => void
   deleteType: 'category' | 'item'
   title: string
   relatedItems?: string[]
   loading?: boolean
+  inventoryUsage?: number // Nombre d'équipements dans l'inventaire qui utilisent ces modèles
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
@@ -34,16 +39,26 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   deleteType,
   title,
   relatedItems = [],
-  loading = false
+  loading = false,
+  inventoryUsage = 0
 }) => {
   const isCategory = deleteType === 'category'
+  const [deleteRelatedItems, setDeleteRelatedItems] = React.useState(false)
+
+  const handleConfirm = () => {
+    if (isCategory) {
+      onConfirm(deleteRelatedItems)
+    } else {
+      onConfirm()
+    }
+  }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth 
       aria-labelledby="delete-confirmation-title"
     >
       <DialogTitle id="delete-confirmation-title">
@@ -62,15 +77,16 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
         
         {isCategory && relatedItems.length > 0 && (
           <Box mt={2}>
-            <Typography variant="body2" color="error" gutterBottom>
-              ⚠️ Cette catégorie contient {relatedItems.length} équipement{relatedItems.length > 1 ? 's' : ''} qui {relatedItems.length > 1 ? 'seront déplacés' : 'sera déplacé'} dans "Sans catégorie" :
-            </Typography>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Cette catégorie contient {relatedItems.length} équipement{relatedItems.length > 1 ? 's' : ''}.
+            </Alert>
+            
             <List dense>
               {relatedItems.slice(0, 5).map((item, index) => (
                 <ListItem key={index} sx={{ py: 0.5 }}>
                   <ListItemText 
                     primary={item}
-                    slotProps={{ primary: { variant: 'body2' } }}
+                    primaryTypographyProps={{ variant: 'body2' }}
                   />
                 </ListItem>
               ))}
@@ -84,6 +100,30 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
                 </ListItem>
               )}
             </List>
+
+            {inventoryUsage > 0 && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                ⚠️ Attention : {inventoryUsage} équipement{inventoryUsage > 1 ? 's' : ''} dans l'inventaire 
+                utilise{inventoryUsage > 1 ? 'nt' : ''} ces modèles d'équipements.
+              </Alert>
+            )}
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={deleteRelatedItems}
+                  onChange={(e) => setDeleteRelatedItems(e.target.checked)}
+                  color="error"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Supprimer également tous les équipements de cette catégorie
+                  {!deleteRelatedItems && <strong> (sinon ils seront déplacés dans "Sans catégorie")</strong>}
+                </Typography>
+              }
+              sx={{ mt: 2 }}
+            />
           </Box>
         )}
         
@@ -101,7 +141,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
           Annuler
         </Button>
         <Button
-          onClick={onConfirm}
+          onClick={handleConfirm}
           color="error"
           variant="contained"
           startIcon={<Delete />}

@@ -1,3 +1,5 @@
+// components/equipment/equipment-management-tab.tsx
+
 import { useState } from "react"
 import {
   Box,
@@ -19,9 +21,12 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  IconButton,
+  Tooltip,
+  CardActions,
 } from "@mui/material"
-import { Settings, Save, Delete } from "@mui/icons-material"
+import { Settings, Save, Delete, Person, Edit } from "@mui/icons-material"
 import { EquipmentType, EquipmentItem } from "@/types/equipment"
 
 interface EquipmentManagementTabProps {
@@ -43,6 +48,10 @@ interface EquipmentManagementTabProps {
   onAddVolumeToEditingItem: () => void
   onRemoveVolumeFromEditingItem: (volume: string) => void
   getAllCategories: () => EquipmentType[]
+  currentUser?: any
+  users?: any[]
+  onEditCategory?: (categoryId: string) => void
+  onDeleteCategory?: (categoryId: string) => void
 }
 
 export function EquipmentManagementTab({
@@ -58,8 +67,31 @@ export function EquipmentManagementTab({
   onSaveEditedItem,
   onAddVolumeToEditingItem,
   onRemoveVolumeFromEditingItem,
-  getAllCategories
+  getAllCategories, 
+  currentUser,
+  users,
+  onEditCategory,
+  onDeleteCategory
 }: EquipmentManagementTabProps) {
+
+  
+  const canModifyCategory = (category: EquipmentType) => {
+    if (!currentUser) return false
+    return (
+      category.ownerId === currentUser.id || 
+      currentUser.role === 'ADMIN' || 
+      currentUser.role === 'ADMINLABO'
+    )
+  }
+
+  const getOwnerName = (ownerId?: string) => {
+    if (!ownerId || ownerId === 'SYSTEM') return 'Système'
+    const owner = users?.find(user => user.id === ownerId)
+    return owner?.name || 'Inconnu'
+  }
+
+
+
   return (
     <>
       <Paper elevation={3} sx={{ p: 3 }}>
@@ -74,40 +106,97 @@ export function EquipmentManagementTab({
               Sélectionnez une catégorie à modifier :
             </Typography>
             <Grid container spacing={2}>
-              {getAllCategories().map((category) => (
-                <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card 
-                    sx={{ 
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': { 
-                        transform: 'translateY(-2px)',
-                        boxShadow: 4 
-                      }
-                    }}
-                    onClick={() => setSelectedManagementCategory(category.id)}
-                  >
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Avatar 
-                        src={category.svg} 
-                        sx={{ 
-                          width: 64, 
-                          height: 64, 
-                          mx: 'auto', 
-                          mb: 2,
-                          bgcolor: 'primary.light'
-                        }} 
-                      />
-                      <Typography variant="h6" gutterBottom>
-                        {category.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {category.items?.length || 0} équipements
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+            {getAllCategories().map((category) => (
+              <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card 
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    position: 'relative',
+                    '&:hover': { 
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4 
+                    }
+                  }}
+                  onClick={() => setSelectedManagementCategory(category.id)}
+                >
+                  {/* Ajouter l'overline pour les catégories custom */}
+                  {category.isCustom && (
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        right: 8,
+                        color: 'text.secondary',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      <Person fontSize="inherit" />
+                      par {getOwnerName(category.ownerId)}
+                    </Typography>
+                  )}
+                  
+                  <CardContent sx={{ textAlign: 'center', pt: category.isCustom ? 4 : 2 }}>
+                    <Avatar 
+                      src={category.svg} 
+                      sx={{ 
+                        width: 64, 
+                        height: 64, 
+                        mx: 'auto', 
+                        mb: 2,
+                        bgcolor: category.isCustom ? 'secondary.light' : 'primary.light',
+                        filter: category.isCustom ? 'opacity(0.8)' : 'none'
+                      }} 
+                    />
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom
+                      sx={{ fontStyle: category.isCustom ? 'italic' : 'normal' }}
+                    >
+                      {category.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {category.items?.length || 0} équipements
+                    </Typography>
+                  </CardContent>
+                  
+                  {/* Actions conditionnelles pour les catégories custom */}
+                  {category.isCustom && canModifyCategory(category) && (
+                    <CardActions sx={{ justifyContent: 'center', pb: 1 }}>
+                      <Tooltip title="Modifier la catégorie">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEditCategory?.(category.id)
+                          }}
+                          sx={{ color: 'primary.main' }}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Supprimer la catégorie">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDeleteCategory?.(category.id)
+                          }}
+                          sx={{ color: 'error.main' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  )}
+                </Card>
+              </Grid>
+            ))}
             </Grid>
           </Box>
         ) : (

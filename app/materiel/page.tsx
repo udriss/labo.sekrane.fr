@@ -1,3 +1,5 @@
+// app/materiel/page.tsx
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -26,6 +28,8 @@ import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm"
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
 import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
+import { useSession } from 'next-auth/react'
+
 
 // Import des composants
 import { TabPanel } from "@/components/equipment/tab-panel"
@@ -36,11 +40,15 @@ import ViewToggle from "@/components/equipment/ViewToggle"
 import { EquipmentListView } from "@/components/equipment/EquipmentListView"
 import DeleteConfirmationDialog from "@/components/equipment/DeleteConfirmationDialog"
 import DuplicateDetectionDialog from "@/components/equipment/DuplicateDetectionDialog"
+import { EquipmentManagementTab } from '@/components/equipment/equipment-management-tab'
+import { EditCategoryDialog } from '@/components/equipment/dialogs/EditCategoryDialog'
 
 // Import des dialogues
 import { ContinueDialog } from "@/components/equipment/dialogs/ContinueDialog"
 import { NewCategoryDialog } from "@/components/equipment/dialogs/NewCategoryDialog"
 import { DeleteDialog } from "@/components/equipment/dialogs/DeleteDialog"
+import { useUsers } from '@/lib/hooks/useUsers';
+
 
 // Import des services
 import { equipmentService } from "@/lib/services/equipmentService"
@@ -62,6 +70,14 @@ export default function EquipmentPage() {
   const deletion = useEquipmentDeletion()
   const { config, updateConfig } = useSiteConfig()
   const [viewMode, setViewModeState] = useState<'cards' | 'list'>('cards')
+  
+  const { users } = useUsers()
+  const { data: session } = useSession()
+
+  // États pour l'édition de catégorie
+  const [editCategoryDialog, setEditCategoryDialog] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState('')
+  const [editingCategoryName, setEditingCategoryName] = useState('')
 
   // Initialiser le mode de vue
   useEffect(() => {
@@ -80,6 +96,110 @@ export default function EquipmentPage() {
     }
   }
 
+  const handleEditCategory = (categoryId: string) => {
+    const category = equipmentData.equipmentTypes.find(t => t.id === categoryId)
+    if (category) {
+      setEditingCategoryId(categoryId)
+      setEditingCategoryName(category.name)
+      setEditCategoryDialog(true)
+    }
+  }
+
+  // Fonction pour supprimer une catégorie
+  const handleDeleteCategory = async (categoryId: string) => {
+    const category = equipmentData.equipmentTypes.find(t => t.id === categoryId)
+    if (!category) return
+
+    try {
+      // Vérifier l'utilisation dans l'inventaire
+      const checkResponse = await fetch('/api/equipment-types/check-usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId })
+      })
+      
+      const usageData = await checkResponse.json()
+      
+      // Ouvrir le dialogue de confirmation avec les infos d'utilisation
+      deletion.openDeletionDialog({
+        type: 'category',
+        id: categoryId,
+        title: category.name,
+        relatedItems: usageData.itemNames || [],
+        inventoryUsage: usageData.inventoryUsage || 0,
+        onConfirm: async (deleteItems?: boolean) => {
+          try {
+            const response = await fetch('/api/equipment-types', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                action: 'deleteCategory', 
+                categoryId,
+                deleteItems: deleteItems || false
+              })
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              await equipmentData.loadEquipmentTypes()
+              
+              // Si on était en train de voir cette catégorie, revenir à la liste
+              if (dialogs.selectedManagementCategory === categoryId) {
+                dialogs.setSelectedManagementCategory('')
+              }
+              
+              // Afficher un message de succès
+              if (deleteItems) {
+                alert(`Catégorie "${category.name}" et ses ${result.itemsDeleted} équipements supprimés avec succès`)
+              } else if (result.itemsMoved > 0) {
+                alert(`Catégorie "${category.name}" supprimée. ${result.itemsMoved} équipements déplacés dans "Sans catégorie"`)
+              } else {
+                alert(`Catégorie "${category.name}" supprimée avec succès`)
+              }
+            } else {
+              const error = await response.json()
+              alert(error.error || 'Erreur lors de la suppression')
+            }
+          } catch (error) {
+            console.error('Erreur lors de la suppression:', error)
+            alert('Erreur lors de la suppression de la catégorie')
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Erreur lors de la vérification:', error)
+      alert('Erreur lors de la vérification de l\'utilisation')
+    }
+  }
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategoryName.trim() || !editingCategoryId) return
+
+    try {
+      const response = await fetch('/api/equipment-types/category', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: editingCategoryId,
+          name: editingCategoryName
+        })
+      })
+
+      if (response.ok) {
+        await equipmentData.loadEquipmentTypes()
+        setEditCategoryDialog(false)
+        setEditingCategoryId('')
+        setEditingCategoryName('')
+        // TODO: Afficher un message de succès
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erreur lors de la modification')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('Erreur lors de la modification de la catégorie')
+    }
+  }
   // Fonction pour obtenir les volumes disponibles pour un équipement
   const getAvailableVolumes = (equipmentTypeId: string): string[] => {
     for (const equipmentType of equipmentData.getAllEquipmentTypes()) {
@@ -189,13 +309,28 @@ export default function EquipmentPage() {
     }
 
     try {
-      await equipmentService.createCustomCategory(dialogs.newCategoryName)
-      
-      await equipmentData.loadEquipmentTypes()
-      dialogs.setCustomCategories(prev => [...prev, { name: dialogs.newCategoryName }])
-      dialogs.setNewCategoryName('')
-      dialogs.setNewCategoryDialog(false)
-      alert('Catégorie créée avec succès !')
+      const newCategory = {
+        id: `CUSTOM_${Date.now()}`,
+        name: dialogs.newCategoryName,
+        svg: '/svg/default.svg',
+        ownerId: session?.user?.id // Ajouter l'ID du créateur
+      }
+
+      const response = await fetch('/api/equipment-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: newCategory,
+          createEmpty: true
+        })
+      })
+
+      if (response.ok) {
+        await equipmentData.loadEquipmentTypes()
+        dialogs.setNewCategoryName('')
+        dialogs.setNewCategoryDialog(false)
+        alert('Catégorie créée avec succès !')
+      }
     } catch (error) {
       console.error('Erreur lors de la création de la catégorie:', error)
       alert('Erreur lors de la création de la catégorie')
@@ -367,6 +502,10 @@ export default function EquipmentPage() {
           onSubmit={handleSubmitWithTabSwitch}
           onReset={form.handleReset}
           loading={equipmentData.loading}
+          currentUser={session?.user}
+          users={users}
+          onEditCategory={handleEditCategory}
+          onDeleteCategory={handleDeleteCategory}
         />
       </TabPanel>
 
@@ -398,375 +537,25 @@ export default function EquipmentPage() {
 
       {/* Onglet Gestion des types */}
       <TabPanel value={tabValue} index={2}>
-        <Paper elevation={3} sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5">
-              Gérer les types d'équipement
-            </Typography>
-          </Box>
-          
-          {!dialogs.selectedManagementCategory ? (
-            // Affichage des catégories
-            <Box>
-              <Typography variant="h6" sx={{ mb: 3 }}>
-                Sélectionnez une catégorie à modifier :
-              </Typography>
-              <Grid container spacing={2}>
-                {equipmentData.getAllCategories().map((category) => (
-                  <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Card 
-                      sx={{ 
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': { 
-                          transform: 'translateY(-2px)',
-                          boxShadow: 4 
-                        }
-                      }}
-                      onClick={() => dialogs.setSelectedManagementCategory(category.id)}
-                    >
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Avatar 
-                          src={category.svg} 
-                          sx={{ 
-                            width: 64, 
-                            height: 64, 
-                            mx: 'auto', 
-                            mb: 2,
-                            bgcolor: 'primary.light'
-                          }} 
-                        />
-                        <Typography variant="h6" gutterBottom>
-                          {category.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {category.items?.length || 0} équipements
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          ) : (
-            // Affichage des équipements de la catégorie sélectionnée
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => {
-                      dialogs.setSelectedManagementCategory('')
-                      dialogs.setSelectedManagementItem(null)
-                    }}
-                  >
-                    ← Retour aux catégories
-                  </Button>
-                  <Typography variant="h6">
-                    {equipmentData.getAllCategories().find(c => c.id === dialogs.selectedManagementCategory)?.name}
-                  </Typography>
-                </Box>
-                <ViewToggle 
-                  viewMode={viewMode}
-                  onViewModeChange={handleViewModeChange}
-                />
-              </Box>
-
-              {(() => {
-                const allItems = equipmentData.getAllEquipmentTypes().find((t: EquipmentType) => t.id === dialogs.selectedManagementCategory)?.items || []
-                const presetItems = allItems.filter((item: EquipmentItem) => !item.isCustom)
-                const customItems = allItems.filter((item: EquipmentItem) => item.isCustom)
-
-                return (
-                  <>
-                    {viewMode === 'cards' ? (
-                      // Vue en cartes (existante)
-                      <>
-                        {/* Équipements preset */}
-                        {presetItems.length > 0 && (
-                    <>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                        📦 Équipements standard
-                      </Typography>
-                      <Grid container spacing={2} sx={{ mb: 3 }}>
-                        {presetItems.map((item: EquipmentItem, index: number) => (
-                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                            <Card 
-                              sx={{ 
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                '&:hover': { 
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: 4 
-                                }
-                              }}
-                              onClick={() => {
-                                dialogs.setSelectedManagementItem(item)
-                                dialogs.setEditingItemData({
-                                  name: item.name,
-                                  volumes: [...item.volumes],
-                                  newVolume: '',
-                                  targetCategory: dialogs.selectedManagementCategory
-                                })
-                                dialogs.setEditItemDialog(true)
-                              }}
-                            >
-                              <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                  <Avatar src={item.svg} sx={{ width: 48, height: 48 }} />
-                                  <Typography variant="h6">{item.name}</Typography>
-                                </Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  {item.volumes?.length || 0} volumes disponibles
-                                </Typography>
-                                {item.volumes?.length > 0 && (
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                                    {item.volumes.slice(0, 3).map((volume, vIndex) => (
-                                      <Chip 
-                                        key={vIndex} 
-                                        label={volume} 
-                                        size="small" 
-                                        variant="outlined" 
-                                      />
-                                    ))}
-                                    {item.volumes.length > 3 && (
-                                      <Chip 
-                                        label={`+${item.volumes.length - 3}`} 
-                                        size="small" 
-                                        variant="outlined" 
-                                      />
-                                    )}
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </>
-                  )}
-                  
-                  {/* Divider si on a les deux types */}
-                  {presetItems.length > 0 && customItems.length > 0 && (
-                    <Divider sx={{ my: 3 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Équipements personnalisés
-                      </Typography>
-                    </Divider>
-                  )}
-                  
-                  {/* Équipements personnalisés */}
-                  {customItems.length > 0 && (
-                    <>
-                      <Typography variant="h6" sx={{ mb: 2, color: 'secondary.main' }}>
-                        🔧 Équipements personnalisés
-                      </Typography>
-                      <Grid container spacing={2}>
-                        {customItems.map((item: EquipmentItem, index: number) => (
-                          <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                            <Card 
-                              sx={{ 
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                bgcolor: 'action.hover',
-                                '&:hover': { 
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: 4 
-                                }
-                              }}
-                              onClick={() => {
-                                dialogs.setSelectedManagementItem(item)
-                                dialogs.setEditingItemData({
-                                  name: item.name,
-                                  volumes: [...item.volumes],
-                                  newVolume: '',
-                                  targetCategory: dialogs.selectedManagementCategory
-                                })
-                                dialogs.setEditItemDialog(true)
-                              }}
-                            >
-                              <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                  <Avatar 
-                                    src={item.svg} 
-                                    sx={{ 
-                                      width: 48, 
-                                      height: 48,
-                                      bgcolor: 'secondary.light',
-                                      color: 'secondary.contrastText'
-                                    }} 
-                                  />
-                                  <Typography variant="h6" sx={{ fontStyle: 'italic' }}>
-                                    {item.name}
-                                  </Typography>
-                                </Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  {item.volumes?.length || 0} volumes disponibles
-                                </Typography>
-                                {item.volumes?.length > 0 && (
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                                    {item.volumes.slice(0, 3).map((volume, vIndex) => (
-                                      <Chip 
-                                        key={vIndex} 
-                                        label={volume} 
-                                        size="small" 
-                                        variant="outlined" 
-                                        color="secondary"
-                                      />
-                                    ))}
-                                    {item.volumes.length > 3 && (
-                                      <Chip 
-                                        label={`+${item.volumes.length - 3}`} 
-                                        size="small" 
-                                        variant="outlined" 
-                                        color="secondary"
-                                      />
-                                    )}
-                                  </Box>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </>
-                  )}
-                </>
-              ) : (
-                // Vue en liste
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Nom</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Volumes disponibles</TableCell>
-                        <TableCell align="right">Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {/* Équipements standard */}
-                      {presetItems.length > 0 && (
-                        <>
-                          <TableRow>
-                            <TableCell colSpan={4} sx={{ bgcolor: 'grey.100', fontWeight: 'bold' }}>
-                              <Typography variant="subtitle1" color="primary">
-                                📦 Équipements standard ({presetItems.length})
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
-                          {presetItems.map((item: EquipmentItem, index: number) => (
-                            <TableRow 
-                              key={index} 
-                              hover
-                              sx={{ cursor: 'pointer' }}
-                              onClick={() => {
-                                dialogs.setSelectedManagementItem(item)
-                                dialogs.setEditingItemData({
-                                  name: item.name,
-                                  volumes: [...item.volumes],
-                                  newVolume: '',
-                                  targetCategory: dialogs.selectedManagementCategory
-                                })
-                                dialogs.setEditItemDialog(true)
-                              }}
-                            >
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Avatar src={item.svg} sx={{ width: 32, height: 32 }} />
-                                  {item.name}
-                                </Box>
-                              </TableCell>
-                              <TableCell>Standard</TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {item.volumes?.slice(0, 3).map((volume, vIndex) => (
-                                    <Chip key={vIndex} label={volume} size="small" />
-                                  ))}
-                                  {item.volumes?.length > 3 && (
-                                    <Chip label={`+${item.volumes.length - 3}`} size="small" />
-                                  )}
-                                </Box>
-                              </TableCell>
-                              <TableCell align="right">
-                                <IconButton size="small" onClick={(e) => e.stopPropagation()}>
-                                  <Edit />
-                                </IconButton>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </>
-                      )}
-              
-              {/* Équipements personnalisés */}
-              {customItems.length > 0 && (
-                <>
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ bgcolor: 'grey.100', fontWeight: 'bold' }}>
-                      <Typography variant="subtitle1" color="secondary">
-                        🔧 Équipements personnalisés ({customItems.length})
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                  {customItems.map((item: EquipmentItem, index: number) => (
-                    <TableRow 
-                      key={index} 
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => {
-                        dialogs.setSelectedManagementItem(item)
-                        dialogs.setEditingItemData({
-                          name: item.name,
-                          volumes: [...item.volumes],
-                          newVolume: '',
-                          targetCategory: dialogs.selectedManagementCategory
-                        })
-                        dialogs.setEditItemDialog(true)
-                      }}
-                    >
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Avatar 
-                            src={item.svg} 
-                            sx={{ 
-                              width: 32, 
-                              height: 32,
-                              bgcolor: 'secondary.light'
-                            }} 
-                          />
-                          <Typography sx={{ fontStyle: 'italic' }}>{item.name}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>Personnalisé</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {item.volumes?.slice(0, 3).map((volume, vIndex) => (
-                            <Chip key={vIndex} label={volume} size="small" color="secondary" />
-                          ))}
-                          {item.volumes?.length > 3 && (
-                            <Chip label={`+${item.volumes.length - 3}`} size="small" color="secondary" />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" onClick={(e) => e.stopPropagation()}>
-                          <Edit />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </>
-  )
-})()}
-            </Box>
-          )}
-        </Paper>
+          <EquipmentManagementTab
+            selectedManagementCategory={dialogs.selectedManagementCategory}
+            setSelectedManagementCategory={dialogs.setSelectedManagementCategory}
+            selectedManagementItem={dialogs.selectedManagementItem}
+            setSelectedManagementItem={dialogs.setSelectedManagementItem}
+            editItemDialog={dialogs.editItemDialog}
+            setEditItemDialog={dialogs.setEditItemDialog}
+            editingItemData={dialogs.editingItemData}
+            setEditingItemData={dialogs.setEditingItemData}
+            equipmentTypes={equipmentData.equipmentTypes}
+            onSaveEditedItem={handleSaveEditedItem}
+            onAddVolumeToEditingItem={handleAddVolumeToEditingItem}
+            onRemoveVolumeFromEditingItem={handleRemoveVolumeFromEditingItem}
+            getAllCategories={equipmentData.getAllCategories}
+            currentUser={session?.user}
+            users={users}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
       </TabPanel>
 
 
@@ -1449,6 +1238,20 @@ export default function EquipmentPage() {
           loading={deletion.loading}
         />
       )}
+
+      {/* Dialog d'édition de catégorie */}
+      <EditCategoryDialog
+        open={editCategoryDialog}
+        onClose={() => {
+          setEditCategoryDialog(false)
+          setEditingCategoryId('')
+          setEditingCategoryName('')
+        }}
+        categoryName={editingCategoryName}
+        setCategoryName={setEditingCategoryName}
+        onUpdateCategory={handleUpdateCategory}
+        originalName={equipmentData.equipmentTypes.find(t => t.id === editingCategoryId)?.name || ''}
+      />
     </Container>
   )
 }

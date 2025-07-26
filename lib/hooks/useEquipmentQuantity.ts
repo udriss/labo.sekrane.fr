@@ -1,3 +1,5 @@
+// lib/hooks/useEquipmentQuantity.ts
+
 import { useState } from 'react';
 
 export const useEquipmentQuantity = (fetchEquipment: () => Promise<void>) => {

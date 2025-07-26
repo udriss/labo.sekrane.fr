@@ -270,8 +270,9 @@
     },
     {
       "id": "CUSTOM_1753288440076",
-      "name": "TEST CAT",
+      "name": "TEST CATA CHANGE",
       "svg": "/svg/default.svg",
+      "ownerId": "USER_001",
       "items": [
         {
           "name": "Exemple",
@@ -292,6 +293,7 @@
       "id": "UNCATEGORIZED",
       "name": "Sans catégorie",
       "svg": "/svg/default.svg",
+      "ownerId": "SYSTEM",
       "isCustom": true,
       "items": []
     },
@@ -299,12 +301,14 @@
       "id": "CUSTOM_1753366672125",
       "name": "TEST LOG",
       "svg": "/svg/default.svg",
+      "ownerId": "USER_001",
       "items": [],
       "isCustom": true
     },
     {
       "id": "CUSTOM_1753367177014",
       "name": "CAT TEST LOG",
+      "ownerId": "USER_001",
       "svg": "/svg/default.svg",
       "items": [],
       "isCustom": true

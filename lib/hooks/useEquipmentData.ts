@@ -1,3 +1,5 @@
+// lib/hooks/useEquipmentData.ts
+
 import { useState, useEffect } from 'react';
 import { EquipmentType } from '@/types/equipment';
 

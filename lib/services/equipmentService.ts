@@ -1,3 +1,5 @@
+// lib/services/equipmentService.ts
+
 export const equipmentService = {
   async submitEquipment(formData: any, selectedCategory: string, selectedItem: any, getAllEquipmentTypes: () => any[]) {
     const dataToSubmit = {
@@ -19,31 +21,6 @@ export const equipmentService = {
     if (!response.ok) throw new Error("Erreur lors de l'ajout");
     
     const newEquipment = await response.json();
-    
-    // Si c'est un équipement personnalisé, l'ajouter aux types d'équipement
-    if (selectedItem?.name === 'Équipement personnalisé') {
-      const selectedType = getAllEquipmentTypes().find((t: any) => t.id === selectedCategory);
-      if (selectedType) {
-        const newItem = {
-          name: formData.name,
-          svg: '/svg/default.svg',
-          volumes: formData.volume ? [formData.volume] : []
-        };
-
-        try {
-          await fetch('/api/equipment-types', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: selectedType,
-              item: newItem
-            })
-          });
-        } catch (error) {
-          console.error('Erreur lors de la sauvegarde du type d\'équipement:', error);
-        }
-      }
-    }
     
     return newEquipment;
   },

@@ -95,82 +95,82 @@ export async function GET() {
 // POST - Ajouter un nouvel équipement
 export const POST = withAudit(
   async (request: NextRequest) => {
-  try {
-    const data = await request.json()
-    
-    // Validation des données requises
-    if (!data.name || !data.equipmentTypeId) {
+    try {
+      const data = await request.json()
+      
+      // Validation des données requises
+      if (!data.name || !data.equipmentTypeId) {
+        return NextResponse.json(
+          { error: "Le nom et l'ID du type d'équipement sont requis" },
+          { status: 400 }
+        )
+      }
+
+      // Vérifier que le type d'équipement existe
+      const types = await readEquipmentTypes()
+      let foundItem = null
+      for (const type of types.types) {
+        const item = type.items.find((item: any) => item.id === data.equipmentTypeId)
+        if (item) {
+          foundItem = { ...item, typeName: type.name, typeId: type.id }
+          break
+        }
+      }
+
+      if (!foundItem) {
+        return NextResponse.json(
+          { error: "Type d'équipement non trouvé" },
+          { status: 400 }
+        )
+      }
+
+      // Lire l'inventaire actuel
+      const inventory = await readEquipmentInventory()
+
+      // Créer le nouvel équipement
+      const newEquipment = {
+        id: `EQUIP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: data.name,
+        equipmentTypeId: data.equipmentTypeId,
+        model: data.model || null,
+        serialNumber: data.serialNumber || null,
+        quantity: data.quantity || 1,
+        minQuantity: data.minQuantity || 1,
+        volume: data.volume || null,
+        location: data.location || null,
+        room: data.room || null,
+        notes: data.notes || null,
+        purchaseDate: data.purchaseDate || null,
+        status: 'AVAILABLE',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      // Ajouter à l'inventaire
+      inventory.equipment.push(newEquipment)
+      
+      // Recalculer les stats
+      inventory.stats = calculateStats(inventory.equipment)
+
+      // Sauvegarder
+      await writeEquipmentInventory(inventory)
+
+      return NextResponse.json({ 
+        materiel: {
+          ...newEquipment,
+          typeName: foundItem.typeName,
+          itemName: foundItem.name,
+          svg: foundItem.svg
+        }
+      })
+    } catch (error) {
+      console.error("Erreur lors de la création de l'équipement:", error)
       return NextResponse.json(
-        { error: "Le nom et l'ID du type d'équipement sont requis" },
-        { status: 400 }
+        { error: "Erreur lors de la création de l'équipement" },
+        { status: 500 }
       )
     }
-
-    // Vérifier que le type d'équipement existe
-    const types = await readEquipmentTypes()
-    let foundItem = null
-    for (const type of types.types) {
-      const item = type.items.find((item: any) => item.id === data.equipmentTypeId)
-      if (item) {
-        foundItem = { ...item, typeName: type.name, typeId: type.id }
-        break
-      }
-    }
-
-    if (!foundItem) {
-      return NextResponse.json(
-        { error: "Type d'équipement non trouvé" },
-        { status: 400 }
-      )
-    }
-
-    // Lire l'inventaire actuel
-    const inventory = await readEquipmentInventory()
-
-    // Créer le nouvel équipement
-    const newEquipment = {
-      id: `EQUIP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: data.name,
-      equipmentTypeId: data.equipmentTypeId,
-      model: data.model || null,
-      serialNumber: data.serialNumber || null,
-      quantity: data.quantity || 1,
-      minQuantity: data.minQuantity || 1,
-      volume: data.volume || null,
-      location: data.location || null,
-      room: data.room || null,
-      notes: data.notes || null,
-      purchaseDate: data.purchaseDate || null,
-      status: 'AVAILABLE',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    // Ajouter à l'inventaire
-    inventory.equipment.push(newEquipment)
-    
-    // Recalculer les stats
-    inventory.stats = calculateStats(inventory.equipment)
-
-    // Sauvegarder
-    await writeEquipmentInventory(inventory)
-
-    return NextResponse.json({ 
-      materiel: {
-        ...newEquipment,
-        typeName: foundItem.typeName,
-        itemName: foundItem.name,
-        svg: foundItem.svg
-      }
-    })
-  } catch (error) {
-    console.error("Erreur lors de la création de l'équipement:", error)
-    return NextResponse.json(
-      { error: "Erreur lors de la création de l'équipement" },
-      { status: 500 }
-    )
-  }
-},
+  },
   {
     module: 'EQUIPMENT',
     entity: 'equipment',
@@ -184,117 +184,4 @@ export const POST = withAudit(
   }
 );
 
-
-// PUT - Mettre à jour un équipement
-export const PUT = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const data = await request.json()
-    const { id, ...updateData } = data
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "ID requis pour la mise à jour" },
-        { status: 400 }
-      )
-    }
-
-    // Lire l'inventaire actuel
-    const inventory = await readEquipmentInventory()
-
-    // Trouver l'équipement à mettre à jour
-    const equipmentIndex = inventory.equipment.findIndex((eq: any) => eq.id === id)
-    
-    if (equipmentIndex === -1) {
-      return NextResponse.json(
-        { error: "Équipement non trouvé" },
-        { status: 404 }
-      )
-    }
-
-    // Mettre à jour l'équipement
-    inventory.equipment[equipmentIndex] = {
-      ...inventory.equipment[equipmentIndex],
-      ...updateData,
-      quantity: updateData.quantity !== undefined ? parseInt(updateData.quantity) : inventory.equipment[equipmentIndex].quantity,
-      updatedAt: new Date().toISOString()
-    }
-
-    // Recalculer les stats
-    inventory.stats = calculateStats(inventory.equipment)
-
-    // Sauvegarder
-    await writeEquipmentInventory(inventory)
-
-    return NextResponse.json({ 
-      materiel: inventory.equipment[equipmentIndex]
-    })
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour de l'équipement:", error)
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour de l'équipement" },
-      { status: 500 }
-    )
-  }
-},
-  {
-    module: 'EQUIPMENT',
-    entity: 'equipment',
-    action: 'UPDATE',
-    extractEntityIdFromResponse: (response) => response?.materiel?.id,
-    customDetails: (req, response) => ({
-      equipmentName: response?.materiel?.name,
-      quantity: response?.materiel?.quantity
-    })
-  }
-);
-
-
-// DELETE - Supprimer un équipement
-export const DELETE = withAudit(
-  async (request: NextRequest) => {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "ID requis pour la suppression" },
-        { status: 400 }
-      );
-    }
-
-    const inventory = await readEquipmentInventory();
-    const equipmentIndex = inventory.equipment.findIndex((eq: any) => eq.id === id);
-    
-    if (equipmentIndex === -1) {
-      return NextResponse.json(
-        { error: "Équipement non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    // Stocker les infos avant suppression
-    const deletedEquipment = inventory.equipment[equipmentIndex];
-    
-    inventory.equipment.splice(equipmentIndex, 1);
-    inventory.stats = calculateStats(inventory.equipment);
-    await writeEquipmentInventory(inventory);
-
-    return NextResponse.json({ 
-      message: "Équipement supprimé avec succès",
-      deletedEquipment: { id: deletedEquipment.id, name: deletedEquipment.name }
-    });
-  },
-  {
-    module: 'EQUIPMENT',
-    entity: 'equipment',
-    action: 'DELETE',
-    extractEntityIdFromResponse: (response) => response?.deletedEquipment?.id,
-    customDetails: (req, response) => ({
-      equipmentName: response?.deletedEquipment?.name
-    })
-  }
-)
-
-
-
+// SUPPRIMER les routes PUT et DELETE car elles sont gérées dans /api/equipement/[id]/route.ts

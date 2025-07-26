@@ -1,3 +1,5 @@
+// components/equipment/dialogs/NewCategoryDialog.tsx
+
 import {
   Dialog,
   DialogTitle,

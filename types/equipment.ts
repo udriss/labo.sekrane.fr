@@ -1,9 +1,11 @@
-// Types et interfaces pour la gestion des équipements
+// lib/services/equipmentService.ts
+
 export interface EquipmentType {
   id: string
   name: string
   svg: string
-  isCustom?: boolean
+  isCustom: boolean
+  ownerId?: string 
   items: EquipmentItem[]
 }
 
@@ -49,3 +51,4 @@ export interface TabPanelProps {
   index: number
   value: number
 }
+

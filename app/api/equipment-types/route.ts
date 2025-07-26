@@ -25,6 +25,44 @@ async function ensureUncategorizedExists(equipmentTypes: any) {
   return uncategorizedId
 }
 
+
+// Fonction pour supprimer les équipements de l'inventaire par type
+async function deleteInventoryItemsByTypeIds(typeIds: string[]) {
+  try {
+    const INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
+    const inventoryData = await fs.readFile(INVENTORY_FILE, 'utf-8')
+    const inventory = JSON.parse(inventoryData)
+    
+    // Filtrer les équipements qui ne correspondent pas aux typeIds
+    const remainingEquipment = inventory.equipment.filter((item: any) => 
+      !typeIds.includes(item.equipmentTypeId)
+    )
+    
+    const deletedCount = inventory.equipment.length - remainingEquipment.length
+    
+    // Mettre à jour l'inventaire
+    inventory.equipment = remainingEquipment
+    
+    // Recalculer les stats
+    inventory.stats = {
+      total: remainingEquipment.length,
+      available: remainingEquipment.filter((e: any) => e.status === 'AVAILABLE').length,
+      inUse: remainingEquipment.filter((e: any) => e.status === 'IN_USE').length,
+      maintenance: remainingEquipment.filter((e: any) => e.status === 'MAINTENANCE').length,
+      outOfOrder: remainingEquipment.filter((e: any) => e.status === 'OUT_OF_ORDER').length
+    }
+    
+    await fs.writeFile(INVENTORY_FILE, JSON.stringify(inventory, null, 2))
+    
+    return deletedCount
+  } catch (error) {
+    console.error('Erreur lors de la suppression des équipements de l\'inventaire:', error)
+    return 0
+  }
+}
+
+
+
 export async function GET() {
   try {
     const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
@@ -197,7 +235,7 @@ export const POST = withAudit(
   }
 )
 
-// PUT - Envelopper car mise à jour
+
 export const PUT = withAudit(
   async (request: NextRequest) => {
     const body = await request.json()
@@ -241,11 +279,12 @@ export const PUT = withAudit(
   }
 )
 
-// DELETE - Envelopper car suppression
+
+
 export const DELETE = withAudit(
   async (request: NextRequest) => {
     const body = await request.json()
-    const { action, categoryId, itemName } = body
+    const { action, categoryId, itemName, deleteItems = false } = body
     
     const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
     const equipmentTypes = JSON.parse(data)
@@ -255,17 +294,47 @@ export const DELETE = withAudit(
       
       if (categoryIndex !== -1) {
         const deletedCategory = equipmentTypes.types[categoryIndex]
+        const itemsToMove = deletedCategory.items || []
+        let inventoryDeletedCount = 0
+        
+        // Si on supprime aussi les items
+        if (deleteItems && itemsToMove.length > 0) {
+          // Obtenir les IDs des équipements à supprimer
+          const typeIdsToDelete = itemsToMove
+            .filter((item: any) => item.id)
+            .map((item: any) => item.id)
+          
+          // Supprimer les équipements de l'inventaire
+          if (typeIdsToDelete.length > 0) {
+            inventoryDeletedCount = await deleteInventoryItemsByTypeIds(typeIdsToDelete)
+          }
+        } else if (!deleteItems && itemsToMove.length > 0) {
+          // Déplacer vers "Sans catégorie"
+          await ensureUncategorizedExists(equipmentTypes)
+          const uncategorizedCategory = equipmentTypes.types.find((t: any) => t.id === 'UNCATEGORIZED')
+          
+          if (uncategorizedCategory) {
+            uncategorizedCategory.items = [...(uncategorizedCategory.items || []), ...itemsToMove]
+          }
+        }
+        
+        // Supprimer la catégorie
         equipmentTypes.types.splice(categoryIndex, 1)
+        
         await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
+        
         return NextResponse.json({ 
           success: true, 
-          message: 'Catégorie supprimée',
+          message: deleteItems 
+            ? `Catégorie et équipements supprimés (${inventoryDeletedCount} équipements retirés de l'inventaire)` 
+            : 'Catégorie supprimée, équipements déplacés dans "Sans catégorie"',
           action: 'deleteCategory',
           categoryName: deletedCategory.name,
-          categoryId: deletedCategory.id
+          categoryId: deletedCategory.id,
+          itemsDeleted: deleteItems ? itemsToMove.length : 0,
+          itemsMoved: deleteItems ? 0 : itemsToMove.length,
+          inventoryDeleted: inventoryDeletedCount
         })
-      } else {
-        return NextResponse.json({ error: 'Catégorie personnalisée non trouvée' }, { status: 404 })
       }
     } else if (action === 'deleteItem') {
       const category = equipmentTypes.types.find((t: any) => t.id === categoryId)
@@ -302,7 +371,9 @@ export const DELETE = withAudit(
       operationType: response?.action,
       itemName: response?.itemName,
       categoryName: response?.categoryName,
-      categoryId: response?.categoryId
+      categoryId: response?.categoryId,
+      itemsDeleted: response?.itemsDeleted,
+      itemsMoved: response?.itemsMoved
     })
   }
 )
