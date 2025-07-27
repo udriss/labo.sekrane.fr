@@ -776,17 +776,6 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
             onViewModeChange={handleViewModeChange}
           />
 
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => {
-              setSelectedChemical(null)
-              setIsFormOpen(true)
-            }}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            Ajouter un réactif
-          </Button>
         </Stack>
                 {/* Affichage selon le mode de vue */}
         {viewMode === 'cards' ? renderCardsView() : renderListView()}

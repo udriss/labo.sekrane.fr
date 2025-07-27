@@ -1,12 +1,37 @@
+// app/chemicals/page.tsx
+
 "use client"
 
 import { useState, useEffect } from "react"
 import {
   Container, Typography, Alert, CircularProgress, Box, Tabs, Tab, Paper
 } from "@mui/material"
+import { 
+  Science, 
+  Inventory, 
+  Add 
+} from "@mui/icons-material"
 import { ChemicalsList } from "@/components/chemicals/chemicals-list"
 import { ChemicalForm } from "@/components/chemicals/chemical-form"
 import { Chemical } from "@/types/prisma"
+
+// Fonction helper pour gérer localStorage
+const getStoredTabValue = (): number => {
+  try {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem('chemicalsTabValue')
+      if (savedTab !== null) {
+        const parsedValue = parseInt(savedTab, 10)
+        if (!isNaN(parsedValue) && parsedValue >= 0 && parsedValue <= 1) {
+          return parsedValue
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors de la lecture du localStorage:', error)
+  }
+  return 0
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -38,7 +63,17 @@ export default function ChemicalsPage() {
   const [chemicals, setChemicals] = useState<Chemical[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [tabValue, setTabValue] = useState(0)
+  const [tabValue, setTabValue] = useState(getStoredTabValue)
+
+  const saveTabValue = (value: number): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chemicalsTabValue', value.toString())
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde dans localStorage:', error)
+    }
+  }
 
   const fetchChemicals = async () => {
     try {
@@ -68,6 +103,7 @@ export default function ChemicalsPage() {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    saveTabValue(newValue);
   };
 
   if (loading) {
@@ -92,18 +128,43 @@ export default function ChemicalsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h3" component="h1" gutterBottom>
-        🧪 Inventaire Chimique
-      </Typography>
+      <Box display="flex" alignItems="center" gap={1} mb={1}>
+        <Science sx={{ fontSize: 40, color: 'primary.main' }} />
+        <Typography variant="h3" component="h1">
+          Inventaire des réactifs chimiques
+        </Typography>
+      </Box>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
         Gestion des réactifs chimiques du laboratoire
       </Typography>
       
       <Paper sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="chemical tabs">
-            <Tab label="📋 Inventaire" id="chemical-tab-0" aria-controls="chemical-tabpanel-0" />
-            <Tab label="➕ Ajouter un réactif" id="chemical-tab-1" aria-controls="chemical-tabpanel-1" />
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            aria-label="chemical tabs"
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: 64,
+                fontWeight: 500,
+              }
+            }}
+          >
+            <Tab 
+              label="Inventaire" 
+              icon={<Inventory />} 
+              iconPosition="start"
+              id="chemical-tab-0" 
+              aria-controls="chemical-tabpanel-0" 
+            />
+            <Tab 
+              label="Ajouter un réactif" 
+              icon={<Add />} 
+              iconPosition="start"
+              id="chemical-tab-1" 
+              aria-controls="chemical-tabpanel-1" 
+            />
           </Tabs>
         </Box>
         
@@ -114,7 +175,7 @@ export default function ChemicalsPage() {
         <TabPanel value={tabValue} index={1}>
           <ChemicalForm onSuccess={() => {
             fetchChemicals();
-            setTabValue(0); // Retourner à l'onglet inventaire après ajout
+            // Ne pas changer de tab automatiquement pour respecter le choix de l'utilisateur
           }} />
         </TabPanel>
       </Paper>

@@ -10,7 +10,7 @@ import {
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
-  Add, Delete, InfoOutlined
+  Add, Delete, InfoOutlined, School
 } from '@mui/icons-material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
@@ -19,7 +19,7 @@ import { CalendarEvent, EventType } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
-
+import { useSession } from 'next-auth/react'
 
 interface EditEventDialogProps {
   open: boolean
@@ -30,6 +30,10 @@ interface EditEventDialogProps {
   chemicals: any[]
   classes: string[]
   isMobile?: boolean
+  userClasses: string[]
+  customClasses: string[]
+  setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
+  saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
 }
 
 const EVENT_TYPES = {
@@ -47,6 +51,10 @@ export function EditEventDialog({
   materials,
   chemicals,
   classes,
+  userClasses,
+  customClasses,
+  saveNewClass,
+  setCustomClasses,
   isMobile = false
 }: EditEventDialogProps) {
   const [loading, setLoading] = useState(false)
@@ -57,10 +65,12 @@ export function EditEventDialog({
   const [chemicalInputValue, setChemicalInputValue] = useState('')
   const [chemicalsWithForecast, setChemicalsWithForecast] = useState<any[]>([])
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
-
+  const [classInputValue, setClassInputValue] = useState<string>('');
   // Ajouter un état pour suivre les uploads
   const [hasUploadingFiles, setHasUploadingFiles] = useState(false)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
+
+  const { data: session } = useSession();
 
   const [timeSlots, setTimeSlots] = useState<Array<{
     date: Date | null;
@@ -796,19 +806,179 @@ const handleSave = async () => {
           {/* Classe et salle */}
           {formData.type === 'TP' && (
             <>
-              <Autocomplete
-                freeSolo
-                options={classes}
-                value={formData.class}
-                onChange={(_, newValue) => setFormData({ ...formData, class: newValue || '' })}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Classe"
-                    placeholder="Sélectionnez ou saisissez une classe..."
-                  />
-                )}
-              />
+<Autocomplete
+  freeSolo
+  options={userClasses}
+  value={formData.class}
+  onChange={async (_, newValue) => {
+    // Si newValue est null ou vide, on réinitialise
+    if (!newValue) {
+      setFormData({ ...formData, class: '' });
+      return;
+    }
+    
+    // Mettre à jour le formulaire
+    setFormData({ ...formData, class: newValue });
+    
+    // Vérifier si c'est une nouvelle classe personnalisée
+    if (!userClasses.includes(newValue) && !customClasses.includes(newValue)) {
+      try {
+        // Sauvegarder la nouvelle classe
+        const result = await saveNewClass(newValue, 'custom');
+        
+        if (result.success) {
+          // Ajouter la classe aux classes personnalisées locales
+          setCustomClasses(prev => {
+            // Vérifier qu'elle n'est pas déjà présente
+            if (!prev.includes(newValue)) {
+              return [...prev, newValue];
+            }
+            return prev;
+          });
+          
+          console.log(`Classe personnalisée "${newValue}" créée avec succès`);
+        } else {
+          console.error(`Erreur lors de l'ajout de la classe "${newValue}":`, result.error);
+          
+          // Optionnel : réinitialiser la valeur en cas d'erreur
+          // setFormData({ ...formData, class: '' });
+          
+          // Ou afficher une notification d'erreur
+          // showSnackbar(result.error || 'Erreur lors de la création de la classe', 'error');
+        }
+      } catch (error) {
+        console.error('Erreur inattendue:', error);
+      }
+    }
+  }}
+  inputValue={classInputValue || ''}
+  onInputChange={(event, newInputValue) => {
+    setClassInputValue(newInputValue);
+  }}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Classe"
+      placeholder="Sélectionnez ou saisissez une classe..."
+      helperText={
+        formData.class && !userClasses.includes(formData.class) && customClasses.includes(formData.class)
+          ? "Classe personnalisée"
+          : null
+      }
+      slotProps={{
+        input: {
+          ...params.InputProps,
+          endAdornment: (
+            <>
+              {params.InputProps.endAdornment}
+              {classInputValue && classInputValue.trim() && 
+               !userClasses.includes(classInputValue.trim()) && 
+               classInputValue.trim() !== formData.class && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={async () => {
+                      const trimmedValue = classInputValue.trim();
+                      
+                      try {
+                        // Sauvegarder la nouvelle classe
+                        const result = await saveNewClass(trimmedValue, 'custom');
+                        
+                        if (result.success) {
+                          // Définir la classe dans le formulaire
+                          setFormData({ ...formData, class: trimmedValue });
+                          
+                          // Ajouter aux classes personnalisées
+                          setCustomClasses(prev => {
+                            if (!prev.includes(trimmedValue)) {
+                              return [...prev, trimmedValue];
+                            }
+                            return prev;
+                          });
+                          
+                          // Réinitialiser l'input
+                          setClassInputValue('');
+                          
+                          // Retirer le focus
+                          (document.activeElement as HTMLElement)?.blur();
+                          
+                          console.log(`Classe personnalisée "${trimmedValue}" créée avec succès`);
+                        } else {
+                          console.error('Erreur:', result.error);
+                          // Gérer l'erreur avec une notification
+                        }
+                      } catch (error) {
+                        console.error('Erreur inattendue:', error);
+                      }
+                    }}
+                    edge="end"
+                    sx={{ 
+                      mr: -1,
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                      px: 1,
+                      "&:hover": {
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        '& .MuiTypography-root': {
+                          color: 'white',
+                        }
+                      } 
+                    }}
+                  >
+                    <Add fontSize="small" />
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ ml: 0.5, mr: 0.5 }}
+                    >
+                      Ajouter une nouvelle classe "{classInputValue}"
+                    </Typography>
+                  </IconButton>
+                </InputAdornment>
+              )}
+            </>
+          ),
+        }
+      }}
+    />
+  )}
+  renderOption={(props, option) => (
+    <li {...props}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+        <School fontSize="small" color="action" />
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="body2">
+            {option}
+          </Typography>
+          {customClasses.includes(option) && (
+            <Typography variant="caption" color="text.secondary">
+              Classe personnalisée
+            </Typography>
+          )}
+        </Box>
+        {customClasses.includes(option) && session?.user?.role === 'TEACHER' && (
+          <Chip 
+            label="Ma classe" 
+            size="small" 
+            color="secondary" 
+            sx={{ height: 20 }}
+          />
+        )}
+      </Box>
+    </li>
+  )}
+  filterOptions={(options, state) => {
+    const filtered = options.filter(option =>
+      option.toLowerCase().includes(state.inputValue.toLowerCase())
+    );
+    
+    return filtered;
+  }}
+  isOptionEqualToValue={(option, value) => 
+    option.toLowerCase() === value.toLowerCase()
+  }
+/>
 
               <TextField
                 fullWidth
@@ -1181,27 +1351,35 @@ const handleSave = async () => {
                                 <ClickAwayListener onClickAway={() => {
                                   if (tooltipOpen.actual) handleTooltipToggle('actual')
                                 }}>
-                                  <div>
-                                    <Tooltip 
-                                      title="Quantité physique actuellement disponible dans l'inventaire"
-                                      arrow
-                                      open={tooltipOpen.actual}
-                                      onClose={() => {
-                                        if (tooltipOpen.actual) handleTooltipToggle('actual')
-                                      }}
-                                      disableHoverListener
-                                      disableFocusListener
-                                      disableTouchListener
+                                <div>
+                                  <Tooltip 
+                                    title="Quantité physique actuellement disponible dans l'inventaire"
+                                    arrow
+                                    open={tooltipOpen.actual}
+                                    onClose={() => {
+                                      if (tooltipOpen.actual) handleTooltipToggle('actual')
+                                    }}
+                                    disableHoverListener
+                                    disableFocusListener
+                                    disableTouchListener
+                                    slotProps={{
+                                      popper: {
+                                      disablePortal: true,
+                                      },
+                                    }}
                                     >
+                                    <Box component="span" sx={{ display: 'inline-block' }}>
                                       <IconButton 
                                         size="small" 
                                         onClick={() => handleTooltipToggle('actual')}
                                         sx={{ p: 0.25 }}
+                                        disableRipple={false}
                                       >
                                         <InfoOutlined sx={{ fontSize: 14 }} />
                                       </IconButton>
-                                    </Tooltip>
-                                  </div>
+                                    </Box>
+                                  </Tooltip>
+                                </div>
                                 </ClickAwayListener>
                               </Box>
 
@@ -1214,18 +1392,24 @@ const handleSave = async () => {
                                   <ClickAwayListener onClickAway={() => {
                                     if (tooltipOpen.prevision) handleTooltipToggle('prevision')
                                   }}>
-                                    <div>
-                                      <Tooltip 
-                                        title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
-                                        arrow
-                                        open={tooltipOpen.prevision}
-                                        onClose={() => {
-                                          if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-                                        }}
-                                        disableHoverListener
-                                        disableFocusListener
-                                        disableTouchListener
-                                      >
+                                  <div>
+                                    <Tooltip 
+                                      title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
+                                      arrow
+                                      open={tooltipOpen.prevision}
+                                      onClose={() => {
+                                        if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                                      }}
+                                      disableHoverListener
+                                      disableFocusListener
+                                      disableTouchListener
+                                      slotProps={{
+                                      popper: {
+                                      disablePortal: true,
+                                      },
+                                    }}
+                                    >
+                                      <Box component="span" sx={{ display: 'inline-flex' }}>
                                         <IconButton 
                                           size="small" 
                                           onClick={() => handleTooltipToggle('prevision')}
@@ -1233,8 +1417,9 @@ const handleSave = async () => {
                                         >
                                           <InfoOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
                                         </IconButton>
-                                      </Tooltip>
-                                    </div>
+                                      </Box>
+                                    </Tooltip>
+                                  </div>
                                   </ClickAwayListener>
                                 </Box>
                               )}
@@ -1260,6 +1445,11 @@ const handleSave = async () => {
                                           : "Stock restant après validation de ce TP"
                                       }
                                       arrow
+                                      slotProps={{
+                                      popper: {
+                                      disablePortal: true,
+                                      },
+                                    }}
                                       open={tooltipOpen.after}
                                       onClose={() => {
                                         if (tooltipOpen.after) handleTooltipToggle('after')
@@ -1268,6 +1458,7 @@ const handleSave = async () => {
                                       disableFocusListener
                                       disableTouchListener
                                     >
+                                      <Box component="span" sx={{ display: 'inline-flex' }}>
                                       <IconButton 
                                         size="small" 
                                         onClick={() => handleTooltipToggle('after')}
@@ -1282,6 +1473,7 @@ const handleSave = async () => {
                                           }} 
                                         />
                                       </IconButton>
+                                      </Box>
                                     </Tooltip>
                                   </div>
                                 </ClickAwayListener>

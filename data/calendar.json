@@ -10,7 +10,7 @@
       "type": "TP",
       "state": "PENDING",
       "stateChanger": [],
-      "class": "Terminale STI2D",
+      "class": "Terminale STI2D 2",
       "room": "",
       "location": "",
       "materials": [
@@ -76,11 +76,12 @@
           "2025-07-27T16:56:25.383Z",
           "2025-07-27T16:57:10.908Z",
           "2025-07-27T17:06:12.711Z",
-          "2025-07-27T17:06:20.631Z"
+          "2025-07-27T17:06:20.631Z",
+          "2025-07-27T22:43:26.741Z"
         ]
       ],
       "createdAt": "2025-07-27T16:11:06.836Z",
-      "updatedAt": "2025-07-27T17:06:20.631Z",
+      "updatedAt": "2025-07-27T22:43:26.741Z",
       "column": 0,
       "totalColumns": 1,
       "visualStartDate": "2025-07-27T06:00:00.000Z",

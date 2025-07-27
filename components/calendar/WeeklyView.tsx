@@ -313,8 +313,8 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     color="primary"
                     sx={{
                       position: 'absolute',
-                      top: 8,
-                      right: 8,
+                      top: 20,
+                      left: 20,
                       '& .MuiBadge-badge': {
                         fontSize: '0.7rem',
                         height: 18,

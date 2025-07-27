@@ -422,7 +422,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     if (!event) return []
     
     const documents: DocumentFile[] = []
-    console.log('Event files:', event.files)
     
     // Nouveau format avec array files
     if (event.files && Array.isArray(event.files) && event.files.length > 0) {
@@ -597,10 +596,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   if (!event) return null
 
   const documents = getDocuments()
-  console.log('Documents:', documents)
 
-  console.log('Event details:', event)
-  
   return (
     <>
     <Dialog 

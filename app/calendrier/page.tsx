@@ -8,6 +8,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
 import { fr } from "date-fns/locale"
 import { isSameDay } from "date-fns"
 import { useSession } from "next-auth/react"
+import { usePersistedTab } from '@/lib/hooks/usePersistedTab'
 
 // Import des composants existants
 import {
@@ -218,9 +219,9 @@ export default function CalendarPage() {
 
       const result = await response.json()
       
-      // Afficher un message de succès avec le nombre de créneaux créés
+      // Afficher un message de succès avec le nombre de créneaux ajoutés
       if (result.createdEvents && result.createdEvents.length > 0) {
-        console.log(`Événement modifié et ${result.createdEvents.length} créneaux supplémentaires créés`)
+        console.log(`Événement modifié et ${result.createdEvents.length} créneaux supplémentaires ajoutés avec succès`)
       } else {
         console.log('Événement modifié avec succès')
       }
@@ -293,15 +294,19 @@ export default function CalendarPage() {
     )
   }
 
+
+  
+console.log('session:', session)
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} 
     adapterLocale={fr}>
-      <Container maxWidth="xl" 
+      <Container maxWidth="lg" 
           sx={{ 
             py: { xs: 2, md: 4 },
             px: { xs: 2, sm: 2, md: 3 },
             width: '100%',
-            maxWidth: '100%',
+            maxWidth: 'lg !important',
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}
@@ -445,6 +450,10 @@ export default function CalendarPage() {
           chemicals={chemicals}
           classes={[...userClasses, ...customClasses]}
           isMobile={isMobile}
+          userClasses={userClasses}
+          customClasses={customClasses}
+          setCustomClasses={setCustomClasses}
+          saveNewClass={saveNewClass}
         />
 
         <CreateTPDialog
