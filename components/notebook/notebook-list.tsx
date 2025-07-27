@@ -208,7 +208,7 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
                                 )}
                                 {entry.chemicals && entry.chemicals.length > 0 && (
                                   <Chip 
-                                    label={`${entry.chemicals.length} produit${entry.chemicals.length > 1 ? 's' : ''}`}
+                                    label={`${entry.chemicals.length} réactif${entry.chemicals.length > 1 ? 's' : ''}`}
                                     size="small"
                                     variant="outlined"
                                   />

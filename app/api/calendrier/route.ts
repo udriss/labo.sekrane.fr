@@ -187,7 +187,7 @@ async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
     chemicals: event.chemicals?.map((chemical: Chemical) => {
       const chemicalInventory = chemicalsMap.get(chemical.id)
       
-      // Si on trouve le produit chimique dans l'inventaire
+      // Si on trouve le réactif chimique dans l'inventaire
       if (chemicalInventory) {
         return {
           ...chemical,
@@ -199,7 +199,7 @@ async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
         }
       }
       
-      // Si on ne trouve pas le produit, retourner tel quel
+      // Si on ne trouve pas le réactif, retourner tel quel
       return chemical
     }) || []
   }))

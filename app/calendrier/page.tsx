@@ -73,6 +73,37 @@ export default function CalendarPage() {
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   const { tpPresets } = useCalendarData()
 
+  useEffect(() => {
+  // Observer les changements dans le DOM
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' || mutation.type === 'attributes') {
+        const vw = window.innerWidth;
+        document.querySelectorAll('*').forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.right > vw) {
+            console.warn('Element causing overflow after load:', {
+              element: el,
+              class: el.className,
+              right: rect.right,
+              width: rect.width
+            });
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class']
+  });
+
+  return () => observer.disconnect();
+}, []);
+
   // Récupération du rôle utilisateur
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -259,16 +290,26 @@ export default function CalendarPage() {
       </Container>
     )
   }
-
+const isVerySmallScreen = useMediaQuery('(max-width:440px)');
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-      <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
+      <Container maxWidth="xl" 
+          sx={{ 
+            py: { xs: 2, md: 4 },
+            px: { xs: 1, sm: 2, md: 3 },
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+          }}
+          >
+        <Box sx={{ width: '100%', maxWidth: '100%', mb: 3 }}>
         <CalendarHeader 
           userRole={userRole}
           onCreateTP={handleCreateTPEvent}
           onCreateLaborantin={handleCreateLaborantinEvent}
         />
-
+        </Box>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -283,18 +324,59 @@ export default function CalendarPage() {
 
         <CalendarStats events={events} getTodayEvents={getTodayEvents} />
 
-        <Paper elevation={2}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={(e, newValue) => setTabValue(newValue)}
-              sx={{ px: 2 }}
-              variant="standard"
-            >
-              <Tab label="Vue hebdomadaire" />
-              <Tab label="Liste des événements" />
-              <Tab label="Planning du jour" />
-            </Tabs>
+          <Paper 
+            elevation={2}
+            sx={{
+              width: '100%',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              boxSizing: 'border-box'
+            }}
+          >
+          <Box sx={{ 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              width: '100%',
+              overflow: 'hidden'
+            }}>
+
+
+
+<Tabs 
+  value={tabValue} 
+  variant="scrollable"
+  scrollButtons="auto"
+  allowScrollButtonsMobile
+  onChange={(e, newValue) => setTabValue(newValue)}
+  sx={{ 
+    width: '100%',
+    maxWidth: '100%',
+    '& .MuiTabs-scrollButtons': {
+      '&.Mui-disabled': {
+        opacity: 0.3
+      },
+      // Sur très petit écran, cacher les boutons de scroll
+      display: isVerySmallScreen ? 'none' : 'flex'
+    },
+    '& .MuiTabs-scroller': {
+      overflowX: 'auto !important',
+      maxWidth: '100%'
+    },
+    '& .MuiTab-root': {
+      minWidth: isVerySmallScreen ? 0 : { xs: 100, sm: 120 },
+      flex: isVerySmallScreen ? 1 : 'initial', // Répartir équitablement sur très petit écran
+      px: isVerySmallScreen ? 0.5 : { xs: 1, sm: 2 },
+      fontSize: isVerySmallScreen ? '0.65rem' : { xs: '0.75rem', sm: '0.875rem' },
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }}
+>
+  <Tab label={isVerySmallScreen ? "Hebdo" : "Vue hebdomadaire"} />
+  <Tab label={isVerySmallScreen ? "Jour" : "Planning du jour"} />
+  <Tab label={isVerySmallScreen ? "Liste" : "Liste des événements"} />
+</Tabs>
           </Box>
 
 <TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
@@ -341,6 +423,7 @@ export default function CalendarPage() {
     onEventDelete={handleEventDelete}
     canEditEvent={canEditEvent}
     canValidateEvent={canValidateEvent()}
+    isMobile={isMobile}
   />
 </TabPanel>
 
@@ -353,6 +436,7 @@ export default function CalendarPage() {
     canEditEvent={canEditEvent}
     canValidateEvent={canValidateEvent()}
     onStateChange={handleStateChange}
+    isMobile={isMobile}
   />
 </TabPanel>
 
@@ -366,6 +450,7 @@ export default function CalendarPage() {
           onDelete={selectedEvent && canEditEvent(selectedEvent) ? handleEventDelete : undefined}
           onStateChange={canValidateEvent() ? handleStateChange : undefined}
           userRole={userRole}
+          isMobile={isMobile}
         />
 
         <EditEventDialog
@@ -379,6 +464,7 @@ export default function CalendarPage() {
           materials={materials}
           chemicals={chemicals}
           classes={[...userClasses, ...customClasses]}
+          isMobile={isMobile}
         />
 
         <CreateTPDialog
@@ -392,6 +478,7 @@ export default function CalendarPage() {
           setCustomClasses={setCustomClasses}
           saveNewClass={saveNewClass}
           tpPresets={tpPresets}
+          isMobile={isMobile}
         />
 
         <CreateLaborantinEventDialog
@@ -399,6 +486,7 @@ export default function CalendarPage() {
           onClose={() => setLaborantinDialogOpen(false)}
           onSuccess={fetchEvents}
           materials={materials}
+          isMobile={isMobile}
         />
 
         <FloatingActionButtons

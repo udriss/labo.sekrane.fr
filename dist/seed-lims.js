@@ -366,7 +366,7 @@ function main() {
                                     groups: ['Groupe C'],
                                     createdById: teacher.id,
                                     objectives: 'Apprendre les bases de la synthèse organique',
-                                    procedure: '1. Mélanger les réactifs\n2. Chauffer sous reflux\n3. Purifier le produit',
+                                    procedure: '1. Mélanger les réactifs\n2. Chauffer sous reflux\n3. Purifier le réactif',
                                     status: 'SCHEDULED',
                                 },
                             }),

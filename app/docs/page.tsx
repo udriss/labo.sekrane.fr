@@ -493,7 +493,7 @@ export default function DocsPage() {
                       🎯 Utilisation type :
                     </Typography>
                     <ol>
-                      <li>Cliquez sur "Ajouter un produit"</li>
+                      <li>Cliquez sur "Ajouter un réactif"</li>
                       <li>Commencez à taper le nom - l'auto-complétion vous aidera</li>
                       <li>Renseignez la quantité et la localisation</li>
                       <li>Définissez une date d'expiration pour les alertes automatiques</li>
@@ -1129,7 +1129,7 @@ export default function DocsPage() {
                 <AccordionDetails>
                   <Typography variant="body2">
                     Le système détecte automatiquement les doublons potentiels lors de l'ajout 
-                    d'un nouveau produit (par nom, formule ou numéro CAS). Vous pouvez alors 
+                    d'un nouveau réactif (par nom, formule ou numéro CAS). Vous pouvez alors 
                     choisir de fusionner ou créer quand même.
                   </Typography>
                 </AccordionDetails>

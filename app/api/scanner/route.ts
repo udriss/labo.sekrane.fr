@@ -18,7 +18,7 @@ async function readJsonFile(filePath: string, defaultValue: any = {}) {
   }
 }
 
-// Fonction pour rechercher un produit par code
+// Fonction pour rechercher un réactif par code
 async function searchProductByCode(code: string) {
   try {
     // Recherche dans les produits chimiques
@@ -49,7 +49,7 @@ async function searchProductByCode(code: string) {
 
     return null
   } catch (error) {
-    console.error('Erreur recherche produit:', error)
+    console.error('Erreur recherche réactif:', error)
     throw error
   }
 }
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     
     if (!result) {
       return NextResponse.json(
-        { error: 'Produit non trouvé', code },
+        { error: 'Réactif non trouvé', code },
         { status: 404 }
       )
     }

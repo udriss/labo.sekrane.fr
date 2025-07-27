@@ -396,7 +396,7 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
         <DialogTitle>Confirmer la suppression</DialogTitle>
         <DialogContent>
           <Typography>
-            Êtes-vous sûr de vouloir supprimer le produit chimique "{chemical.name}" ?
+            Êtes-vous sûr de vouloir supprimer le réactif chimique "{chemical.name}" ?
             Cette action est irréversible.
           </Typography>
         </DialogContent>

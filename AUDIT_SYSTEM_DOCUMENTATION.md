@@ -100,7 +100,7 @@ await auditLogger.log({
   details: {
     before: null,
     after: newChemical,
-    reason: 'Nouveau produit chimique ajouté'
+    reason: 'Nouveau réactif chimique ajouté'
   },
   context: {
     ip: request.ip,

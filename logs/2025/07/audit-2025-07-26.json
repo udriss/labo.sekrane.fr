@@ -62046,7 +62046,7 @@
         "status": 200,
         "statusText": "",
         "data": {
-          "message": "Produit chimique supprimé avec succès",
+          "message": "Réactif chimique supprimé avec succès",
           "deletedChemical": {
             "id": "CHEM_1753540740051_lodw1w9un",
             "name": "Acide phosphorique"

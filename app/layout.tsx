@@ -196,6 +196,7 @@ export default function RootLayout({
   const pageInfo = getCurrentPageInfo(pathname || '/');
   const theme = createAppTheme(appSettings.theme, appSettings);
 
+  
   // Appliquer les styles globaux
   useEffect(() => {
     if (appSettings.theme) {
@@ -224,7 +225,7 @@ export default function RootLayout({
     <html lang="fr">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <meta name="description" content="LIMS - Système de gestion intégré pour laboratoire de chimie. Gestion des produits chimiques, matériel, cahiers de TP et planification." />
         <meta name="keywords" content="LIMS, laboratoire, chimie, gestion, inventaire, TP, matériel, produits chimiques" />
         
@@ -314,7 +315,7 @@ export default function RootLayout({
                         <Box
                           sx={{
                             flexGrow: 1,
-                            p: { xs: 2, sm: 3, md: 4 },
+                            p: { xs: 0, sm: 3, md: 4 },
                             position: 'relative',
                           }}
                         >

@@ -257,7 +257,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
   }
 
   const handleDeleteChemical = async (chemicalId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit chimique ?')) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce réactif chimique ?')) {
       return
     }
 
@@ -785,30 +785,30 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
             }}
             sx={{ whiteSpace: 'nowrap' }}
           >
-            Ajouter un produit
+            Ajouter un réactif
           </Button>
         </Stack>
                 {/* Affichage selon le mode de vue */}
         {viewMode === 'cards' ? renderCardsView() : renderListView()}
 
-        {/* Message si aucun produit trouvé */}
+        {/* Message si aucun réactif trouvé */}
         {sortedChemicals.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Inventory sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              Aucun produit trouvé
+              Aucun réactif trouvé
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {search || statusFilter !== "ALL" 
                 ? "Essayez de modifier vos critères de recherche."
-                : "Commencez par ajouter un produit chimique."
+                : "Commencez par ajouter un réactif chimique."
               }
             </Typography>
           </Box>
         )}
       </Stack>
 
-      {/* Dialog pour ajouter/modifier un produit */}
+      {/* Dialog pour ajouter/modifier un réactif */}
       <Dialog
         open={isFormOpen}
         onClose={() => {
@@ -819,7 +819,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
         fullWidth
       >
         <DialogTitle>
-          {selectedChemical ? "Modifier le produit chimique" : "Ajouter un nouveau produit chimique"}
+          {selectedChemical ? "Modifier le réactif chimique" : "Ajouter un nouveau réactif chimique"}
           {selectedChemical && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               ID: {selectedChemical.id}
@@ -838,7 +838,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
         </DialogContent>
       </Dialog>
 
-      {/* Dialog pour les détails du produit */}
+      {/* Dialog pour les détails du réactif */}
       <Dialog
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}

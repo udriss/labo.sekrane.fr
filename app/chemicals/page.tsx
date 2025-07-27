@@ -103,7 +103,7 @@ export default function ChemicalsPage() {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="chemical tabs">
             <Tab label="📋 Inventaire" id="chemical-tab-0" aria-controls="chemical-tabpanel-0" />
-            <Tab label="➕ Ajouter un produit" id="chemical-tab-1" aria-controls="chemical-tabpanel-1" />
+            <Tab label="➕ Ajouter un réactif" id="chemical-tab-1" aria-controls="chemical-tabpanel-1" />
           </Tabs>
         </Box>
         

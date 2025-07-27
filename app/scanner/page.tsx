@@ -51,8 +51,8 @@ function TabPanel(props: TabPanelProps) {
 
 // Define mockProducts for testing purposes
 const mockProducts: Record<string, { name: string }> = {
-  "1234567890123": { name: "Produit A" },
-  "9876543210987": { name: "Produit B" },
+  "1234567890123": { name: "Réactif A" },
+  "9876543210987": { name: "Réactif B" },
 };
 
 export default function ScannerPage() {
@@ -124,7 +124,7 @@ export default function ScannerPage() {
           id: Date.now().toString(),
           code,
           type: "chemical",
-          name: "Produit inconnu",
+          name: "Réactif inconnu",
           status: "not_found",
           timestamp: new Date()
         };
@@ -581,7 +581,7 @@ export default function ScannerPage() {
                 Saisie manuelle d'un code
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                Si le scanner ne fonctionne pas, vous pouvez saisir manuellement le code du produit.
+                Si le scanner ne fonctionne pas, vous pouvez saisir manuellement le code du réactif.
               </Typography>
               
               <Box component="form" 
@@ -595,7 +595,7 @@ export default function ScannerPage() {
                 <TextField
                   name="code"
                   label="Code-barres ou QR code"
-                  placeholder="Saisissez le code du produit"
+                  placeholder="Saisissez le code du réactif"
                   fullWidth
                   margin="normal"
                   helperText="Exemple: 1234567890123"
@@ -633,10 +633,10 @@ export default function ScannerPage() {
         </TabPanel>
       </Paper>
 
-      {/* Dialog détails du produit */}
+      {/* Dialog détails du réactif */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {selectedResult ? `Détails - ${selectedResult.name}` : "Détails du produit"}
+          {selectedResult ? `Détails - ${selectedResult.name}` : "Détails du réactif"}
         </DialogTitle>
         <DialogContent>
           {selectedResult && (
@@ -655,7 +655,7 @@ export default function ScannerPage() {
                     </Box>
                   </Box>
                   <Chip 
-                    label={selectedResult.status === "found" ? "Produit trouvé" : "Produit non trouvé"} 
+                    label={selectedResult.status === "found" ? "Réactif trouvé" : "Réactif non trouvé"} 
                     color={getStatusColor(selectedResult.status) as any}
                     sx={{ mb: 2 }}
                   />

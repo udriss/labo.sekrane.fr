@@ -26,7 +26,7 @@ export async function calculateChemicalsForecast(
       return eventDate >= now && event.id !== currentEventId
     })
     
-    // Calculer les quantités demandées par produit chimique
+    // Calculer les quantités demandées par réactif chimique
     const requestedQuantities = new Map<string, number>()
     
     futureEvents.forEach(event => {
@@ -40,7 +40,7 @@ export async function calculateChemicalsForecast(
       }
     })
     
-    // Ajouter les informations de stock prévisionnel à chaque produit chimique
+    // Ajouter les informations de stock prévisionnel à chaque réactif chimique
     return chemicals.map(chemical => ({
       ...chemical,
       totalRequested: requestedQuantities.get(chemical.id) || 0,

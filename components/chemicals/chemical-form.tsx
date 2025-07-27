@@ -294,7 +294,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
           )}
 
           <Typography variant="h6">
-            {chemical ? "Modifier le produit" : "Nouveau produit chimique"}
+            {chemical ? "Modifier le réactif" : "Nouveau réactif chimique"}
           </Typography>
 
           {/* Alerte de doublon */}
@@ -337,7 +337,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
                 {...params}
                 fullWidth
                 required
-                label="Nom du produit"
+                label="Nom du réactif"
                 placeholder="Commencez à taper le nom..."
                 autoComplete="off"
                 slotProps={{

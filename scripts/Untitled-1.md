@@ -10,7 +10,7 @@
 - dans l'étape 3 "Compléter les informations", les volumes doivent ^pouvoir être agrémentés par des valeurs perso. Les valeurs persos ajoutés sont ensuite réutilisable lors d'un prochain ajout même par un autre user
 
 PROBLÈME 2 dans "/var/www/labo.sekrane.fr/app/chemicals" :
-- lors de l'ajout d'un Nouveau produit chimique lorsque je clique sur "Choisir une molécule prédéfinie (optionnel)" : 
+- lors de l'ajout d'un Nouveau réactif chimique lorsque je clique sur "Choisir une molécule prédéfinie (optionnel)" : 
 [Error] A props object containing a "key" prop is being spread into JSX:
   let props = {key: someKey, component: ..., tabIndex: ..., role: ..., id: ..., onMouseMove: ..., onClick: ..., onTouchStart: ..., data-option-index: ..., aria-disabled: ..., aria-selected: ..., className: ..., children: ...};
   <ForwardRef(Box) {...props} />
@@ -107,7 +107,7 @@ PROBLÈME 5 dans "/var/www/labo.sekrane.fr/app/admin/classes" :
 
 
 PROBLÈME 1 dans "/var/www/labo.sekrane.fr/app/chemicals" :
-- mettre en place un système de reconnaissance auto soit par le nom soit par le cas. lorsqu'on commence à rentrer le nom du produit, une liste doit appariatre affichant les potentiel composés. De même pour le cas qui doit affiche le nombre mais aussi le nom de la molécule associée en petit en dessous
+- mettre en place un système de reconnaissance auto soit par le nom soit par le cas. lorsqu'on commence à rentrer le nom du réactif, une liste doit appariatre affichant les potentiel composés. De même pour le cas qui doit affiche le nombre mais aussi le nom de la molécule associée en petit en dessous
 
 PROBLÈME 2 DANS "/var/www/labo.sekrane.fr/app/materiel" :
 - dans "Modifier l'équipement", le champ de volumes doit êtr eun select avec les valeurs par défaut associé à la vverreire sélectionnée. On peut ajouter une valeur perso si besoin

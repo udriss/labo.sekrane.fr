@@ -17,6 +17,7 @@ import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
 import { useSession } from "next-auth/react"
+import { is } from 'date-fns/locale'
 
 
 interface CreateTPDialogProps {
@@ -30,6 +31,7 @@ interface CreateTPDialogProps {
   setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
   saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
   tpPresets: any[]
+  isMobile?: boolean
 }
 
 export function CreateTPDialog({
@@ -42,10 +44,11 @@ export function CreateTPDialog({
   customClasses,
   setCustomClasses,
   saveNewClass,
-  tpPresets
+  tpPresets,
+  isMobile = false
 }: CreateTPDialogProps) {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
   
   const [activeStep, setActiveStep] = useState(0)
   const [uploadMethod, setUploadMethod] = useState<'file' | 'manual' | 'preset' | null>(null)
@@ -1098,7 +1101,7 @@ const handleCreateCalendarEvent = async () => {
       options={chemicals}
       getOptionLabel={(option) => {
         if (typeof option === 'string') return option;
-        return `${option.name || 'Produit chimique'} - ${option.quantity || 0}${option.unit || ''}`;
+        return `${option.name || 'Réactif chimique'} - ${option.quantity || 0}${option.unit || ''}`;
       }}
       value={null} // Toujours null pour permettre de nouvelles sélections
       inputValue={chemicalInputValue || ''} // Contrôler la valeur du TextField
@@ -1107,7 +1110,7 @@ const handleCreateCalendarEvent = async () => {
       }}
       onChange={(_, newValue) => {
         if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
-          // Ajouter le produit chimique avec une quantité par défaut
+          // Ajouter le réactif chimique avec une quantité par défaut
           handleFormDataChange('chemicals', [
             ...formData.chemicals,
             { ...newValue, requestedQuantity: 1 }
@@ -1119,7 +1122,7 @@ const handleCreateCalendarEvent = async () => {
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Ajouter un produit chimique"
+          label="Ajouter un réactif chimique"
           placeholder="Rechercher et sélectionner..."
         />
       )}
@@ -1182,6 +1185,7 @@ const handleCreateCalendarEvent = async () => {
             key={chemical.id || index}
             sx={{
               display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
               alignItems: 'center',
               gap: 2,
               p: 2,
@@ -1191,132 +1195,136 @@ const handleCreateCalendarEvent = async () => {
               backgroundColor: 'background.paper'
             }}
           >
-            {/* Nom du produit chimique */}
-<Box sx={{ flex: 1 }}>
-  <Typography variant="body1">
-    {chemical.name || 'Produit chimique'}
-  </Typography>
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
-    
-    {/* Stock actuel */}
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Typography variant="body2" color="text.secondary">
-        Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
-      </Typography>
-      <ClickAwayListener onClickAway={() => {
-        if (tooltipOpen.actual) handleTooltipToggle('actual')
-      }}>
-        <div>
-          <Tooltip 
-            title="Quantité physique actuellement disponible dans l'inventaire"
-            arrow
-            open={tooltipOpen.actual}
-            onClose={() => {
-              if (tooltipOpen.actual) handleTooltipToggle('actual')
-            }}
-            disableHoverListener
-            disableFocusListener
-            disableTouchListener
-          >
-            <IconButton 
-              size="small" 
-              onClick={() => handleTooltipToggle('actual')}
-              sx={{ p: 0.25 }}
-            >
-              <InfoOutlined sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-        </div>
-      </ClickAwayListener>
-    </Box>
-    
-    {/* Stock prévisionnel */}
-    {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Typography variant="body2" color="warning.main">
-          Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
-        </Typography>
-        <ClickAwayListener onClickAway={() => {
-          if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-        }}>
-          <div>
-            <Tooltip 
-              title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
-              arrow
-              open={tooltipOpen.prevision}
-              onClose={() => {
-                if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-              }}
-              disableHoverListener
-              disableFocusListener
-              disableTouchListener
-            >
-              <IconButton 
-                size="small" 
-                onClick={() => handleTooltipToggle('prevision')}
-                sx={{ p: 0.25 }}
-              >
-                <InfoOutlined sx={{ fontSize: 16, color: 'warning.main' }} />
-              </IconButton>
-            </Tooltip>
-          </div>
-        </ClickAwayListener>
-      </Box>
-    )}
-    
-    {/* Stock après commande */}
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Typography 
-        variant="body2" 
-        color={
-          stockAfterRequest < 0 ? 'error' : 
-          stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
-          'success.main'
-        }
-      >
-        Après ce TP : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
-      </Typography>
-      <ClickAwayListener onClickAway={() => {
-        if (tooltipOpen.after) handleTooltipToggle('after')
-      }}>
-        <div>
-          <Tooltip 
-            title={
-              stockAfterRequest < 0 
-                ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
-                : stockAfterRequest < (chemical.minQuantity || 0)
-                ? "Attention : le stock passera sous le seuil minimum recommandé"
-                : "Stock restant après validation de ce TP"
-            }
-            arrow
-            open={tooltipOpen.after}
-            onClose={() => {
-              if (tooltipOpen.after) handleTooltipToggle('after')
-            }}
-            disableHoverListener
-            disableFocusListener
-            disableTouchListener
-          >
-            <IconButton 
-              size="small" 
-              onClick={() => handleTooltipToggle('after')}
-              sx={{ p: 0.25 }}
-            >
-              <InfoOutlined 
-                sx={{ 
-                  fontSize: 16,
-                  color: stockAfterRequest < 0 ? 'error.main' : 
-                         stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
-                         'success.main'
-                }} 
-              />
-            </IconButton>
-          </Tooltip>
-        </div>
-      </ClickAwayListener>
-    </Box>
-  </Box>
-</Box>
+            {/* Nom du réactif chimique */}
+            <Box sx={{ display: 'flex', 
+              flexDirection: 'column', 
+              width: isMobile ? '100%' : 'auto',}}>
+              <Typography variant="body1">
+                {chemical.name || 'Réactif chimique'}
+              </Typography>
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
+                
+                {/* Stock actuel */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
+                  </Typography>
+                  <ClickAwayListener onClickAway={() => {
+                    if (tooltipOpen.actual) handleTooltipToggle('actual')
+                  }}>
+                    <div>
+                      <Tooltip 
+                        title="Quantité physique actuellement disponible dans l'inventaire"
+                        arrow
+                        open={tooltipOpen.actual}
+                        onClose={() => {
+                          if (tooltipOpen.actual) handleTooltipToggle('actual')
+                        }}
+                        disableHoverListener
+                        disableFocusListener
+                        disableTouchListener
+                      >
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleTooltipToggle('actual')}
+                          sx={{ p: 0.25 }}
+                        >
+                          <InfoOutlined sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </ClickAwayListener>
+                </Box>
+                
+                {/* Stock prévisionnel */}
+                {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="body2" color="warning.main">
+                      Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
+                    </Typography>
+                    <ClickAwayListener onClickAway={() => {
+                      if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                    }}>
+                      <div>
+                        <Tooltip 
+                          title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
+                          arrow
+                          open={tooltipOpen.prevision}
+                          onClose={() => {
+                            if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                          }}
+                          disableHoverListener
+                          disableFocusListener
+                          disableTouchListener
+                        >
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleTooltipToggle('prevision')}
+                            sx={{ p: 0.25 }}
+                          >
+                            <InfoOutlined sx={{ fontSize: 16, color: 'warning.main' }} />
+                          </IconButton>
+                        </Tooltip>
+                      </div>
+                    </ClickAwayListener>
+                  </Box>
+                )}
+                
+                {/* Stock après commande */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography 
+                    variant="body2" 
+                    color={
+                      stockAfterRequest < 0 ? 'error' : 
+                      stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                      'success.main'
+                    }
+                  >
+                    Après ce TP : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
+                  </Typography>
+                  <ClickAwayListener onClickAway={() => {
+                    if (tooltipOpen.after) handleTooltipToggle('after')
+                  }}>
+                    <div>
+                      <Tooltip 
+                        title={
+                          stockAfterRequest < 0 
+                            ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
+                            : stockAfterRequest < (chemical.minQuantity || 0)
+                            ? "Attention : le stock passera sous le seuil minimum recommandé"
+                            : "Stock restant après validation de ce TP"
+                        }
+                        arrow
+                        open={tooltipOpen.after}
+                        onClose={() => {
+                          if (tooltipOpen.after) handleTooltipToggle('after')
+                        }}
+                        disableHoverListener
+                        disableFocusListener
+                        disableTouchListener
+                      >
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleTooltipToggle('after')}
+                          sx={{ p: 0.25 }}
+                        >
+                          <InfoOutlined 
+                            sx={{ 
+                              fontSize: 16,
+                              color: stockAfterRequest < 0 ? 'error.main' : 
+                                    stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                    'success.main'
+                            }} 
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </ClickAwayListener>
+                </Box>
+              </Box>
+
+            </Box>
             {/* Input pour la quantité demandée */}
             <TextField
               label={`Quantité (${chemical.unit || 'unité'})`}

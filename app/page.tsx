@@ -909,7 +909,7 @@ useEffect(() => {
                         py: 1.5
                       }}
                     >
-                      Scanner un produit
+                      Scanner un réactif
                     </Button>
                     <Button 
                       component={Link}

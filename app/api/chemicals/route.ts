@@ -106,7 +106,7 @@ export const POST = withAudit(
     // Lire l'inventaire actuel
     const inventory = await readChemicalsInventory()
     
-    // Créer le nouveau produit chimique
+    // Créer le nouveau réactif chimique
     const newChemical = {
       id: `CHEM_INV_${Array.from({ length: 12 }, () => Math.floor(Math.random() * 36).toString(36).toUpperCase()).join('')}`,
       name: body.name,
@@ -176,11 +176,11 @@ export const PUT = withAudit(
     // Lire l'inventaire actuel
     const inventory = await readChemicalsInventory()
 
-    // Trouver le produit chimique à mettre à jour
+    // Trouver le réactif chimique à mettre à jour
     const chemicalIndex = inventory.chemicals.findIndex((c: any) => c.id === id)
     
     if (chemicalIndex === -1) {
-      return NextResponse.json({ error: 'Produit chimique non trouvé' }, { status: 404 })
+      return NextResponse.json({ error: 'Réactif chimique non trouvé' }, { status: 404 })
     }
 
     // Stocker l'ancien état pour l'audit

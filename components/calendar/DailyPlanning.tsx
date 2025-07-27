@@ -60,6 +60,7 @@ interface DailyPlanningProps {
   canEditEvent?: (event: CalendarEvent) => boolean
   canValidateEvent?: boolean
   onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
+  isMobile?: boolean
 }
 
 const EVENT_TYPES = {
@@ -76,7 +77,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   onEventDelete,
   canEditEvent,
   canValidateEvent,
-  onStateChange
+  onStateChange,
+  isMobile = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | EventType>('all')
@@ -93,20 +95,38 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
   }
 
-  const getStateIcon = (state: string | undefined) => {
-    switch (state) {
-      case 'PENDING':
-        return <HourglassEmpty sx={{ fontSize: 20 }} />
-      case 'VALIDATED':
-        return <CheckCircle sx={{ fontSize: 20 }} />
-      case 'CANCELLED':
-        return <Cancel sx={{ fontSize: 20 }} />
-      case 'MOVED':
-        return <SwapHoriz sx={{ fontSize: 20 }} />
-      default:
-        return null
+
+  // Fonction pour obtenir l'icône et la couleur d'état
+  const getStateInfo = (state: string | undefined) => {
+      switch (state) {
+        case 'PENDING':
+          return { 
+            icon: <HourglassEmpty sx={{ fontSize: 20 }} />, 
+            color: 'warning',
+            label: 'En attente' 
+          }
+        case 'VALIDATED':
+          return { 
+            icon: <CheckCircle sx={{ fontSize: 20 }} />, 
+            color: 'success',
+            label: 'Validé' 
+          }
+        case 'CANCELLED':
+          return { 
+            icon: <Cancel sx={{ fontSize: 20 }} />, 
+            color: 'error',
+            label: 'Annulé' 
+          }
+        case 'MOVED':
+          return { 
+            icon: <SwapHoriz sx={{ fontSize: 20 }} />, 
+            color: 'info',
+            label: 'Déplacé' 
+          }
+        default:
+          return null
+      }
     }
-  }
 
   const getStateColor = (state: string | undefined): any => {
     switch (state) {
@@ -164,7 +184,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     const showEditDelete = canEditEvent && canEditEvent(event)
     const showValidationActions = canValidateEvent && event.state === 'PENDING'
     const isCancelled = event.state === 'CANCELLED'
-    
+    const stateInfo = getStateInfo(event.state)
+
       const menuItems = []
 
   // Ajouter les items de modification/suppression
@@ -297,125 +318,137 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
       }
 
       >
-        <ListItemAvatar>
+        <ListItemIcon>
           <Badge
             overlap="circular"
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            badgeContent={getStateIcon(event.state)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            badgeContent={stateInfo && (
+              <Avatar 
+                sx={{ 
+                  width: 22, 
+                  height: 22, 
+                  bgcolor: `${stateInfo.color}.main`,
+                  border: '2px solid white'
+                }}
+              >
+                {React.cloneElement(stateInfo.icon, { sx: { fontSize: 14 } })}
+              </Avatar>
+            )}
           >
-            <Avatar sx={{ bgcolor: isCancelled ? 'grey.500' : typeInfo.color }}>
+            <Avatar 
+              sx={{ 
+                bgcolor: isCancelled ? 'grey.500' : typeInfo.color, 
+                width: 44, 
+                height: 44 
+              }}
+            >
               {typeInfo.icon}
             </Avatar>
           </Badge>
-        </ListItemAvatar>
-        
-<ListItemText
-  primary={
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography
-        variant="subtitle1"
-        sx={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
-      >
-        {event.title}
-      </Typography>
-      {event.state && (
-        <Chip
-          label={
-            event.state === 'PENDING' ? 'En attente' :
-            event.state === 'VALIDATED' ? 'Validé' :
-            event.state === 'CANCELLED' ? 'Annulé' :
-            event.state === 'MOVED' ? 'Déplacé' : event.state
+        </ListItemIcon>
+        <ListItemText
+          primary={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
+              >
+                {event.title}
+              </Typography>
+              {stateInfo && (
+                <Chip 
+                  label={stateInfo.label}
+                  size="small"
+                  color={stateInfo.color as any}
+                  sx={{ height: 24 }}
+                />
+              )}
+            </Box>
           }
-          size="small"
-          color={getStateColor(event.state)}
-        />
-      )}
-    </Box>
-  }
-  secondary={
-    <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-      <Typography variant="body2" color="text.secondary" component="div">
-        🕒 {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
-      </Typography>
-      {event.class && (
-        <Typography variant="body2" color="text.secondary" component="div">
-          🎓 {event.class}
-        </Typography>
-      )}
-      {event.room && (
-        <Typography variant="body2" color="text.secondary" component="div">
-          📍 {event.room}
-        </Typography>
-      )}
-      
-      {/* Chips existants */}
-      <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-        {event.materials && event.materials.length > 0 && (
-          <Chip
-            size="small"
-            label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
-          />
-        )}
-        {event.chemicals && event.chemicals.length > 0 && (
-          <Chip
-            size="small"
-            label={`${event.chemicals.length} produit${event.chemicals.length > 1 ? 's' : ''}`}
-            color="secondary"
-          />
-        )}
-      </Stack>
-
-            {/* Section documents */}
-      {event.files && event.files.length > 0 && (
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary" component="div">
-            📎 {event.files.length} document{event.files.length > 1 ? 's' : ''} joint{event.files.length > 1 ? 's' : ''} :
-          </Typography>
-          <Stack spacing={0.3} sx={{ mt: 0.5, ml: 2 }}>
-            {event.files.map((file, index) => (
-              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">•</Typography>
-                <Typography
-                  component="a"
-                  href={file.fileUrl.startsWith('/uploads/') 
-                    ? `/api/calendrier/files?path=${encodeURIComponent(file.fileUrl)}`
-                    : file.fileUrl
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="caption"
-                  sx={{
-                    color: 'primary.main',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    },
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {file.fileName}
-                  {file.fileSize && (
-                    <Typography component="span" variant="caption" color="text.secondary">
-                      ({formatFileSize(file.fileSize)})
-                    </Typography>
-                  )}
+          secondary={
+            <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" component="div">
+                🕒 {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
+              </Typography>
+              {event.class && (
+                <Typography variant="body2" color="text.secondary" component="div">
+                  🎓 {event.class}
                 </Typography>
-              </Box>
-            ))}
-          </Stack>
-        </Box>
-      )}
-    </Stack>
-  }
-  slotProps={{
-    secondary: { component: 'div' }
-  }}
-/>
-      </ListItem>
+              )}
+              {event.room && (
+                <Typography variant="body2" color="text.secondary" component="div">
+                  📍 {event.room}
+                </Typography>
+              )}
+              
+              {/* Chips existants */}
+              <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+                {event.materials && event.materials.length > 0 && (
+                  <Chip
+                    size="small"
+                    label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
+                  />
+                )}
+                {event.chemicals && event.chemicals.length > 0 && (
+                  <Chip
+                    size="small"
+                    label={`${event.chemicals.length} réactif${event.chemicals.length > 1 ? 's' : ''}`}
+                    color="secondary"
+                  />
+                )}
+              </Stack>
+
+                    {/* Section documents */}
+              {event.files && event.files.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary" component="div">
+                    📎 {event.files.length} document{event.files.length > 1 ? 's' : ''} joint{event.files.length > 1 ? 's' : ''} :
+                  </Typography>
+                  <Stack spacing={0.3} sx={{ mt: 0.5, ml: 2 }}>
+                    {event.files.map((file, index) => (
+                      <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">•</Typography>
+                        <Typography
+                          component="a"
+                          href={file.fileUrl.startsWith('/uploads/') 
+                            ? `/api/calendrier/files?path=${encodeURIComponent(file.fileUrl)}`
+                            : file.fileUrl
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="caption"
+                          sx={{
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            },
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.5
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {file.fileName}
+                          {file.fileSize && (
+                            <Typography component="span" variant="caption" color="text.secondary">
+                              ({formatFileSize(file.fileSize)})
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </Stack>
+          }
+          slotProps={{
+            secondary: { component: 'div' }
+          }}
+        />
+        </ListItem>
     )
   }
 
@@ -518,6 +551,7 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
       {/* Dialog de confirmation pour annulation/déplacement */}
       <Dialog 
+        fullScreen={isMobile}
         open={validationDialog.open} 
         onClose={() => {
           setValidationDialog({ open: false, event: null, action: null })

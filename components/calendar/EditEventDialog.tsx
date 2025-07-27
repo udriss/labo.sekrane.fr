@@ -29,6 +29,7 @@ interface EditEventDialogProps {
   materials: any[]
   chemicals: any[]
   classes: string[]
+  isMobile?: boolean
 }
 
 const EVENT_TYPES = {
@@ -45,7 +46,8 @@ export function EditEventDialog({
   onSave,
   materials,
   chemicals,
-  classes
+  classes,
+  isMobile = false
 }: EditEventDialogProps) {
   const [loading, setLoading] = useState(false)
   const [showMultipleSlots, setShowMultipleSlots] = useState(false)
@@ -384,12 +386,15 @@ export function EditEventDialog({
 
   return (
     <Dialog
-          open={open}
+      fullScreen={isMobile}
+      open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: { minHeight: '400px' }
+      slotProps={{
+        paper: {
+          sx: { minHeight: '400px' }
+        }
       }}
     >
       <DialogTitle>
@@ -948,7 +953,7 @@ export function EditEventDialog({
                   getOptionLabel={(option) => {
                     if (typeof option === 'string') return option
                     const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity
-                    return `${option.name || 'Produit chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`
+                    return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`
                   }}
                   value={null}
                   inputValue={chemicalInputValue || ''}
@@ -970,7 +975,7 @@ export function EditEventDialog({
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ajouter un produit chimique"
+                      label="Ajouter un réactif chimique"
                       placeholder="Rechercher et sélectionner..."
                     />
                   )}
@@ -1063,7 +1068,7 @@ export function EditEventDialog({
                         >
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2">
-                              {chemical.name || 'Produit chimique'}
+                              {chemical.name || 'Réactif chimique'}
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
                               {/* Stock actuel */}

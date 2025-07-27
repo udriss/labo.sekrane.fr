@@ -71,7 +71,7 @@ export const GET = withAudit(
 
     if (!chemical) {
       return NextResponse.json(
-        { error: "Produit chimique non trouvé" },
+        { error: "Réactif chimique non trouvé" },
         { status: 404 }
       );
     }
@@ -97,7 +97,7 @@ export const PUT = withAudit(
     // Lire le fichier JSON
     const inventory = await readChemicalsInventory();
     
-    // Trouver et mettre à jour le produit chimique
+    // Trouver et mettre à jour le réactif chimique
     const chemicalIndex = inventory.chemicals.findIndex((c: any) => c.id === chemicalId);
     
     if (chemicalIndex === -1) {
@@ -140,7 +140,7 @@ export const DELETE = withAudit(
     // Lire le fichier JSON
     const inventory = await readChemicalsInventory();
     
-    // Trouver l'index du produit chimique à supprimer
+    // Trouver l'index du réactif chimique à supprimer
     const chemicalIndex = inventory.chemicals.findIndex((c: any) => c.id === chemicalId);
     
     if (chemicalIndex === -1) {
@@ -150,14 +150,14 @@ export const DELETE = withAudit(
     // Stocker le nom avant suppression pour l'audit
     const deletedChemical = inventory.chemicals[chemicalIndex];
 
-    // Supprimer le produit chimique du tableau
+    // Supprimer le réactif chimique du tableau
     inventory.chemicals.splice(chemicalIndex, 1);
 
     // Sauvegarder dans le fichier JSON
     await writeChemicalsInventory(inventory);
 
     return NextResponse.json({ 
-      message: "Produit chimique supprimé avec succès",
+      message: "Réactif chimique supprimé avec succès",
       deletedChemical: { id: deletedChemical.id, name: deletedChemical.name }
     });
   },

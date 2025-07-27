@@ -19,16 +19,18 @@ interface CreateLaborantinEventDialogProps {
   onClose: () => void
   onSuccess: () => void
   materials: any[]
+  isMobile?: boolean
 }
 
 export function CreateLaborantinEventDialog({
   open,
   onClose,
   onSuccess,
-  materials
+  materials,
+  isMobile
 }: CreateLaborantinEventDialogProps) {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+
   
   const [activeStep, setActiveStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -195,8 +197,10 @@ const isOutsideBusinessHours = useMemo(() => {
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{
-        sx: { minHeight: isMobile ? '100%' : '500px' }
+      slotProps={{
+        paper: {
+          sx: { minHeight: isMobile ? '100%' : '500px' }
+        }
       }}
     >
       <DialogTitle>

@@ -2,10 +2,10 @@
 
 ## ✅ PROBLÈME 2 - Page Chemicals (RÉSOLU)
 ### 🔧 Problème corrigé : Modal de modification des chemicals
-- **Avant** : Le modal affichait toujours "Ajouter un nouveau produit chimique" même lors de la modification
+- **Avant** : Le modal affichait toujours "Ajouter un nouveau réactif chimique" même lors de la modification
 - **Après** : 
-  - Le titre du modal s'adapte dynamiquement : "Modifier le produit chimique" pour l'édition, "Ajouter un nouveau produit chimique" pour la création
-  - Affichage de l'ID du produit chimique dans le modal de modification
+  - Le titre du modal s'adapte dynamiquement : "Modifier le réactif chimique" pour l'édition, "Ajouter un nouveau réactif chimique" pour la création
+  - Affichage de l'ID du réactif chimique dans le modal de modification
   - Le formulaire ChemicalForm est désormais correctement pré-rempli avec les données du chemical sélectionné
   - Réinitialisation correcte du selectedChemical lors de la fermeture du modal
 

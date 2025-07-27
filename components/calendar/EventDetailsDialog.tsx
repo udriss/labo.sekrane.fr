@@ -52,6 +52,7 @@ interface EventDetailsDialogProps {
   onDelete?: (event: CalendarEvent) => void
   onStateChange?: (event: CalendarEvent) => void
   userRole?: UserRole
+  isMobile?: boolean
 }
 
 // Définition corrigée de EVENT_TYPES
@@ -360,7 +361,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   onEdit,
   onDelete, 
   onStateChange,
-  userRole
+  userRole,
+  isMobile = false
 }) => {
 
   const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
@@ -583,7 +585,11 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   
   return (
     <>
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+    fullScreen={isMobile}
+    open={open} 
+    onClose={onClose} 
+    maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
@@ -751,7 +757,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                           <Typography key={index} variant="body2">
                             • {typeof chemical === 'string' 
                                 ? chemical 
-                                : (chemical.name || 'Produit')}
+                                : (chemical.name || 'Réactif')}
                             {typeof chemical === 'object' && chemical.formula && ` (${chemical.formula})`}
                             {typeof chemical === 'object' && chemical.requestedQuantity && (
                               <Typography component="span" color="primary.main">
@@ -1095,6 +1101,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
       {/* Dialog de confirmation pour annulation/déplacement */}
       <Dialog 
+        fullScreen={isMobile}
         open={validationDialog.open} 
         onClose={() => setValidationDialog({ open: false, action: null })}
         maxWidth="sm"
