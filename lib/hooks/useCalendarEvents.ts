@@ -36,5 +36,6 @@ export function useCalendarEvents() {
     fetchEvents()
   }, [])
 
-  return { events, loading, error, fetchEvents }
+  // Ajouter setEvents dans l'objet retourné
+  return { events, loading, error, fetchEvents, setEvents }
 }

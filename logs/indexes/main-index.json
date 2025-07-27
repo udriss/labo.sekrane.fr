@@ -28,19 +28,22 @@
     "CALENDAR": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
     ]
   },
   "actions": {
     "UPDATE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
     ],
     "CREATE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
     ],
     "READ": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-24.json",
@@ -50,12 +53,14 @@
     ],
     "DELETE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
     ]
   },
   "dates": {
     "2025-07-24": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-25.json",
     "2025-07-25": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
-    "2025-07-26": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
+    "2025-07-26": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json",
+    "2025-07-27": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json"
   }
 }

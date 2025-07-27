@@ -1,6 +1,17 @@
 // types/calendar.ts
 export type EventType = 'TP' | 'MAINTENANCE' | 'INVENTORY' | 'OTHER'
 
+export type EventState = 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED'
+
+export interface StateChange {
+  userId: string
+  date: string
+  fromState: EventState
+  toState: EventState
+  reason?: string
+}
+
+
 export interface FileInfo {
   fileName: string
   fileUrl: string
@@ -16,6 +27,8 @@ export interface CalendarEvent {
   startDate: Date | string
   endDate: Date | string
   type: EventType
+  state?: EventState
+  stateChanger?: StateChange[]
   class?: string | null
   room?: string | null
   location?: string | null

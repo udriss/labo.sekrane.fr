@@ -7,7 +7,7 @@ export interface AuditUser {
 }
 
 export interface AuditAction {
-  type: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT';
+  type: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT' | 'STATE_CHANGE';
   module: 'USERS' | 'CHEMICALS' | 'EQUIPMENT' | 'ROOMS' | 'CALENDAR' | 'ORDERS' | 'SECURITY' | 'SYSTEM';
   entity: string;
   entityId?: string;

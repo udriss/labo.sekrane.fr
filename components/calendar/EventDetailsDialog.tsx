@@ -16,6 +16,7 @@ import {
   CardMedia,
   Tooltip,
   Snackbar,
+  TextField,
   Alert as MuiAlert
 } from '@mui/material'
 import {
@@ -27,9 +28,13 @@ import {
 import { 
   Science, Schedule, Assignment, EventAvailable, Edit, Delete, 
   History, Person, PictureAsPdf, Description, Image, 
-  InsertDriveFile, OpenInNew, Download
+  InsertDriveFile, OpenInNew, Download, CheckCircle, Cancel, SwapHoriz,
+  HourglassEmpty,
 } from '@mui/icons-material'
-import { CalendarEvent, EventType } from '@/types/calendar'
+import { CalendarEvent, EventType, EventState } from '@/types/calendar'
+import { UserRole } from "@/types/global";
+
+import { useSession } from 'next-auth/react'
 
 interface DocumentFile {
   fileName: string
@@ -45,6 +50,8 @@ interface EventDetailsDialogProps {
   onClose: () => void
   onEdit?: (event: CalendarEvent) => void
   onDelete?: (event: CalendarEvent) => void
+  onStateChange?: (event: CalendarEvent) => void
+  userRole?: UserRole
 }
 
 // Définition corrigée de EVENT_TYPES
@@ -55,6 +62,18 @@ const EVENT_TYPES = {
   OTHER: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
 }
 
+
+// Fonction helper pour les labels de changement d'état
+const getStateChangeLabel = (fromState: string, toState: string): string => {
+  const stateLabels: Record<string, string> = {
+    'PENDING': 'En attente',
+    'VALIDATED': 'Validé',
+    'CANCELLED': 'Annulé',
+    'MOVED': 'Déplacé'
+  }
+  
+  return `${stateLabels[fromState] || fromState} → ${stateLabels[toState] || toState}`
+}
 // Fonction pour déterminer le type de fichier
 const getFileType = (fileName: string): string => {
   const extension = fileName.split('.').pop()?.toLowerCase() || ''
@@ -339,7 +358,9 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   event, 
   onClose,
   onEdit,
-  onDelete 
+  onDelete, 
+  onStateChange,
+  userRole
 }) => {
 
   const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
@@ -352,6 +373,19 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     isConsecutive: boolean
   }>>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Récupérer les informations de session pour le rôle de l'utilisateur
+  const { data: session } = useSession()
+
+  // Vérifier si l'utilisateur a le droit de modifier ou supprimer l'événement
+  const [validationDialog, setValidationDialog] = useState<{
+    open: boolean
+    action: 'validate' | 'cancel' | 'move' | null
+  }>({ open: false, action: null })
+  const [validationReason, setValidationReason] = useState('')
+
+    // Vérifier si l'utilisateur peut valider
+  const canValidate = userRole === 'LABORANTIN' || userRole === 'ADMINLABO'
 
   const getEventTypeInfo = (type: EventType) => {
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
@@ -393,6 +427,36 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     }
     
     return documents
+  }
+
+    // Fonction pour gérer le changement d'état
+  const handleStateChange = async (newState: EventState, reason?: string) => {
+    try {
+      const response = await fetch(`/api/calendrier?id=${event?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          state: newState,
+          reason
+        })
+      })
+
+      if (response.ok) {
+        const updatedEvent = await response.json()
+        if (onStateChange) {
+          onStateChange(updatedEvent)
+        }
+        setValidationDialog({ open: false, action: null })
+        setValidationReason('')
+        onClose()
+      } else {
+        console.error('Erreur lors du changement d\'état')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+    }
   }
 
   useEffect(() => {
@@ -518,17 +582,41 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   console.log('Event details:', event)
   
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h6">Détails de la séance</Typography>
-            <Chip 
-              label={getEventTypeInfo(event.type).label} 
-              color="primary" 
-              size="small"
-            />
-          </Box>
+              <Typography variant="h6">Détails de la séance</Typography>
+              <Chip 
+                label={getEventTypeInfo(event.type).label} 
+                color="primary" 
+                size="small"
+              />
+              {event?.state && (
+                <Chip
+                  label={
+                    event.state === 'PENDING' ? 'En attente' :
+                    event.state === 'VALIDATED' ? 'Validé' :
+                    event.state === 'CANCELLED' ? 'Annulé' :
+                    event.state === 'MOVED' ? 'Déplacé' : event.state
+                  }
+                  color={
+                    event.state === 'PENDING' ? 'warning' :
+                    event.state === 'VALIDATED' ? 'success' :
+                    event.state === 'CANCELLED' ? 'error' :
+                    'default'
+                  }
+                  size="small"
+                  icon={
+                    event.state === 'VALIDATED' ? <CheckCircle /> :
+                    event.state === 'CANCELLED' ? <Cancel /> :
+                    event.state === 'MOVED' ? <SwapHoriz /> :
+                    undefined
+                  }
+                />
+              )}
+            </Box>
           <Box display="flex" gap={1}>
             {onEdit && (
               <IconButton
@@ -862,11 +950,105 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               </Box>
             </>
           )}
+
+{/* Ajouter dans la section historique, après l'historique des modifications */}
+{event.stateChanger && event.stateChanger.length > 0 && (
+  <>
+    <Divider sx={{ my: 2 }} />
+    <Box>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <SwapHoriz /> Historique des validations
+      </Typography>
+      
+      <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
+        {event.stateChanger.map((change, index) => {
+          const userInfo = usersInfo[change.userId]
+          const userName = userInfo?.name || userInfo?.email || `Utilisateur ${change.userId}`
+          
+          return (
+            <TimelineItem key={index}>
+              <TimelineOppositeContent
+                sx={{ m: 'auto 0' }}
+                variant="body2"
+                color="text.secondary"
+              >
+                {formatDate(change.date)}
+              </TimelineOppositeContent>
+              
+              <TimelineSeparator>
+                {index > 0 && <TimelineConnector />}
+                <TimelineDot 
+                  color={
+                    change.toState === 'VALIDATED' ? 'success' :
+                    change.toState === 'CANCELLED' ? 'error' :
+                    change.toState === 'MOVED' ? 'info' :
+                    'grey'
+                  }
+                >
+                  {change.toState === 'VALIDATED' && <CheckCircle />}
+                  {change.toState === 'CANCELLED' && <Cancel />}
+                  {change.toState === 'MOVED' && <SwapHoriz />}
+                  {change.toState === 'PENDING' && <HourglassEmpty />}
+                </TimelineDot>
+                {event.stateChanger && index < event.stateChanger.length - 1 && <TimelineConnector />}
+              </TimelineSeparator>
+              
+              <TimelineContent sx={{ py: '12px', px: 2 }}>
+                <Typography variant="body2" component="div">
+                  <strong>{userName}</strong>
+                </Typography>
+                <Typography variant="caption" component="div">
+                  {getStateChangeLabel(change.fromState, change.toState)}
+                </Typography>
+                {change.reason && (
+                  <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    Raison : {change.reason}
+                  </Typography>
+                )}
+              </TimelineContent>
+            </TimelineItem>
+          )
+        })}
+      </Timeline>
+    </Box>
+  </>
+)}
         </Stack>
       </DialogContent>
       
       <DialogActions>
         <Button onClick={onClose}>Fermer</Button>
+
+          {/* Boutons pour les laborantins */}
+          {canValidate && event?.state === 'PENDING' && (
+            <>
+              <Button
+                onClick={() => handleStateChange('VALIDATED')}
+                variant="contained"
+                color="success"
+                startIcon={<CheckCircle />}
+              >
+                Valider TP
+              </Button>
+              <Button
+                onClick={() => setValidationDialog({ open: true, action: 'move' })}
+                variant="outlined"
+                startIcon={<SwapHoriz />}
+              >
+                Déplacer TP
+              </Button>
+              <Button
+                onClick={() => setValidationDialog({ open: true, action: 'cancel' })}
+                variant="outlined"
+                color="error"
+                startIcon={<Cancel />}
+              >
+                Annuler TP
+              </Button>
+            </>
+          )}
+        
+        {/* Boutons existants pour modification/suppression */}
         {onEdit && (
           <Button 
             onClick={() => {
@@ -910,6 +1092,47 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
         </MuiAlert>
       </Snackbar>
     </Dialog>
+
+      {/* Dialog de confirmation pour annulation/déplacement */}
+      <Dialog 
+        open={validationDialog.open} 
+        onClose={() => setValidationDialog({ open: false, action: null })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {validationDialog.action === 'cancel' ? 'Annuler le TP' : 
+           validationDialog.action === 'move' ? 'Déplacer le TP' : ''}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Raison (optionnel)"
+            fullWidth
+            multiline
+            rows={3}
+            value={validationReason}
+            onChange={(e) => setValidationReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setValidationDialog({ open: false, action: null })}>
+            Annuler
+          </Button>
+          <Button
+            onClick={() => {
+              const newState = validationDialog.action === 'cancel' ? 'CANCELLED' : 'MOVED'
+              handleStateChange(newState, validationReason)
+            }}
+            variant="contained"
+            color={validationDialog.action === 'cancel' ? 'error' : 'primary'}
+          >
+            Confirmer
+          </Button>
+        </DialogActions>
+      </Dialog>
+  </>
   )
 }
 

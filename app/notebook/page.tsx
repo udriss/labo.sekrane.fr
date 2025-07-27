@@ -46,27 +46,29 @@ export default function NotebookPage() {
         onClose={handleFormCancel}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: { minHeight: '70vh' }
+        slotProps={{
+          paper: {
+        sx: { minHeight: '70vh' }
+          }
         }}
       >
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {editingEntry ? 'Modifier le TP' : 'Nouveau TP'}
           <IconButton onClick={handleFormCancel}>
-            <Close />
+        <Close />
           </IconButton>
         </DialogTitle>
         <DialogContent>
           {editingEntry ? (
-            <NotebookForm
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
+        <NotebookForm
+          onSuccess={handleFormSuccess}
+          onCancel={handleFormCancel}
+        />
           ) : (
-            <NotebookFormAdvanced
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
+        <NotebookFormAdvanced
+          onSuccess={handleFormSuccess}
+          onCancel={handleFormCancel}
+        />
           )}
         </DialogContent>
       </Dialog>

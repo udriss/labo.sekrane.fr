@@ -5,7 +5,7 @@
 import React from 'react'
 import {
   Box, Stack, IconButton, Chip, Typography, Card, CardContent,
-  Tooltip, Paper, useTheme, alpha, Badge
+  Tooltip, Paper, useTheme, alpha, Badge, GlobalStyles
 } from '@mui/material'
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval,
@@ -17,7 +17,8 @@ import { fr } from "date-fns/locale"
 import {
   ChevronLeft, ChevronRight, Today,
   Science, Schedule, Assignment, EventAvailable,
-  Circle, Edit, Delete 
+  Circle, Edit, Delete, CheckCircle, 
+  Cancel, SwapHoriz, HourglassEmpty 
 } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
 
@@ -184,6 +185,24 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
   const handleToday = () => {
     setCurrentDate(new Date())
   }
+  
+    // Fonction pour obtenir l'icône d'état
+    const getStateIcon = (state: string | undefined, size: 'small' | 'medium' = 'small') => {
+      const iconSize = size === 'small' ? 14 : 18
+      
+      switch (state) {
+        case 'PENDING':
+          return <HourglassEmpty sx={{ fontSize: iconSize, color: 'warning.dark' }} />
+        case 'VALIDATED':
+          return <CheckCircle sx={{ fontSize: iconSize, color: 'success.light' }} />
+        case 'CANCELLED':
+          return <Cancel sx={{ fontSize: iconSize, color: 'error.light' }} />
+        case 'MOVED':
+          return <SwapHoriz sx={{ fontSize: iconSize, color: 'info.light' }} />
+        default:
+          return null
+      }
+    }
 
   return (
     <Box>
@@ -405,7 +424,8 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
               
               // Opacité basée sur le nombre de colonnes (plus il y a de chevauchements, plus c'est transparent)
               const baseOpacity = event.totalColumns > 1 ? 0.85 : 1
-              const opacity = isPastEvent ? baseOpacity * 0.6 : baseOpacity
+              const stateOpacity = event.state === 'CANCELLED' ? 0.5 : 1
+              const opacity = isPastEvent ? baseOpacity * 0.6 * stateOpacity : baseOpacity * stateOpacity
 
               // Déterminer les radius en fonction des débordements
               const borderRadius = {
@@ -429,6 +449,16 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                           Classe: {event.class}
                         </Typography>
                       )}
+                      {event.state && (
+                        <Typography variant="caption" display="block">
+                          État: {
+                            event.state === 'PENDING' ? 'En attente' :
+                            event.state === 'VALIDATED' ? 'Validé' :
+                            event.state === 'CANCELLED' ? 'Annulé' :
+                            event.state === 'MOVED' ? 'Déplacé' : event.state
+                          }
+                        </Typography>
+                      )}
                       {event.startsBeforeDay && (
                         <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
                           Commence le {format(event.startDate, 'dd/MM')}
@@ -445,7 +475,10 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                 >
                 <Card
                   sx={{
-                    bgcolor: alpha(typeInfo.color, opacity),
+                    bgcolor: alpha(
+                      event.state === 'CANCELLED' ? theme.palette.grey[500] : typeInfo.color, 
+                      opacity
+                    ),
                     color: 'white',
                     cursor: 'pointer',
                     position: 'absolute',
@@ -460,36 +493,40 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     borderTopRightRadius: borderRadius.topRight,
                     borderBottomLeftRadius: borderRadius.bottomLeft,
                     borderBottomRightRadius: borderRadius.bottomRight,
-                      '&::before': event.startsBeforeSchedule ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '4px solid transparent',
-                        borderRight: '4px solid transparent',
-                        borderBottom: `6px solid ${alpha(theme.palette.common.white, 0.5)}`,
-                      } : {},
-                      '&::after': (event.endsAfterSchedule || event.endsAfterDay) ? {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: 0,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '4px solid transparent',
-                        borderRight: '4px solid transparent',
-                        borderTop: `6px solid ${alpha(theme.palette.common.white, 0.5)}`,
-                      } : {},
-                      '&:hover': { 
-                        transform: 'scale(1.02)',
-                        boxShadow: theme.shadows[8],
-                        zIndex: 10 + event.column,
+                    textDecoration: event.state === 'CANCELLED' ? 'line-through' : 'none',
+                    '&::before': event.startsBeforeSchedule ? {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 0,
+                      height: 0,
+                      borderLeft: '4px solid transparent',
+                      borderRight: '4px solid transparent',
+                      borderBottom: `6px solid ${alpha(theme.palette.common.white, 0.5)}`,
+                    } : {},
+                    '&::after': (event.endsAfterSchedule || event.endsAfterDay) ? {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: 0,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 0,
+                      height: 0,
+                      borderLeft: '4px solid transparent',
+                      borderRight: '4px solid transparent',
+                      borderTop: `6px solid ${alpha(theme.palette.common.white, 0.5)}`,
+                    } : {},
+                    '&:hover': { 
+                      transform: 'scale(1.02)',
+                      boxShadow: theme.shadows[8],
+                      zIndex: 10 + event.column,
+                      opacity: 1,
+                      '& .event-actions': {
                         opacity: 1
                       }
+                    }
                   }}
                   onClick={(e) => {
                     // Empêcher le clic sur les boutons de déclencher l'ouverture du détail
@@ -499,6 +536,35 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     onEventClick(event)
                   }}
                 >
+                  {/* Icône d'état positionnée en haut à droite */}
+                  {event.state && height > 30 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        margin: 'auto',
+                        width: '50%',
+                        aspectRatio: '1 / 1',
+                        maxWidth: '50%',
+                        maxHeight: '50%',
+                        zIndex: 4,
+                        bgcolor: 'rgba(255,255,255,0.9)',
+                        borderRadius: '50%',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {getStateIcon(event.state, height > 50 ? 'medium' : 'small')}
+                    </Box>
+                  )}
+
+
+
                   <CardContent sx={{ 
                       p: 1, 
                       height: '100%',
@@ -543,6 +609,8 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         )}
                       </Stack>
                     </CardContent>
+                  
+                  
                   {/* Boutons d'action */}
                   <Box
                     className="event-actions"
@@ -667,7 +735,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
         </Box>
       </Paper>
 
-      {/* Légende améliorée */}
+{/* Légende améliorée avec états */}
       <Stack direction="column" spacing={2} sx={{ mt: 3 }}>
         <Stack 
           direction="row" 
@@ -688,6 +756,55 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
               }}
             />
           ))}
+        </Stack>
+
+        {/* Légende des états */}
+        <Stack 
+          direction="row" 
+          spacing={2} 
+          sx={{ justifyContent: 'center' }}
+          flexWrap="wrap"
+        >
+          <Chip
+            icon={<HourglassEmpty sx={{ fontSize: 16 }} />}
+            label="En attente"
+            size="small"
+            sx={{ 
+              '& .MuiChip-icon': { 
+                color: 'warning.main' 
+              }
+            }}
+          />
+          <Chip
+            icon={<CheckCircle sx={{ fontSize: 16 }} />}
+            label="Validé"
+            size="small"
+            sx={{ 
+              '& .MuiChip-icon': { 
+                color: 'success.main' 
+              }
+            }}
+          />
+          <Chip
+            icon={<Cancel sx={{ fontSize: 16 }} />}
+            label="Annulé"
+            size="small"
+            sx={{ 
+              '& .MuiChip-icon': { 
+                color: 'error.main' 
+              }
+            }}
+          />
+          <Chip
+            icon={<SwapHoriz sx={{ fontSize: 16 }} />}
+            label="Déplacé"
+            size="small"
+            sx={{ 
+              '& .MuiChip-icon': { 
+                color: 'info.main' 
+              }
+            }}
+          />
         </Stack>
         
         {/* Indicateurs de débordement */}

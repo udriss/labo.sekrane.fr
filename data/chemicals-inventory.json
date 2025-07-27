@@ -30,7 +30,7 @@
       "updatedAt": "2025-07-23T08:52:48.121Z",
       "supplier": "",
       "location": "Hotte de synthèse",
-      "quantityPrevision": 2.4000000000000004
+      "quantityPrevision": 1.4000000000000004
     },
     {
       "id": "CHEM_INV_02ZP4BCDZ3G4",
@@ -224,7 +224,8 @@
       "notes": null,
       "createdAt": "2025-07-23T14:36:55.835Z",
       "updatedAt": "2025-07-24T14:11:17.898Z",
-      "supplier": null
+      "supplier": null,
+      "quantityPrevision": 2631.6
     },
     {
       "id": "CHEM_INV_0RUP4BADFOGF",

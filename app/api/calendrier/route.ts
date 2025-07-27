@@ -254,9 +254,10 @@ export async function GET(request: NextRequest) {
 export const POST = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions)
-    const userEmail = session?.user?.email
+    const userRole = session?.user?.role
     const userId = session?.user?.id
-
+    const initialState = (userRole === 'TEACHER' || userRole === 'ADMIN') ? 'PENDING' : 'VALIDATED'
+    
     const body = await request.json()
     const { 
       title, 
@@ -374,14 +375,18 @@ export const POST = withAudit(
 
         const startDateTime = new Date(`${date}T${slot.startTime}`)
         const endDateTime = new Date(`${date}T${slot.endTime}`)
+        
 
         eventsToCreate.push({
-          id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          title: title || 'TP',
+          id: `EVENT_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+          title: title || 'Sans titre',
+          name: type === 'TP' ? session?.user?.name : (title || 'TP'),
           description: description || null,
           startDate: startDateTime.toISOString(),
           endDate: endDateTime.toISOString(),
-          type: type || 'TP',
+          type: type || 'Type inconnu',
+          state: initialState,
+          stateChanger: [],
           class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
           room: room || null,
           location: location || null,
@@ -402,12 +407,15 @@ export const POST = withAudit(
     } else if (startDate && endDate) {
       // Ancien format ou événements laborantin
       eventsToCreate.push({
-        id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        title: title || 'TP',
+        id: `EVENT_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+        title: title || 'Sans titre',
+        name: type === 'TP' ? session?.user?.name : (title || '-- Sans nom --'),
         description: description || null,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
-        type: type || 'TP',
+        type: type || 'Type inconnu',
+        state: initialState,
+        stateChanger: [],
         class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
         room: room || null,
         location: location || null,
@@ -759,6 +767,93 @@ export const DELETE = withAudit(
       eventTitle: response?.event?.title,
       hadFiles: !!(response?.event?.files && response?.event?.files.length > 0),
       filesCount: response?.event?.files?.length || 0
+    })
+  }
+)
+
+
+export const PATCH = withAudit(
+  async (request: NextRequest) => {
+  try {
+    const session = await getServerSession(authOptions)
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
+    // Vérifier les permissions
+    if (userRole !== 'LABORANTIN' && userRole !== 'ADMINLABO') {
+      return NextResponse.json(
+        { error: 'Vous n\'avez pas la permission de valider les événements' },
+        { status: 403 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const eventId = searchParams.get('id')
+    const body = await request.json()
+    const { state, reason } = body
+
+    if (!eventId || !state) {
+      return NextResponse.json(
+        { error: 'ID de l\'événement et nouvel état requis' },
+        { status: 400 }
+      )
+    }
+
+    const calendarData = await readCalendarFile()
+    const eventIndex = calendarData.events.findIndex((e: any) => e.id === eventId)
+
+    if (eventIndex === -1) {
+      return NextResponse.json(
+        { error: 'Événement non trouvé' },
+        { status: 404 }
+      )
+    }
+
+    const event = calendarData.events[eventIndex]
+    const previousState = event.state || 'PENDING'
+
+    // Créer l'entrée de changement d'état
+    const stateChange = {
+      userId,
+      date: new Date().toISOString(),
+      fromState: previousState,
+      toState: state,
+      reason
+    }
+
+    // Mettre à jour l'événement
+    calendarData.events[eventIndex] = {
+      ...event,
+      state,
+      stateChanger: [...(event.stateChanger || []), stateChange],
+      updatedAt: new Date().toISOString()
+    }
+
+    await writeCalendarFile(calendarData)
+
+    // Enrichir l'événement avant de le retourner
+    const enrichedEvent = (await enrichEventsWithChemicalData([calendarData.events[eventIndex]]))[0]
+
+    return NextResponse.json(enrichedEvent)
+  } catch (error) {
+    console.error('Erreur lors du changement d\'état:', error)
+    return NextResponse.json(
+      { error: 'Erreur lors du changement d\'état' },
+      { status: 500 }
+    )
+  }
+},
+  {
+    module: 'CALENDAR',
+    entity: 'event',
+    action: 'STATE_CHANGE',
+    extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
+    extractEntityIdFromResponse: (response) => response?.id,
+    customDetails: (req, response) => ({
+      eventTitle: response?.title,
+      previousState: response?.stateChanger?.slice(-1)[0]?.fromState,
+      newState: response?.state,
+      hasReason: !!response?.stateChanger?.slice(-1)[0]?.reason
     })
   }
 )

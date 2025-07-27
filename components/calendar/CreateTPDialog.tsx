@@ -217,8 +217,9 @@ const handleCreateCalendarEvent = async () => {
       throw new Error(`Erreur lors du téléchargement de ${errorFiles.length} fichier(s). Veuillez les supprimer ou réessayer.`)
     }
 
+    console.log('session user:', session?.user)
     const eventData = {
-      title: formData.title || session?.user?.name || 'Séance TP',
+      title: session?.user?.name || formData.title || 'Séance TP',
       description: formData.description,
       type: 'TP',
       classes: formData.classes,

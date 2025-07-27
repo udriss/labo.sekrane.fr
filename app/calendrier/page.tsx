@@ -34,7 +34,6 @@ import { useCalendarEvents } from '@/lib//hooks/useCalendarEvents'
 import { useReferenceData } from '@/lib//hooks/useReferenceData'
 import { UserRole } from "@/types/global";
 
-
 const TAB_INDICES = {
   CALENDAR: 0,
   LIST: 1,
@@ -51,7 +50,7 @@ export default function CalendarPage() {
   const [tabValue, setTabValue] = useState(0)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [openDialog, setOpenDialog] = useState(false)
+
   
   // États pour gérer l'affichage des détails
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -70,12 +69,9 @@ export default function CalendarPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Hooks personnalisés
-  const { events, loading, error, fetchEvents } = useCalendarEvents()
+  const { events, loading, error, fetchEvents, setEvents } = useCalendarEvents()
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   const { tpPresets } = useCalendarData()
-
-
-
 
   // Récupération du rôle utilisateur
   useEffect(() => {
@@ -112,16 +108,8 @@ export default function CalendarPage() {
     setDetailsOpen(true)
   }
 
-  
-
-
   const getTodayEvents = () => {
     return events.filter(event => isSameDay(event.startDate, new Date()))
-  }
-
-  const handleViewEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event)
-    setOpenDialog(true)
   }
 
   const handleCreateTPEvent = () => {
@@ -139,6 +127,42 @@ export default function CalendarPage() {
     setEditDialogOpen(true)
   }
 
+  // Handler pour gérer les changements d'état (validation, annulation, déplacement)
+  const handleStateChange = async (updatedEvent: CalendarEvent) => {
+    try {
+      // Mettre à jour localement l'état des événements
+      setEvents((prevEvents: CalendarEvent[]) => 
+        prevEvents.map(event => 
+          event.id === updatedEvent.id ? updatedEvent : event
+        )
+      )
+      
+      // Mettre à jour l'événement sélectionné si c'est celui qui a été modifié
+      if (selectedEvent?.id === updatedEvent.id) {
+        setSelectedEvent(updatedEvent)
+      }
+
+      // Afficher un message de succès selon l'état
+      const stateMessages: Record<string, string> = {
+        'VALIDATED': 'Événement validé avec succès',
+        'CANCELLED': 'Événement annulé',
+        'MOVED': 'Événement marqué comme déplacé',
+        'PENDING': 'Événement remis en attente'
+      }
+      
+      const message = stateMessages[updatedEvent.state || ''] || 'État de l\'événement modifié'
+      console.log(message)
+      
+      // Optionnel : afficher une notification ou un snackbar
+      // showNotification({ message, type: 'success' })
+      
+    } catch (error) {
+      console.error('Erreur lors du changement d\'état:', error)
+      // Recharger les événements en cas d'erreur
+      await fetchEvents()
+    }
+  }
+  
   // Handler pour sauvegarder les modifications
   const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     if (!eventToEdit) return
@@ -181,35 +205,35 @@ export default function CalendarPage() {
     }
   }
 
-// Handler pour supprimer un événement
-const handleEventDelete = async (event: CalendarEvent) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
-    return
-  }
-
-  try {
-    const response = await fetch(`/api/calendrier?id=${event.id}`, {
-      method: 'DELETE'
-    })
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la suppression')
+  // Handler pour supprimer un événement
+  const handleEventDelete = async (event: CalendarEvent) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+      return
     }
 
-    // Rafraîchir la liste des événements
-    await fetchEvents()
-    
-    // Fermer le dialogue de détails si ouvert
-    setDetailsOpen(false)
-    
-    // Afficher un message de succès
-    console.log('Événement supprimé avec succès')
-    
-  } catch (error) {
-    console.error('Erreur lors de la suppression:', error)
-    alert('Erreur lors de la suppression de l\'événement')
+    try {
+      const response = await fetch(`/api/calendrier?id=${event.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression')
+      }
+
+      // Rafraîchir la liste des événements
+      await fetchEvents()
+      
+      // Fermer le dialogue de détails si ouvert
+      setDetailsOpen(false)
+      
+      // Afficher un message de succès
+      console.log('Événement supprimé avec succès')
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert('Erreur lors de la suppression de l\'événement')
+    }
   }
-}
 
   // Ajout de la fonction canEditEvent
   const canEditEvent = (event: CalendarEvent): boolean => {
@@ -219,6 +243,11 @@ const handleEventDelete = async (event: CalendarEvent) => {
           userRole === 'ADMINLABO' || 
           event.createdBy === userEmail || 
           event.createdBy === userId
+  }
+
+  // Fonction pour vérifier si l'utilisateur peut valider les événements
+  const canValidateEvent = (): boolean => {
+    return userRole === 'LABORANTIN' || userRole === 'ADMINLABO'
   }
 
   if (loading) {
@@ -268,49 +297,65 @@ const handleEventDelete = async (event: CalendarEvent) => {
             </Tabs>
           </Box>
 
-          <TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
-          <DailyCalendarView
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            events={events}
-            onEventClick={handleEventClick}
-            onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
-            onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
-            canEditEvent={canEditEvent}
-          />
-          </TabPanel>
+<TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
+  <DailyCalendarView
+    currentDate={currentDate}
+    setCurrentDate={setCurrentDate}
+    events={events}
+    onEventClick={handleEventClick}  // Utilisez handleEventClick
+    onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
+    onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
+    canEditEvent={canEditEvent}
+  />
+</TabPanel>
 
-          {/* Tab 0: Vue calendrier (jour par jour sur mobile, semaine sur desktop) */}
-          <TabPanel value={tabValue} index={0}>
-            {isMobile || isTablet ? (
-              // Vue jour par jour pour mobile
-              <DailyCalendarView
-                currentDate={currentDate}
-                setCurrentDate={setCurrentDate}
-                events={events}
-                onEventClick={handleViewEvent}
-              />
-            ) : (
-              // Vue hebdomadaire pour desktop
-            <WeeklyView
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              events={events}
-              onEventClick={handleEventClick}
-              onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
-              onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
-              canEditEvent={canEditEvent}
-            />
-            )}
-          </TabPanel>
+<TabPanel value={tabValue} index={0}>
+  {isMobile || isTablet ? (
+    <DailyCalendarView
+      currentDate={currentDate}
+      setCurrentDate={setCurrentDate}
+      events={events}
+      onEventClick={handleEventClick}  // Utilisez handleEventClick
+      onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
+      onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
+      canEditEvent={canEditEvent}
+    />
+  ) : (
+    <WeeklyView
+      currentDate={currentDate}
+      setCurrentDate={setCurrentDate}
+      events={events}
+      onEventClick={handleEventClick} 
+      onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
+      onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
+      canEditEvent={canEditEvent}
+    />
+  )}
+</TabPanel>
 
-          <TabPanel value={tabValue} index={TAB_INDICES.LIST}>
-            <EventsList events={events} onEventClick={handleViewEvent} />
-          </TabPanel>
+<TabPanel value={tabValue} index={TAB_INDICES.LIST}>
+  <EventsList 
+    events={events} 
+    onEventClick={handleEventClick}  
+    onEventEdit={handleEventEdit}
+    onEventDelete={handleEventDelete}
+    canEditEvent={canEditEvent}
+    canValidateEvent={canValidateEvent()}
+  />
+</TabPanel>
 
-          <TabPanel value={tabValue} index={TAB_INDICES.DAILY}>
-            <DailyPlanning events={events} onEventClick={handleViewEvent} />
-          </TabPanel>
+<TabPanel value={tabValue} index={TAB_INDICES.DAILY}>
+  <DailyPlanning 
+    events={events} 
+    onEventClick={handleEventClick}  
+    onEventEdit={handleEventEdit}
+    onEventDelete={handleEventDelete}
+    canEditEvent={canEditEvent}
+    canValidateEvent={canValidateEvent()}
+    onStateChange={handleStateChange}
+  />
+</TabPanel>
+
         </Paper>
 
         <EventDetailsDialog
@@ -319,20 +364,22 @@ const handleEventDelete = async (event: CalendarEvent) => {
           onClose={() => setDetailsOpen(false)}
           onEdit={selectedEvent && canEditEvent(selectedEvent) ? handleEventEdit : undefined}
           onDelete={selectedEvent && canEditEvent(selectedEvent) ? handleEventDelete : undefined}
+          onStateChange={canValidateEvent() ? handleStateChange : undefined}
+          userRole={userRole}
         />
 
         <EditEventDialog
-        open={editDialogOpen}
-        event={eventToEdit}
-        onClose={() => {
-          setEditDialogOpen(false)
-          setEventToEdit(null)
-        }}
-        onSave={handleSaveEdit}
-        materials={materials}
-        chemicals={chemicals}
-        classes={[...userClasses, ...customClasses]}
-      />
+          open={editDialogOpen}
+          event={eventToEdit}
+          onClose={() => {
+            setEditDialogOpen(false)
+            setEventToEdit(null)
+          }}
+          onSave={handleSaveEdit}
+          materials={materials}
+          chemicals={chemicals}
+          classes={[...userClasses, ...customClasses]}
+        />
 
         <CreateTPDialog
           open={createDialogOpen}

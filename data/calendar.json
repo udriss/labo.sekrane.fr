@@ -54,20 +54,23 @@
       "modifiedBy": []
     },
     {
-      "id": "EVENT_1753559501965_6uwsmzbro",
+      "id": "EVENT_1753588597943_oeoc5amy6",
       "title": "Administrateur",
-      "description": null,
-      "startDate": "2025-07-25T06:00:00.000Z",
-      "endDate": "2025-07-25T09:00:00.000Z",
+      "name": "Administrateur",
+      "description": "",
+      "startDate": "2025-07-27T06:00:00.000Z",
+      "endDate": "2025-07-27T10:00:00.000Z",
       "type": "TP",
-      "class": "202",
-      "room": null,
-      "location": null,
+      "state": "PENDING",
+      "stateChanger": [],
+      "class": "1ère ES",
+      "room": "",
+      "location": "",
       "materials": [
         {
           "id": "EQUIP_1753254105873_vjm5cl4wd",
           "name": "Tube à essai",
-          "quantity": 1,
+          "quantity": 11,
           "isCustom": false,
           "volume": "25 mL"
         }
@@ -84,13 +87,131 @@
       "equipment": [],
       "fileName": null,
       "fileUrl": null,
-      "files": [],
-      "remarks": null,
+      "files": [
+        {
+          "fileName": "1750771252984.jpeg",
+          "fileUrl": "/uploads/calendar/1753588596396_y9mr90_1750771252984.jpeg",
+          "filePath": "/uploads/calendar/1753588596396_y9mr90_1750771252984.jpeg",
+          "fileSize": 87534,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-27T03:56:37.732Z"
+        }
+      ],
+      "remarks": "",
       "notes": null,
       "createdBy": "USER_001",
-      "modifiedBy": [],
-      "createdAt": "2025-07-26T19:51:41.965Z",
-      "updatedAt": "2025-07-26T19:51:41.965Z"
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-27T04:07:21.409Z"
+        ]
+      ],
+      "createdAt": "2025-07-27T03:56:37.943Z",
+      "updatedAt": "2025-07-27T04:07:21.409Z",
+      "column": 0,
+      "totalColumns": 2,
+      "visualStartDate": "2025-07-26T06:00:00.000Z",
+      "visualEndDate": "2025-07-26T10:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": false,
+      "endsAfterSchedule": false
+    },
+    {
+      "id": "EVENT_1753589185752_83ps2gh9a",
+      "title": "Séance TP",
+      "name": "Administrateur",
+      "description": "",
+      "startDate": "2025-07-27T06:00:00.000Z",
+      "endDate": "2025-07-27T13:00:00.000Z",
+      "type": "TP",
+      "state": "PENDING",
+      "stateChanger": [],
+      "class": "1ère ES",
+      "room": "",
+      "location": "",
+      "materials": [
+        {
+          "id": "EQUIP_1753254176990_5y8n3pivf",
+          "name": "Bécher",
+          "quantity": 1,
+          "isCustom": false,
+          "volume": "25 mL"
+        }
+      ],
+      "chemicals": [
+        {
+          "id": "CHEM_INV_A2ZF1BSLZBW8",
+          "name": "Acide chlorhydrique",
+          "requestedQuantity": 1,
+          "unit": "g",
+          "quantity": 2632.6
+        }
+      ],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [],
+      "remarks": "",
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-27T04:06:54.826Z",
+          "2025-07-27T04:07:32.728Z"
+        ]
+      ],
+      "createdAt": "2025-07-27T04:06:25.752Z",
+      "updatedAt": "2025-07-27T04:07:32.728Z",
+      "column": 0,
+      "totalColumns": 1,
+      "visualStartDate": "2025-07-26T06:00:00.000Z",
+      "visualEndDate": "2025-07-26T13:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": false,
+      "endsAfterSchedule": false
+    },
+    {
+      "id": "EVENT_1753589368442_vbdqajmxa",
+      "title": "Administrateur",
+      "name": "Administrateur",
+      "description": "",
+      "startDate": "2025-07-28T05:00:00.000Z",
+      "endDate": "2025-07-28T16:00:00.000Z",
+      "type": "TP",
+      "state": "PENDING",
+      "stateChanger": [],
+      "room": "",
+      "location": "",
+      "materials": [],
+      "chemicals": [],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [],
+      "remarks": "",
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-27T04:09:49.622Z",
+          "2025-07-27T04:22:08.824Z"
+        ]
+      ],
+      "createdAt": "2025-07-27T04:09:28.442Z",
+      "updatedAt": "2025-07-27T04:22:08.824Z",
+      "column": 0,
+      "totalColumns": 1,
+      "visualStartDate": "2025-07-26T06:00:00.000Z",
+      "visualEndDate": "2025-07-26T16:00:00.000Z",
+      "startsBeforeDay": false,
+      "endsAfterDay": false,
+      "startsBeforeSchedule": true,
+      "endsAfterSchedule": false,
+      "class": ""
     }
   ]
 }

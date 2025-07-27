@@ -77207,5 +77207,82 @@
       "duration": 6
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "b2f4f6df-2e98-45ca-8479-d586b643d49e",
+    "timestamp": "2025-07-26T22:28:32.003Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-24T08:21:01.060Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-24T19:34:33.091Z"
+          },
+          "associatedClasses": [
+            "1ère ES",
+            "Terminale ES"
+          ],
+          "customClasses": []
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-26T22:28:32.003Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753568912000_5wmdzs30x",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
   }
 ]
