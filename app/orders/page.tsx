@@ -166,7 +166,9 @@ export default function OrdersPage() {
                   <Typography variant="h4" color="warning.main">
                     {orders.filter(o => o.status === 'SENT').length}
                   </Typography>
-                  <Typography variant="body2">En attente</Typography>
+                  <Typography variant="overline"
+                  sx= {{ fontWeight: 'bold', textTransform: 'uppercase' }}
+                  >À valider</Typography>
                 </Box>
               </Box>
             </CardContent>

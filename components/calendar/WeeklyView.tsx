@@ -187,16 +187,16 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
   }
   
     // Fonction pour obtenir l'icône d'état
-    const getStateIcon = (state: string | undefined, size: 'small' | 'medium' = 'small') => {
-      const iconSize = size === 'small' ? 14 : 18
-      
+    const getStateIcon = (state: string | undefined, size: 'small' | 'medium' | 'large' = 'small') => {
+      const iconSize = size === 'small' ? 25 : size === 'medium' ? 50 : 75
+
       switch (state) {
         case 'PENDING':
           return <HourglassEmpty sx={{ fontSize: iconSize, color: 'warning.dark' }} />
         case 'VALIDATED':
-          return <CheckCircle sx={{ fontSize: iconSize, color: 'success.light' }} />
+          return <CheckCircle sx={{ fontSize: iconSize, color: 'success.main' }} />
         case 'CANCELLED':
-          return <Cancel sx={{ fontSize: iconSize, color: 'error.light' }} />
+          return <Cancel sx={{ fontSize: iconSize, color: 'error.main' }} />
         case 'MOVED':
           return <SwapHoriz sx={{ fontSize: iconSize, color: 'info.light' }} />
         default:
@@ -452,7 +452,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                       {event.state && (
                         <Typography variant="caption" display="block">
                           État: {
-                            event.state === 'PENDING' ? 'En attente' :
+                            event.state === 'PENDING' ? 'À valider' :
                             event.state === 'VALIDATED' ? 'Validé' :
                             event.state === 'CANCELLED' ? 'Annulé' :
                             event.state === 'MOVED' ? 'Déplacé' : event.state
@@ -536,7 +536,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     onEventClick(event)
                   }}
                 >
-                  {/* Icône d'état positionnée en haut à droite */}
+                  {/* Icône d'état positionnée en plein milieu */}
                   {event.state && height > 30 && (
                     <Box
                       sx={{
@@ -551,15 +551,18 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         maxWidth: '50%',
                         maxHeight: '50%',
                         zIndex: 4,
-                        bgcolor: 'rgba(255,255,255,0.9)',
+                        bgcolor: 'rgba(87, 87, 87, 0.46)',
                         borderRadius: '50%',
                         padding: '2px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 0 4px rgba(0, 0, 0, 0.2)',
+                        border: `1px solid rgba(0, 0, 0, 0.2)`
                       }}
                     >
-                      {getStateIcon(event.state, height > 50 ? 'medium' : 'small')}
+                      {getStateIcon(event.state, height > 50 ? 'medium' : 'large')}
                     </Box>
                   )}
 
@@ -753,7 +756,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
         >
           <Chip
             icon={<HourglassEmpty sx={{ fontSize: 16 }} />}
-            label="En attente"
+            label="À valider"
             size="small"
             sx={{ 
               '& .MuiChip-icon': { 

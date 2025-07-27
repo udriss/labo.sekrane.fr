@@ -6,19 +6,26 @@ import {
   Dialog, DialogTitle, DialogContent, Box, Typography, IconButton,
   Stepper, Step, StepLabel, StepContent, Button, TextField,
   Card, Chip, Autocomplete, useMediaQuery, useTheme,
-  Alert, Collapse, Stack, InputAdornment, Tooltip, ClickAwayListener
+  Alert, Collapse, Stack, InputAdornment, Tooltip, ClickAwayListener,
+  Snackbar, Alert as MuiAlert, Slide
 } from '@mui/material'
 import { 
   Add, Close, Upload, Class, Assignment, Save, Delete,
-  Warning, CloudUpload, InsertDriveFile, Clear, InfoOutlined
+  Warning, CloudUpload, InsertDriveFile, Clear, InfoOutlined, HourglassTop
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
 import { useSession } from "next-auth/react"
-import { is } from 'date-fns/locale'
 
+
+
+interface TimeSlot {
+  date: string
+  startTime: string
+  endTime: string
+}
 
 interface CreateTPDialogProps {
   open: boolean
@@ -59,8 +66,10 @@ export function CreateTPDialog({
   const [dragOver, setDragOver] = useState(false)
   const [materialInputValue, setMaterialInputValue] = useState('');
   const [chemicalInputValue, setChemicalInputValue] = useState('');
-
+  const [swapMessage, setSwapMessage] = useState<string | null>(null)
+  const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
+  const [pendingSwap, setPendingSwap] = useState<{index: number, field: keyof TimeSlot, value: string} | null>(null)
 
 
   const [formData, setFormData] = useState({
@@ -170,13 +179,56 @@ export function CreateTPDialog({
     }
   }
 
-  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: string) => {
-    const newTimeSlots = [...formData.timeSlots]
-    newTimeSlots[index][field] = value
-    setFormData({
-      ...formData,
-      timeSlots: newTimeSlots
-    })
+// Modifiez la fonction updateTimeSlot pour séparer la mise à jour de la vérification d'inversion
+const updateTimeSlot = (index: number, field: keyof TimeSlot, value: string, shouldCheckSwap: boolean = true) => {
+  const newTimeSlots = [...formData.timeSlots]
+  const currentSlot = { ...newTimeSlots[index] }
+  
+  // Toujours mettre à jour la valeur immédiatement
+  currentSlot[field] = value
+  newTimeSlots[index] = currentSlot
+  setFormData({ ...formData, timeSlots: newTimeSlots })
+  
+  // Vérifier l'inversion seulement si demandé
+  if (shouldCheckSwap && currentSlot.startTime && currentSlot.endTime) {
+    const start = new Date(`2000-01-01T${currentSlot.startTime}`)
+    const end = new Date(`2000-01-01T${currentSlot.endTime}`)
+    
+    if (end < start) {
+      // Effectuer l'inversion
+      performTimeSwap(index)
+    }
+  }
+}
+
+// Fonction séparée pour l'inversion
+const performTimeSwap = (index: number) => {
+  const newTimeSlots = [...formData.timeSlots]
+  const currentSlot = { ...newTimeSlots[index] }
+  
+  // Inverser les heures
+  const tempTime = currentSlot.startTime
+  currentSlot.startTime = currentSlot.endTime
+  currentSlot.endTime = tempTime
+  
+  newTimeSlots[index] = currentSlot
+  setFormData({ ...formData, timeSlots: newTimeSlots })
+  
+  // Déclencher l'animation
+  setAnimatingSlot(index)
+  setTimeout(() => setAnimatingSlot(null), 600)
+  
+  // Afficher le message
+  setSwapMessage(`Les heures ont été inversées pour le créneau ${index + 1}`)
+  setTimeout(() => setSwapMessage(null), 3000)
+}
+
+  // Fonction pour appliquer l'échange en attente
+  const applyPendingSwap = () => {
+    if (pendingSwap) {
+      updateTimeSlot(pendingSwap.index, pendingSwap.field, pendingSwap.value, true)
+      setPendingSwap(null)
+    }
   }
 
 const handleCreateCalendarEvent = async () => {
@@ -455,7 +507,8 @@ const handleCreateCalendarEvent = async () => {
                         </Box>
                         {preset.dureeEstimee && (
                           <Typography variant="caption" color="text.secondary">
-                            Durée: {preset.dureeEstimee} min
+                            <HourglassTop sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            Durée : {preset.dureeEstimee} min
                           </Typography>
                         )}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
@@ -584,7 +637,17 @@ const handleCreateCalendarEvent = async () => {
                         border: 1,
                         borderColor: 'divider',
                         borderRadius: 2,
-                        bgcolor: 'background.default'
+                        bgcolor: 'background.default',
+                        position: 'relative',
+                        transition: 'all 0.3s ease',
+                        ...(animatingSlot === index && {
+                          animation: 'shake 0.5s',
+                          '@keyframes shake': {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' }
+                          }
+                        })
                       }}
                     >
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
@@ -625,53 +688,133 @@ const handleCreateCalendarEvent = async () => {
                             }
                           }}
                         />
-                        <TimePicker
-                          label="Début"
-                          value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
-                          onChange={(newValue) => {
-                            if (newValue) {
-                              const hours = newValue.getHours().toString().padStart(2, '0')
-                              const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                              updateTimeSlot(index, 'startTime', `${hours}:${minutes}`)
-                            }
-                          }}
-                          slotProps={{
-                            textField: { 
-                              size: "small",
-                              sx: { minWidth: { xs: '48%', sm: 120 } },
-                              onClick: (e: any) => {
-                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                  const button = e.currentTarget.querySelector('button')
-                                  if (button) button.click()
+                            <Box 
+                            sx={{
+                              display: 'flex', 
+                              gap: 2, 
+                              alignItems: 'center',
+                              position: 'relative',
+                              flexDirection: isMobile ? 'column' : 'row',
+                              ...(animatingSlot === index && {
+                                '& > *:nth-of-type(1)': {
+                                  animation: isMobile ? 'swapRightMobile 1s ease-in-out' : 'swapRight 0.6s ease-in-out',
+                                },
+                                '& > *:nth-of-type(2)': {
+                                  animation: isMobile ? 'swapLeftMobile 1s ease-in-out' : 'swapLeft 0.6s ease-in-out',
+                                },
+                                '@keyframes swapRight': {
+                                  '0%': { transform: 'translateX(0)' },
+                                  '50%': { transform: 'translateX(150px)' },
+                                  '100%': { transform: 'translateX(0)' }
+                                },
+                                '@keyframes swapLeft': {
+                                  '0%': { transform: 'translateX(0)' },
+                                  '50%': { transform: 'translateX(-150px)' },
+                                  '100%': { transform: 'translateX(0)' }
+                                },
+                                '@keyframes swapRightMobile': {
+                                  '0%': { transform: 'translateX(0) scale(1)' },
+                                  '25%': { transform: 'translateX(0) scale(1.1)' },
+                                  '50%': { transform: 'translateX(100px) scale(1.1)' },
+                                  '75%': { transform: 'translateX(0) scale(1.1)' },
+                                  '100%': { transform: 'translateX(0) scale(1)' }
+                                },
+                                '@keyframes swapLeftMobile': {
+                                  '0%': { transform: 'translateX(0) scale(1)' },
+                                  '25%': { transform: 'translateX(0) scale(1.1)' },
+                                  '50%': { transform: 'translateX(-100px) scale(1.1)' },
+                                  '75%': { transform: 'translateX(0) scale(1.1)' },
+                                  '100%': { transform: 'translateX(0) scale(1)' }
                                 }
-                              }
-                            }
-                          }}
-                        />
-                        <TimePicker
-                          label="Fin"
-                          value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
-                          onChange={(newValue) => {
-                            if (newValue) {
-                              const hours = newValue.getHours().toString().padStart(2, '0')
-                              const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                              updateTimeSlot(index, 'endTime', `${hours}:${minutes}`)
-                            }
-                          }}
-                          slotProps={{
-                            textField: { 
-                              size: "small",
-                              sx: { minWidth: { xs: '100%', sm: 120 } },
-                              onClick: (e: any) => {
-                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                  const button = e.currentTarget.querySelector('button')
-                                  if (button) button.click()
+                              })
+                            }}
+                            >
+
+                            <TimePicker
+                              label="Début"
+                              value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  const hours = newValue.getHours().toString().padStart(2, '0')
+                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                  // Sur mobile, mettre à jour sans vérifier l'inversion
+                                  updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, !isMobile)
                                 }
-                              }
-                            }
-                          }}
-                        />
+                              }}
+                              onAccept={(newValue) => {
+                                // Sur mobile, vérifier l'inversion après validation
+                                if (newValue && isMobile) {
+                                  const currentSlot = formData.timeSlots[index]
+                                  if (currentSlot.startTime && currentSlot.endTime) {
+                                    const start = new Date(`2000-01-01T${currentSlot.startTime}`)
+                                    const end = new Date(`2000-01-01T${currentSlot.endTime}`)
+                                    if (end < start) {
+                                      performTimeSwap(index)
+                                    }
+                                  }
+                                }
+                              }}
+                              slotProps={{
+                                textField: { 
+                                  size: "small",
+                                  sx: { 
+                                    minWidth: { xs: '48%', sm: 120 },
+                                    transition: 'all 0.3s ease'
+                                  },
+                                  onClick: (e: any) => {
+                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                      const button = e.currentTarget.querySelector('button')
+                                      if (button) button.click()
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+
+                            <TimePicker
+                              label="Fin"
+                              value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  const hours = newValue.getHours().toString().padStart(2, '0')
+                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                  // Sur mobile, mettre à jour sans vérifier l'inversion
+                                  updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, !isMobile)
+                                }
+                              }}
+                              onAccept={(newValue) => {
+                                // Sur mobile, vérifier l'inversion après validation
+                                if (newValue && isMobile) {
+                                  const currentSlot = formData.timeSlots[index]
+                                  if (currentSlot.startTime && currentSlot.endTime) {
+                                    const start = new Date(`2000-01-01T${currentSlot.startTime}`)
+                                    const end = new Date(`2000-01-01T${currentSlot.endTime}`)
+                                    if (end < start) {
+                                      performTimeSwap(index)
+                                    }
+                                  }
+                                }
+                              }}
+                              slotProps={{
+                                textField: { 
+                                  size: "small",
+                                  sx: { 
+                                    minWidth: { xs: '100%', sm: 120 },
+                                    transition: 'all 0.3s ease'
+                                  },
+                                  onClick: (e: any) => {
+                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                      const button = e.currentTarget.querySelector('button')
+                                      if (button) button.click()
+                                    }
+                                  }
+                                }
+                              }}
+                            />
+                        
+
                       </Box>
+                    </Box>
                     </Box>
                   ))}
 
@@ -731,6 +874,28 @@ const handleCreateCalendarEvent = async () => {
                 </Button>
               </Box>
             </StepContent>
+            {/* Snackbar pour les messages d'inversion */}
+          <Snackbar
+            open={!!swapMessage}
+            autoHideDuration={3000}
+            onClose={() => setSwapMessage(null)}
+            slots={{ transition: Slide }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <MuiAlert 
+              onClose={() => setSwapMessage(null)} 
+              severity="info" 
+              sx={{ 
+                width: '100%',
+                '& .MuiAlert-icon': {
+                  fontSize: '1.5rem'
+                }
+              }}
+              variant="filled"
+            >
+              {swapMessage}
+            </MuiAlert>
+          </Snackbar>
           </Step>
 
           {/* Étape 4: Classes concernées */}

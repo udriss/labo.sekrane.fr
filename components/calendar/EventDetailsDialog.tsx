@@ -28,10 +28,12 @@ import {
   Science, Schedule, Assignment, EventAvailable, Edit, Delete, 
   History, Person, PictureAsPdf, Description, Image, Build,
   InsertDriveFile, OpenInNew, Download, CheckCircle, Cancel, SwapHoriz,
-  HourglassEmpty,
+  HourglassEmpty, CalendarToday, AccessTime, Room, School, HourglassTop
 } from '@mui/icons-material'
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { UserRole } from "@/types/global";
+import { SiMoleculer } from "react-icons/si";
+
 
 import { useSession } from 'next-auth/react'
 
@@ -52,6 +54,7 @@ interface EventDetailsDialogProps {
   onStateChange?: (event: CalendarEvent) => void
   userRole?: UserRole
   isMobile?: boolean
+  isTablet?: boolean
 }
 
 // Définition corrigée de EVENT_TYPES
@@ -66,7 +69,7 @@ const EVENT_TYPES = {
 // Fonction helper pour les labels de changement d'état
 const getStateChangeLabel = (fromState: string, toState: string): string => {
   const stateLabels: Record<string, string> = {
-    'PENDING': 'En attente',
+    'PENDING': 'À valider',
     'VALIDATED': 'Validé',
     'CANCELLED': 'Annulé',
     'MOVED': 'Déplacé'
@@ -121,6 +124,8 @@ const formatFileSize = (bytes?: number): string => {
 }
 
 
+
+
 // Composant pour afficher une carte de document - VERSION CORRIGÉE
 const DocumentCard: React.FC<{ 
   document: DocumentFile,
@@ -130,6 +135,13 @@ const DocumentCard: React.FC<{
   const fileInfo = getFileTypeInfo(fileType)
   const [isHovered, setIsHovered] = useState(false)
   
+    // Construire l'URL une seule fois
+  const documentUrl = document.fileUrl 
+    ? (document.fileUrl.startsWith('/uploads/') 
+        ? `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
+        : document.fileUrl)
+    : null
+
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault()
     
@@ -143,14 +155,11 @@ const DocumentCard: React.FC<{
         }
         
         // Ouvrir dans un nouvel onglet
-        const newWindow = window.open(urlToOpen, '_blank', 'noopener,noreferrer')
+        window.open(urlToOpen, '_blank', 'noopener,noreferrer')
         
-        // Vérifier si l'ouverture a été bloquée
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          if (onOpenError) {
-            onOpenError('Le navigateur a bloqué l\'ouverture du document. Veuillez autoriser les pop-ups pour ce site.')
-          }
-        }
+        // Ne pas vérifier si la fenêtre est bloquée car cela donne des faux positifs
+        // La plupart des navigateurs modernes permettent window.open() sur un événement de clic
+        
       } catch (error) {
         console.error('Erreur lors de l\'ouverture du document:', error)
         if (onOpenError) {
@@ -165,6 +174,7 @@ const DocumentCard: React.FC<{
   }
 
   const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault() // Important pour empêcher la navigation
     e.stopPropagation()
     
     if (document.fileUrl) {
@@ -244,19 +254,24 @@ const DocumentCard: React.FC<{
           sx={{
             cursor: document.fileUrl ? 'pointer' : 'default',
             '&:focus': {
+              outlineColor: 'primary.main',
+              outlineOffset: -2,
+            },
+            // Garder l'outline uniquement pour la navigation au clavier
+            '&:focus-visible': {
               outline: '2px solid',
               outlineColor: 'primary.main',
               outlineOffset: -2,
             }
-          }}
-          tabIndex={document.fileUrl ? 0 : -1}
-          role={document.fileUrl ? "button" : undefined}
-          onKeyPress={(e) => {
+            }}
+            tabIndex={document.fileUrl ? 0 : -1}
+            role={document.fileUrl ? "button" : undefined}
+            onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               handleClick(e as any)
             }
-          }}
-        >
+            }}
+          >
           <Box
             sx={{
               height: 120,
@@ -362,7 +377,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   onDelete, 
   onStateChange,
   userRole,
-  isMobile = false
+  isMobile = false,
+  isTablet = false
 }) => {
 
   const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
@@ -406,6 +422,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     if (!event) return []
     
     const documents: DocumentFile[] = []
+    console.log('Event files:', event.files)
     
     // Nouveau format avec array files
     if (event.files && Array.isArray(event.files) && event.files.length > 0) {
@@ -580,6 +597,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   if (!event) return null
 
   const documents = getDocuments()
+  console.log('Documents:', documents)
 
   console.log('Event details:', event)
   
@@ -589,20 +607,37 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     fullScreen={isMobile}
     open={open} 
     onClose={onClose} 
-    maxWidth="md" fullWidth>
+    maxWidth="md"
+    fullWidth
+    sx ={{
+      p: isMobile ? 0 : 2,
+    }}
+    >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="h6">Détails de la séance</Typography>
+          <Box 
+          sx ={{
+            display: 'flex',
+            alignItems: !isMobile ? 'center' : 'flex-start',
+            gap: 1,
+            flexDirection: isMobile ? 'column' : 'row',
+            width: isMobile ? '100%' : 'auto'
+          }}
+          >
+              <Typography variant="h5" component="h3" >Détails de la séance</Typography>
               <Chip 
                 label={getEventTypeInfo(event.type).label} 
                 color="primary" 
                 size="small"
+                sx= {{ 
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}
               />
               {event?.state && (
                 <Chip
                   label={
-                    event.state === 'PENDING' ? 'En attente' :
+                    event.state === 'PENDING' ? 'À valider' :
                     event.state === 'VALIDATED' ? 'Validé' :
                     event.state === 'CANCELLED' ? 'Annulé' :
                     event.state === 'MOVED' ? 'Déplacé' : event.state
@@ -620,6 +655,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     event.state === 'MOVED' ? <SwapHoriz /> :
                     undefined
                   }
+                  sx= {{ 
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                  }}
                 />
               )}
             </Box>
@@ -655,7 +694,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
         <Stack spacing={3}>
           {/* Titre et informations principales */}
           <Box>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h6" gutterBottom>
               {event.title}
             </Typography>
             {event.description && (
@@ -670,22 +709,39 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
           {/* Informations temporelles */}
           <Grid container spacing={2}>
             <Grid size = {{ xs: 12, sm: 6 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Date et heure
-              </Typography>
-              <Typography variant="body1">
-                📅 {formatDateTime(event.startDate)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                jusqu'à {formatTime(event.endDate)}
-              </Typography>
+            {/* Option 1 - Avec icônes et mise en page alignée */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: isMobile ? 'flex-start' : 'center', 
+              gap: isMobile ? 1 : 2,
+              py: 0.5,
+              borderLeft: 3,
+              borderColor: 'primary.main',
+              flexDirection: isMobile ? 'column' : 'row',
+              pl: 1.5,
+              mb: 1,
+              width: '100%',
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
+                  {format(event.startDate, 'EEEE d MMMM', { locale: fr })}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography color="text.secondary" sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
+                  {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
+                </Typography>
+              </Box>
+            </Box>
             </Grid>
             <Grid size = {{ xs: 12, sm: 6 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Durée
               </Typography>
               <Typography variant="body1">
-                ⏱️ {calculateDuration()} heure{calculateDuration() > 1 ? 's' : ''}
+                <HourglassTop sx={{ fontSize: 16, color: 'text.secondary' }} /> {calculateDuration()} heure{calculateDuration() > 1 ? 's' : ''}
               </Typography>
             </Grid>
           </Grid>
@@ -701,7 +757,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                       Classe
                     </Typography>
                     <Typography variant="body1">
-                      🎓 {event.class}
+                      <School sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.class}
                     </Typography>
                   </Grid>
                 )}
@@ -711,7 +767,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                       Salle
                     </Typography>
                     <Typography variant="body1">
-                      📍 {event.room}
+                      <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.room}
                     </Typography>
                   </Grid>
                 )}
@@ -775,7 +831,7 @@ sx={{ mt: 2,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Build sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Science sx={{ fontSize: 16, color: 'primary.main' }} />
                 <Typography variant="caption" fontWeight="medium" color="text.secondary">
                   MATÉRIEL
                 </Typography>
@@ -832,7 +888,7 @@ sx={{ mt: 2,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Science sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <SiMoleculer size={16} color="green" />
                 <Typography variant="caption" fontWeight="medium" color="text.secondary">
                   RÉACTIFS CHIMIQUES
                 </Typography>
@@ -960,122 +1016,170 @@ sx={{ mt: 2,
           <Divider sx={{ my: 2 }} />
           
           {/* Historique des modifications */}
-          {timelineData.length > 0 && (
-            <>
-              <Box>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <History /> Historique des modifications
+{/* Historique des modifications */}
+{(timelineData.length > 0 || event.createdAt) && (
+  <>
+    <Box>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <History /> Historique
+      </Typography>
+      
+      {loadingUsers ? (
+        <Stack spacing={2}>
+          <Skeleton variant="circular" width={40} height={40} />
+          <Skeleton variant="text" width="60%" />
+          <Skeleton variant="text" width="40%" />
+          <Skeleton variant="text" width="50%" />
+        </Stack>
+      ) : (
+        <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
+          {/* Date d'ajout en premier */}
+          {event.createdAt && (
+            <TimelineItem 
+              sx={{
+                minHeight: 60,
+                '&::before': {
+                  flex: 0,
+                  padding: 0,
+                }
+              }}
+            >
+              <TimelineOppositeContent
+                sx={{ 
+                  m: 'auto 0',
+                  py: 0.5
+                }}
+                align="right"
+                variant="body2"
+                color="text.secondary"
+              >
+                {formatDate(event.createdAt)}
+              </TimelineOppositeContent>
+              
+              <TimelineSeparator>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Avatar
+                    sx={{ 
+                      bgcolor: 'success.main', 
+                      width: 24, 
+                      height: 24, 
+                      fontSize: '0.75rem' 
+                    }}
+                  >
+                    <Person sx={{ fontSize: 16, color: 'white' }} />
+                  </Avatar>
+                </Box>
+                {timelineData.length > 0 && <TimelineConnector sx={{ bgcolor: 'grey.400', height: '20px' }} />}
+              </TimelineSeparator>
+              
+              <TimelineContent sx={{ py: 0.5, px: 2 }}>
+                <Typography variant="body2" component="span" fontWeight="medium">
+                  {creatorInfo ? (creatorInfo.name || creatorInfo.email) : 'Utilisateur'}
                 </Typography>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  a ajouté l'événement
+                </Typography>
+              </TimelineContent>
+            </TimelineItem>
+          )}
+
+          {/* Modifications suivantes */}
+          {timelineData.map((item, index) => {
+            const isAlternate = (event.createdAt ? index + 1 : index) % 2 === 0
+            const previousUserId = index > 0 ? timelineData[index - 1].userId : event.createdBy
+            const isSameUserAsPrevious = item.userId === previousUserId
+            
+            return (
+              <TimelineItem 
+                key={index}
+                sx={{
+                  minHeight: isSameUserAsPrevious ? 40 : 60,
+                  '&::before': {
+                    flex: 0,
+                    padding: 0,
+                  }
+                }}
+              >
+                <TimelineOppositeContent
+                  sx={{ 
+                    m: 'auto 0',
+                    py: isSameUserAsPrevious ? 0.1 : 0.5
+                  }}
+                  align={isAlternate ? "right" : "left"}
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  {formatDate(item.date)}
+                </TimelineOppositeContent>
                 
-                {loadingUsers ? (
-                  <Stack spacing={2}>
-                    <Skeleton variant="circular" width={40} height={40} />
-                    <Skeleton variant="text" width="60%" />
-                    <Skeleton variant="text" width="40%" />
-                    <Skeleton variant="text" width="50%" />
-                  </Stack>
-                ) : (
-                  <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
-                    {timelineData.map((item, index) => (
-                      <TimelineItem 
-                        key={index}
-                        sx={{
-                          minHeight: item.isConsecutive ? 40 : 60,
-                          '&::before': {
-                            flex: 0,
-                            padding: 0,
-                          }
+                <TimelineSeparator>
+                  <TimelineConnector sx={{ 
+                    bgcolor: isSameUserAsPrevious ? 'grey.300' : 'grey.400',
+                    height: isSameUserAsPrevious ? '10px' : '20px'
+                  }} />
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {!isSameUserAsPrevious && (
+                      <Avatar
+                        sx={{ 
+                          bgcolor: 'primary.main', 
+                          width: 24, 
+                          height: 24, 
+                          fontSize: '0.75rem' 
                         }}
                       >
-                        <TimelineOppositeContent
-                          sx={{ 
-                            m: 'auto 0',
-                            py: item.isConsecutive ? 0.1 : 0.5
-                          }}
-                          align={index % 2 === 0 ? "right" : "left"}
-                          variant="body2"
-                          color="text.secondary"
-                        >
-                          {formatDate(item.date)}
-                        </TimelineOppositeContent>
-                        
-                        <TimelineSeparator>
-                          {index > 0 && <TimelineConnector sx={{ 
-                            bgcolor: item.isConsecutive ? 'grey.300' : 'grey.400',
-                            height: item.isConsecutive ? '10px' : '20px'
-                          }} />}
+                        <Person sx={{ fontSize: 16, color: 'white' }} />
+                      </Avatar>
+                    )}
+                    {isSameUserAsPrevious && (
+                      <TimelineDot 
+                        color={index === timelineData.length - 1 ? "primary" : "grey"}
+                        variant="outlined"
+                        sx={{ 
+                          width: 10,
+                          height: 10,
+                          margin: 0,
+                          transition: 'all 0.3s'
+                        }}
+                      />
+                    )}
+                  </Box>
+                  
+                  {index < timelineData.length - 1 && (
+                    <TimelineConnector sx={{ 
+                      bgcolor: timelineData[index + 1]?.userId === item.userId ? 'grey.300' : 'grey.400',
+                      height: timelineData[index + 1]?.userId === item.userId ? '5px' : '20px'
+                    }} />
+                  )}
+                </TimelineSeparator>
+                
+                <TimelineContent sx={{ 
+                  py: isSameUserAsPrevious ? 0.1 : 0.5,
+                  px: 2 
+                }}>
+                  {!isSameUserAsPrevious ? (
+                    <Typography variant="body2" component="span" fontWeight="medium">
+                      {item.userName}
+                    </Typography>
+                  ) : (
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ fontStyle: 'italic' }}
+                    >
+                      Modification supplémentaire
+                    </Typography>
+                  )}
+                </TimelineContent>
+              </TimelineItem>
+            )
+          })}
+        </Timeline>
+      )}
+    </Box>
+  </>
+)}
 
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {!item.isConsecutive && (
-                              <Avatar
-                                sx={{ 
-                                  bgcolor: 'primary.main', 
-                                  width: 24, 
-                                  height: 24, 
-                                  fontSize: '0.75rem' 
-                                }}
-                              >
-                                <Person sx={{ fontSize: 16, color: 'white' }} />
-                              </Avatar>
-                            )}
-                            {item.isConsecutive && (
-                              <TimelineDot 
-                                color={index === timelineData.length - 1 ? "primary" : "grey"}
-                                variant="outlined"
-                                                                sx={{ 
-                                  width: 10,
-                                  height: 10,
-                                  margin: 0,
-                                  transition: 'all 0.3s'
-                                }}
-                              />
-                            )}
-                          </Box>
-                          
-                          {index < timelineData.length - 1 && 
-                          <TimelineConnector sx={{ 
-                            bgcolor: timelineData[index + 1]?.isConsecutive ? 'grey.300' : 'grey.400',
-                            height: timelineData[index + 1]?.isConsecutive ? '5px' : '20px'
-                          }} />}
-                        </TimelineSeparator>
-                        
-                        <TimelineContent sx={{ 
-                          py: item.isConsecutive ? 0.1 : 0.5,
-                          px: 2 
-                        }}>
-                          {!item.isConsecutive ? (
-                            <Typography variant="body2" component="span" fontWeight="medium">
-                              {item.userName}
-                            </Typography>
-                          ) : (
-                            <Typography 
-                              variant="caption" 
-                              color="text.secondary" 
-                              sx={{ fontStyle: 'italic' }}
-                            >
-                              Modification supplémentaire
-                            </Typography>
-                          )}
-                        </TimelineContent>
-                      </TimelineItem>
-                    ))}
-                  </Timeline>
-                )}
-              </Box>
-            </>
-          )}
-
-          {/* Métadonnées de création */}
-          {event.createdBy && (
-            <>
-              <Box>
-                <Typography variant="caption" color="text.secondary" display="block">
-                  Ajouté par {creatorInfo ? (creatorInfo.name || creatorInfo.email) : event.createdBy}
-                  {event.createdAt && ` le ${formatDateTime(event.createdAt)}`}
-                </Typography>
-              </Box>
-            </>
-          )}
 
 {/* Ajouter dans la section historique, après l'historique des modifications */}
 {event.stateChanger && event.stateChanger.length > 0 && (
@@ -1123,7 +1227,9 @@ sx={{ mt: 2,
                 <Typography variant="body2" component="div">
                   <strong>{userName}</strong>
                 </Typography>
-                <Typography variant="caption" component="div">
+                <Typography variant="caption" component="div"
+                sx= {{ fontWeight: 'bold', textTransform: 'uppercase' }}
+                >
                   {getStateChangeLabel(change.fromState, change.toState)}
                 </Typography>
                 {change.reason && (
@@ -1143,11 +1249,26 @@ sx={{ mt: 2,
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose}>Fermer</Button>
 
           {/* Boutons pour les laborantins */}
+          <Box sx ={{
+              display: 'flex',
+              gap: 1,
+              flexDirection: 'row',
+              justifyContent: isMobile || isTablet ? 'space-around' : 'flex-end',
+              width: '100%',
+            }}
+          >
+          <Button onClick={onClose}>Fermer</Button>
+
           {canValidate && event?.state === 'PENDING' && (
-            <>
+          <Box sx ={{
+              display: 'flex',
+              gap: 1,
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-around',
+            }}
+          >
               <Button
                 onClick={() => handleStateChange('VALIDATED')}
                 variant="contained"
@@ -1171,10 +1292,18 @@ sx={{ mt: 2,
               >
                 Annuler TP
               </Button>
-            </>
+            </Box>
           )}
         
+
         {/* Boutons existants pour modification/suppression */}
+          <Box sx ={{
+              display: 'flex',
+              gap: 1,
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-around',
+            }}
+          >
         {onEdit && (
           <Button 
             onClick={() => {
@@ -1200,6 +1329,8 @@ sx={{ mt: 2,
             Supprimer
           </Button>
         )}
+        </Box>
+        </Box>
       </DialogActions>
 
       {/* Snackbar pour les messages d'erreur */}

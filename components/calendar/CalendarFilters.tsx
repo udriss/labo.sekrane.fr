@@ -90,7 +90,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
 
   const stateOptions = [
     { value: 'ALL', label: 'Tous les états' },
-    { value: 'PENDING', label: 'En attente' },
+    { value: 'PENDING', label: 'À valider' },
     { value: 'VALIDATED', label: 'Validés' },
     { value: 'CANCELLED', label: 'Annulés' },
     { value: 'MOVED', label: 'Déplacés' }

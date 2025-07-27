@@ -9,7 +9,7 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete, Room } from "@mui/icons-material";
 
 interface EquipmentCardProps {
   item: any;
@@ -127,7 +127,7 @@ export const EquipmentCard = ({
 
         {item.location && (
           <Typography color="text.secondary">
-            📍 {item.location}
+            <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.location}
           </Typography>
         )}
 

@@ -13,7 +13,7 @@ import {
   Slider,
   Tooltip
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete, Room as RoomIcon, HomeFilled } from "@mui/icons-material";
 
 interface EquipmentListViewProps {
   items: any[];
@@ -94,8 +94,8 @@ export const EquipmentListView = ({
                 <TableCell>
                   {item.room && (
                     <Typography variant="body2">
-                      🏠 {item.room}
-                      {item.location && <><br />📍 {item.location}</>}
+                      <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.room}
+                      {item.location && <><br /><RoomIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.location}</>}
                     </Typography>
                   )}
                 </TableCell>

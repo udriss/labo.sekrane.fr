@@ -35,9 +35,9 @@ import { useReferenceData } from '@/lib//hooks/useReferenceData'
 import { UserRole } from "@/types/global";
 
 const TAB_INDICES = {
-  CALENDAR: 0,
-  LIST: 1,
-  DAILY: 2
+  DAILY: 0,
+  CALENDAR: 1,
+  LIST: 2,
 }
 
 export default function CalendarPage() {
@@ -47,7 +47,6 @@ export default function CalendarPage() {
   const [userRole, setUserRole] = useState<UserRole>('TEACHER')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-  const [tabValue, setTabValue] = useState(0)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
@@ -73,36 +72,39 @@ export default function CalendarPage() {
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   const { tpPresets } = useCalendarData()
 
-  useEffect(() => {
-  // Observer les changements dans le DOM
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' || mutation.type === 'attributes') {
-        const vw = window.innerWidth;
-        document.querySelectorAll('*').forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          if (rect.right > vw) {
-            console.warn('Element causing overflow after load:', {
-              element: el,
-              class: el.className,
-              right: rect.right,
-              width: rect.width
-            });
+
+  // Fonction helper pour gérer localStorage de manière sûre
+  const getStoredTabValue = (): number => {
+    try {
+      if (typeof window !== 'undefined') {
+        const savedTab = localStorage.getItem('calendarTabValue')
+        if (savedTab !== null) {
+          const parsedValue = parseInt(savedTab, 10)
+          if (!isNaN(parsedValue) && Object.values(TAB_INDICES).includes(parsedValue)) {
+            return parsedValue
           }
-        });
+        }
       }
-    });
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['style', 'class']
-  });
-
-  return () => observer.disconnect();
-}, []);
+    } catch (error) {
+      console.error('Erreur lors de la lecture du localStorage:', error)
+    }
+    return TAB_INDICES.DAILY // Valeur par défaut
+  }
+  const [tabValue, setTabValue] = useState(getStoredTabValue)
+  const saveTabValue = (value: number): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('calendarTabValue', value.toString())
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde dans localStorage:', error)
+    }
+  }
+  // Handler pour changer de tab
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue)
+    saveTabValue(newValue)
+  }
 
   // Récupération du rôle utilisateur
   useEffect(() => {
@@ -178,7 +180,7 @@ export default function CalendarPage() {
         'VALIDATED': 'Événement validé avec succès',
         'CANCELLED': 'Événement annulé',
         'MOVED': 'Événement marqué comme déplacé',
-        'PENDING': 'Événement remis en attente'
+        'PENDING': 'Événement remis à valider'
       }
       
       const message = stateMessages[updatedEvent.state || ''] || 'État de l\'événement modifié'
@@ -345,7 +347,7 @@ export default function CalendarPage() {
               variant="scrollable"
               scrollButtons={isMobile ? "auto" : false} // Boutons uniquement sur mobile
               allowScrollButtonsMobile
-              onChange={(e, newValue) => setTabValue(newValue)}
+              onChange={handleTabChange}
               sx={{ 
                   width: '100%',
                   '& .MuiTabs-scrollButtons': {
@@ -360,25 +362,14 @@ export default function CalendarPage() {
                   }
                 }}
             >
-              <Tab label="Vue hebdomadaire" />
               <Tab label="Planning du jour" />
+              <Tab label="Vue hebdomadaire" />
               <Tab label="Liste des événements" />
             </Tabs>
           </Box>
 
-<TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
-  <DailyCalendarView
-    currentDate={currentDate}
-    setCurrentDate={setCurrentDate}
-    events={events}
-    onEventClick={handleEventClick}  // Utilisez handleEventClick
-    onEventEdit={(event) => canEditEvent(event) ? handleEventEdit(event) : undefined}
-    onEventDelete={(event) => canEditEvent(event) ? handleEventDelete(event) : undefined}
-    canEditEvent={canEditEvent}
-  />
-</TabPanel>
 
-<TabPanel value={tabValue} index={0}>
+<TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
   {isMobile || isTablet ? (
     <DailyCalendarView
       currentDate={currentDate}
@@ -411,6 +402,7 @@ export default function CalendarPage() {
     canEditEvent={canEditEvent}
     canValidateEvent={canValidateEvent()}
     isMobile={isMobile}
+    isTablet={isTablet}
   />
 </TabPanel>
 
@@ -438,6 +430,7 @@ export default function CalendarPage() {
           onStateChange={canValidateEvent() ? handleStateChange : undefined}
           userRole={userRole}
           isMobile={isMobile}
+          isTablet={isTablet}
         />
 
         <EditEventDialog

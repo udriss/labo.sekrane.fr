@@ -56,7 +56,6 @@ export async function logAuditEvent(
       status: 'SUCCESS'
     };
 
-    console.log('Log entry created:', logEntry.id);
 
     // Store in memory buffer (will be lost on restart, but that's ok for edge)
     auditBuffer.push(logEntry);
@@ -73,8 +72,6 @@ export async function logAuditEvent(
       const host = request.headers.get('host') || 'localhost:3000';
       const baseUrl = `${protocol}://${host}`;
       
-      console.log('Sending audit log to:', `${baseUrl}/api/audit/log`);
-      
       // Fire and forget - ne pas attendre la réponse
       globalThis.fetch(`${baseUrl}/api/audit/log`, {
         method: 'POST',
@@ -85,7 +82,7 @@ export async function logAuditEvent(
         },
         body: JSON.stringify(logEntry)
       }).then(() => {
-        console.log('Audit log sent successfully');
+
       }).catch((error) => {
         console.error('Failed to send audit log:', error);
       });
@@ -99,10 +96,7 @@ export async function logAuditEvent(
 
 export async function auditMiddleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  
-  // Debug log
-  console.log('Audit middleware called for path:', path);
-  
+    
   // Déterminer le module depuis le chemin
   let module = 'SYSTEM';
   if (path.includes('/api/auth')) module = 'SECURITY';
@@ -120,7 +114,6 @@ export async function auditMiddleware(request: NextRequest) {
   else if (path.includes('/api/system-status')) module = 'SYSTEM';
   else if (path.includes('/api/')) module = 'SYSTEM';
 
-  console.log('Module determined:', module);
 
   // Déterminer le type d'action basé sur la méthode HTTP
   let actionType = 'READ';

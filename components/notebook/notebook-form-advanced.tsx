@@ -347,6 +347,7 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
                   <MenuItem value={90}>1h30</MenuItem>
                   <MenuItem value={120}>2h</MenuItem>
                   <MenuItem value={180}>3h</MenuItem>
+                  <MenuItem value={240}>4h</MenuItem>
                 </Select>
               </FormControl>
 

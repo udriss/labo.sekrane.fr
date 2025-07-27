@@ -115,7 +115,7 @@ export const POST = withAudit(
             name: data.name,
             quantity: data.quantity || 1,
             volume: data.volume || null,
-            temporary: true // Indiquer que c'est temporaire, en attente de création du type
+            temporary: true // Indiquer que c'est temporaire, à valider de création du type
           }
         })
       }

@@ -164,7 +164,8 @@
         "isActive": true,
         "createdAt": "2025-07-21T13:40:04.461Z",
         "updatedAt": "2025-07-21T13:40:04.461Z"
-      }
+      },
+      "quantityPrevision": 249
     },
     {
       "id": "CHEM_INV_A2ZP1BSQZBY8",
@@ -255,7 +256,8 @@
       "notes": null,
       "createdAt": "2025-07-26T14:41:46.376Z",
       "updatedAt": "2025-07-26T14:41:46.376Z",
-      "supplier": null
+      "supplier": null,
+      "quantityPrevision": 1999
     }
   ],
   "stats": {

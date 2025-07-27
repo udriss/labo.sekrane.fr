@@ -1,94 +1,41 @@
 {
   "events": [
     {
-      "id": "EVENT_001",
-      "title": "TP Chimie Organique - Synthèse",
-      "description": "Synthèse d'un ester et étude des mécanismes réactionnels",
-      "startDate": "2025-01-24T08:00:00Z",
-      "endDate": "2025-01-24T10:00:00Z",
-      "type": "TP",
-      "class": "2nd BTS",
-      "room": "Laboratoire A1",
-      "materials": [
-        {
-          "id": "MAT_001",
-          "name": "Ballon tricol 250mL",
-          "quantity": 4
-        },
-        {
-          "id": "MAT_002",
-          "name": "Réfrigérant à boules",
-          "quantity": 4
-        }
-      ],
-      "chemicals": [
-        {
-          "id": "CHEM_001",
-          "name": "Acide acétique",
-          "quantity": 50,
-          "unit": "mL"
-        }
-      ],
-      "modifiedBy": []
-    },
-    {
-      "id": "EVENT_003",
-      "title": "Maintenance équipements",
-      "description": "Vérification et calibrage des balances analytiques",
-      "startDate": "2025-01-26T09:00:00Z",
-      "endDate": "2025-01-26T12:00:00Z",
-      "type": "MAINTENANCE",
-      "class": null,
-      "room": "Laboratoire A1",
-      "materials": [
-        {
-          "id": "MAT_005",
-          "name": "Balance analytique Sartorius",
-          "quantity": 1
-        }
-      ],
-      "chemicals": [],
-      "fileName": null,
-      "createdAt": "2025-01-15T14:00:00Z",
-      "updatedAt": "2025-01-15T14:00:00Z",
-      "modifiedBy": []
-    },
-    {
-      "id": "EVENT_1753588597943_oeoc5amy6",
+      "id": "EVENT_1753632666836_jmv1bsr5s",
       "title": "Administrateur",
       "name": "Administrateur",
       "description": "",
       "startDate": "2025-07-27T06:00:00.000Z",
-      "endDate": "2025-07-27T10:00:00.000Z",
+      "endDate": "2025-07-27T15:00:00.000Z",
       "type": "TP",
       "state": "PENDING",
       "stateChanger": [],
-      "class": "1ère ES",
+      "class": "Terminale STI2D",
       "room": "",
       "location": "",
       "materials": [
         {
           "id": "EQUIP_1753254105873_vjm5cl4wd",
           "name": "Tube à essai",
-          "quantity": 11,
-          "isCustom": false,
-          "volume": "25 mL"
-        },
-        {
-          "id": "EQUIP_1753254176990_5y8n3pivf",
-          "name": "Bécher",
-          "quantity": 4,
+          "quantity": 13,
           "isCustom": false,
           "volume": "25 mL"
         }
       ],
       "chemicals": [
         {
-          "id": "CHEM_INV_0RZP4BADZOGZ",
-          "name": "Acide nitrique",
+          "id": "cmdd5kp7c00071f0vz4lco20j",
+          "name": "Hydroxyde de sodium",
           "requestedQuantity": 1,
           "unit": "g",
-          "quantity": 4.7
+          "quantity": 250
+        },
+        {
+          "id": "CHEM_INV_0RUP4BADFOGF",
+          "name": "Acide phosphorique",
+          "requestedQuantity": 4.2,
+          "unit": "mL",
+          "quantity": 2000
         }
       ],
       "equipment": [],
@@ -96,12 +43,20 @@
       "fileUrl": null,
       "files": [
         {
-          "fileName": "1750771252984.jpeg",
-          "fileUrl": "/uploads/calendar/1753588596396_y9mr90_1750771252984.jpeg",
-          "filePath": "/uploads/calendar/1753588596396_y9mr90_1750771252984.jpeg",
+          "fileName": "TEST_3.jpeg",
+          "fileUrl": "/uploads/calendar/1753635970975_1pwb03_TEST_3.jpeg",
+          "filePath": "/uploads/calendar/1753635970975_1pwb03_TEST_3.jpeg",
           "fileSize": 87534,
           "fileType": "image/jpeg",
-          "uploadedAt": "2025-07-27T03:56:37.732Z"
+          "uploadedAt": "2025-07-27T17:06:12.534Z"
+        },
+        {
+          "fileName": "TEST_3.jpeg",
+          "fileUrl": "/uploads/calendar/1753635979732_mhbfpr_TEST_3.jpeg",
+          "filePath": "/uploads/calendar/1753635979732_mhbfpr_TEST_3.jpeg",
+          "fileSize": 87534,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-27T17:06:20.486Z"
         }
       ],
       "remarks": "",
@@ -110,116 +65,30 @@
       "modifiedBy": [
         [
           "USER_001",
-          "2025-07-27T04:07:21.409Z",
-          "2025-07-27T09:56:06.158Z"
+          "2025-07-27T16:11:18.372Z",
+          "2025-07-27T16:11:39.162Z",
+          "2025-07-27T16:38:07.396Z",
+          "2025-07-27T16:43:58.739Z",
+          "2025-07-27T16:44:36.725Z",
+          "2025-07-27T16:45:31.217Z",
+          "2025-07-27T16:46:20.787Z",
+          "2025-07-27T16:55:30.532Z",
+          "2025-07-27T16:56:25.383Z",
+          "2025-07-27T16:57:10.908Z",
+          "2025-07-27T17:06:12.711Z",
+          "2025-07-27T17:06:20.631Z"
         ]
       ],
-      "createdAt": "2025-07-27T03:56:37.943Z",
-      "updatedAt": "2025-07-27T09:56:06.158Z",
+      "createdAt": "2025-07-27T16:11:06.836Z",
+      "updatedAt": "2025-07-27T17:06:20.631Z",
       "column": 0,
-      "totalColumns": 2,
+      "totalColumns": 1,
       "visualStartDate": "2025-07-27T06:00:00.000Z",
-      "visualEndDate": "2025-07-27T10:00:00.000Z",
+      "visualEndDate": "2025-07-27T15:00:00.000Z",
       "startsBeforeDay": false,
       "endsAfterDay": false,
       "startsBeforeSchedule": false,
       "endsAfterSchedule": false
-    },
-    {
-      "id": "EVENT_1753589185752_83ps2gh9a",
-      "title": "Séance TP",
-      "name": "Administrateur",
-      "description": "",
-      "startDate": "2025-07-27T06:00:00.000Z",
-      "endDate": "2025-07-27T13:00:00.000Z",
-      "type": "TP",
-      "state": "PENDING",
-      "stateChanger": [],
-      "class": "1ère ES",
-      "room": "",
-      "location": "",
-      "materials": [
-        {
-          "id": "EQUIP_1753254176990_5y8n3pivf",
-          "name": "Bécher",
-          "quantity": 1,
-          "isCustom": false,
-          "volume": "25 mL"
-        }
-      ],
-      "chemicals": [
-        {
-          "id": "CHEM_INV_A2ZF1BSLZBW8",
-          "name": "Acide chlorhydrique",
-          "requestedQuantity": 1,
-          "unit": "g",
-          "quantity": 2632.6
-        }
-      ],
-      "equipment": [],
-      "fileName": null,
-      "fileUrl": null,
-      "files": [],
-      "remarks": "",
-      "notes": null,
-      "createdBy": "USER_001",
-      "modifiedBy": [
-        [
-          "USER_001",
-          "2025-07-27T04:06:54.826Z",
-          "2025-07-27T04:07:32.728Z"
-        ]
-      ],
-      "createdAt": "2025-07-27T04:06:25.752Z",
-      "updatedAt": "2025-07-27T04:07:32.728Z",
-      "column": 0,
-      "totalColumns": 1,
-      "visualStartDate": "2025-07-26T06:00:00.000Z",
-      "visualEndDate": "2025-07-26T13:00:00.000Z",
-      "startsBeforeDay": false,
-      "endsAfterDay": false,
-      "startsBeforeSchedule": false,
-      "endsAfterSchedule": false
-    },
-    {
-      "id": "EVENT_1753589368442_vbdqajmxa",
-      "title": "Administrateur",
-      "name": "Administrateur",
-      "description": "",
-      "startDate": "2025-07-28T05:00:00.000Z",
-      "endDate": "2025-07-28T16:00:00.000Z",
-      "type": "TP",
-      "state": "PENDING",
-      "stateChanger": [],
-      "room": "",
-      "location": "",
-      "materials": [],
-      "chemicals": [],
-      "equipment": [],
-      "fileName": null,
-      "fileUrl": null,
-      "files": [],
-      "remarks": "",
-      "notes": null,
-      "createdBy": "USER_001",
-      "modifiedBy": [
-        [
-          "USER_001",
-          "2025-07-27T04:09:49.622Z",
-          "2025-07-27T04:22:08.824Z"
-        ]
-      ],
-      "createdAt": "2025-07-27T04:09:28.442Z",
-      "updatedAt": "2025-07-27T04:22:08.824Z",
-      "column": 0,
-      "totalColumns": 1,
-      "visualStartDate": "2025-07-26T06:00:00.000Z",
-      "visualEndDate": "2025-07-26T16:00:00.000Z",
-      "startsBeforeDay": false,
-      "endsAfterDay": false,
-      "startsBeforeSchedule": true,
-      "endsAfterSchedule": false,
-      "class": ""
     }
   ]
 }

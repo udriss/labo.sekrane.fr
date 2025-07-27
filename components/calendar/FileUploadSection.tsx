@@ -13,7 +13,6 @@ import {
 } from '@mui/icons-material'
 import { FileWithMetadata } from '@/types/global'
 
-
 interface FileUploadSectionProps {
   files: FileWithMetadata[]
   onFilesChange: (files: FileWithMetadata[]) => void
@@ -21,16 +20,14 @@ interface FileUploadSectionProps {
   maxSizePerFile?: number // en MB
   acceptedTypes?: string[]
   autoUpload?: boolean // Pour déclencher l'upload automatiquement
+  onFileUploaded?: (fileId: string, uploadedFile: {
+    fileName: string
+    fileUrl: string
+    fileSize: number
+    fileType: string
+  }) => void // Nouveau callback pour persister après upload
 }
 
-interface FileUploadSectionProps {
-  files: FileWithMetadata[]
-  onFilesChange: (files: FileWithMetadata[]) => void
-  maxFiles?: number
-  maxSizePerFile?: number
-  acceptedTypes?: string[]
-  autoUpload?: boolean
-}
 
 
 export function FileUploadSection({
@@ -39,10 +36,13 @@ export function FileUploadSection({
   maxFiles = 5,
   maxSizePerFile = 10,
   acceptedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif'],
-  autoUpload = true
+  autoUpload = true,
+  onFileUploaded
 }: FileUploadSectionProps) {
   const [dragOver, setDragOver] = useState(false)
   const [activeUploads, setActiveUploads] = useState<Record<string, XMLHttpRequest>>({})
+
+
 
 
 
@@ -137,12 +137,25 @@ const formatFileSize = (bytes: number): string => {
           if (xhr.status === 200) {
             try {
               const response = JSON.parse(xhr.responseText)
+              const uploadedUrl = response.fileUrl || response.path
+              
               updateFileProgress(
                 fileItem.id, 
                 100, 
                 'completed', 
                 response.fileUrl || response.path
               )
+
+              // NOUVEAU : Appeler le callback onFileUploaded si fourni
+              if (onFileUploaded && fileItem.file) {
+                onFileUploaded(fileItem.id, {
+                  fileName: fileItem.file.name,
+                  fileUrl: uploadedUrl,
+                  fileSize: fileItem.file.size,
+                  fileType: fileItem.file.type || 'application/octet-stream'
+                })
+              }
+
               resolve()
             } catch {
               updateFileProgress(fileItem.id, 0, 'error', undefined, 'Réponse serveur invalide')
@@ -373,7 +386,7 @@ const formatFileSize = (bytes: number): string => {
         onClick={handleFileInput}
       >
         <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-        <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom>
           Glissez-déposez vos fichiers ici
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -420,7 +433,7 @@ const formatFileSize = (bytes: number): string => {
                           sx={{ height: 20 }}
                         />
                       )}
-                                            {!isExisting && fileItem.uploadStatus === 'completed' && (
+                      {!isExisting && fileItem.uploadStatus === 'completed' && (
                         <CheckCircle color="success" sx={{ fontSize: 16 }} />
                       )}
                       {!isExisting && fileItem.uploadStatus === 'error' && (
@@ -453,6 +466,15 @@ const formatFileSize = (bytes: number): string => {
                         <Typography variant="caption" color="warning.main">
                           • Annulé
                         </Typography>
+                      )}
+                      {fileItem.isPersisted && (
+                        <Chip 
+                          label="Sauvegardé" 
+                          size="small" 
+                          color="success" 
+                          variant="outlined"
+                          sx={{ height: 16 }}
+                        />
                       )}
                     </Box>
                   </Box>
@@ -627,6 +649,14 @@ const formatFileSize = (bytes: number): string => {
               color="warning"
               size="small"
               variant="outlined"
+            />
+          )}
+          {files.filter(f => f.isPersisted).length > 0 && (
+            <Chip
+              icon={<CheckCircle />}
+              label={`${files.filter(f => f.isPersisted).length} sauvegardé${files.filter(f => f.isPersisted).length > 1 ? 's' : ''}`}
+              color="success"
+              size="small"
             />
           )}
         </Box>

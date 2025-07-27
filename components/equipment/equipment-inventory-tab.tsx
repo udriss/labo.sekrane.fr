@@ -27,7 +27,7 @@ import {
   TableSortLabel,
   Skeleton
 } from "@mui/material"
-import { Search, Edit, Delete } from "@mui/icons-material"
+import { Search, Edit, Delete, Room as RoomIcon, HomeFilled } from "@mui/icons-material"
 import { Room, EquipmentType } from "@/types/equipment"
 import ViewToggle from "@/components/equipment/ViewToggle"  
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
@@ -352,8 +352,8 @@ export function EquipmentInventoryTab({
                   </Box>
                 </TableCell>
                 <TableCell>
-                  {item.room && <Typography variant="body2">🏠 {item.room}</Typography>}
-                  {item.location && <Typography variant="body2">📍 {item.location}</Typography>}
+                  {item.room && <Typography variant="body2"><HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.room}</Typography>}
+                  {item.location && <Typography variant="body2"><RoomIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.location}</Typography>}
                 </TableCell>
                 <TableCell>
                   <Chip 
@@ -473,12 +473,12 @@ export function EquipmentInventoryTab({
                     </Typography>
                     {item.location && (
                       <Typography color="text.secondary">
-                        📍 {item.location}
+                        <RoomIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.location}
                       </Typography>
                     )}
                     {item.room && (
                       <Typography color="text.secondary">
-                        🏠 {item.room}
+                        <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {item.room}
                       </Typography>
                     )}
                     
@@ -599,7 +599,7 @@ export function EquipmentInventoryTab({
               <MenuItem value="all">Tous les lieux</MenuItem>
               {rooms.map((room) => [
                 <MenuItem key={room.id} value={room.name} sx={{ fontWeight: 'bold' }}>
-                  🏠 {room.name}
+                  <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {room.name}
                 </MenuItem>,
                 ...(room.locations || []).map((location: any) => (
                   <MenuItem 
@@ -607,7 +607,7 @@ export function EquipmentInventoryTab({
                     value={`${room.name}|${location.name}`}
                     sx={{ pl: 4 }}
                   >
-                    📍 {location.name}
+                    <RoomIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> {location.name}
                   </MenuItem>
                 ))
               ])}

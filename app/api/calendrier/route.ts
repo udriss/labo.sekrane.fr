@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
-
+import { readCalendarFile, writeCalendarFile } from '@/lib/calendar-utils'
 
 // Ajouter ces interfaces au début du fichier
 interface Chemical {
@@ -148,16 +148,7 @@ function getFileTypeFromName(fileName: string): string {
   return 'other'
 }
 
-// Fonction pour lire le fichier calendrier
-async function readCalendarFile() {
-  try {
-    const data = await fs.readFile(CALENDAR_FILE, 'utf-8')
-    return JSON.parse(data)
-  } catch (error) {
-    console.error('Erreur lecture fichier calendar:', error)
-    return { events: [] }
-  }
-}
+
 
 // Nouvelle fonction pour lire le fichier chemicals inventory
 async function readChemicalsInventoryFile(): Promise<ChemicalInventory[]> {
@@ -206,15 +197,6 @@ async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
 }
 
 
-// Fonction pour écrire dans le fichier calendrier
-async function writeCalendarFile(data: any) {
-  try {
-    await fs.writeFile(CALENDAR_FILE, JSON.stringify(data, null, 2))
-  } catch (error) {
-    console.error('Erreur écriture fichier calendar:', error)
-    throw error
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -540,81 +522,102 @@ export const PUT = withAudit(
       updatedModifiedBy = currentModifiedBy
     }
 
-    // Préparer et sauvegarder les nouveaux fichiers
-    let filesUpdate = {}
+
+// Préparer et sauvegarder les nouveaux fichiers
+let filesUpdate = {}
+
+if (files !== undefined) {
+  if (Array.isArray(files)) {
+    const savedFiles = []
     
-    if (files !== undefined) {
-      if (Array.isArray(files)) {
-        const savedFiles = []
-        
-        for (const file of files) {
-          try {
-            // Si c'est un nouveau fichier avec du contenu
-                       // Si c'est un nouveau fichier avec du contenu
-            if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
-              const savedFileUrl = await saveFileToDisk({
-                userId: userId ?? 'TEMP_USER',
-                fileName: file.fileName,
-                fileContent: file.fileContent || file.fileUrl
-              })
-              
-              savedFiles.push({
-                fileName: file.fileName,
-                fileUrl: savedFileUrl,
-                filePath: savedFileUrl,
-                fileSize: file.fileSize || 0,
-                fileType: file.fileType || getFileTypeFromName(file.fileName),
-                uploadedAt: file.uploadedAt || new Date().toISOString()
-              })
-            } else {
-              // Fichier existant, on le garde
-              savedFiles.push(file)
-            }
-          } catch (error) {
-            console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
-          }
-        }
-        
-        filesUpdate = { files: savedFiles }
-      } else {
-        filesUpdate = { files: [] }
-      }
-    }
-    
-    // Gérer l'ancien format fileName (rétrocompatibilité)
-    if (fileName !== undefined) {
-      eventUpdates.fileName = fileName
-      if (fileUrl !== undefined) {
-        eventUpdates.fileUrl = fileUrl
-      }
-      
-      if (files === undefined && fileName) {
-        let savedFileUrl = fileUrl
-        
-        if (fileUrl && fileUrl.startsWith('data:')) {
-          try {
-            savedFileUrl = await saveFileToDisk({
-              userId: userId ?? 'TEMP_USER',
-              fileName: fileName,
-              fileContent: fileUrl
-            })
-          } catch (error) {
-            console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
-          }
-        }
-        
-        filesUpdate = {
-          files: [{
-            fileName: fileName,
-            fileUrl: savedFileUrl || '',
-            filePath: savedFileUrl || '',
-            fileSize: fileSize || 0,
-            fileType: getFileTypeFromName(fileName),
+    for (const file of files) {
+      try {
+        // Si c'est un fichier existant (déjà uploadé)
+        if (file.fileUrl && !file.fileUrl.startsWith('data:') && !file.fileContent) {
+          // Fichier existant, on garde toutes ses métadonnées
+          savedFiles.push({
+            fileName: file.fileName,
+            fileUrl: file.fileUrl,
+            filePath: file.filePath || file.fileUrl,
+            fileSize: file.fileSize || 0,
+            fileType: file.fileType || getFileTypeFromName(file.fileName),
+            uploadedAt: file.uploadedAt || new Date().toISOString()
+          })
+        } 
+        // Si c'est un nouveau fichier avec du contenu base64
+        else if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
+          const savedFileUrl = await saveFileToDisk({
+            userId: userId ?? 'TEMP_USER',
+            fileName: file.fileName,
+            fileContent: file.fileContent || file.fileUrl,
+          })
+          
+          savedFiles.push({
+            fileName: file.fileName,
+            fileUrl: savedFileUrl,
+            filePath: savedFileUrl,
+            fileSize: file.fileSize || 0,
+            fileType: file.fileType || getFileTypeFromName(file.fileName),
             uploadedAt: new Date().toISOString()
-          }]
+          })
         }
+        // Si c'est un fichier nouvellement uploadé (via FileUploadSection)
+        else if (file.uploadedUrl || file.path) {
+          savedFiles.push({
+            fileName: file.fileName,
+            fileUrl: file.uploadedUrl || file.path,
+            filePath: file.uploadedUrl || file.path,
+            fileSize: file.fileSize || file.size || 0,
+            fileType: file.fileType || file.type || getFileTypeFromName(file.fileName),
+            uploadedAt: file.uploadedAt || new Date().toISOString()
+          })
+        }
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
       }
     }
+    
+    filesUpdate = { files: savedFiles }
+  } else {
+    filesUpdate = { files: [] }
+  }
+}
+
+// Gérer l'ancien format fileName (rétrocompatibilité)
+if (fileName !== undefined && files === undefined) {
+  eventUpdates.fileName = fileName
+  if (fileUrl !== undefined) {
+    eventUpdates.fileUrl = fileUrl
+  }
+  
+  // Convertir l'ancien format vers le nouveau format files[]
+  if (fileName) {
+    let savedFileUrl = fileUrl
+    
+    if (fileUrl && fileUrl.startsWith('data:')) {
+      try {
+        savedFileUrl = await saveFileToDisk({
+          userId: userId ?? 'TEMP_USER',
+          fileName: fileName,
+          fileContent: fileUrl
+        })
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
+      }
+    }
+    
+    filesUpdate = {
+      files: [{
+        fileName: fileName,
+        fileUrl: savedFileUrl || '',
+        filePath: savedFileUrl || '',
+        fileSize: fileSize || 0,
+        fileType: getFileTypeFromName(fileName),
+        uploadedAt: new Date().toISOString()
+      }]
+    }
+  }
+}
 
     // Mettre à jour l'événement principal
     const updatedEvent = {

@@ -16,7 +16,7 @@ import {
   ArrowForward, PlayCircle, BookmarkBorder, Security,
   Groups, School, QrCodeScanner, Speed, Support,
   Lightbulb, MenuBook, Code, GitHub, Email, Category,
-  Add, Edit, Tune, ViewList, ViewModule
+  Add, Edit, Tune, ViewList, ViewModule, Room
 } from "@mui/icons-material"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -778,7 +778,7 @@ export default function DocsPage() {
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 2 }}>
                         <Typography variant="subtitle2" fontWeight="bold">
-                          📍 Planning du jour
+                          <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> Planning du jour
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Focus sur la journée en cours avec timeline détaillée

@@ -38,7 +38,8 @@ import {
   Edit,
   Delete,
   Person,
-  Settings
+  Settings,
+  Room
 } from "@mui/icons-material"
 import { EquipmentType, EquipmentItem, EquipmentFormData } from "@/types/equipment"
 
@@ -764,7 +765,7 @@ export function EquipmentAddTab({
                 {formData.room && (
                   <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'info.light' }}>
                     <Typography variant="body2" color="info.contrastText">
-                      <strong>📍 Localisation sélectionnée:</strong><br />
+                      <strong><Room sx={{ fontSize: 16, color: 'text.secondary' }} /> Localisation sélectionnée:</strong><br />
                       <Home fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
                       {formData.room}
                       {formData.location && (

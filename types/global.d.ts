@@ -25,4 +25,5 @@ export interface FileWithMetadata {
     fileType?: string
     uploadedAt?: string
   }
+  isPersisted?: boolean
 }

@@ -8,8 +8,6 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const path = request.nextUrl.pathname;
   
-  // Debug log
-  console.log('Main middleware called for:', path);
   
   // Apply audit middleware for API routes
   if (path.startsWith('/api') && 
@@ -17,7 +15,6 @@ export async function middleware(request: NextRequest) {
       !path.includes('/status') &&
       !path.startsWith('/api/audit/log') &&
       !path.startsWith('/api/auth')) { // Exclure auth pour éviter les boucles
-    console.log('Calling audit middleware for:', path);
     await auditMiddleware(request);
   }
   

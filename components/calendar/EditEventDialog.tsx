@@ -1,12 +1,12 @@
 // components/calendar/EditEventDialog.tsx
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, IconButton,
   TextField, Button, FormControl, InputLabel, Select, MenuItem,
   Autocomplete, Chip, Alert, Collapse, Stack, Divider, InputAdornment,
-  ClickAwayListener, Tooltip
+  ClickAwayListener, Tooltip, CircularProgress
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
@@ -58,6 +58,10 @@ export function EditEventDialog({
   const [chemicalsWithForecast, setChemicalsWithForecast] = useState<any[]>([])
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
 
+  // Ajouter un état pour suivre les uploads
+  const [hasUploadingFiles, setHasUploadingFiles] = useState(false)
+  const [uploadErrors, setUploadErrors] = useState<string[]>([])
+
   const [timeSlots, setTimeSlots] = useState<Array<{
     date: Date | null;
     startTime: string;
@@ -78,6 +82,15 @@ export function EditEventDialog({
     chemicals: [] as any[],
     location: ''
   })
+
+
+
+  // Surveiller l'état des uploads
+  useEffect(() => {
+    const uploading = files.some(f => f.uploadStatus === 'uploading')
+    setHasUploadingFiles(uploading)
+  }, [files])
+
 
   // Initialiser le formulaire avec les données de l'événement
   useEffect(() => {
@@ -237,122 +250,179 @@ export function EditEventDialog({
     return warnings
   }
 
-  const handleSave = async () => {
-    if (!formData.title) {
-      alert('Veuillez remplir le titre')
+   // Callback pour gérer l'upload réussi d'un fichier
+const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  fileType: string
+}) => {
+  console.log('handleFileUploaded appelé avec event:', event)
+  console.log('handleFileUploaded - event.id:', event?.id)
+
+    if (!event?.id) {
+      console.warn('Pas d\'ID d\'événement pour persister le fichier')
       return
     }
 
-    // Vérifier les créneaux selon le mode
-    if (showMultipleSlots && formData.type === 'TP') {
-      for (const slot of timeSlots) {
-        if (!slot.date || !slot.startTime || !slot.endTime) {
-          alert('Veuillez remplir tous les créneaux horaires')
-          return
-        }
+    
+    try {
+      // Persister immédiatement le fichier dans l'événement
+      const response = await fetch(`/api/calendrier/add-file?id=${event.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: {
+            ...uploadedFile,
+            uploadedAt: new Date().toISOString()
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la persistance du fichier')
       }
-    } else {
-      if (!formData.startDate || !formData.startTime || !formData.endTime) {
-        alert('Veuillez remplir tous les champs obligatoires')
+
+      const result = await response.json()
+      console.log('Fichier persisté:', result)
+
+      // Mettre à jour l'état local pour marquer le fichier comme uploadé et persisté
+      setFiles(prevFiles => 
+        prevFiles.map(f => 
+          f.id === fileId 
+            ? { 
+                ...f, 
+                uploadedUrl: uploadedFile.fileUrl,
+                uploadStatus: 'completed' as const,
+                isPersisted: true 
+              }
+            : f
+        )
+      )
+    } catch (error) {
+      console.error('Erreur lors de la persistance du fichier:', error)
+      setUploadErrors(prev => [...prev, `Erreur lors de la sauvegarde de ${uploadedFile.fileName}`])
+      
+      // Marquer le fichier comme uploadé mais non persisté
+      setFiles(prevFiles => 
+        prevFiles.map(f => 
+          f.id === fileId 
+            ? { 
+                ...f, 
+                uploadedUrl: uploadedFile.fileUrl,
+                uploadStatus: 'completed' as const,
+                isPersisted: false 
+              }
+            : f
+        )
+      )
+    }
+  }, [event?.id])
+
+const handleSave = async () => {
+  if (!formData.title) {
+    alert('Veuillez remplir le titre')
+    return
+  }
+
+  if (hasUploadingFiles) {
+    alert('Des fichiers sont encore en cours d\'upload. Veuillez patienter.')
+    return
+  }
+
+  // Vérifier les créneaux selon le mode
+  if (showMultipleSlots && formData.type === 'TP') {
+    for (const slot of timeSlots) {
+      if (!slot.date || !slot.startTime || !slot.endTime) {
+        alert('Veuillez remplir tous les créneaux horaires')
         return
       }
     }
-
-    // Vérifier les quantités de réactifs chimiques
-    const insufficientChemicals = formData.chemicals.filter(c => 
-      c.requestedQuantity > (c.quantity || 0)
-    )
-    if (insufficientChemicals.length > 0) {
-      alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
+  } else {
+    if (!formData.startDate || !formData.startTime || !formData.endTime) {
+      alert('Veuillez remplir tous les champs obligatoires')
       return
     }
+  }
 
-    setLoading(true)
-    try {
-      // Préparer les fichiers
-      const filesData = files.map(f => {
+  // Vérifier les quantités de réactifs chimiques
+  const insufficientChemicals = formData.chemicals.filter(c => 
+    c.requestedQuantity > (c.quantity || 0)
+  )
+  if (insufficientChemicals.length > 0) {
+    alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
+    return
+  }
+
+  setLoading(true)
+  try {
+    // Préparer TOUS les fichiers (existants + nouveaux)
+    const allFilesData = files
+      .filter(f => f.existingFile || f.uploadedUrl || f.path) // Garder tous les fichiers valides
+      .map(f => {
+        // Si c'est un fichier existant
         if (f.existingFile) {
-          return f.existingFile
-        } else if (f.file) {
           return {
-            fileName: f.file.name,
-            fileSize: f.file.size,
-            fileType: f.file.type,
+            fileName: f.existingFile.fileName,
+            fileUrl: f.existingFile.fileUrl,
+            filePath: f.existingFile.filePath || f.existingFile.fileUrl,
+            fileSize: f.existingFile.fileSize || 0,
+            fileType: f.existingFile.fileType || '',
+            uploadedAt: f.existingFile.uploadedAt || ''
+          }
+        }
+        // Si c'est un nouveau fichier uploadé
+        else if (f.uploadedUrl || f.path) {
+          return {
+            fileName: f.file?.name || f.fileName || '',
+            fileUrl: f.uploadedUrl || f.path || '',
+            filePath: f.uploadedUrl || f.path || '',
+            fileSize: f.file?.size || f.fileSize || 0,
+            fileType: f.file?.type || f.fileType || '',
             uploadedAt: new Date().toISOString()
           }
         }
-      }).filter(Boolean)
+        return null
+      })
+      .filter((file): file is NonNullable<typeof file> => file !== null)
 
-      // Préparer les matériels avec quantités
-      const materialsData = formData.materials.map((m) => ({
-        id: m.id,
-        name: m.itemName || m.name || '',
-        quantity: m.quantity || 1,
-        isCustom: m.isCustom || false,
-        volume: m.volume || null
+    // Préparer les matériels avec quantités
+    const materialsData = formData.materials.map((m) => ({
+      id: m.id,
+      name: m.itemName || m.name || '',
+      quantity: m.quantity || 1,
+      isCustom: m.isCustom || false,
+      volume: m.volume || null
+    }))
+
+    // Préparer les réactifs chimiques avec quantités
+    const chemicalsData = formData.chemicals.map((c) => ({
+      id: c.id,
+      name: c.name || '',
+      requestedQuantity: c.requestedQuantity || 1,
+      unit: c.unit || '',
+      quantity: c.quantity || 0
+    }))
+
+    if (showMultipleSlots && formData.type === 'TP' && timeSlots.length > 1) {
+      // Mode multi-créneaux
+      const firstSlot = timeSlots[0]
+      const additionalSlots = timeSlots.slice(1).map(slot => ({
+        date: slot.date ? format(slot.date, 'yyyy-MM-dd') : '',
+        startTime: slot.startTime,
+        endTime: slot.endTime
       }))
+      
+      if (firstSlot.date) {
+        const startDateTime = new Date(firstSlot.date)
+        startDateTime.setHours(parseInt(firstSlot.startTime.split(':')[0]))
+        startDateTime.setMinutes(parseInt(firstSlot.startTime.split(':')[1]))
 
-      // Préparer les réactifs chimiques avec quantités
-      const chemicalsData = formData.chemicals.map((c) => ({
-        id: c.id,
-        name: c.name || '',
-        requestedQuantity: c.requestedQuantity || 1,
-        unit: c.unit || '',
-        quantity: c.quantity || 0
-      }))
+        const endDateTime = new Date(firstSlot.date)
+        endDateTime.setHours(parseInt(firstSlot.endTime.split(':')[0]))
+        endDateTime.setMinutes(parseInt(firstSlot.endTime.split(':')[1]))
 
-      if (showMultipleSlots && formData.type === 'TP' && timeSlots.length > 1) {
-        // Mode multi-créneaux
-        const firstSlot = timeSlots[0]
-        const additionalSlots = timeSlots.slice(1).map(slot => ({
-          date: slot.date ? format(slot.date, 'yyyy-MM-dd') : '',
-          startTime: slot.startTime,
-          endTime: slot.endTime
-        }))
-        
-        if (firstSlot.date) {
-          const startDateTime = new Date(firstSlot.date)
-          startDateTime.setHours(parseInt(firstSlot.startTime.split(':')[0]))
-          startDateTime.setMinutes(parseInt(firstSlot.startTime.split(':')[1]))
-
-          const endDateTime = new Date(firstSlot.date)
-          endDateTime.setHours(parseInt(firstSlot.endTime.split(':')[0]))
-          endDateTime.setMinutes(parseInt(firstSlot.endTime.split(':')[1]))
-
-          const updatedEvent: Partial<CalendarEvent> & { additionalTimeSlots?: any[] } = {
-            title: formData.title,
-            description: formData.description,
-            type: formData.type,
-            startDate: startDateTime,
-            endDate: endDateTime,
-            class: formData.class,
-            room: formData.room,
-            materials: materialsData,
-            chemicals: chemicalsData,
-            location: formData.location,
-            files: filesData,
-            remarks: remarks,
-            additionalTimeSlots: additionalSlots
-          }
-
-          await onSave(updatedEvent)
-        }
-      } else {
-        // Mode simple
-        const startDateTime = new Date(formData.startDate!)
-        startDateTime.setHours(parseInt(formData.startTime.split(':')[0]))
-        startDateTime.setMinutes(parseInt(formData.startTime.split(':')[1]))
-
-        let endDateTime: Date
-        if (formData.endDate && formData.endDate.getDate() !== formData.startDate!.getDate()) {
-          endDateTime = new Date(formData.endDate)
-        } else {
-          endDateTime = new Date(formData.startDate!)
-        }
-        endDateTime.setHours(parseInt(formData.endTime.split(':')[0]))
-        endDateTime.setMinutes(parseInt(formData.endTime.split(':')[1]))
-
-        const updatedEvent: Partial<CalendarEvent> = {
+        const updatedEvent: Partial<CalendarEvent> & { additionalTimeSlots?: any[] } = {
           title: formData.title,
           description: formData.description,
           type: formData.type,
@@ -363,21 +433,54 @@ export function EditEventDialog({
           materials: materialsData,
           chemicals: chemicalsData,
           location: formData.location,
-          files: filesData,
-          remarks: remarks
+          remarks: remarks,
+          files: allFilesData, // Toujours envoyer tous les fichiers
+          additionalTimeSlots: additionalSlots
         }
 
         await onSave(updatedEvent)
       }
-      
-      onClose()
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error)
-      alert('Erreur lors de la sauvegarde de l\'événement')
-    } finally {
-      setLoading(false)
+    } else {
+      // Mode simple
+      const startDateTime = new Date(formData.startDate!)
+      startDateTime.setHours(parseInt(formData.startTime.split(':')[0]))
+      startDateTime.setMinutes(parseInt(formData.startTime.split(':')[1]))
+
+      let endDateTime: Date
+      if (formData.endDate && formData.endDate.getDate() !== formData.startDate!.getDate()) {
+        endDateTime = new Date(formData.endDate)
+      } else {
+        endDateTime = new Date(formData.startDate!)
+      }
+      endDateTime.setHours(parseInt(formData.endTime.split(':')[0]))
+      endDateTime.setMinutes(parseInt(formData.endTime.split(':')[1]))
+
+      const updatedEvent: Partial<CalendarEvent> = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        class: formData.class,
+        room: formData.room,
+        materials: materialsData,
+        chemicals: chemicalsData,
+        location: formData.location,
+        remarks: remarks,
+        files: allFilesData // Toujours envoyer tous les fichiers
+      }
+
+      await onSave(updatedEvent)
     }
+    
+    onClose()
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde:', error)
+    alert('Erreur lors de la sauvegarde de l\'événement')
+  } finally {
+    setLoading(false)
   }
+}
 
   if (!event) return null
 
@@ -626,7 +729,6 @@ export function EditEventDialog({
                   />
                 )}
               </Box>
-
               <Box display="flex" gap={2}>
                 <TimePicker
                   label="Heure de début"
@@ -1273,6 +1375,19 @@ export function EditEventDialog({
             </>
           )}
 
+          {/* Afficher les erreurs d'upload s'il y en a */}
+          {uploadErrors.length > 0 && (
+            <Alert severity="error" onClose={() => setUploadErrors([])}>
+              <Typography variant="body2" fontWeight="bold">
+                Erreurs lors de l'upload :
+              </Typography>
+              {uploadErrors.map((error, index) => (
+                <Typography key={index} variant="caption" display="block">
+                  • {error}
+                </Typography>
+              ))}
+            </Alert>
+          )}
           {/* Section de gestion des fichiers multiples */}
           <Box>
             <Typography variant="subtitle1" gutterBottom>
@@ -1283,23 +1398,26 @@ export function EditEventDialog({
               onFilesChange={setFiles}
               maxFiles={5}
               maxSizePerFile={10}
-              acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif']}
+              onFileUploaded={handleFileUploaded}
             />
           </Box>
         </Stack>
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>
-          Annuler
-        </Button>
+        <Button onClick={onClose}>Annuler</Button>
         <Button
-          variant="contained"
           onClick={handleSave}
-          startIcon={<Save />}
-          disabled={loading || formData.chemicals.some(c => c.requestedQuantity > (c.quantity || 0))}
+          variant="contained"
+          disabled={loading || hasUploadingFiles}
+          startIcon={hasUploadingFiles ? <CircularProgress size={20} /> : <Save />}
         >
-          {loading ? 'Enregistrement...' : 'Enregistrer'}
+          {hasUploadingFiles 
+            ? `Upload en cours (${files.filter(f => f.uploadStatus === 'uploading').length} fichier(s))...` 
+            : loading 
+            ? 'Enregistrement...' 
+            : 'Enregistrer'
+          }
         </Button>
       </DialogActions>
     </Dialog>

@@ -9,15 +9,16 @@ import {
   TextField, InputAdornment, FormControl, Select, MenuItem,
   Divider, Badge, ListItemAvatar, Collapse,
   Button, Paper, Menu, Dialog, DialogTitle, DialogContent,
-  DialogActions
+  DialogActions, Grid
 } from '@mui/material'
 import { format } from "date-fns"
-import { fr } from "date-fns/locale"
+import { fr, is } from "date-fns/locale"
 import { 
   Science, Schedule, Assignment, EventAvailable,
   CheckCircle, Cancel, SwapHoriz, HourglassEmpty,
   Search, FilterList, Visibility, Edit, Delete,
-  ExpandMore, ExpandLess, MoreVert
+  ExpandMore, ExpandLess, MoreVert, CalendarToday,
+  AccessTime, Room
 } from '@mui/icons-material'
 
 // Importer les types depuis le fichier partagé
@@ -32,6 +33,7 @@ interface EventsListProps {
   canValidateEvent?: boolean
   onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
   isMobile?: boolean
+  isTablet?: boolean
 }
 
 const EVENT_TYPES = {
@@ -64,15 +66,7 @@ const getStateIcon = (state: string | undefined) => {
   }
 }
 
-const getStateColor = (state: string | undefined): any => {
-  switch (state) {
-    case 'PENDING': return 'warning'
-    case 'VALIDATED': return 'success'
-    case 'CANCELLED': return 'error'
-    case 'MOVED': return 'info'
-    default: return 'default'
-  }
-}
+
 
 const EventsList: React.FC<EventsListProps> = ({ 
   events, 
@@ -82,7 +76,8 @@ const EventsList: React.FC<EventsListProps> = ({
   canEditEvent,
   canValidateEvent,
   onStateChange,
-  isMobile = false
+  isMobile = false,
+  isTablet = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | EventType>('all')
@@ -105,19 +100,6 @@ const EventsList: React.FC<EventsListProps> = ({
     return EVENT_TYPES[type] || EVENT_TYPES.OTHER
   }
 
-  const formatTime = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, "HH:mm", { locale: fr })
-  }
-
-  const formatDateTimeDay = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, "dd/MM/yyyy", { locale: fr })
-  }
-  const formatDateTimeHour = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    return format(dateObj, "HH:mm", { locale: fr })
-  }
 
   // Fonction pour obtenir l'icône et la couleur d'état
   const getStateInfo = (state: string | undefined) => {
@@ -126,7 +108,7 @@ const EventsList: React.FC<EventsListProps> = ({
         return { 
           icon: <HourglassEmpty sx={{ fontSize: 20 }} />, 
           color: 'warning',
-          label: 'En attente' 
+          label: 'À valider' 
         }
       case 'VALIDATED':
         return { 
@@ -219,313 +201,372 @@ const EventsList: React.FC<EventsListProps> = ({
     }))
   }
 
-  const renderEventItem = (event: CalendarEvent) => {
-    const typeInfo = getEventTypeInfo(event.type)
-    const stateInfo = getStateInfo(event.state)
-    const showEditDelete = canEditEvent && canEditEvent(event)
-    const showValidationActions = canValidateEvent && event.state === 'PENDING'
-    const isCancelled = event.state === 'CANCELLED'
-    const isPast = new Date(event.startDate) < new Date()
-    
-    // Créer un tableau des items de menu
-    const menuItems = []
-    
-    // Ajouter les items de modification/suppression
-    if (showEditDelete && onEventEdit && event.state !== 'VALIDATED') {
-      menuItems.push(
-        <MenuItem 
-          key="edit"
-          onClick={() => {
-            if (selectedEvent) {
-              onEventEdit(selectedEvent)
-              handleMenuClose()
-            }
-          }}
-        >
-          <ListItemIcon>
-            <Edit fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Modifier</ListItemText>
-        </MenuItem>
-      )
-    }
-    
-    if (showEditDelete && onEventDelete) {
-      menuItems.push(
-        <MenuItem 
-          key="delete"
-          onClick={() => {
-            if (selectedEvent) {
-              onEventDelete(selectedEvent)
-              handleMenuClose()
-            }
-          }}
-        >
-          <ListItemIcon>
-            <Delete fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Supprimer</ListItemText>
-        </MenuItem>
-      )
-    }
-    
-    // Ajouter les items de validation
-    if (showValidationActions) {
-      menuItems.push(
-        <MenuItem 
-          key="validate"
-          onClick={() => {
-            if (selectedEvent) {
-              handleStateChange(selectedEvent, 'VALIDATED')
-            }
-          }}
-        >
-          <ListItemIcon>
-            <CheckCircle fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText>Valider</ListItemText>
-        </MenuItem>,
-        
-        <MenuItem 
-          key="move"
-          onClick={() => {
-            if (selectedEvent) {
-              openValidationDialog(selectedEvent, 'move')
-            }
-          }}
-        >
-          <ListItemIcon>
-            <SwapHoriz fontSize="small" color="info" />
-          </ListItemIcon>
-          <ListItemText>Déplacer</ListItemText>
-        </MenuItem>,
-        
-        <MenuItem 
-          key="cancel"
-          onClick={() => {
-            if (selectedEvent) {
-              openValidationDialog(selectedEvent, 'cancel')
-            }
-          }}
-        >
-          <ListItemIcon>
-            <Cancel fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Annuler</ListItemText>
-        </MenuItem>
-      )
-    }
-    
-    return (
-      <ListItem 
-        key={event.id}
-        sx={{ 
-          border: 1, 
-          borderColor: 'divider', 
-          borderRadius: 1, 
-          mb: 1,
-          opacity: isCancelled ? 0.6 : (isPast ? 0.8 : 1),
-          backgroundColor: isCancelled ? 'grey.50' : 'background.paper',
-          transition: 'all 0.2s',
-          '&:hover': { 
-            bgcolor: 'action.hover',
-            transform: 'translateX(4px)'
-          }
+const renderEventItem = (event: CalendarEvent) => {
+  const typeInfo = getEventTypeInfo(event.type)
+  const showEditDelete = canEditEvent && canEditEvent(event)
+  const showValidationActions = canValidateEvent && event.state === 'PENDING'
+  const isCancelled = event.state === 'CANCELLED'
+  const stateInfo = getStateInfo(event.state)
+  const isPast = new Date(event.startDate) < new Date()
+
+  const menuItems = []
+
+  // Ajouter les items de modification/suppression
+  if (showEditDelete && onEventEdit && event.state !== 'VALIDATED') {
+    menuItems.push(
+      <MenuItem 
+        key="edit"
+        onClick={() => {
+          onEventEdit(event)
+          setAnchorEl(null)
         }}
-        secondaryAction={
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Voir détails">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEventClick(event)
-                }}
-                color="primary"
-              >
-                <Visibility fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            
-            {/* Menu pour les autres actions */}
-            {menuItems.length > 0 && (
-              <>
-                <Tooltip title="Plus d'actions">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleMenuOpen(e, event)}
-                  >
-                    <MoreVert fontSize="small" />
-                  </IconButton>
-                                </Tooltip>
-              </>
-            )}
-          </Stack>
-        }
       >
         <ListItemIcon>
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            badgeContent={stateInfo && (
-              <Avatar 
-                sx={{ 
-                  width: 22, 
-                  height: 22, 
-                  bgcolor: `${stateInfo.color}.main`,
-                  border: '2px solid white'
-                }}
-              >
-                {React.cloneElement(stateInfo.icon, { sx: { fontSize: 14 } })}
-              </Avatar>
-            )}
-          >
-            <Avatar 
-              sx={{ 
-                bgcolor: isCancelled ? 'grey.500' : typeInfo.color, 
-                width: 44, 
-                height: 44 
-              }}
-            >
-              {typeInfo.icon}
-            </Avatar>
-          </Badge>
+          <Edit fontSize="small" />
         </ListItemIcon>
-        
-        <ListItemText
-          primary={
-            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-              <Typography 
-                variant="subtitle1"
-                sx={{ 
-                  textDecoration: isCancelled ? 'line-through' : 'none',
-                  fontWeight: 500
-                }}
-              >
-                {event.title}
-              </Typography>
-              <Chip 
-                label={typeInfo.label} 
-                size="small"
-                sx={{ height: 24 }}
-              />
-              {event.class && (
-                <Chip 
-                  label={event.class} 
-                  size="small" 
-                  variant="outlined"
-                  sx={{ height: 24 }}
-                />
-              )}
-              {stateInfo && (
-                <Chip 
-                  label={stateInfo.label}
-                  size="small"
-                  color={stateInfo.color as any}
-                  sx={{ height: 24 }}
-                />
-              )}
-              {isPast && !isCancelled && (
-                <Chip 
-                  label="Date passée" 
-                  size="small" 
-                  color="default"
-                  sx={{ height: 24 }}
-                />
-              )}
-            </Box>
-          }
-          secondary={
-            <Stack spacing={0.5} sx={{ mt: 1 }}>
-              <Typography variant="body2" color="text.secondary" component="div">
-                📅 {formatDateTimeDay(event.startDate)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" component="div">
-                🕒 {formatTime(event.startDate)} - {formatTime(event.endDate)}
-              </Typography>
-              
-              {event.room && (
-                <Typography variant="body2" color="text.secondary" component="div">
-                  📍 {event.room}
-                </Typography>
-              )}
-              
-              {/* Chips pour matériels et réactifs */}
-              <Stack direction="row" spacing={1} sx={{ mt: 0.5 }} flexWrap="wrap">
-                {event.materials && event.materials.length > 0 && (
-                  <Chip
-                    size="small"
-                    label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
-                  />
-                )}
-                {event.chemicals && event.chemicals.length > 0 && (
-                  <Chip
-                    size="small"
-                    label={`${event.chemicals.length} réactif${event.chemicals.length > 1 ? 's' : ''}`}
-                    color="secondary"
-                  />
-                )}
-              </Stack>
-
-                            {/* Section documents */}
-              {event.files && event.files.length > 0 && (
-                <Box sx={{ mt: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    📎 {event.files.length} document{event.files.length > 1 ? 's' : ''} joint{event.files.length > 1 ? 's' : ''} :
-                  </Typography>
-                  <Stack spacing={0.3} sx={{ mt: 0.5, ml: 2 }}>
-                    {event.files.slice(0, 3).map((file, index) => (
-                      <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary">•</Typography>
-                        <Typography
-                          component="a"
-                          href={file.fileUrl.startsWith('/uploads/') 
-                            ? `/api/calendrier/files?path=${encodeURIComponent(file.fileUrl)}`
-                            : file.fileUrl
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="caption"
-                          sx={{
-                            color: 'primary.main',
-                            textDecoration: 'none',
-                            '&:hover': {
-                              textDecoration: 'underline'
-                            },
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.5
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {file.fileName}
-                          {file.fileSize && (
-                            <Typography component="span" variant="caption" color="text.secondary">
-                              ({formatFileSize(file.fileSize)})
-                            </Typography>
-                          )}
-                        </Typography>
-                      </Box>
-                    ))}
-                    {event.files.length > 3 && (
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                        ... et {event.files.length - 3} autre(s) document(s)
-                      </Typography>
-                    )}
-                  </Stack>
-                </Box>
-              )}
-            </Stack>
-          }
-          slotProps={{
-            secondary: { component: 'div' }
-          }}
-        />
-      </ListItem>
+        <ListItemText>Modifier</ListItemText>
+      </MenuItem>
+    )
+  }
+  
+  if (showEditDelete && onEventDelete) {
+    menuItems.push(
+      <MenuItem 
+        key="delete"
+        onClick={() => {
+          onEventDelete(event)
+          setAnchorEl(null)
+        }}
+      >
+        <ListItemIcon>
+          <Delete fontSize="small" color="error" />
+        </ListItemIcon>
+        <ListItemText>Supprimer</ListItemText>
+      </MenuItem>
+    )
+  }
+  
+  // Ajouter les items de validation
+  if (showValidationActions) {
+    menuItems.push(
+      <MenuItem 
+        key="validate"
+        onClick={() => {
+          handleStateChange(event, 'VALIDATED')
+          setAnchorEl(null)
+        }}
+      >
+        <ListItemIcon>
+          <CheckCircle fontSize="small" color="success" />
+        </ListItemIcon>
+        <ListItemText>Valider</ListItemText>
+      </MenuItem>,
+      
+      <MenuItem 
+        key="move"
+        onClick={() => {
+          openValidationDialog(event, 'move')
+          setAnchorEl(null)
+        }}
+      >
+        <ListItemIcon>
+          <SwapHoriz fontSize="small" color="info" />
+        </ListItemIcon>
+        <ListItemText>Déplacer</ListItemText>
+      </MenuItem>,
+      
+      <MenuItem 
+        key="cancel"
+        onClick={() => {
+          openValidationDialog(event, 'cancel')
+          setAnchorEl(null)
+        }}
+      >
+        <ListItemIcon>
+          <Cancel fontSize="small" color="error" />
+        </ListItemIcon>
+        <ListItemText>Annuler</ListItemText>
+      </MenuItem>
     )
   }
 
+  return (
+    <ListItem
+      key={event.id}
+      sx={{
+        opacity: isCancelled ? 0.6 : (isPast ? 0.8 : 1),
+        bgcolor: isCancelled ? 'grey.50' : 'background.paper',
+        mb: 1,
+        borderRadius: 1,
+        border: 1,
+        borderColor: 'divider',
+        '&:hover': {
+          bgcolor: 'action.hover',
+        }
+      }}
+      secondaryAction={
+        <Stack direction="row" spacing={0.5}>
+          {/* Bouton Voir détails - toujours visible */}
+          <Tooltip title="Voir détails">
+            <IconButton
+              size="small"
+              onClick={() => onEventClick(event)}
+              color="primary"
+            >
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          {/* Menu pour les autres actions */}
+          {menuItems.length > 0 && (
+            <>
+              <Tooltip title="Plus d'actions">
+                <IconButton
+                  size="small"
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                >
+                  <MoreVert fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+              >
+                {menuItems}
+              </Menu>
+            </>
+          )}
+        </Stack>
+      }
+    >
+      <Box sx={{ display: 'flex', 
+        alignItems: 'center', 
+        width: '100%',
+        flexDirection: isMobile || isTablet ? 'column' : 'row',
+      }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <ListItemIcon>
+        <Badge
+          overlap="circular"
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          badgeContent={stateInfo && (
+            <Avatar 
+              sx={{ 
+                width: 22, 
+                height: 22, 
+                bgcolor: `${stateInfo.color}.main`,
+                border: '2px solid white'
+              }}
+            >
+              {React.cloneElement(stateInfo.icon, { sx: { fontSize: 14 } })}
+            </Avatar>
+          )}
+        >
+          <Avatar 
+            sx={{ 
+              bgcolor: isCancelled ? 'grey.500' : typeInfo.color, 
+              width: 44, 
+              height: 44 
+            }}
+          >
+            {typeInfo.icon}
+          </Avatar>
+        </Badge>
+      </ListItemIcon>
+
+      {/* Colonne principale avec titre et badges */}
+      <ListItemText
+        primary={
+            <Box>
+            <Typography 
+              variant="subtitle1"
+              sx={{ 
+              textDecoration: isCancelled ? 'line-through' : 'none',
+              fontWeight: 500,
+              mb: 1
+              }}
+            >
+              {event.title}
+            </Typography>
+            <Grid container spacing={1} sx={{ mb: 1, p: isMobile ? 1 : 2 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Chip 
+                  label={typeInfo.label} 
+                  size="small"
+                  sx={{ height: 24, width: '100%', textTransform: 'uppercase' }}
+                />
+              </Grid>
+              
+              {event.class && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Chip 
+                    label={event.class} 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ height: 24, width: '100%', textTransform: 'uppercase' }}
+                  />
+                </Grid>
+              )}
+              
+              {stateInfo && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Chip 
+                    label={stateInfo.label}
+                    size="small"
+                    color={stateInfo.color as any}
+                    sx={{ height: 24, width: '100%', fontWeight: 'bold', textTransform: 'uppercase' }}
+                  />
+                </Grid>
+              )}
+              
+              {isPast && !isCancelled && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Chip 
+                    label="Date passée" 
+                    size="small" 
+                    color="default"
+                    sx={{ height: 24, width: '100%', textTransform: 'uppercase' }}
+                  />
+                </Grid>
+              )}
+            </Grid>
+            </Box>
+        }
+        secondary={event.room && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.room}
+          </Typography>
+        )}
+      />
+      </Box>
+
+      {/* Colonne Ressources */}
+      <Box
+        component="div"
+        sx={{
+          minWidth: isMobile ? '100%' : 400,
+          width: 'auto',
+          flexShrink: 0,
+          pl: 2,
+          borderLeft: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Stack spacing={0.5}>
+          {/* Date et heure avec icônes */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: isMobile ? 'flex-start' : 'center', 
+            gap: isMobile ? 1 : 2,
+            py: 0.5,
+            borderLeft: 3,
+            borderColor: 'primary.main',
+            flexDirection: isMobile ? 'column' : 'row',
+            pl: 1.5,
+            mb: 1,
+            width: '100%',
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography variant="body2" fontWeight={500}>
+                {format(event.startDate, 'EEEE d MMMM', { locale: fr })}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
+              <Typography variant="body2" color="text.secondary">
+                {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Chips pour matériels et réactifs */}
+          <Stack 
+            sx={{
+              display: 'flex',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+              flexDirection: isMobile ? 'column' : 'row',
+            }}
+          >
+            {event.materials && event.materials.length > 0 && (
+              <Chip
+                size="small"
+                label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
+                variant='outlined'
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
+            {event.chemicals && event.chemicals.length > 0 && (
+              <Chip
+                size="small"
+                label={`${event.chemicals.length} réactif${event.chemicals.length > 1 ? 's' : ''}`}
+                color="secondary"
+                variant='outlined'
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
+          </Stack>
+
+          {/* Documents - Liste complète */}
+          {event.files && event.files.length > 0 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                📎 {event.files.length} document{event.files.length > 1 ? 's' : ''}
+              </Typography>
+              <Stack spacing={0.3} sx={{ ml: 1 }}>
+                {event.files.map((file, index) => {
+                  // Construire l'URL de manière sûre
+                  const fileUrl = file?.fileUrl
+                  const href = fileUrl 
+                    ? (fileUrl.startsWith('/uploads/') 
+                        ? `/api/calendrier/files?path=${encodeURIComponent(fileUrl)}`
+                        : fileUrl)
+                    : '#'
+                  
+                  return (
+                    <Typography
+                      key={index}
+                      component="a"
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="caption"
+                      sx={{
+                        color: fileUrl ? 'primary.main' : 'text.disabled',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: fileUrl ? 'underline' : 'none'
+                        },
+                        cursor: fileUrl ? 'pointer' : 'default',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!fileUrl) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      • {file?.fileName || 'Document sans nom'}
+                    </Typography>
+                  )
+                })}
+              </Stack>
+            </Box>
+          )}
+        </Stack>
+      </Box>
+      </Box>
+    </ListItem>
+  )
+}
   const renderGroup = (title: string, events: CalendarEvent[], groupKey: string, color?: string) => {
     if (events.length === 0) return null
     
@@ -576,9 +617,9 @@ const EventsList: React.FC<EventsListProps> = ({
   return (
     <>
       <Box>
-        <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
+        <Paper elevation={0} sx={{ p: 0, mb: 3 }}>
           {/* Barre de recherche et filtres */}
-          <Stack spacing={2}>
+            <Stack spacing={2}>
             <TextField
               fullWidth
               size="small"
@@ -586,71 +627,73 @@ const EventsList: React.FC<EventsListProps> = ({
               placeholder="Rechercher un événement..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
+              slotProps={{
+              input: {
                 startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
                 ),
+              },
               }}
             />
             
             <Stack direction="row" spacing={2}>
               <FormControl size="small" sx={{ minWidth: 150 }}>
-                <Select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
-                  displayEmpty
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <FilterList fontSize="small" />
-                    </InputAdornment>
-                  }
-                >
-                  <MenuItem value="all">Tous les types</MenuItem>
-                  {Object.entries(EVENT_TYPES).map(([key, value]) => (
-                    <MenuItem key={key} value={key}>
-                      {value.label}
-                    </MenuItem>
-                  ))}
-                </Select>
+              <Select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as any)}
+                displayEmpty
+                startAdornment={
+                <InputAdornment position="start">
+                  <FilterList fontSize="small" />
+                </InputAdornment>
+                }
+              >
+                <MenuItem value="all">Tous les types</MenuItem>
+                {Object.entries(EVENT_TYPES).map(([key, value]) => (
+                <MenuItem key={key} value={key}>
+                  {value.label}
+                </MenuItem>
+                ))}
+              </Select>
               </FormControl>
               
               <FormControl size="small" sx={{ minWidth: 150 }}>
-                <Select
-                  value={filterState}
-                  onChange={(e) => setFilterState(e.target.value)}
-                  displayEmpty
-                >
-                  <MenuItem value="all">Tous les états</MenuItem>
-                  <MenuItem value="PENDING">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <HourglassEmpty fontSize="small" />
-                      <span>En attente</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="VALIDATED">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CheckCircle fontSize="small" color="success" />
-                      <span>Validés</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="CANCELLED">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Cancel fontSize="small" color="error" />
-                      <span>Annulés</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="MOVED">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <SwapHoriz fontSize="small" color="info" />
-                      <span>Déplacés</span>
-                    </Stack>
-                  </MenuItem>
-                </Select>
+              <Select
+                value={filterState}
+                onChange={(e) => setFilterState(e.target.value)}
+                displayEmpty
+              >
+                <MenuItem value="all">Tous les états</MenuItem>
+                <MenuItem value="PENDING">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <HourglassEmpty fontSize="small" />
+                  <span>À valider</span>
+                </Stack>
+                </MenuItem>
+                <MenuItem value="VALIDATED">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CheckCircle fontSize="small" color="success" />
+                  <span>Validés</span>
+                </Stack>
+                </MenuItem>
+                <MenuItem value="CANCELLED">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Cancel fontSize="small" color="error" />
+                  <span>Annulés</span>
+                </Stack>
+                </MenuItem>
+                <MenuItem value="MOVED">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <SwapHoriz fontSize="small" color="info" />
+                  <span>Déplacés</span>
+                </Stack>
+                </MenuItem>
+              </Select>
               </FormControl>
             </Stack>
-          </Stack>
+            </Stack>
         </Paper>
 
         {/* Groupes d'événements */}
@@ -667,7 +710,7 @@ const EventsList: React.FC<EventsListProps> = ({
           </Box>
         ) : (
           <>
-            {/* Événements en attente (affichés seulement pour les laborantins) */}
+            {/* Événements à valider (affichés seulement pour les laborantins) */}
             {groupedEvents.pending.length > 0 && (
               <>
                 {renderGroup('En attente de validation', groupedEvents.pending, 'pending', 'warning')}

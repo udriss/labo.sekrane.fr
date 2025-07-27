@@ -11,7 +11,7 @@ import {
 import { 
   QrCodeScanner, CameraAlt, Close, CheckCircle, Error, Warning,
   FlashOn, FlashOff, Refresh, History, Add, Science, Inventory,
-  PhotoCamera, Search
+  PhotoCamera, Search, Room
 } from "@mui/icons-material"
 
 import { ScanResult as ScanResultType, Chemical, Materiel } from "@/types/prisma"
@@ -556,7 +556,7 @@ export default function ScannerPage() {
                         </Typography>
                         {result.location && (
                           <Typography variant="body2" color="text.secondary">
-                            📍 {result.location}
+                            <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {result.location}
                           </Typography>
                         )}
                         {result.quantity && (

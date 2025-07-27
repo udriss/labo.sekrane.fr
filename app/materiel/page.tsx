@@ -17,7 +17,8 @@ import {
   IconButton
 } from "@mui/material"
 import { 
-  Add, Inventory, Settings, Edit, Delete, Save, Category, CheckCircle, Warning
+  Add, Inventory, Settings, Edit, Delete, Save,
+   Category, CheckCircle, Warning, Room, HomeFilled
 } from "@mui/icons-material"
 
 // Import des hooks personnalisés
@@ -1082,7 +1083,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                 </MenuItem>
                 {equipmentData.rooms.map((room) => (
                   <MenuItem key={room.id} value={room.name}>
-                    🏠 {room.name}
+                    <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {room.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -1116,7 +1117,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                     const selectedRoom = equipmentData.rooms.find(room => room.name === dialogs.editingEquipment.room)
                     return selectedRoom?.locations?.map((location: any) => (
                       <MenuItem key={location.id} value={location.name}>
-                        📍 {location.name}
+                        <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {location.name}
                       </MenuItem>
                     )) || []
                   })()}
