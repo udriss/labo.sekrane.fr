@@ -117,11 +117,11 @@ export function TpPresetList() {
   const fetchChemicals = async () => {
     try {
       const response = await fetch("/api/chemicals")
-      if (!response.ok) throw new Error("Erreur lors du chargement des produits chimiques")
+      if (!response.ok) throw new Error("Erreur lors du chargement des réactifs chimiques")
       const data = await response.json()
       setChemicals(data.chemicals || [])
     } catch (error) {
-      console.error("Erreur lors du chargement des produits chimiques:", error)
+      console.error("Erreur lors du chargement des réactifs chimiques:", error)
     }
   }
 
@@ -277,7 +277,7 @@ export function TpPresetList() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Science fontSize="small" color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {preset.chemicals.length} produits
+                      {preset.chemicals.length} réactifs
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -372,12 +372,12 @@ export function TpPresetList() {
             />
 
             <FormControl>
-              <InputLabel>Produits chimiques</InputLabel>
+              <InputLabel>Réactifs chimiques</InputLabel>
               <Select
                 multiple
                 value={formData.chemicalIds}
                 onChange={(e) => setFormData({ ...formData, chemicalIds: e.target.value as string[] })}
-                input={<OutlinedInput label="Produits chimiques" />}
+                input={<OutlinedInput label="Réactifs chimiques" />}
                 renderValue={(selected) => 
                   chemicals
                     .filter(c => selected.includes(c.id))

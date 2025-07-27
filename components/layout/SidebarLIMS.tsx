@@ -26,7 +26,7 @@ interface MenuItem {
 
 const mainMenuItems: MenuItem[] = [
   { title: 'Tableau de bord', icon: <Dashboard />, href: '/' },
-  { title: 'Produits chimiques', icon: <Science />, href: '/chemicals', badge: 'New' },
+  { title: 'Réactifs chimiques', icon: <Science />, href: '/chemicals', badge: 'New' },
   { title: 'Matériel', icon: <Inventory />, href: '/materiel' },
   { title: 'Cahier TP', icon: <Assignment />, href: '/notebook' },
   { title: 'Calendrier', icon: <CalendarMonth />, href: '/calendrier' },

@@ -428,14 +428,14 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
           </StepContent>
         </Step>
 
-        {/* Étape 4: Produits chimiques */}
+        {/* Étape 4: Réactifs chimiques */}
         <Step>
           <StepLabel>
-            <Typography variant="h6">Produits chimiques</Typography>
+            <Typography variant="h6">Réactifs chimiques</Typography>
           </StepLabel>
           <StepContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Sélectionnez les produits chimiques nécessaires (optionnel)
+              Sélectionnez les réactifs chimiques nécessaires (optionnel)
             </Typography>
 
             <Autocomplete
@@ -447,8 +447,8 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Produits chimiques"
-                  placeholder="Choisir les produits chimiques..."
+                  label="Réactifs chimiques"
+                  placeholder="Choisir les réactifs chimiques..."
                 />
               )}
               renderTags={(value, getTagProps) =>

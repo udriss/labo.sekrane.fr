@@ -290,13 +290,14 @@ export default function CalendarPage() {
       </Container>
     )
   }
-const isVerySmallScreen = useMediaQuery('(max-width:440px)');
+
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+    <LocalizationProvider dateAdapter={AdapterDateFns} 
+    adapterLocale={fr}>
       <Container maxWidth="xl" 
           sx={{ 
             py: { xs: 2, md: 4 },
-            px: { xs: 1, sm: 2, md: 3 },
+            px: { xs: 2, sm: 2, md: 3 },
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box',
@@ -339,44 +340,30 @@ const isVerySmallScreen = useMediaQuery('(max-width:440px)');
               width: '100%',
               overflow: 'hidden'
             }}>
-
-
-
-<Tabs 
-  value={tabValue} 
-  variant="scrollable"
-  scrollButtons="auto"
-  allowScrollButtonsMobile
-  onChange={(e, newValue) => setTabValue(newValue)}
-  sx={{ 
-    width: '100%',
-    maxWidth: '100%',
-    '& .MuiTabs-scrollButtons': {
-      '&.Mui-disabled': {
-        opacity: 0.3
-      },
-      // Sur très petit écran, cacher les boutons de scroll
-      display: isVerySmallScreen ? 'none' : 'flex'
-    },
-    '& .MuiTabs-scroller': {
-      overflowX: 'auto !important',
-      maxWidth: '100%'
-    },
-    '& .MuiTab-root': {
-      minWidth: isVerySmallScreen ? 0 : { xs: 100, sm: 120 },
-      flex: isVerySmallScreen ? 1 : 'initial', // Répartir équitablement sur très petit écran
-      px: isVerySmallScreen ? 0.5 : { xs: 1, sm: 2 },
-      fontSize: isVerySmallScreen ? '0.65rem' : { xs: '0.75rem', sm: '0.875rem' },
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis'
-    }
-  }}
->
-  <Tab label={isVerySmallScreen ? "Hebdo" : "Vue hebdomadaire"} />
-  <Tab label={isVerySmallScreen ? "Jour" : "Planning du jour"} />
-  <Tab label={isVerySmallScreen ? "Liste" : "Liste des événements"} />
-</Tabs>
+            <Tabs 
+              value={tabValue} 
+              variant="scrollable"
+              scrollButtons={isMobile ? "auto" : false} // Boutons uniquement sur mobile
+              allowScrollButtonsMobile
+              onChange={(e, newValue) => setTabValue(newValue)}
+              sx={{ 
+                  width: '100%',
+                  '& .MuiTabs-scrollButtons': {
+                    '&.Mui-disabled': {
+                      opacity: 0.3
+                    }
+                  },
+                  '& .MuiTab-root': {
+                    minWidth: { xs: 'auto', sm: 'auto' },
+                    px: { xs: 1.5, sm: 2 },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }
+                }}
+            >
+              <Tab label="Vue hebdomadaire" />
+              <Tab label="Planning du jour" />
+              <Tab label="Liste des événements" />
+            </Tabs>
           </Box>
 
 <TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>

@@ -324,7 +324,7 @@ export default function RoomsManagement() {
                         onChange={(e) => updateLocation(index, 'description', e.target.value)}
                         size="small"
                         sx={{ flex: 1 }}
-                        placeholder="ex: Produits chimiques, Matériel fragile..."
+                        placeholder="ex: Réactifs chimiques, Matériel fragile..."
                       />
                       {formData.locations.length > 1 && (
                         <IconButton

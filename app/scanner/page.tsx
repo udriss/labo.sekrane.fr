@@ -204,7 +204,7 @@ export default function ScannerPage() {
             Scanner QR/Code-barres
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            Identification rapide des produits chimiques et matériel
+            Identification rapide des réactifs chimiques et matériel
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -255,7 +255,7 @@ export default function ScannerPage() {
                   <Typography variant="h4" color="success.main">
                     {scanHistory.filter(s => s.status === "found").length}
                   </Typography>
-                  <Typography variant="body2">Produits trouvés</Typography>
+                  <Typography variant="body2">Réactifs trouvés</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -289,7 +289,7 @@ export default function ScannerPage() {
                   <Typography variant="h4" color="info.main">
                     {scanHistory.filter(s => s.type === "chemical").length}
                   </Typography>
-                  <Typography variant="body2">Produits chimiques</Typography>
+                  <Typography variant="body2">Réactifs chimiques</Typography>
                 </Box>
               </Box>
             </CardContent>

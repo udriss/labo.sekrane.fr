@@ -40,7 +40,7 @@ async function initializeFromPrisma() {
     
     // Sauvegarder dans le fichier JSON
     await writeChemicalsInventory(jsonData);
-    console.log(`Fichier JSON initialisé avec ${jsonData.chemicals.length} produits chimiques`);
+    console.log(`Fichier JSON initialisé avec ${jsonData.chemicals.length} réactifs chimiques`);
     
     return jsonData;
   } catch (error) {

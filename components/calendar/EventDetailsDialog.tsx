@@ -8,8 +8,8 @@ import { fr } from "date-fns/locale"
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Box, Grid, Typography, Chip, Stack, Divider,
-  IconButton, Skeleton,
-  Avatar,
+  IconButton, Skeleton, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, Avatar,
   Card,
   CardActionArea,
   CardContent,
@@ -24,10 +24,9 @@ import {
   TimelineDot, TimelineConnector, TimelineContent,
   TimelineOppositeContent
 } from '@mui/lab'
-
 import { 
   Science, Schedule, Assignment, EventAvailable, Edit, Delete, 
-  History, Person, PictureAsPdf, Description, Image, 
+  History, Person, PictureAsPdf, Description, Image, Build,
   InsertDriveFile, OpenInNew, Download, CheckCircle, Cancel, SwapHoriz,
   HourglassEmpty,
 } from '@mui/icons-material'
@@ -289,6 +288,7 @@ const DocumentCard: React.FC<{
                     borderRadius: '50%',
                     padding: 0.5,
                     boxShadow: 1,
+                    width: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -719,7 +719,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
             </>
           )}
 
-          {/* Matériel et produits */}
+          {/* Matériel et réactifs */}
           {((event.materials && event.materials.length > 0) || 
             (event.chemicals && event.chemicals.length > 0)) && (
             <>
@@ -729,46 +729,164 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                   Ressources nécessaires
                 </Typography>
                 <Grid container spacing={2}>
-                  {event.materials && event.materials.length > 0 && (
-                    <Grid size = {{ xs: 12, sm: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Matériel ({event.materials.length})
-                      </Typography>
-                      <Stack spacing={0.5}>
-                        {event.materials.map((material, index) => (
-                          <Typography key={index} variant="body2">
-                            • {typeof material === 'string' 
-                                ? material 
-                                : (material.name || material.itemName || 'Matériel')}
-                            {typeof material === 'object' && material.volume && ` (${material.volume})`}
-                            {typeof material === 'object' && material.quantity && ` - Quantité: ${material.quantity}`}
-                          </Typography>
-                        ))}
-                      </Stack>
-                    </Grid>
+{/* Table combinée pour Matériel et Réactifs chimiques */}
+<TableContainer 
+sx={{ mt: 2,
+  maxWidth: 400,
+  margin: '0 auto',
+ }}>
+  <Table size="small" sx={{ minWidth: 300 }}>
+    <TableHead>
+      <TableRow>
+        <TableCell 
+          sx={{ 
+            fontWeight: 'bold',
+            borderBottom: '2px solid',
+            borderColor: 'primary.main',
+            color: 'primary.main'
+          }}
+        >
+          Type / Nom
+        </TableCell>
+        <TableCell 
+          align="right"
+          sx={{ 
+            fontWeight: 'bold',
+            borderBottom: '2px solid',
+            borderColor: 'primary.main',
+            color: 'primary.main'
+          }}
+        >
+          Quantité
+        </TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {/* Section Matériel */}
+      {event.materials && event.materials.length > 0 && (
+        <>
+          <TableRow>
+            <TableCell 
+              colSpan={3} 
+              sx={{ 
+                bgcolor: 'action.hover',
+                py: 0.5,
+                borderBottom: 'none'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Build sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="caption" fontWeight="medium" color="text.secondary">
+                  MATÉRIEL
+                </Typography>
+              </Box>
+            </TableCell>
+          </TableRow>
+          {event.materials.map((material, index) => (
+            <TableRow 
+              key={`material-${index}`}
+              sx={{ 
+                '&:hover': { bgcolor: 'action.hover' },
+                '& td': { borderBottom: '1px solid rgba(224, 224, 224, 0.4)' }
+              }}
+            >
+              <TableCell>
+                <Box>
+                  <Typography variant="body2">
+                    {typeof material === 'string' 
+                      ? material 
+                      : (material.name || material.itemName || 'Matériel')}
+                  </Typography>
+                  {typeof material === 'object' && material.volume && (
+                    <Typography variant="caption" color="text.secondary">
+                      Volume: {material.volume}
+                    </Typography>
                   )}
-                  {event.chemicals && event.chemicals.length > 0 && (
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Produits chimiques ({event.chemicals.length})
-                      </Typography>
-                      <Stack spacing={0.5}>
-                        {event.chemicals.map((chemical, index) => (
-                          <Typography key={index} variant="body2">
-                            • {typeof chemical === 'string' 
-                                ? chemical 
-                                : (chemical.name || 'Réactif')}
-                            {typeof chemical === 'object' && chemical.formula && ` (${chemical.formula})`}
-                            {typeof chemical === 'object' && chemical.requestedQuantity && (
-                              <Typography component="span" color="primary.main">
-                                {` - ${chemical.requestedQuantity}${chemical.unit || ''} demandé(s)`}
-                              </Typography>
-                            )}
-                          </Typography>
-                        ))}
-                      </Stack>
-                    </Grid>
+                </Box>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="body2" fontWeight="medium" color="info.main">
+                  {typeof material === 'object' && material.quantity 
+                    ? `${material.quantity} ${material.quantity > 1 ? 'unités' : 'unité'}`
+                    : '1 unité'
+                  }
+                </Typography>
+              </TableCell>
+            </TableRow>
+          ))}
+        </>
+      )}
+
+      {/* Section Réactifs chimiques */}
+      {event.chemicals && event.chemicals.length > 0 && (
+        <>
+          <TableRow>
+            <TableCell 
+              colSpan={3} 
+              sx={{ 
+                bgcolor: 'action.hover',
+                py: 0.5,
+                borderBottom: 'none',
+                borderTop: (event.materials?.length ?? 0) > 0 ? '2px solid' : 'none',
+                borderColor: 'divider'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Science sx={{ fontSize: 16, color: 'text.secondary' }} />
+                <Typography variant="caption" fontWeight="medium" color="text.secondary">
+                  RÉACTIFS CHIMIQUES
+                </Typography>
+              </Box>
+            </TableCell>
+          </TableRow>
+          {event.chemicals.map((chemical, index) => (
+            <TableRow 
+              key={`chemical-${index}`}
+              sx={{ 
+                '&:hover': { bgcolor: 'action.hover' },
+                '& td': { borderBottom: '1px solid rgba(224, 224, 224, 0.4)' }
+              }}
+            >
+              <TableCell>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: 300, // ajustez la largeur max selon vos besoins
+                      display: 'block'
+                    }}
+                    title={typeof chemical === 'string' ? chemical : (chemical.name || 'Réactif')}
+                  >
+                    {typeof chemical === 'string' 
+                      ? chemical 
+                      : (chemical.name || 'Réactif')}
+                  </Typography>
+                  {typeof chemical === 'object' && chemical.formula && (
+                    <Typography variant="caption" color="text.secondary" fontStyle="italic">
+                      {chemical.formula}
+                    </Typography>
                   )}
+                </Box>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="body2" fontWeight="medium" color="warning.main">
+                  {typeof chemical === 'object' && chemical.requestedQuantity 
+                    ? `${chemical.requestedQuantity} ${chemical.unit || 'unité'}`
+                    : '-'
+                  }
+                </Typography>
+              </TableCell>
+            </TableRow>
+          ))}
+        </>
+      )}
+
+    </TableBody>
+  </Table>
+</TableContainer>
                 </Grid>
               </Box>
             </>
@@ -802,7 +920,9 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               <Divider />
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  Documents joints ({documents.length})
+                  {documents.length > 1
+                    ? `Documents joints (${documents.length})`
+                    : 'Document joint'}
                 </Typography>
                 <Stack 
                   direction="row" 

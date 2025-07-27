@@ -383,7 +383,7 @@ export default function DocsPage() {
               <Grid size={{ xs: 12, md: 6, lg: 3 }}>
                 <FeatureCard
                   icon={<Science color="primary" />}
-                  title="Gestion des produits chimiques"
+                  title="Gestion des réactifs chimiques"
                   description="Inventaire intelligent avec alertes d'expiration, suivi des stocks et détection de doublons"
                 />
               </Grid>
@@ -439,7 +439,7 @@ export default function DocsPage() {
                     <Science />
                   </Avatar>
                   <Box>
-                    <Typography variant="h6">Module Produits Chimiques</Typography>
+                    <Typography variant="h6">Module Réactifs Chimiques</Typography>
                     <Typography variant="body2" color="text.secondary">
                       Gestion complète de l'inventaire chimique
                     </Typography>
@@ -461,14 +461,14 @@ export default function DocsPage() {
                         <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
                         <ListItemText 
                           primary="Inventaire intelligent"
-                          secondary="Auto-complétion basée sur une base de données de produits chimiques avec numéros CAS"
+                          secondary="Auto-complétion basée sur une base de données de réactifs chimiques avec numéros CAS"
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemIcon><CheckCircle color="success" /></ListItemIcon>
                         <ListItemText 
                           primary="Alertes automatiques"
-                          secondary="Notifications pour produits expirés ou stock faible"
+                          secondary="Notifications pour réactifs expirés ou stock faible"
                         />
                       </ListItem>
                       <ListItem>
@@ -970,7 +970,7 @@ export default function DocsPage() {
                     <ListItemIcon><Lightbulb color="warning" /></ListItemIcon>
                     <ListItemText 
                       primary="Utilisez les numéros CAS"
-                      secondary="Identifiez précisément vos produits chimiques pour éviter les erreurs"
+                      secondary="Identifiez précisément vos réactifs chimiques pour éviter les erreurs"
                     />
                   </ListItem>
                   <ListItem>
@@ -1123,7 +1123,7 @@ export default function DocsPage() {
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography fontWeight="bold">
-                    Comment gérer les produits en double ?
+                    Comment gérer les réactifs en double ?
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>

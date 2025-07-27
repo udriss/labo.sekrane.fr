@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 import fs from 'fs/promises';
 import path from 'path';
 
-// Chemin vers le fichier JSON des produits chimiques communs
+// Chemin vers le fichier JSON des réactifs chimiques communs
 const COMMON_CHEMICALS_FILE = path.join(process.cwd(), 'data', 'common-chemicals.json');
 
 export async function GET(request: NextRequest) {

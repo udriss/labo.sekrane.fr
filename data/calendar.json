@@ -73,6 +73,13 @@
           "quantity": 11,
           "isCustom": false,
           "volume": "25 mL"
+        },
+        {
+          "id": "EQUIP_1753254176990_5y8n3pivf",
+          "name": "Bécher",
+          "quantity": 4,
+          "isCustom": false,
+          "volume": "25 mL"
         }
       ],
       "chemicals": [
@@ -103,15 +110,16 @@
       "modifiedBy": [
         [
           "USER_001",
-          "2025-07-27T04:07:21.409Z"
+          "2025-07-27T04:07:21.409Z",
+          "2025-07-27T09:56:06.158Z"
         ]
       ],
       "createdAt": "2025-07-27T03:56:37.943Z",
-      "updatedAt": "2025-07-27T04:07:21.409Z",
+      "updatedAt": "2025-07-27T09:56:06.158Z",
       "column": 0,
       "totalColumns": 2,
-      "visualStartDate": "2025-07-26T06:00:00.000Z",
-      "visualEndDate": "2025-07-26T10:00:00.000Z",
+      "visualStartDate": "2025-07-27T06:00:00.000Z",
+      "visualEndDate": "2025-07-27T10:00:00.000Z",
       "startsBeforeDay": false,
       "endsAfterDay": false,
       "startsBeforeSchedule": false,

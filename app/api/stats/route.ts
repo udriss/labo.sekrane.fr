@@ -58,7 +58,7 @@ async function getStatsData() {
       admins: users.users?.filter((user: any) => user.role === 'ADMIN').length || 0
     }
 
-    // Calculer les statistiques de produits chimiques
+    // Calculer les statistiques de réactifs chimiques
     const chemicalStats = {
       total: chemicals.chemicals?.length || 0,
       lowStock: chemicals.chemicals?.filter((chem: any) => chem.quantity <= (chem.minQuantity || 10)).length || 0,

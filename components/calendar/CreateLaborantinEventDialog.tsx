@@ -266,7 +266,7 @@ const isOutsideBusinessHours = useMemo(() => {
                       <Inventory color={laborantinEventType === 'INVENTAIRE' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
                       <Typography variant="h6">Inventaire</Typography>
                       <Typography variant="body2" color="text.secondary" textAlign="center">
-                        Inventaire du matériel ou des produits chimiques
+                        Inventaire du matériel ou des réactifs chimiques
                       </Typography>
                     </Box>
                   </Card>

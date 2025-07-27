@@ -59,7 +59,7 @@ interface AuditLogsDashboardProps {
 const MODULES = [
   { value: '', label: 'Tous les modules' },
   { value: 'USERS', label: 'Utilisateurs' },
-  { value: 'CHEMICALS', label: 'Produits Chimiques' },
+  { value: 'CHEMICALS', label: 'Réactifs Chimiques' },
   { value: 'EQUIPMENT', label: 'Équipements' },
   { value: 'ROOMS', label: 'Salles' },
   { value: 'CALENDAR', label: 'Calendrier' },

@@ -176,7 +176,7 @@ async function readChemicalsInventoryFile(): Promise<ChemicalInventory[]> {
 async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
   const chemicalsData = await readChemicalsInventoryFile()
   
-  // Créer un map des produits chimiques pour un accès rapide
+  // Créer un map des réactifs chimiques pour un accès rapide
   const chemicalsMap = new Map<string, ChemicalInventory>(
     chemicalsData.map((chem: ChemicalInventory) => [chem.id, chem])
   )

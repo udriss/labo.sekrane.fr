@@ -7,7 +7,7 @@ import { withAudit } from '@/lib/api/with-audit'
 
 const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 
-// Fonction pour lire l'inventaire des produits chimiques
+// Fonction pour lire l'inventaire des réactifs chimiques
 async function readChemicalsInventory() {
   try {
     const data = await fs.readFile(CHEMICALS_INVENTORY_FILE, 'utf-8')
@@ -18,7 +18,7 @@ async function readChemicalsInventory() {
   }
 }
 
-// Fonction pour écrire l'inventaire des produits chimiques
+// Fonction pour écrire l'inventaire des réactifs chimiques
 async function writeChemicalsInventory(data: any) {
   try {
     await fs.writeFile(CHEMICALS_INVENTORY_FILE, JSON.stringify(data, null, 2))
@@ -91,9 +91,9 @@ export async function GET(request: NextRequest) {
       stats
     })
   } catch (error) {
-    console.error('Erreur lors de la récupération des produits chimiques:', error)
+    console.error('Erreur lors de la récupération des réactifs chimiques:', error)
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des produits chimiques' },
+      { error: 'Erreur lors de la récupération des réactifs chimiques' },
       { status: 500 }
     )
   }

@@ -21,7 +21,7 @@ async function readJsonFile(filePath: string, defaultValue: any = {}) {
 // Fonction pour rechercher un réactif par code
 async function searchProductByCode(code: string) {
   try {
-    // Recherche dans les produits chimiques
+    // Recherche dans les réactifs chimiques
     const chemicalsData = await readJsonFile(CHEMICALS_FILE, { chemicals: [] })
     const chemical = chemicalsData.chemicals?.find((c: any) => 
       c.barcode === code || c.casNumber === code || c.id === code

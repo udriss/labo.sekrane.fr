@@ -44,7 +44,16 @@ export function CalendarHeader({ userRole, onCreateTP, onCreateLaborantin }: Cal
       case 'ADMIN':
       case 'ADMINLABO':
         return (
-          <Box display="flex" gap={2} flexDirection={isMobile ? "column" : "row"}>
+          <Box
+          sx= {{
+            display: 'flex',
+            width: isMobile ? '100%' : 'auto',
+            justifyContent: isMobile ? 'center' : 'flex-end',
+            alignItems: isMobile ? 'center' : 'flex-end',
+            flexDirection: isMobile ? 'column' : 'row', 
+            gap: isMobile ? 1 : 2,
+          }}
+          >
             <Button
               variant="contained"
               startIcon={<Add />}

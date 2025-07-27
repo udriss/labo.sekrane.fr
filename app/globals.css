@@ -44,3 +44,12 @@ body {
   white-space: nowrap !important;
   max-width: none !important;
 }
+
+
+/* Forcer tous les conteneurs MUI */
+.MuiContainer-root,
+.MuiBox-root,
+.MuiPaper-root {
+  max-width: 100vw !important;
+}
+

@@ -185,7 +185,7 @@ export default function RootLayout({
     if (normalizedPath === '' || normalizedPath === '/') return { name: 'Accueil', showLayout: false };
     if (normalizedPath.startsWith('/auth')) return { name: 'Auth', showLayout: false };
     if (normalizedPath.startsWith('/admin')) return { name: 'Admin', showLayout: true, isAdmin: true };
-    if (normalizedPath === '/chemicals') return { name: 'Produits chimiques', showLayout: true };
+    if (normalizedPath === '/chemicals') return { name: 'Réactifs chimiques', showLayout: true };
     if (normalizedPath === '/materiel') return { name: 'Matériel', showLayout: true };
     if (normalizedPath === '/notebook') return { name: 'Cahier TP', showLayout: true };
     if (normalizedPath === '/calendrier') return { name: 'Calendrier', showLayout: true };
@@ -226,8 +226,8 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <meta name="description" content="LIMS - Système de gestion intégré pour laboratoire de chimie. Gestion des produits chimiques, matériel, cahiers de TP et planification." />
-        <meta name="keywords" content="LIMS, laboratoire, chimie, gestion, inventaire, TP, matériel, produits chimiques" />
+        <meta name="description" content="LIMS - Système de gestion intégré pour laboratoire de chimie. Gestion des réactifs chimiques, matériel, cahiers de TP et planification." />
+        <meta name="keywords" content="LIMS, laboratoire, chimie, gestion, inventaire, TP, matériel, réactifs chimiques" />
         
         {/* Open Graph */}
         <meta property="og:title" content="LIMS - Laboratoire de Chimie" />

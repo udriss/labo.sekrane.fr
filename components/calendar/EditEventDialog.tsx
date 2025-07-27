@@ -104,13 +104,13 @@ export function EditEventDialog({
         return { ...mat, quantity: 1 }
       }) || []
 
-      // Préparer les produits chimiques avec quantités
+      // Préparer les réactifs chimiques avec quantités
       const chemicalsWithQuantities = event.chemicals?.map((chem: any) => {
         // Si c'est déjà un objet avec quantité demandée
         if (typeof chem === 'object' && chem.requestedQuantity) {
           return chem
         }
-        // Si c'est un ID, chercher dans la liste des produits chimiques
+        // Si c'est un ID, chercher dans la liste des réactifs chimiques
         const foundChemical = chemicals.find(c => c.id === chem)
         if (foundChemical) {
           return { ...foundChemical, requestedQuantity: 1 }
@@ -258,12 +258,12 @@ export function EditEventDialog({
       }
     }
 
-    // Vérifier les quantités de produits chimiques
+    // Vérifier les quantités de réactifs chimiques
     const insufficientChemicals = formData.chemicals.filter(c => 
       c.requestedQuantity > (c.quantity || 0)
     )
     if (insufficientChemicals.length > 0) {
-      alert('Certains produits chimiques ont des quantités insuffisantes en stock.')
+      alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
       return
     }
 
@@ -292,7 +292,7 @@ export function EditEventDialog({
         volume: m.volume || null
       }))
 
-      // Préparer les produits chimiques avec quantités
+      // Préparer les réactifs chimiques avec quantités
       const chemicalsData = formData.chemicals.map((c) => ({
         id: c.id,
         name: c.name || '',
@@ -939,15 +939,15 @@ export function EditEventDialog({
             </>
           )}
 
-          {/* Produits chimiques avec gestion des quantités */}
+          {/* Réactifs chimiques avec gestion des quantités */}
           {formData.type === 'TP' && (
             <>
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Produits chimiques
+                  Réactifs chimiques
                 </Typography>
                 
-                {/* Autocomplete pour ajouter des produits chimiques */}
+                {/* Autocomplete pour ajouter des réactifs chimiques */}
                 <Autocomplete
                   options={chemicalsWithForecast}
                   getOptionLabel={(option) => {
@@ -1027,7 +1027,7 @@ export function EditEventDialog({
                   }}
                 />
 
-                {/* Liste des produits chimiques sélectionnés avec quantités */}
+                {/* Liste des réactifs chimiques sélectionnés avec quantités */}
                 {formData.chemicals.length > 0 && (
                   <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {formData.chemicals.map((chemical, index) => {
@@ -1243,9 +1243,9 @@ export function EditEventDialog({
                     Attention : Stock faible
                   </Typography>
                   <Typography variant="body2">
-                    Certains produits chimiques seront en dessous de leur stock minimum après ce TP.
+                    Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
                   </Typography>
-                  {/* Optionnel : Afficher les détails des produits concernés */}
+                  {/* Optionnel : Afficher les détails des réactifs concernés */}
                   <Box sx={{ mt: 1 }}>
                     {formData.chemicals
                       .filter(c => {

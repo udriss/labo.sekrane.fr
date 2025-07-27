@@ -157,7 +157,7 @@ function main() {
                                 },
                             }),
                         ])
-                        // Ajout de produits chimiques supplémentaires
+                        // Ajout de réactifs chimiques supplémentaires
                     ];
                 case 5:
                     chemicals = _a.sent();
@@ -301,11 +301,11 @@ function main() {
                                 status: 'SCHEDULED',
                             },
                         })
-                        // Associer des produits chimiques au TP
+                        // Associer des réactifs chimiques au TP
                     ];
                 case 9:
                     notebookEntry = _a.sent();
-                    // Associer des produits chimiques au TP
+                    // Associer des réactifs chimiques au TP
                     return [4 /*yield*/, Promise.all([
                             prisma.notebookChemical.create({
                                 data: {
@@ -329,7 +329,7 @@ function main() {
                         // Associer du matériel au TP
                     ];
                 case 10:
-                    // Associer des produits chimiques au TP
+                    // Associer des réactifs chimiques au TP
                     _a.sent();
                     // Associer du matériel au TP
                     return [4 /*yield*/, Promise.all([
@@ -391,7 +391,7 @@ function main() {
                     console.log("\uD83D\uDC64 Admin cr\u00E9\u00E9: ".concat(admin.email));
                     console.log("\uD83D\uDC68\u200D\uD83C\uDFEB Enseignant cr\u00E9\u00E9: ".concat(teacher.email));
                     console.log("\uD83C\uDFED ".concat(suppliers.length, " fournisseurs cr\u00E9\u00E9s"));
-                    console.log("\uD83E\uDDEA ".concat(chemicals.length, " produits chimiques cr\u00E9\u00E9s"));
+                    console.log("\uD83E\uDDEA ".concat(chemicals.length, " réactifs chimiques cr\u00E9\u00E9s"));
                     console.log("\uD83D\uDD2C ".concat(materiel.length, " \u00E9quipements cr\u00E9\u00E9s"));
                     console.log("\uD83D\uDCD3 1 TP d'exemple cr\u00E9\u00E9");
                     return [2 /*return*/];

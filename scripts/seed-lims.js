@@ -81,7 +81,7 @@ async function main() {
     }),
   ]);
 
-  // Créer des produits chimiques de test
+  // Créer des réactifs chimiques de test
   const chemicals = await Promise.all([
     prisma.chemical.create({
       data: {
@@ -121,7 +121,7 @@ async function main() {
     }),
   ]);
 
-  // Ajout de produits chimiques supplémentaires
+  // Ajout de réactifs chimiques supplémentaires
   const additionalChemicals = await Promise.all([
     prisma.chemical.create({
       data: {
@@ -261,7 +261,7 @@ async function main() {
     },
   });
 
-  // Associer des produits chimiques au TP
+  // Associer des réactifs chimiques au TP
   await Promise.all([
     prisma.notebookChemical.create({
       data: {
@@ -339,7 +339,7 @@ async function main() {
   console.log(`👤 Admin créé: ${admin.email}`);
   console.log(`👨‍🏫 Enseignant créé: ${teacher.email}`);
   console.log(`🏭 ${suppliers.length} fournisseurs créés`);
-  console.log(`🧪 ${chemicals.length} produits chimiques créés`);
+  console.log(`🧪 ${chemicals.length} réactifs chimiques créés`);
   console.log(`🔬 ${materiel.length} équipements créés`);
   console.log(`📓 1 TP d'exemple créé`);
 }

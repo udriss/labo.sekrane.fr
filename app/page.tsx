@@ -291,7 +291,7 @@ const ModuleCard = ({ module, disabled = false }: { module: Module; disabled?: b
 const MAIN_MODULES: Module[] = [
   {
     title: "Inventaire Chimique",
-    description: "Gestion complète des produits chimiques, suivi des stocks et alertes de sécurité",
+    description: "Gestion complète des réactifs chimiques, suivi des stocks et alertes de sécurité",
     icon: <Science sx={{ fontSize: 32 }} />,
     href: "/chemicals",
     color: "#1976d2",
@@ -661,7 +661,7 @@ useEffect(() => {
             <StatCard
               icon={<Science />}
               value={stats?.chemicals.total || 0}
-              label="Produits chimiques"
+              label="Réactifs chimiques"
               subLabel={stats?.chemicals?.lowStock ? `${stats.chemicals.lowStock} en stock faible` : undefined}
               color="#667eea"
               bgColor={alpha('#667eea', 0.08)}
@@ -729,7 +729,7 @@ useEffect(() => {
                     {stats.chemicals.expired > 0 && (
                       <Chip 
                         icon={<ErrorOutline />} 
-                        label={`${stats.chemicals.expired} produits expirés`} 
+                        label={`${stats.chemicals.expired} réactifs expirés`} 
                         color="error" 
                         size="small"
                         sx={{ fontWeight: 500 }}

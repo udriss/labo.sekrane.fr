@@ -37,12 +37,12 @@ export function useReferenceData() {
         setMaterials([])
       }
 
-      // Gestion des produits chimiques
+      // Gestion des réactifs chimiques
       if (chemicalsRes.ok) {
         const chemicalsData = await chemicalsRes.json()
         setChemicals(chemicalsData.chemicals || [])
       } else {
-        console.error('Erreur lors du chargement des produits chimiques')
+        console.error('Erreur lors du chargement des réactifs chimiques')
         setChemicals([])
       }
 

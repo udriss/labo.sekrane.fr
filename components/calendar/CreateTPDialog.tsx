@@ -189,12 +189,12 @@ const handleCreateCalendarEvent = async () => {
       }
     }
 
-    // Vérifier les quantités de produits chimiques
+    // Vérifier les quantités de réactifs chimiques
     const insufficientChemicals = formData.chemicals.filter(c => 
       c.requestedQuantity > (c.quantity || 0)
     )
     if (insufficientChemicals.length > 0) {
-      throw new Error("Certains produits chimiques ont des quantités insuffisantes en stock.")
+      throw new Error("Certains réactifs chimiques ont des quantités insuffisantes en stock.")
     }
 
     // Préparer les données des fichiers avec le contenu uploadé
@@ -234,7 +234,7 @@ const handleCreateCalendarEvent = async () => {
         isCustom: m.isCustom || false,
         volume: m.volume || null
       })),
-      // Envoyer l'objet complet pour les produits chimiques
+      // Envoyer l'objet complet pour les réactifs chimiques
       chemicals: formData.chemicals.map((c) => ({
         id: c.id,
         name: c.name || '',
@@ -263,7 +263,7 @@ const handleCreateCalendarEvent = async () => {
       throw new Error(errorData.error || 'Erreur lors de la création des événements')
     }
 
-    // Mettre à jour les quantités prévisionnelles des produits chimiques
+    // Mettre à jour les quantités prévisionnelles des réactifs chimiques
     if (formData.chemicals.length > 0) {
       const updateResponse = await fetch('/api/chemicals/update-forecast', {
         method: 'POST',
@@ -460,7 +460,7 @@ const handleCreateCalendarEvent = async () => {
                         )}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {preset.chemicals.length} produits
+                            {preset.chemicals.length} réactifs
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {preset.materials.length} matériels
@@ -1083,20 +1083,20 @@ const handleCreateCalendarEvent = async () => {
   </StepContent>
 </Step>
 
-          {/* Étape 6: Produits chimiques */}
+          {/* Étape 6: Réactifs chimiques */}
 <Step>
   <StepLabel
     onClick={() => handleStepClick(5)}
     sx={{ cursor: 'pointer' }}
   >
-    <Typography variant="h6">Produits chimiques</Typography>
+    <Typography variant="h6">Réactifs chimiques</Typography>
   </StepLabel>
   <StepContent>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-      Sélectionnez les produits chimiques qui seront utilisés
+      Sélectionnez les réactifs chimiques qui seront utilisés
     </Typography>
 
-    {/* Autocomplete pour sélectionner les produits chimiques */}
+    {/* Autocomplete pour sélectionner les réactifs chimiques */}
     <Autocomplete
       options={chemicals}
       getOptionLabel={(option) => {
@@ -1153,11 +1153,11 @@ const handleCreateCalendarEvent = async () => {
       }}
     />
 
-{/* Liste des produits chimiques sélectionnés avec quantités */}
+{/* Liste des réactifs chimiques sélectionnés avec quantités */}
 {formData.chemicals.length > 0 && (
   <Box sx={{ mt: 3 }}>
     <Typography variant="subtitle2" sx={{ mb: 2 }}>
-      Produits chimiques sélectionnés :
+      Réactifs chimiques sélectionnés :
     </Typography>
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {formData.chemicals.map((chemical, index) => {
@@ -1371,7 +1371,7 @@ const handleCreateCalendarEvent = async () => {
   </Box>
 )}
 
-{/* Ajouter un avertissement global si des produits seront en stock faible */}
+{/* Ajouter un avertissement global si des réactifs seront en stock faible */}
 {formData.chemicals.some(c => {
   const availableStock = c.quantityPrevision !== undefined 
     ? c.quantityPrevision 
@@ -1384,12 +1384,12 @@ const handleCreateCalendarEvent = async () => {
       Attention : Stock faible
     </Typography>
     <Typography variant="body2">
-      Certains produits chimiques seront en dessous de leur stock minimum après ce TP.
+      Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
     </Typography>
   </Alert>
 )}
 
-{/* Ajouter aussi une erreur si des produits ont un stock insuffisant */}
+{/* Ajouter aussi une erreur si des réactifs ont un stock insuffisant */}
 {formData.chemicals.some(c => {
   const availableStock = c.quantityPrevision !== undefined 
     ? c.quantityPrevision 
@@ -1401,7 +1401,7 @@ const handleCreateCalendarEvent = async () => {
       Erreur : Stock insuffisant
     </Typography>
     <Typography variant="body2">
-      Certains produits chimiques n'ont pas assez de stock disponible.
+      Certains réactifs chimiques n'ont pas assez de stock disponible.
     </Typography>
   </Alert>
 )}

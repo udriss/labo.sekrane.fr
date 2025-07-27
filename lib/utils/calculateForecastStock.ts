@@ -48,7 +48,7 @@ export async function calculateChemicalsForecast(
     }))
   } catch (error) {
     console.error('Erreur lors du calcul du stock prévisionnel:', error)
-    // En cas d'erreur, retourner les produits chimiques sans prévision
+    // En cas d'erreur, retourner les réactifs chimiques sans prévision
     return chemicals.map(chemical => ({
       ...chemical,
       totalRequested: 0,

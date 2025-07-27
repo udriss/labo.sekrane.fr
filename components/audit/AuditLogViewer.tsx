@@ -58,7 +58,7 @@ interface AuditLogViewerProps {
 const MODULES = [
   { value: '', label: 'Tous les modules' },
   { value: 'USERS', label: 'Utilisateurs' },
-  { value: 'CHEMICALS', label: 'Produits chimiques' },
+  { value: 'CHEMICALS', label: 'Réactifs chimiques' },
   { value: 'EQUIPMENT', label: 'Équipements' },
   { value: 'ROOMS', label: 'Salles' },
   { value: 'CALENDAR', label: 'Calendrier' },

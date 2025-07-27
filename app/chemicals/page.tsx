@@ -46,7 +46,7 @@ export default function ChemicalsPage() {
       const response = await fetch("/api/chemicals")
       
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des produits chimiques")
+        throw new Error("Erreur lors du chargement des réactifs chimiques")
       }
       
       const { chemicals: data } = await response.json();
@@ -96,7 +96,7 @@ export default function ChemicalsPage() {
         🧪 Inventaire Chimique
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
-        Gestion des produits chimiques du laboratoire
+        Gestion des réactifs chimiques du laboratoire
       </Typography>
       
       <Paper sx={{ width: '100%' }}>

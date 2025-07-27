@@ -92,7 +92,7 @@ export default function DashboardPage() {
                       <Typography variant="h4" color="primary">
                         {stats.chemicals.total}
                       </Typography>
-                      <Typography variant="body2">Produits chimiques</Typography>
+                      <Typography variant="body2">Réactifs chimiques</Typography>
                       {stats.chemicals.lowStock > 0 && (
                         <Typography variant="caption" color="warning.main">
                           {stats.chemicals.lowStock} stock bas
@@ -174,12 +174,12 @@ export default function DashboardPage() {
               <Box>
                 {stats.chemicals.expired > 0 && (
                   <Typography variant="body2">
-                    ⚠️ {stats.chemicals.expired} produits expirés
+                    ⚠️ {stats.chemicals.expired} réactifs expirés
                   </Typography>
                 )}
                 {stats.chemicals.lowStock > 0 && (
                   <Typography variant="body2">
-                    📉 {stats.chemicals.lowStock} produits en stock faible
+                    📉 {stats.chemicals.lowStock} réactifs en stock faible
                   </Typography>
                 )}
               </Box>
@@ -191,7 +191,7 @@ export default function DashboardPage() {
             <Grid size={{ xs: 12, md: 6 }}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  État des produits chimiques
+                  État des réactifs chimiques
                 </Typography>
                 <Box>
                   <Box display="flex" justifyContent="space-between" py={1}>

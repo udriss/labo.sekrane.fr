@@ -2,7 +2,7 @@
 import path from 'path';
 import { ChemicalCompound } from '@/types/prisma';
 
-// Fonction pour récupérer les produits chimiques depuis l'API
+// Fonction pour récupérer les réactifs chimiques depuis l'API
 export async function fetchChemicalsFromAPI(query: string): Promise<ChemicalCompound[]> {
   try {
     const response = await fetch(`/api/preset-chemicals?query=${encodeURIComponent(query)}`);

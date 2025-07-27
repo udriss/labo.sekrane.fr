@@ -5,12 +5,12 @@
 import React from 'react'
 import {
   Box, Stack, IconButton, Chip, Typography, Card, CardContent,
-  Tooltip, Paper, useTheme, alpha, Badge, GlobalStyles
+  Tooltip, Paper, useTheme, alpha, Badge, 
 } from '@mui/material'
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval,
   isSameDay, isToday, addDays, subDays, differenceInMinutes,
-  isPast, isFuture, startOfDay, endOfDay, isWithinInterval,
+  isPast, isFuture, startOfDay, endOfDay,
   setHours, setMinutes
 } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -611,33 +611,20 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     </CardContent>
                   
                   
-                  {/* Boutons d'action */}
-                  <Box
-                    className="event-actions"
-                    sx={{
-                      position: 'absolute',
-                      top: 2,
-                      right: 2,
-                      display: 'flex',
-                      gap: 0.5,
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      zIndex: 5
-                    }}
-                  >
                     {/* Boutons d'action - n'afficher que si l'utilisateur a les permissions */}
                     {showActions && (
                       <Box
                         className="event-actions"
                         sx={{
                           position: 'absolute',
-                          top: 2,
-                          right: 2,
-                          display: 'flex',
+                          bottom: 10,
+                          right: 5,
                           gap: 0.5,
                           opacity: 0,
                           transition: 'opacity 0.2s',
-                          zIndex: 5
+                          zIndex: 5,
+                          display: 'flex',
+                          flexDirection: 'column',
                         }}
                       >
                         {onEventEdit && (
@@ -680,7 +667,6 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         )}
                       </Box>
                     )}
-                  </Box>
 
                   <CardContent sx={{ 
                     p: 1, 
