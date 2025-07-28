@@ -106,6 +106,12 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
             color: 'warning',
             label: 'À valider' 
           }
+        case 'IN_PROGRESS':
+          return { 
+            icon: <AccessTime sx={{ fontSize: 20 }} />, 
+            color: 'info',
+            label: 'En préparation' 
+          }
         case 'VALIDATED':
           return { 
             icon: <CheckCircle sx={{ fontSize: 20 }} />, 

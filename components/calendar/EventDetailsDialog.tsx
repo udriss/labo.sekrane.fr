@@ -38,6 +38,7 @@ import { SiMoleculer } from "react-icons/si";
 
 
 import { useSession } from 'next-auth/react'
+import { cp } from 'fs'
 
 interface DocumentFile {
   fileName: string
@@ -74,7 +75,8 @@ const getStateChangeLabel = (fromState: string, toState: string): string => {
     'PENDING': 'À valider',
     'VALIDATED': 'Validé',
     'CANCELLED': 'Annulé',
-    'MOVED': 'Déplacé'
+    'MOVED': 'Déplacé',
+    'IN_PROGRESS': 'En préparation'
   }
   
   return `${stateLabels[fromState] || fromState} → ${stateLabels[toState] || toState}`
@@ -479,108 +481,111 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     }
   }
 
-  useEffect(() => {
-    const fetchUsersAndPrepareTimeline = async () => {
-      if (!event) return
+useEffect(() => {
+  const fetchUsersAndPrepareTimeline = async () => {
+    if (!event) return
+    console.log('Récupération des utilisateurs pour la timeline de l\'événement:', event.id)
 
-      // Réinitialiser la timeline si pas de modifications
-      if (!event.modifiedBy || event.modifiedBy.length === 0) {
-        setTimelineData([])
-        return
+    setLoadingUsers(true)
+    try {
+      // Collecter tous les userIds (modificateurs + créateur)
+      const userIds: string[] = []
+      
+      // Toujours ajouter l'ID du créateur s'il existe
+      if (event.createdBy) {
+        userIds.push(event.createdBy)
       }
+      
+      // Ajouter les IDs des modificateurs s'il y en a
+      if (event.modifiedBy && event.modifiedBy.length > 0) {
+        event.modifiedBy.forEach(entry => userIds.push(entry[0]))
+      }
+      
+      console.log('User IDs collectés pour la timeline:', userIds)
+      
+      // Récupérer les infos de tous les utilisateurs (y compris le créateur)
+      if (userIds.length > 0) {
+        const response = await fetch('/api/utilisateurs/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userIds: [...new Set(userIds)] }) // Enlever les doublons
+        })
 
-      setLoadingUsers(true)
-      try {
-        // Collecter tous les userIds (modificateurs + créateur)
-        const userIds: string[] = []
-        
-        // Ajouter les IDs des modificateurs
-        if (event.modifiedBy && event.modifiedBy.length > 0) {
-          event.modifiedBy.forEach(entry => userIds.push(entry[0]))
-        }
-        
-        // Ajouter l'ID du créateur s'il existe
-        if (event.createdBy) {
-          userIds.push(event.createdBy)
-        }
-        
-        // Récupérer les infos de tous les utilisateurs
-        if (userIds.length > 0) {
-          const response = await fetch('/api/utilisateurs/info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userIds: [...new Set(userIds)] }) // Enlever les doublons
-          })
-
-          if (response.ok) {
-            const users = await response.json()
-            setUsersInfo(users)
+        if (response.ok) {
+          const users = await response.json()
+          setUsersInfo(users)
+          console.log('Utilisateurs récupérés:', users)
+          
+          // Stocker les infos du créateur
+          if (event.createdBy && users[event.createdBy]) {
+            setCreatorInfo(users[event.createdBy])
+          }
+          
+          // Préparer les données pour la timeline des modifications
+          if (event.modifiedBy && event.modifiedBy.length > 0) {
+            const allModifications: Array<{
+              userId: string, 
+              userName: string,
+              date: string,
+              isConsecutive: boolean
+            }> = []
             
-            // Stocker les infos du créateur
-            if (event.createdBy && users[event.createdBy]) {
-              setCreatorInfo(users[event.createdBy])
-            }
-            
-            // Préparer les données pour la timeline
-            if (event.modifiedBy && event.modifiedBy.length > 0) {
-              const allModifications: Array<{
-                userId: string, 
-                userName: string,
-                date: string,
-                isConsecutive: boolean
-              }> = []
+            // Créer une entrée pour chaque modification
+            event.modifiedBy.forEach(([userId, ...dates]) => {
+              const userName = users[userId]?.name || 
+                              users[userId]?.email || 
+                              `Utilisateur ${userId}`
               
-              // Créer une entrée pour chaque modification
-              event.modifiedBy.forEach(([userId, ...dates]) => {
-                const userName = users[userId]?.name || 
-                                users[userId]?.email || 
-                                `Utilisateur ${userId}`
-                
-                dates.forEach(date => {
-                  // Vérifier si la date est valide
-                  try {
-                    const d = new Date(date)
-                    if (!isNaN(d.getTime())) {
-                      allModifications.push({ userId, userName, date, isConsecutive: false })
-                    }
-                  } catch {
-                    // Ignorer les dates invalides
+              dates.forEach(date => {
+                // Vérifier si la date est valide
+                try {
+                  const d = new Date(date)
+                  if (!isNaN(d.getTime())) {
+                    allModifications.push({ userId, userName, date, isConsecutive: false })
                   }
-                })
-              })
-              
-              // Trier par date
-              allModifications.sort((a, b) => 
-                new Date(a.date).getTime() - new Date(b.date).getTime()
-              )
-              
-              // Marquer les modifications consécutives du même utilisateur
-              for (let i = 1; i < allModifications.length; i++) {
-                if (allModifications[i].userId === allModifications[i - 1].userId) {
-                  allModifications[i].isConsecutive = true
+                } catch {
+                  // Ignorer les dates invalides
                 }
+              })
+            })
+            
+            // Trier par date
+            allModifications.sort((a, b) => 
+              new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
+            
+            // Marquer les modifications consécutives du même utilisateur
+            for (let i = 1; i < allModifications.length; i++) {
+              if (allModifications[i].userId === allModifications[i - 1].userId) {
+                allModifications[i].isConsecutive = true
               }
-              
-              setTimelineData(allModifications)
-            } else {
-              setTimelineData([])
             }
+            
+            setTimelineData(allModifications)
+          } else {
+            // Pas de modifications, mais on a quand même récupéré les infos du créateur
+            setTimelineData([])
           }
         } else {
+          console.error('Erreur lors de la récupération des utilisateurs')
           setTimelineData([])
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des utilisateurs:', error)
+      } else {
+        // Pas d'utilisateurs à récupérer
         setTimelineData([])
-      } finally {
-        setLoadingUsers(false)
       }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des utilisateurs:', error)
+      setTimelineData([])
+    } finally {
+      setLoadingUsers(false)
     }
+  }
 
-    if (open && event) {
-      fetchUsersAndPrepareTimeline()
-    }
-  }, [event, open])
+  if (open && event) {
+    fetchUsersAndPrepareTimeline()
+  }
+}, [event, open])
 
   // Fonction helper pour formater les dates en toute sécurité
   const formatDate = (dateString: string) => {
@@ -638,12 +643,15 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     event.state === 'PENDING' ? 'À valider' :
                     event.state === 'VALIDATED' ? 'Validé' :
                     event.state === 'CANCELLED' ? 'Annulé' :
+                    event.state === 'IN_PROGRESS' ? 'En préparation' :
                     event.state === 'MOVED' ? 'Déplacé' : event.state
                   }
                   color={
                     event.state === 'PENDING' ? 'warning' :
                     event.state === 'VALIDATED' ? 'success' :
                     event.state === 'CANCELLED' ? 'error' :
+                    event.state === 'IN_PROGRESS' ? 'info' :
+                    event.state === 'MOVED' ? 'secondary' :
                     'default'
                   }
                   size="small"
@@ -651,6 +659,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     event.state === 'VALIDATED' ? <CheckCircle /> :
                     event.state === 'CANCELLED' ? <Cancel /> :
                     event.state === 'MOVED' ? <SwapHoriz /> :
+                    event.state === 'IN_PROGRESS' ? <AccessTime /> :
+                    event.state === 'PENDING' ? <History /> :
                     undefined
                   }
                   sx= {{ 
@@ -706,7 +716,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
           {/* Informations temporelles */}
           <Grid container spacing={2}>
-            <Grid size = {{ xs: 12, sm: 6 }}>
+            <Grid size = {{ xs: 12, sm: 12 }}>
             {/* Option 1 - Avec icônes et mise en page alignée */}
             <Box sx={{ 
               display: 'flex', 
@@ -734,7 +744,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               </Box>
             </Box>
             </Grid>
-            <Grid size = {{ xs: 12, sm: 6 }}>
+            <Grid size = {{ xs: 12, sm: 12 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Durée
               </Typography>
@@ -747,7 +757,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
           {/* Informations de localisation */}
           {(event.class || event.room) && (
             <>
-              <Divider />
+
               <Grid container spacing={2}>
                 {event.class && (
                   <Grid size = {{ xs: 12, sm: 6 }}>
@@ -824,60 +834,82 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {/* Section Matériel */}
-              {event.materials && event.materials.length > 0 && (
-                <>
-                  <TableRow>
-                    <TableCell 
-                      colSpan={3} 
-                      sx={{ 
-                        bgcolor: 'action.hover',
-                        py: 0.5,
-                        borderBottom: 'none'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Science sx={{ fontSize: 16, color: 'primary.main' }} />
-                        <Typography variant="caption" fontWeight="medium" color="text.secondary">
-                          MATÉRIEL
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                  {event.materials.map((material, index) => (
-                    <TableRow 
-                      key={`material-${index}`}
-                      sx={{ 
-                        '&:hover': { bgcolor: 'action.hover' },
-                        '& td': { borderBottom: '1px solid rgba(224, 224, 224, 0.4)' }
-                      }}
-                    >
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2">
-                            {typeof material === 'string' 
-                              ? material 
-                              : (material.name || material.itemName || 'Matériel')}
-                          </Typography>
-                          {typeof material === 'object' && material.volume && (
-                            <Typography variant="caption" color="text.secondary">
-                              Volume: {material.volume}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="medium" color="info.main">
-                          {typeof material === 'object' && material.quantity 
-                            ? `${material.quantity} ${material.quantity > 1 ? 'unités' : 'unité'}`
-                            : '1 unité'
-                          }
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
+{/* Section Matériel */}
+{event.materials && event.materials.length > 0 && (
+  <>
+    <TableRow>
+      <TableCell 
+        colSpan={3} 
+        sx={{ 
+          bgcolor: 'action.hover',
+          py: 0.5,
+          borderBottom: 'none'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Science sx={{ fontSize: 16, color: 'primary.main' }} />
+          <Typography variant="caption" fontWeight="medium" color="text.secondary">
+            MATÉRIEL
+          </Typography>
+        </Box>
+      </TableCell>
+    </TableRow>
+    {event.materials.map((material, index) => (
+      <TableRow 
+        key={`material-${index}`}
+        sx={{ 
+          '&:hover': { bgcolor: 'action.hover' },
+          '& td': { borderBottom: '1px solid rgba(224, 224, 224, 0.4)' }
+        }}
+      >
+        <TableCell>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1 
+          }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2">
+                {typeof material === 'string' 
+                  ? material 
+                  : (material.name || material.itemName || 'Matériel')}
+              </Typography>
+              {typeof material === 'object' && material.volume && (
+                <Typography variant="caption" color="text.secondary">
+                  Volume: {material.volume}
+                </Typography>
               )}
+            </Box>
+            {typeof material === 'object' && material.isCustom && (
+              <Chip 
+                label="Non inventorié" 
+                size="small" 
+                color="info" 
+                variant="outlined"
+                sx={{ 
+                  height: 20,
+                  fontSize: '0.7rem',
+                  '& .MuiChip-label': { px: 1 },
+                  fontVariant: 'small-caps',
+                  textTransform: 'uppercase',
+                  fontWeight: 'bold',
+                }}
+              />
+            )}
+          </Box>
+        </TableCell>
+        <TableCell align="right">
+          <Typography variant="body2" fontWeight="medium" color="info.main">
+            {typeof material === 'object' && material.quantity 
+              ? `${material.quantity} ${material.quantity > 1 ? 'unités' : 'unité'}`
+              : '1 unité'
+            }
+          </Typography>
+        </TableCell>
+      </TableRow>
+    ))}
+  </>
+)}
 
               {/* Section Réactifs chimiques */}
               {event.chemicals && event.chemicals.length > 0 && (
@@ -939,14 +971,17 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                           </Box>
                           {typeof chemical === 'object' && chemical.isCustom && (
                             <Chip 
-                              label="Personnalisé" 
+                              label="Non inventorié" 
                               size="small" 
                               color="info" 
                               variant="outlined"
                               sx={{ 
                                 height: 20,
                                 fontSize: '0.7rem',
-                                '& .MuiChip-label': { px: 1 }
+                                '& .MuiChip-label': { px: 1 },
+                                fontVariant: 'small-caps',
+                                textTransform: 'uppercase',
+                                fontWeight: 'bold',
                               }}
                             />
                           )}
@@ -969,7 +1004,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
           </Table>
         </TableContainer>
       </Box>
-              {/* Alert pour les réactifs personnalisés */}
+        {/* Alert pour les réactifs personnalisés */}
         {event.chemicals && event.chemicals.some(c => 
           typeof c === 'object' && c.isCustom
         ) && (
@@ -977,12 +1012,12 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
             severity="info" 
             sx={{ 
               mt: 2, 
+              width: 'auto',
               maxWidth: 400,
               margin: '16px auto 0'
             }}
             icon={<InfoOutlined />}
           >
-            <AlertTitle>Commande spéciale requise</AlertTitle>
             <Typography variant="body2">
               {(() => {
                 const customChemicals = event.chemicals.filter(c => 
@@ -1272,6 +1307,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                     change.toState === 'VALIDATED' ? 'success' :
                     change.toState === 'CANCELLED' ? 'error' :
                     change.toState === 'MOVED' ? 'info' :
+                    change.toState === 'PENDING' ? 'warning' :
+                    change.toState === 'IN_PROGRESS' ? 'info' :
                     'grey'
                   }
                 >
@@ -1279,6 +1316,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
                   {change.toState === 'CANCELLED' && <Cancel />}
                   {change.toState === 'MOVED' && <SwapHoriz />}
                   {change.toState === 'PENDING' && <HourglassEmpty />}
+                  {change.toState === 'IN_PROGRESS' && <AccessTime />}
                 </TimelineDot>
                 {event.stateChanger && index < event.stateChanger.length - 1 && <TimelineConnector />}
               </TimelineSeparator>

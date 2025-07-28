@@ -59,6 +59,8 @@ const getStateIcon = (state: string | undefined) => {
       return <CheckCircle sx={{ fontSize: 20 }} />
     case 'CANCELLED':
       return <Cancel sx={{ fontSize: 20 }} />
+    case 'IN_PROGRESS':
+      return <AccessTime sx={{ fontSize: 20 }} />
     case 'MOVED':
       return <SwapHoriz sx={{ fontSize: 20 }} />
     default:
@@ -127,6 +129,12 @@ const EventsList: React.FC<EventsListProps> = ({
           icon: <SwapHoriz sx={{ fontSize: 20 }} />, 
           color: 'info',
           label: 'Déplacé' 
+        }
+      case 'IN_PROGRESS':
+        return { 
+          icon: <AccessTime sx={{ fontSize: 20 }} />, 
+          color: 'info',
+          label: 'En préparation' 
         }
       default:
         return null
@@ -688,6 +696,12 @@ const renderEventItem = (event: CalendarEvent) => {
                 <Stack direction="row" spacing={1} alignItems="center">
                   <SwapHoriz fontSize="small" color="info" />
                   <span>Déplacés</span>
+                </Stack>
+                </MenuItem>
+                <MenuItem value="IN_PROGRESS">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <AccessTime fontSize="small" color="info" />
+                  <span>En préparation</span>
                 </Stack>
                 </MenuItem>
               </Select>

@@ -18,7 +18,7 @@ import {
   ChevronLeft, ChevronRight, Today,
   Science, Schedule, Assignment, EventAvailable,
   Circle, Edit, Delete, CheckCircle, 
-  Cancel, SwapHoriz, HourglassEmpty 
+  Cancel, SwapHoriz, HourglassEmpty, AccessTime
 } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
 
@@ -199,6 +199,8 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
           return <Cancel sx={{ fontSize: iconSize, color: 'error.main' }} />
         case 'MOVED':
           return <SwapHoriz sx={{ fontSize: iconSize, color: 'info.light' }} />
+        case 'IN_PROGRESS':
+          return <AccessTime sx={{ fontSize: iconSize, color: 'info.light' }} />
         default:
           return null
       }
@@ -455,6 +457,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                             event.state === 'PENDING' ? 'À valider' :
                             event.state === 'VALIDATED' ? 'Validé' :
                             event.state === 'CANCELLED' ? 'Annulé' :
+                            event.state === 'IN_PROGRESS' ? 'En préparation' :
                             event.state === 'MOVED' ? 'Déplacé' : event.state
                           }
                         </Typography>

@@ -1,7 +1,7 @@
 // types/calendar.ts
 export type EventType = 'TP' | 'MAINTENANCE' | 'INVENTORY' | 'OTHER'
 
-export type EventState = 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED'
+export type EventState = 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED' | 'IN_PROGRESS'
 
 export interface StateChange {
   userId: string
@@ -38,6 +38,8 @@ export interface CalendarEvent {
     itemName?: string
     volume?: string
     quantity?: number
+    unit?: string
+    isCustom?: boolean
   })[]
   chemicals?: (string | {
     id?: string

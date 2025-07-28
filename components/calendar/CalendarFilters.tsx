@@ -93,7 +93,8 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
     { value: 'PENDING', label: 'À valider' },
     { value: 'VALIDATED', label: 'Validés' },
     { value: 'CANCELLED', label: 'Annulés' },
-    { value: 'MOVED', label: 'Déplacés' }
+    { value: 'MOVED', label: 'Déplacés' },
+    { value: 'IN_PROGRESS', label: 'En préparation' },
   ]
 
   return (

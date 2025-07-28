@@ -181,7 +181,8 @@ export default function CalendarPage() {
         'VALIDATED': 'Événement validé avec succès',
         'CANCELLED': 'Événement annulé',
         'MOVED': 'Événement marqué comme déplacé',
-        'PENDING': 'Événement remis à valider'
+        'PENDING': 'Événement remis à valider',
+        'IN_PROGRESS': 'Événement en cours de préparation'
       }
       
       const message = stateMessages[updatedEvent.state || ''] || 'État de l\'événement modifié'
