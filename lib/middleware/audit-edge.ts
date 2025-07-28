@@ -14,7 +14,6 @@ export async function logAuditEvent(
   userId?: string
 ) {
   try {
-    console.log('logAuditEvent called:', { actionType, module, path: request.nextUrl.pathname });
     
     const timestamp = new Date().toISOString();
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 

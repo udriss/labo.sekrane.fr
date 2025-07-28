@@ -290,7 +290,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
             <Skeleton variant="rectangular" width={200} height={56} />
             <Skeleton variant="rectangular" width={150} height={40} />
           </Stack>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {[1, 2, 3, 4].map(i => (
               <Grid size={{ xs: 12, md: 6, lg: 4 }} key={i}>
                 <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1 }} />
@@ -530,7 +530,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
   // Rendu de la vue cartes (existante)
   const renderCardsView = () => {
     return (
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {sortedChemicals.map((chemical) => (
           <Grid size={{ xs: 12, md: 6, lg: 4 }} key={chemical.id}>
             <Card

@@ -6,199 +6,13 @@ import path from 'path'
 import { withAudit } from '@/lib/api/with-audit'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth';
-
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import { readCalendarFile, writeCalendarFile } from '@/lib/calendar-utils'
-
-// Ajouter ces interfaces au début du fichier
-interface Chemical {
-  id: string
-  name: string
-  quantity?: number
-  requestedQuantity?: number
-  unit?: string
-  quantityPrevision?: number
-  minQuantity?: number
-  isCustom?: boolean
-}
-
-interface ChemicalInventoryFile {
-  chemicals: ChemicalInventory[]
-  stats: {
-    total: number
-    inStock: number
-    lowStock: number
-    expired: number
-    expiringSoon: number
-  }
-}
+import { readCalendarFile, writeCalendarFile, migrateEventToNewFormat } from '@/lib/calendar-utils'
+import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { enrichEventsWithChemicalData, getFileTypeFromName, saveFileToDisk } from '@/lib/utils/chemical-data-utils'
+import { TimeSlot, CalendarEvent } from '@/types/calendar'
 
 
-
-interface ChemicalInventory {
-  id: string
-  name: string
-  formula?: string
-  molfile?: string | null
-  casNumber?: string
-  barcode?: string
-  quantity: number
-  unit: string
-  minQuantity: number
-  concentration?: number | null
-  purity?: number | null
-  purchaseDate?: string | null
-  expirationDate?: string | null
-  openedDate?: string | null
-  storage?: string
-  room?: string
-  cabinet?: string
-  shelf?: string
-  hazardClass?: string | null
-  sdsFileUrl?: string | null
-  supplierId?: string | null
-  batchNumber?: string | null
-  orderReference?: string | null
-  status: string
-  notes?: string
-  createdAt: string
-  updatedAt: string
-  supplier?: string
-  location?: string
-  quantityPrevision?: number
-}
-
-interface Event {
-  id: string
-  title: string
-  description?: string | null
-  startDate: string
-  endDate: string
-  type: string
-  class?: string | null
-  room?: string | null
-  location?: string | null
-  materials?: any[]
-  chemicals?: Chemical[]
-  equipment?: any[]
-  fileName?: string | null
-  fileUrl?: string | null
-  files?: any[]
-  remarks?: string | null
-  notes?: string | null
-  createdBy?: string | null  // Changé de string | undefined à string | null
-  modifiedBy?: any[]
-  createdAt: string
-  updatedAt: string
-  parentEventId?: string 
-  [key: string]: any
-}
-
-const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
-const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
-
-async function saveFileToDisk(fileData: {
-  userId: string
-  fileName: string
-  fileContent?: string // Base64 ou URL data
-  fileBuffer?: Buffer
-}): Promise<string> {
-  try {
-    // Créer le dossier uploads s'il n'existe pas
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'calendar')
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Générer un nom de fichier unique
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 8)
-    const fileExtension = path.extname(fileData.fileName)
-    const safeFileName = `${timestamp}_${randomString}${fileExtension}`
-    const filePath = path.join(uploadDir, safeFileName)
-
-    // Sauvegarder le fichier
-    if (fileData.fileBuffer) {
-      await writeFile(filePath, fileData.fileBuffer)
-    } else if (fileData.fileContent) {
-      // Si c'est une data URL, extraire le contenu base64
-      const base64Data = fileData.fileContent.replace(/^data:.*,/, '')
-      const buffer = Buffer.from(base64Data, 'base64')
-      await writeFile(filePath, buffer)
-    }
-
-    // Retourner le chemin relatif pour l'URL
-    return `/uploads/calendar/${fileData.userId}/${safeFileName}`
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde du fichier:', error)
-    throw error
-  }
-}
-
-// Fonction helper pour obtenir le type de fichier
-function getFileTypeFromName(fileName: string): string {
-  const extension = fileName.split('.').pop()?.toLowerCase() || ''
-  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
-    return 'image/' + extension
-  } else if (extension === 'pdf') {
-    return 'pdf'
-  } else if (['doc', 'docx', 'odt'].includes(extension)) {
-    return 'msword'
-  }
-  return 'other'
-}
-
-
-
-// Nouvelle fonction pour lire le fichier chemicals inventory
-async function readChemicalsInventoryFile(): Promise<ChemicalInventory[]> {
-  try {
-    const data = await fs.readFile(CHEMICALS_INVENTORY_FILE, 'utf-8')
-    const parsed: ChemicalInventoryFile = JSON.parse(data)
-    
-    return parsed.chemicals || []
-  } catch (error) {
-    console.error('Erreur lecture fichier chemicals-inventory:', error)
-    return []
-  }
-}
-
-// Fonction pour enrichir les événements avec les données de stock
-async function enrichEventsWithChemicalData(events: Event[]): Promise<Event[]> {
-  const chemicalsData = await readChemicalsInventoryFile()
-  
-  // Créer un map des réactifs chimiques pour un accès rapide
-  const chemicalsMap = new Map<string, ChemicalInventory>(
-    chemicalsData.map((chem: ChemicalInventory) => [chem.id, chem])
-  )
-  
-  // Enrichir chaque événement
-  return events.map((event: Event) => ({
-    ...event,
-    chemicals: event.chemicals?.map((chemical: Chemical) => {
-      const chemicalInventory = chemicalsMap.get(chemical.id)
-      
-      // Si on trouve le réactif chimique dans l'inventaire
-      if (chemicalInventory) {
-        return {
-          ...chemical,
-          // Ajouter les données du stock depuis chemicals-inventory
-          quantity: chemicalInventory.quantity || chemical.quantity,
-          quantityPrevision: chemicalInventory.quantityPrevision,
-          minQuantity: chemicalInventory.minQuantity,
-          unit: chemicalInventory.unit || chemical.unit
-        }
-      }
-      
-      // Si on ne trouve pas le réactif, retourner tel quel
-      return chemical
-    }) || []
-  }))
-}
-
-
-
+// GET - Modifié pour supporter le nouveau format
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -208,15 +22,22 @@ export async function GET(request: NextRequest) {
     const calendarData = await readCalendarFile()
     let events = calendarData.events || []
 
+    // Migrer tous les événements vers le nouveau format
+    events = await Promise.all(events.map(migrateEventToNewFormat));
+
     // Filtrage par période si demandé
     if (startDate && endDate) {
       const start = new Date(startDate)
       const end = new Date(endDate)
       
       events = events.filter((event: any) => {
-        const eventStart = new Date(event.startDate)
-        const eventEnd = new Date(event.endDate)
-        return eventStart <= end && eventEnd >= start
+        // Vérifier si au moins un timeSlot est dans la période
+        return event.timeSlots.some((slot: TimeSlot) => {
+          if (slot.status === 'deleted') return false;
+          const slotStart = new Date(slot.startDate)
+          const slotEnd = new Date(slot.endDate)
+          return slotStart <= end && slotEnd >= start
+        });
       })
     }
 
@@ -233,7 +54,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
+// POST - Nouveau format avec timeSlots
 export const POST = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions)
@@ -247,17 +68,12 @@ export const POST = withAudit(
       description, 
       date,
       timeSlots,
-      startDate,
-      endDate,
       type,
       classes,
       materials,
       chemicals,
-      fileName,
-      fileUrl,
-      fileSize,
       files,
-      remarks,  // Ajouter remarks
+      remarks,
       location,
       room,
       notes,
@@ -271,80 +87,11 @@ export const POST = withAudit(
       )
     }
 
-    // Fonction pour préparer et sauvegarder les fichiers
-    const prepareAndSaveFiles = async () => {
-      const filesList = []
-      
-      // Nouveau format avec array files
-      if (files && Array.isArray(files) && files.length > 0) {
-        for (const file of files) {
-          try {
-            let savedFileUrl = file.fileUrl
+    // Préparer et sauvegarder les fichiers
+    const savedFiles = await prepareAndSaveFiles(files, userId);
 
-            // Si le fichier contient du contenu (base64), le sauvegarder
-            if (file.fileContent) {
-              savedFileUrl = await saveFileToDisk({
-                userId: userId ?? 'TEMP_USER',
-                fileName: file.fileName,
-                fileContent: file.fileContent
-              })
-            }
-            // Si c'est une data URL, la sauvegarder aussi
-            else if (file.fileUrl && file.fileUrl.startsWith('data:')) {
-              savedFileUrl = await saveFileToDisk({
-                userId: userId ?? 'TEMP_USER',
-                fileName: file.fileName,
-                fileContent: file.fileUrl
-              })
-            }
-
-            filesList.push({
-              fileName: file.fileName,
-              fileUrl: savedFileUrl,
-              filePath: savedFileUrl, // Ajouter le chemin du fichier
-              fileSize: file.fileSize || 0,
-              fileType: file.fileType || getFileTypeFromName(file.fileName),
-              uploadedAt: file.uploadedAt || new Date().toISOString()
-            })
-          } catch (error) {
-            console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
-            // Continuer avec les autres fichiers même si un échoue
-          }
-        }
-      }
-      
-      // Ancien format avec fileName unique (rétrocompatibilité)
-      if (fileName && !files) {
-        let savedFileUrl = fileUrl
-        
-        if (fileUrl && fileUrl.startsWith('data:')) {
-          try {
-            savedFileUrl = await saveFileToDisk({
-              userId: userId ?? 'TEMP_USER',
-              fileName: fileName,
-              fileContent: fileUrl
-            })
-          } catch (error) {
-            console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
-          }
-        }
-        
-        filesList.push({
-          fileName: fileName,
-          fileUrl: savedFileUrl || '',
-          filePath: savedFileUrl || '',
-          fileSize: fileSize || 0,
-          fileType: getFileTypeFromName(fileName),
-          uploadedAt: new Date().toISOString()
-        })
-      }
-      
-      return filesList
-    }
-
-    // Support du nouveau format (date + timeSlots) et de l'ancien format
-    let eventsToCreate = []
-    const savedFiles = await prepareAndSaveFiles()
+    // Créer les timeSlots avec IDs uniques
+    const formattedTimeSlots: TimeSlot[] = [];
 
     if (date && timeSlots && Array.isArray(timeSlots)) {
       // Nouveau format pour les TP avec créneaux multiples
@@ -356,65 +103,25 @@ export const POST = withAudit(
           )
         }
 
-        const startDateTime = new Date(`${date}T${slot.startTime}`)
-        const endDateTime = new Date(`${date}T${slot.endTime}`)
-        
+        const startDateTime = new Date(`${date}T${slot.startTime}`);
+        const endDateTime = new Date(`${date}T${slot.endTime}`);
 
-        eventsToCreate.push({
-          id: `EVENT_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-          title: title || 'Sans titre',
-          name: type === 'TP' ? session?.user?.name : (title || 'TP'),
-          description: description || null,
+        formattedTimeSlots.push({
+          id: generateTimeSlotId(),
           startDate: startDateTime.toISOString(),
           endDate: endDateTime.toISOString(),
-          type: type || 'Type inconnu',
-          state: initialState,
-          stateChanger: [],
-          class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
-          room: room || null,
-          location: location || null,
-          materials: materials || [],
-          chemicals: chemicals || [],
-          equipment: equipment || [],
-          fileName: fileName || null,
-          fileUrl: fileUrl || null,
-          files: savedFiles,
-          remarks: remarks || null,  // Ajouter les remarques
-          notes: notes || null,
-          createdBy: userId || null,
-          modifiedBy: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        })
+          status: 'active',
+          userIDAdding: userId || 'INDISPONIBLE'
+        });
       }
-    } else if (startDate && endDate) {
-      // Ancien format ou événements laborantin
-      eventsToCreate.push({
-        id: `EVENT_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
-        title: title || 'Sans titre',
-        name: type === 'TP' ? session?.user?.name : (title || '-- Sans nom --'),
-        description: description || null,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        type: type || 'Type inconnu',
-        state: initialState,
-        stateChanger: [],
-        class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
-        room: room || null,
-        location: location || null,
-        materials: materials || [],
-        chemicals: chemicals || [],
-        equipment: equipment || [],
-        fileName: fileName || null,
-        fileUrl: fileUrl || null,
-        files: savedFiles,
-        remarks: remarks || null,
-        notes: notes || null,
-        createdBy: userId || null,
-        modifiedBy: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
+    } else if (body.startDate && body.endDate) {
+      // Support de l'ancien format pour la rétrocompatibilité
+      formattedTimeSlots.push({
+        id: generateTimeSlotId(),
+        startDate: new Date(body.startDate).toISOString(),
+        endDate: new Date(body.endDate).toISOString(),
+        status: 'active'
+      });
     } else {
       return NextResponse.json(
         { error: 'Format de données invalide. Utilisez soit (date + timeSlots) soit (startDate + endDate)' },
@@ -422,41 +129,60 @@ export const POST = withAudit(
       )
     }
 
-    // Lire le fichier existant et ajouter les nouveaux événements
-    const calendarData = await readCalendarFile()
-    const newEvents = []
-    
-    for (const eventData of eventsToCreate) {
-      calendarData.events.push(eventData)
-      newEvents.push(eventData)
-    }
+    // Créer l'événement unique avec tous les créneaux
+    const newEvent = {
+      id: `EVENT_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+      title: title || 'Sans titre',
+      name: type === 'TP' ? session?.user?.name : (title || 'TP'),
+      description: description || null,
+      timeSlots: formattedTimeSlots,
+      type: type || 'Type inconnu',
+      state: initialState,
+      stateChanger: [],
+      class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
+      room: room || null,
+      location: location || null,
+      materials: materials || [],
+      chemicals: chemicals || [],
+      equipment: equipment || [],
+      files: savedFiles,
+      remarks: remarks || null,
+      notes: notes || null,
+      createdBy: userId || null,
+      modifiedBy: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Lire le fichier existant et ajouter le nouvel événement
+    const calendarData = await readCalendarFile();
+    calendarData.events.push(newEvent);
     
     // Sauvegarder le fichier
-    await writeCalendarFile(calendarData)
+    await writeCalendarFile(calendarData);
 
-    // Enrichir les nouveaux événements avec les données de stock avant de les retourner
-    const enrichedNewEvents = await enrichEventsWithChemicalData(newEvents)
+    // Enrichir le nouvel événement avec les données de stock
+    const enrichedEvent = (await enrichEventsWithChemicalData([newEvent]))[0];
 
-    return NextResponse.json(enrichedNewEvents.length === 1 ? enrichedNewEvents[0] : enrichedNewEvents, { status: 201 })
+    return NextResponse.json(enrichedEvent, { status: 201 });
   },
   {
     module: 'CALENDAR',
     entity: 'event',
     action: 'CREATE',
-    extractEntityIdFromResponse: (response) => response?.id || response?.[0]?.id,
+    extractEntityIdFromResponse: (response) => response?.id,
     customDetails: (req, response) => ({
-      eventTitle: response?.title || response?.[0]?.title,
-      eventCount: Array.isArray(response) ? response.length : 1,
-      filesCount: response?.files?.length || (response?.[0]?.files?.length) || 0
+      eventTitle: response?.title,
+      timeSlotsCount: response?.timeSlots?.length || 0,
+      filesCount: response?.files?.length || 0
     })
   }
-)
+);
 
-// PUT - Version améliorée avec gestion des fichiers
+// PUT - Gestion des modifications de timeSlots
 export const PUT = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions)
-    const userEmail = session?.user?.email
     const userRole = session?.user?.role
     const userId = session?.user?.id
 
@@ -480,7 +206,7 @@ export const PUT = withAudit(
       )
     }
 
-    const event = calendarData.events[eventIndex]
+    const event = await migrateEventToNewFormat(calendarData.events[eventIndex])
 
     // Vérifier les permissions
     const canEdit = userRole === 'ADMIN' || 
@@ -497,13 +223,15 @@ export const PUT = withAudit(
     const body = await request.json()
     
     const { 
-      additionalTimeSlots, 
+      timeSlots,  // Extraire timeSlots directement
       files,
       fileName,
       fileUrl,
       fileSize,
       ...eventUpdates 
     } = body
+    
+    console.log('TimeSlots reçus:', timeSlots);
     
     // Gérer le tableau modifiedBy
     const currentModifiedBy: Array<[string, ...string[]]> = event.modifiedBy || []
@@ -523,168 +251,102 @@ export const PUT = withAudit(
       updatedModifiedBy = currentModifiedBy
     }
 
-
-// Préparer et sauvegarder les nouveaux fichiers
-let filesUpdate = {}
-
-if (files !== undefined) {
-  if (Array.isArray(files)) {
-    const savedFiles = []
+    // Valider et formater les timeSlots si fournis
+    let finalTimeSlots = event.timeSlots || []
     
-    for (const file of files) {
-      try {
-        // Si c'est un fichier existant (déjà uploadé)
-        if (file.fileUrl && !file.fileUrl.startsWith('data:') && !file.fileContent) {
-          // Fichier existant, on garde toutes ses métadonnées
-          savedFiles.push({
-            fileName: file.fileName,
-            fileUrl: file.fileUrl,
-            filePath: file.filePath || file.fileUrl,
-            fileSize: file.fileSize || 0,
-            fileType: file.fileType || getFileTypeFromName(file.fileName),
-            uploadedAt: file.uploadedAt || new Date().toISOString()
-          })
-        } 
-        // Si c'est un nouveau fichier avec du contenu base64
-        else if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
-          const savedFileUrl = await saveFileToDisk({
-            userId: userId ?? 'TEMP_USER',
-            fileName: file.fileName,
-            fileContent: file.fileContent || file.fileUrl,
-          })
-          
-          savedFiles.push({
-            fileName: file.fileName,
-            fileUrl: savedFileUrl,
-            filePath: savedFileUrl,
-            fileSize: file.fileSize || 0,
-            fileType: file.fileType || getFileTypeFromName(file.fileName),
-            uploadedAt: new Date().toISOString()
-          })
+    if (timeSlots !== undefined) {
+      // S'assurer que chaque timeSlot a un ID et le bon format
+      finalTimeSlots = timeSlots.map((slot: any) => {
+        // Si le slot a déjà un ID et les bonnes propriétés, le garder tel quel
+        if (slot.id && slot.startDate && slot.endDate && slot.status) {
+          return slot;
         }
-        // Si c'est un fichier nouvellement uploadé (via FileUploadSection)
-        else if (file.uploadedUrl || file.path) {
-          savedFiles.push({
-            fileName: file.fileName,
-            fileUrl: file.uploadedUrl || file.path,
-            filePath: file.uploadedUrl || file.path,
-            fileSize: file.fileSize || file.size || 0,
-            fileType: file.fileType || file.type || getFileTypeFromName(file.fileName),
-            uploadedAt: file.uploadedAt || new Date().toISOString()
-          })
+        
+        // Sinon, créer un nouveau slot correctement formaté
+        return {
+          id: slot.id || generateTimeSlotId(),
+          startDate: slot.startDate,
+          endDate: slot.endDate,
+          status: slot.status || 'active'
+        };
+      });
+      
+      console.log('TimeSlots formatés:', finalTimeSlots);
+    }
+
+    // Préparer et sauvegarder les nouveaux fichiers
+    let filesUpdate = {}
+
+    if (files !== undefined) {
+      if (Array.isArray(files)) {
+        const savedFiles = []
+        
+        for (const file of files) {
+          try {
+            if (file.fileUrl && !file.fileUrl.startsWith('data:') && !file.fileContent) {
+              savedFiles.push({
+                fileName: file.fileName,
+                fileUrl: file.fileUrl,
+                filePath: file.filePath || file.fileUrl,
+                fileSize: file.fileSize || 0,
+                fileType: file.fileType || getFileTypeFromName(file.fileName),
+                uploadedAt: file.uploadedAt || new Date().toISOString()
+              })
+            } 
+            else if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
+              const savedFileUrl = await saveFileToDisk({
+                userId: userId ?? 'TEMP_USER',
+                fileName: file.fileName,
+                fileContent: file.fileContent || file.fileUrl,
+              })
+              
+              savedFiles.push({
+                fileName: file.fileName,
+                fileUrl: savedFileUrl,
+                filePath: savedFileUrl,
+                fileSize: file.fileSize || 0,
+                fileType: file.fileType || getFileTypeFromName(file.fileName),
+                uploadedAt: new Date().toISOString()
+              })
+            }
+          } catch (error) {
+            console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
+          }
         }
-      } catch (error) {
-        console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error)
+        
+        filesUpdate = { files: savedFiles }
+      } else {
+        filesUpdate = { files: [] }
       }
     }
-    
-    filesUpdate = { files: savedFiles }
-  } else {
-    filesUpdate = { files: [] }
-  }
-}
-
-// Gérer l'ancien format fileName (rétrocompatibilité)
-if (fileName !== undefined && files === undefined) {
-  eventUpdates.fileName = fileName
-  if (fileUrl !== undefined) {
-    eventUpdates.fileUrl = fileUrl
-  }
-  
-  // Convertir l'ancien format vers le nouveau format files[]
-  if (fileName) {
-    let savedFileUrl = fileUrl
-    
-    if (fileUrl && fileUrl.startsWith('data:')) {
-      try {
-        savedFileUrl = await saveFileToDisk({
-          userId: userId ?? 'TEMP_USER',
-          fileName: fileName,
-          fileContent: fileUrl
-        })
-      } catch (error) {
-        console.error('Erreur lors de la sauvegarde du fichier:', fileName, error)
-      }
-    }
-    
-    filesUpdate = {
-      files: [{
-        fileName: fileName,
-        fileUrl: savedFileUrl || '',
-        filePath: savedFileUrl || '',
-        fileSize: fileSize || 0,
-        fileType: getFileTypeFromName(fileName),
-        uploadedAt: new Date().toISOString()
-      }]
-    }
-  }
-}
 
     // Mettre à jour l'événement principal
     const updatedEvent = {
       ...event,
       ...eventUpdates,
       ...filesUpdate,
+      timeSlots: finalTimeSlots,  // Remplacer directement tous les timeSlots
       modifiedBy: updatedModifiedBy,
       updatedAt: modificationDate
     }
     
+    console.log('Événement final à sauvegarder:', {
+      id: updatedEvent.id,
+      title: updatedEvent.title,
+      timeSlotsCount: updatedEvent.timeSlots.length,
+      timeSlots: updatedEvent.timeSlots
+    });
+    
     calendarData.events[eventIndex] = updatedEvent
-    
-    // Créer les événements supplémentaires si nécessaire
-    const createdEvents = []
-    
-    if (additionalTimeSlots && Array.isArray(additionalTimeSlots) && additionalTimeSlots.length > 0) {
-      for (const slot of additionalTimeSlots) {
-        if (!slot.date || !slot.startTime || !slot.endTime) {
-          continue
-        }
-        
-        const startDateTime = new Date(`${slot.date}T${slot.startTime}`)
-        const endDateTime = new Date(`${slot.date}T${slot.endTime}`)
-        
-        const newEvent = {
-          id: `EVENT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          title: updatedEvent.title,
-          description: updatedEvent.description,
-          startDate: startDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-          type: updatedEvent.type,
-          class: updatedEvent.class,
-          room: updatedEvent.room,
-          location: updatedEvent.location,
-          materials: updatedEvent.materials || [],
-          chemicals: updatedEvent.chemicals || [],
-          equipment: updatedEvent.equipment || [],
-          fileName: updatedEvent.fileName,
-          fileUrl: updatedEvent.fileUrl,
-          files: updatedEvent.files || [],
-          remarks: updatedEvent.remarks || null,
-          notes: updatedEvent.notes,
-          createdBy: userId || null,
-          modifiedBy: [],
-          createdAt: modificationDate,
-          updatedAt: modificationDate,
-          parentEventId: eventId
-        }
-        
-        calendarData.events.push(newEvent)
-        createdEvents.push(newEvent)
-      }
-    }
     
     await writeCalendarFile(calendarData)
     
-    // Enrichir les événements avant de les retourner
+    // Enrichir l'événement avant de le retourner
     const enrichedUpdatedEvent = (await enrichEventsWithChemicalData([updatedEvent]))[0]
-    const enrichedCreatedEvents = await enrichEventsWithChemicalData(createdEvents)
 
     const response = {
       updatedEvent: enrichedUpdatedEvent,
-      createdEvents: enrichedCreatedEvents,
-      message: enrichedCreatedEvents.length > 0 
-        ? `Événement modifié et ${enrichedCreatedEvents.length} créneaux supplémentaires ajoutés`
-        : 'Événement modifié avec succès'
+      message: 'Événement modifié avec succès'
     }
     
     return NextResponse.json(response)
@@ -697,69 +359,120 @@ if (fileName !== undefined && files === undefined) {
     extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
     customDetails: (req, response) => ({
       modifiedByCount: response?.updatedEvent?.modifiedBy?.length || 0,
-      additionalSlotsCreated: response?.createdEvents?.length || 0,
-      filesCount: response?.updatedEvent?.files?.length || 0,
-      hasFiles: !!(response?.updatedEvent?.files && response?.updatedEvent?.files.length > 0)
+      timeSlotsCount: response?.updatedEvent?.timeSlots?.filter((s: TimeSlot) => s.status === 'active').length || 0,
+      filesCount: response?.updatedEvent?.files?.length || 0
     })
   }
 )
 
+// Fonctions utilitaires
+function updateModifiedBy(
+  modifiedBy: Array<[string, ...string[]]>, 
+  userId: string | undefined, 
+  date: string
+): Array<[string, ...string[]]> {
+  if (!userId) return modifiedBy;
+  
+  const userIndex = modifiedBy.findIndex(entry => entry[0] === userId);
+  
+  if (userIndex >= 0) {
+    const updatedModifiedBy = [...modifiedBy];
+    const [existingUserId, ...existingDates] = modifiedBy[userIndex];
+    updatedModifiedBy[userIndex] = [existingUserId, ...existingDates, date] as [string, ...string[]];
+    return updatedModifiedBy;
+  } else {
+    return [...modifiedBy, [userId, date]];
+  }
+}
 
+async function prepareAndSaveFiles(files: any[], userId: string | undefined): Promise<any[]> {
+  if (!files || !Array.isArray(files)) return [];
+  
+  const savedFiles = [];
+  
+  for (const file of files) {
+    try {
+      // Si c'est un fichier existant
+      if (file.fileUrl && !file.fileUrl.startsWith('data:') && !file.fileContent) {
+        savedFiles.push(file);
+      } 
+      // Si c'est un nouveau fichier avec du contenu base64
+      else if (file.fileContent || (file.fileUrl && file.fileUrl.startsWith('data:'))) {
+        const savedFileUrl = await saveFileToDisk({
+          userId: userId ?? 'TEMP_USER',
+          fileName: file.fileName,
+          fileContent: file.fileContent || file.fileUrl,
+        });
+        
+        savedFiles.push({
+          fileName: file.fileName,
+          fileUrl: savedFileUrl,
+          filePath: savedFileUrl,
+          fileSize: file.fileSize || 0,
+          fileType: file.fileType || getFileTypeFromName(file.fileName),
+          uploadedAt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du fichier:', file.fileName, error);
+    }
+  }
+  
+  return savedFiles;
+}
 
-// DELETE - Envelopper car c'est une suppression
+// DELETE reste inchangé car il supprime l'événement entier
 export const DELETE = withAudit(
   async (request: NextRequest) => {
-    // Récupérer la session pour vérifier les permissions
-    const session = await getServerSession(authOptions)
-    const userEmail = session?.user?.email
-    const userRole = session?.user?.role
-    const userId = session?.user?.id
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const userRole = session?.user?.role;
 
-    const { searchParams } = new URL(request.url)
-    const eventId = searchParams.get('id')
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('id');
     
     if (!eventId) {
       return NextResponse.json(
         { error: 'ID de l\'événement requis' },
         { status: 400 }
-      )
+      );
     }
 
-    const calendarData = await readCalendarFile()
-    const eventIndex = calendarData.events.findIndex((event: any) => event.id === eventId)
+    const calendarData = await readCalendarFile();
+    const eventIndex = calendarData.events.findIndex((event: any) => event.id === eventId);
     
     if (eventIndex === -1) {
       return NextResponse.json(
         { error: 'Événement non trouvé' },
         { status: 404 }
-      )
+      );
     }
 
-    const event = calendarData.events[eventIndex]
+    const event = calendarData.events[eventIndex];
 
     // Vérifier les permissions
     const canDelete = userRole === 'ADMIN' || 
                      userRole === 'ADMINLABO' || 
-                     event.createdBy === userId
+                     event.createdBy === userId;
 
     if (!canDelete) {
       return NextResponse.json(
         { error: 'Vous n\'avez pas la permission de supprimer cet événement' },
         { status: 403 }
-      )
+      );
     }
 
     // Supprimer l'événement
-    const deletedEvent = calendarData.events.splice(eventIndex, 1)[0]
-    await writeCalendarFile(calendarData)
+    const deletedEvent = calendarData.events.splice(eventIndex, 1)[0];
+    await writeCalendarFile(calendarData);
     
     // Enrichir l'événement supprimé avant de le retourner
-    const enrichedDeletedEvent = (await enrichEventsWithChemicalData([deletedEvent]))[0]
+    const enrichedDeletedEvent = (await enrichEventsWithChemicalData([deletedEvent]))[0];
 
     return NextResponse.json({ 
       message: 'Événement supprimé', 
       event: enrichedDeletedEvent 
-    })
+    });
   },
   {
     module: 'CALENDAR',
@@ -769,84 +482,86 @@ export const DELETE = withAudit(
     extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
     customDetails: (req, response) => ({
       eventTitle: response?.event?.title,
-      hadFiles: !!(response?.event?.files && response?.event?.files.length > 0),
-      filesCount: response?.event?.files?.length || 0
+      hadTimeSlots: response?.event?.timeSlots?.length || 0,
+      hadFiles: !!(response?.event?.files && response?.event?.files.length > 0)
     })
   }
-)
+);
 
-
+// PATCH reste inchangé
 export const PATCH = withAudit(
   async (request: NextRequest) => {
-  try {
-    const session = await getServerSession(authOptions)
-    const userRole = session?.user?.role
-    const userId = session?.user?.id
+    try {
+      const session = await getServerSession(authOptions);
+      const userRole = session?.user?.role;
+      const userId = session?.user?.id;
 
-    // Vérifier les permissions
-    if (userRole !== 'LABORANTIN' && userRole !== 'ADMINLABO') {
+      // Vérifier les permissions
+      if (userRole !== 'LABORANTIN' && userRole !== 'ADMINLABO') {
+        return NextResponse.json(
+          { error: 'Vous n\'avez pas la permission de valider les événements' },
+          { status: 403 }
+        );
+      }
+
+      const { searchParams } = new URL(request.url);
+      const eventId = searchParams.get('id');
+      const body = await request.json();
+      const { state, reason } = body;
+
+      if (!eventId || !state) {
+        return NextResponse.json(
+          { error: 'ID de l\'événement et nouvel état requis' },
+          { status: 400 }
+        );
+      }
+
+      const calendarData = await readCalendarFile();
+      const eventIndex = calendarData.events.findIndex((e: any) => e.id === eventId);
+
+      if (eventIndex === -1) {
+        return NextResponse.json(
+          { error: 'Événement non trouvé' },
+          { status: 404 }
+        );
+      }
+
+      const event = calendarData.events[eventIndex].timeSlots 
+  ? calendarData.events[eventIndex] 
+  : await migrateEventToNewFormat(calendarData.events[eventIndex]);
+      const previousState = event.state || 'PENDING';
+
+      // Créer l'entrée de changement d'état
+      const stateChange = {
+        userId,
+        date: new Date().toISOString(),
+        fromState: previousState,
+        toState: state,
+        reason
+      };
+
+      // Mettre à jour l'événement
+      calendarData.events[eventIndex] = {
+        ...event,
+        state,
+        stateChanger: [...(event.stateChanger || []), stateChange],
+        updatedAt: new Date().toISOString()
+      };
+
+      await writeCalendarFile(calendarData);
+
+      // Enrichir l'événement avant de le retourner
+      const enrichedEvent = (await enrichEventsWithChemicalData([calendarData.events[eventIndex]]))[0];
+
+      return NextResponse.json(enrichedEvent);
+    } catch (error) {
+      console.error('Erreur lors du changement d\'état:', error);
       return NextResponse.json(
-        { error: 'Vous n\'avez pas la permission de valider les événements' },
-        { status: 403 }
-      )
+        { error: 'Erreur lors du changement d\'état' },
+        { status: 500 }
+      );
     }
-
-    const { searchParams } = new URL(request.url)
-    const eventId = searchParams.get('id')
-    const body = await request.json()
-    const { state, reason } = body
-
-    if (!eventId || !state) {
-      return NextResponse.json(
-        { error: 'ID de l\'événement et nouvel état requis' },
-        { status: 400 }
-      )
-    }
-
-    const calendarData = await readCalendarFile()
-    const eventIndex = calendarData.events.findIndex((e: any) => e.id === eventId)
-
-    if (eventIndex === -1) {
-      return NextResponse.json(
-        { error: 'Événement non trouvé' },
-        { status: 404 }
-      )
-    }
-
-    const event = calendarData.events[eventIndex]
-    const previousState = event.state || 'PENDING'
-
-    // Créer l'entrée de changement d'état
-    const stateChange = {
-      userId,
-      date: new Date().toISOString(),
-      fromState: previousState,
-      toState: state,
-      reason
-    }
-
-    // Mettre à jour l'événement
-    calendarData.events[eventIndex] = {
-      ...event,
-      state,
-      stateChanger: [...(event.stateChanger || []), stateChange],
-      updatedAt: new Date().toISOString()
-    }
-
-    await writeCalendarFile(calendarData)
-
-    // Enrichir l'événement avant de le retourner
-    const enrichedEvent = (await enrichEventsWithChemicalData([calendarData.events[eventIndex]]))[0]
-
-    return NextResponse.json(enrichedEvent)
-  } catch (error) {
-    console.error('Erreur lors du changement d\'état:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors du changement d\'état' },
-      { status: 500 }
-    )
-  }
-},
+  },
   {
     module: 'CALENDAR',
     entity: 'event',
@@ -860,4 +575,4 @@ export const PATCH = withAudit(
       hasReason: !!response?.stateChanger?.slice(-1)[0]?.reason
     })
   }
-)
+);

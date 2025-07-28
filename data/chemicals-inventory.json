@@ -165,7 +165,7 @@
         "createdAt": "2025-07-21T13:40:04.461Z",
         "updatedAt": "2025-07-21T13:40:04.461Z"
       },
-      "quantityPrevision": 249
+      "quantityPrevision": 247.7
     },
     {
       "id": "CHEM_INV_A2ZP1BSQZBY8",
@@ -196,7 +196,7 @@
       "createdAt": "2025-07-23T08:54:05.051Z",
       "updatedAt": "2025-07-23T08:56:13.226Z",
       "supplier": null,
-      "quantityPrevision": 214.6
+      "quantityPrevision": 212.6
     },
     {
       "id": "CHEM_INV_A2ZF1BSLZBW8",

@@ -21,6 +21,8 @@ import {
   Cancel, SwapHoriz, HourglassEmpty, ManageHistory
 } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
+
 
 interface WeeklyViewProps {
   currentDate: Date
@@ -74,33 +76,62 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
 
   // Fonction pour détecter les chevauchements entre événements
   const doEventsOverlap = (event1: CalendarEvent, event2: CalendarEvent) => {
-    const start1 = typeof event1.startDate === 'string' ? new Date(event1.startDate) : event1.startDate
-    const end1 = typeof event1.endDate === 'string' ? new Date(event1.endDate) : event1.endDate
-    const start2 = typeof event2.startDate === 'string' ? new Date(event2.startDate) : event2.startDate
-    const end2 = typeof event2.endDate === 'string' ? new Date(event2.endDate) : event2.endDate
-
-    return start1 < end2 && start2 < end1
+    const slots1 = getActiveTimeSlots(event1)
+    const slots2 = getActiveTimeSlots(event2)
+    
+    // Vérifier si au moins un créneau de event1 chevauche avec un créneau de event2
+    return slots1.some(slot1 => {
+      const start1 = new Date(slot1.startDate)
+      const end1 = new Date(slot1.endDate)
+      
+      return slots2.some(slot2 => {
+        const start2 = new Date(slot2.startDate)
+        const end2 = new Date(slot2.endDate)
+        return start1 < end2 && start2 < end1
+      })
+    })
   }
 
   // Fonction pour obtenir les événements d'un jour avec gestion des colonnes
   const getPositionedEventsForDay = (date: Date): PositionedEvent[] => {
     const dayStart = setHours(setMinutes(startOfDay(date), 0), 8) // 8h00
     const dayEnd = setHours(setMinutes(startOfDay(date), 0), 19) // 19h00
-    const nextDayStart = setHours(setMinutes(addDays(date, 1), 0), 8)
 
-    // Filtrer les événements qui touchent ce jour
+    // Filtrer les événements qui ont au moins un créneau actif ce jour
     const dayEvents = events.filter(event => {
-      const eventStart = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate
-      const eventEnd = typeof event.endDate === 'string' ? new Date(event.endDate) : event.endDate
-      
-      // L'événement touche ce jour s'il commence avant la fin du jour ET se termine après le début
-      return eventStart < endOfDay(date) && eventEnd > startOfDay(date)
+      const activeSlots = getActiveTimeSlots(event)
+      return activeSlots.some(slot => {
+        const slotStart = new Date(slot.startDate)
+        const slotEnd = new Date(slot.endDate)
+        // Le créneau touche ce jour s'il commence avant la fin du jour ET se termine après le début
+        return slotStart < endOfDay(date) && slotEnd > startOfDay(date)
+      })
+    })
+
+    // Pour chaque événement, créer une entrée pour chaque créneau actif du jour
+    const expandedEvents: (CalendarEvent & { slotIndex: number; activeSlot: any })[] = []
+    
+    dayEvents.forEach(event => {
+      const activeSlots = getActiveTimeSlots(event)
+      activeSlots.forEach((slot, index) => {
+        const slotStart = new Date(slot.startDate)
+        const slotEnd = new Date(slot.endDate)
+        
+        // Vérifier si ce créneau touche le jour en cours
+        if (slotStart < endOfDay(date) && slotEnd > startOfDay(date)) {
+          expandedEvents.push({
+            ...event,
+            slotIndex: index,
+            activeSlot: slot
+          })
+        }
+      })
     })
 
     // Trier par heure de début
-    dayEvents.sort((a, b) => {
-      const startA = typeof a.startDate === 'string' ? new Date(a.startDate) : a.startDate
-      const startB = typeof b.startDate === 'string' ? new Date(b.startDate) : b.startDate
+    expandedEvents.sort((a, b) => {
+      const startA = new Date(a.activeSlot.startDate)
+      const startB = new Date(b.activeSlot.startDate)
       return startA.getTime() - startB.getTime()
     })
 
@@ -108,9 +139,10 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
     const positionedEvents: PositionedEvent[] = []
     const columns: PositionedEvent[][] = []
 
-    dayEvents.forEach(event => {
-      const eventStart = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate
-      const eventEnd = typeof event.endDate === 'string' ? new Date(event.endDate) : event.endDate
+    expandedEvents.forEach(eventWithSlot => {
+      const { activeSlot, slotIndex, ...event } = eventWithSlot
+      const eventStart = new Date(activeSlot.startDate)
+      const eventEnd = new Date(activeSlot.endDate)
 
       // Déterminer les dates visuelles (clippées aux heures de la journée)
       const visualStartDate = eventStart < dayStart ? dayStart : eventStart
@@ -122,11 +154,23 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
       const startsBeforeSchedule = eventStart < dayStart && isSameDay(eventStart, date)
       const endsAfterSchedule = eventEnd > dayEnd && isSameDay(eventEnd, date)
 
+      // Créer un événement temporaire avec les dates du créneau pour la vérification des chevauchements
+      const tempEvent = {
+        ...event,
+        startDate: activeSlot.startDate,
+        endDate: activeSlot.endDate
+      }
+
       // Trouver la première colonne disponible
       let columnIndex = 0
       for (let i = 0; i < columns.length; i++) {
         const columnEvents = columns[i]
-        const hasOverlap = columnEvents.some(colEvent => doEventsOverlap(event, colEvent))
+        const hasOverlap = columnEvents.some(colEvent => {
+          // Comparer les dates visuelles pour le chevauchement
+          const colStart = colEvent.visualStartDate
+          const colEnd = colEvent.visualEndDate
+          return visualStartDate < colEnd && colStart < visualEndDate
+        })
         if (!hasOverlap) {
           columnIndex = i
           break
@@ -143,6 +187,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
       
       const positioned: PositionedEvent = {
         ...event,
+        id: `${event.id}-slot-${slotIndex}`, // ID unique pour chaque créneau
         column: columnIndex,
         totalColumns: 1, // Sera mis à jour après
         visualStartDate,
@@ -160,9 +205,9 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
     // Mettre à jour le nombre total de colonnes pour chaque événement
     positionedEvents.forEach(event => {
       // Trouver tous les événements qui chevauchent avec celui-ci
-      const overlappingEvents = positionedEvents.filter(other => 
-        doEventsOverlap(event, other)
-      )
+      const overlappingEvents = positionedEvents.filter(other => {
+        return event.visualStartDate < other.visualEndDate && other.visualStartDate < event.visualEndDate
+      })
       const maxColumn = Math.max(...overlappingEvents.map(e => e.column))
       event.totalColumns = maxColumn + 1
     })
@@ -418,7 +463,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
               const slotHeight = 80
               const top = headerHeight + (startHour - 8) * slotHeight + (startMinute / 60) * slotHeight + 2
               const height = Math.max((durationInMinutes / 60) * slotHeight - 4, 30)
-              const isPastEvent = isPast(event.endDate)
+              const isPastEvent = isPast(event.visualEndDate)
 
               // Calculer la largeur et la position en fonction des colonnes
               const columnWidth = `calc((100% - 60px) / 7 / ${event.totalColumns})`
@@ -438,44 +483,49 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
               }
 
               return (
-                <Tooltip 
-                  key={`${event.id}-${dayIndex}`}
-                  title={
-                    <Box>
-                      <Typography variant="subtitle2">{event.title}</Typography>
-                      <Typography variant="caption">
-                        {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
+              <Tooltip 
+                key={`${event.id}-${dayIndex}`}
+                title={
+                  <Box>
+                    <Typography variant="subtitle2">{event.title}</Typography>
+                    <Typography variant="caption">
+                      {format(event.visualStartDate, 'HH:mm')} - {format(event.visualEndDate, 'HH:mm')}
+                    </Typography>
+                    {event.class && (
+                      <Typography variant="caption" display="block">
+                        Classe: {event.class}
                       </Typography>
-                      {event.class && (
-                        <Typography variant="caption" display="block">
-                          Classe: {event.class}
-                        </Typography>
-                      )}
-                      {event.state && (
-                        <Typography variant="caption" display="block">
-                          État: {
-                            event.state === 'PENDING' ? 'À valider' :
-                            event.state === 'VALIDATED' ? 'Validé' :
-                            event.state === 'CANCELLED' ? 'Annulé' :
-                            event.state === 'IN_PROGRESS' ? 'En préparation' :
-                            event.state === 'MOVED' ? 'Déplacé' : event.state
-                          }
-                        </Typography>
-                      )}
-                      {event.startsBeforeDay && (
-                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
-                          Commence le {format(event.startDate, 'dd/MM')}
-                        </Typography>
-                      )}
-                      {event.endsAfterDay && (
-                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
-                          Se termine le {format(event.endDate, 'dd/MM')}
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                  placement="right"
-                >
+                    )}
+                    {event.state && (
+                      <Typography variant="caption" display="block">
+                        État: {
+                          event.state === 'PENDING' ? 'À valider' :
+                          event.state === 'VALIDATED' ? 'Validé' :
+                          event.state === 'CANCELLED' ? 'Annulé' :
+                          event.state === 'IN_PROGRESS' ? 'En préparation' :
+                          event.state === 'MOVED' ? 'Déplacé' : event.state
+                        }
+                      </Typography>
+                    )}
+                    {event.startsBeforeDay && (
+                      <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
+                        Commence le {format(event.visualStartDate, 'dd/MM à HH:mm')}
+                      </Typography>
+                    )}
+                    {event.endsAfterDay && (
+                      <Typography variant="caption" display="block" sx={{ fontStyle: 'italic' }}>
+                        Se termine le {format(event.visualEndDate, 'dd/MM à HH:mm')}
+                      </Typography>
+                    )}
+                    {getActiveTimeSlots(event).length > 1 && (
+                      <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 0.5 }}>
+                        Événement multi-créneaux ({getActiveTimeSlots(event).length} créneaux au total)
+                      </Typography>
+                    )}
+                  </Box>
+                }
+                placement="right"
+              >
                 <Card
                   sx={{
                     bgcolor: alpha(

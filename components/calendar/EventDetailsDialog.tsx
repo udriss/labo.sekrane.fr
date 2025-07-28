@@ -25,20 +25,23 @@ import {
 import {
   Timeline, TimelineItem, TimelineSeparator,
   TimelineDot, TimelineConnector, TimelineContent,
-  TimelineOppositeContent
+  TimelineOppositeContent,
 } from '@mui/lab'
 import { 
-  Science, Schedule, Assignment, EventAvailable, Edit, Delete, 
+  Science, Schedule, Assignment, EventAvailable,
   History, Person, PictureAsPdf, Description, Image, Build,
-  InsertDriveFile, OpenInNew, Download, CheckCircle, Cancel, SwapHoriz,
+  InsertDriveFile, OpenInNew, Download, Add, Edit, Delete,
   HourglassEmpty, CalendarToday, AccessTime, Room, School, HourglassTop,
-  InfoOutlined, ManageHistory
+  InfoOutlined, SwapHoriz, CheckCircle, Cancel, ManageHistory
 } from '@mui/icons-material'
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { UserRole } from "@/types/global";
 import { SiMoleculer } from "react-icons/si";
 import { useSession } from 'next-auth/react'
-
+import StateChangeHandler from '@/components/calendar/StateChangeHandler'
+import EventActions from '@/components/calendar/EventActions'
+import PendingModifications from '@/components/calendar/PendingModifications'
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client';
 
 interface DocumentFile {
   fileName: string
@@ -54,8 +57,11 @@ interface EventDetailsDialogProps {
   onClose: () => void
   onEdit?: (event: CalendarEvent) => void
   onDelete?: (event: CalendarEvent) => void
-  onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
+  onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string, timeSlots?: any[]) => void
+  onMoveDate?: (event: CalendarEvent, timeSlots: any[], reason?: string) => void
+  onConfirmModification?: (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => void
   userRole?: UserRole
+  currentUserId?: string
   isMobile?: boolean
   isTablet?: boolean
 }
@@ -138,7 +144,10 @@ const DocumentCard: React.FC<{
   const fileType = document.fileType || getFileType(document.fileName)
   const fileInfo = getFileTypeInfo(fileType)
   const [isHovered, setIsHovered] = useState(false)
-  
+  // Ajout d'un état pour gérer les créneaux horaires lors du déplacement
+
+
+
     // Construire l'URL une seule fois
   const documentUrl = document.fileUrl 
     ? (document.fileUrl.startsWith('/uploads/') 
@@ -380,7 +389,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   onEdit,
   onDelete, 
   onStateChange,
+  onMoveDate,
+  onConfirmModification,
   userRole,
+  currentUserId,
   isMobile = false,
   isTablet = false
 }) => {
@@ -395,17 +407,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     isConsecutive: boolean
   }>>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  // Récupérer les informations de session pour le rôle de l'utilisateur
-  const { data: session } = useSession()
-
-  // Vérifier si l'utilisateur a le droit de modifier ou supprimer l'événement
-  const [validationDialog, setValidationDialog] = useState<{
-    open: boolean
-    event: CalendarEvent | null
-    action: 'cancel' | 'move' | 'validate' | 'in-progress' | 'other' | null
-  }>({ open: false, event: null, action: null })
-  
-  const [validationReason, setValidationReason] = useState('')
 
     // Vérifier si l'utilisateur peut valider
   const canValidate = userRole === 'LABORANTIN' || userRole === 'ADMINLABO'
@@ -416,9 +417,12 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
   const calculateDuration = () => {
     if (!event) return 0
-    const start = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate
-    const end = typeof event.endDate === 'string' ? new Date(event.endDate) : event.endDate
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    const activeSlots = getActiveTimeSlots(event);
+    const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
+
+    const startDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
+    const endDate = firstSlot ? new Date(firstSlot.endDate) : new Date();
+    const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
     return hours
   }
 
@@ -440,27 +444,17 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
         })
       })
     } 
-    // Ancien format avec fileName unique (rétrocompatibilité)
-    else if (event.fileName) {
-      documents.push({
-        fileName: event.fileName,
-        fileUrl: event.fileUrl || undefined,
-        fileType: getFileType(event.fileName)
-      })
-    }
+
+
     
     return documents
   }
 
   // Fonction pour gérer le changement d'état
-  const handleStateChange = (newState: EventState, reason?: string) => {
-    if (!event) return;
-
+  const handleStateChange = (event: CalendarEvent, newState: EventState, reason?: string) => {
     if (onStateChange) {
       onStateChange(event, newState, reason);
     }
-    setValidationDialog({ open: false, action: null, event: null });
-    setValidationReason('');
     onClose();
   };
 useEffect(() => {
@@ -482,8 +476,7 @@ useEffect(() => {
       if (event.modifiedBy && event.modifiedBy.length > 0) {
         event.modifiedBy.forEach(entry => userIds.push(entry[0]))
       }
-      
-      console.log('User IDs collectés pour la timeline:', userIds)
+
       
       // Récupérer les infos de tous les utilisateurs (y compris le créateur)
       if (userIds.length > 0) {
@@ -496,7 +489,6 @@ useEffect(() => {
         if (response.ok) {
           const users = await response.json()
           setUsersInfo(users)
-          console.log('Utilisateurs récupérés:', users)
           
           // Stocker les infos du créateur
           if (event.createdBy && users[event.createdBy]) {
@@ -569,9 +561,6 @@ useEffect(() => {
   }
 }, [event, open])
 
- const openValidationDialog = (event: CalendarEvent, action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
-    setValidationDialog({ open: true, event, action })
-  }
   // Fonction helper pour formater les dates en toute sécurité
   const formatDate = (dateString: string) => {
     try {
@@ -588,6 +577,12 @@ useEffect(() => {
   if (!event) return null
 
   const documents = getDocuments()
+
+  const activeSlots = getActiveTimeSlots(event);
+  const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
+  const eventDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
+  const eventStartTime = firstSlot ? new Date(firstSlot.startDate) : new Date();
+  const eventEndTime = firstSlot ? new Date(firstSlot.endDate) : new Date();
 
   return (
     <>
@@ -655,32 +650,6 @@ useEffect(() => {
                 />
               )}
             </Box>
-          <Box display="flex" gap={1}>
-            {onEdit && (
-              <IconButton
-                onClick={() => {
-                  onEdit(event)
-                  onClose()
-                }}
-                size="small"
-                color="primary"
-              >
-                <Edit />
-              </IconButton>
-            )}
-            {onDelete && (
-              <IconButton
-                onClick={() => {
-                  onDelete(event)
-                  onClose()
-                }}
-                size="small"
-                color="error"
-              >
-                <Delete />
-              </IconButton>
-            )}
-          </Box>
         </Box>
       </DialogTitle>
       <DialogContent>
@@ -696,6 +665,14 @@ useEffect(() => {
               </Typography>
             )}
           </Box>
+
+          {/* Modifications en attente avec design moderne */}
+          <PendingModifications 
+            event={event}
+            isCreator={event.createdBy === currentUserId}
+            onConfirmModification={onConfirmModification || (() => {})}
+            compact={false}
+          />
 
           <Divider />
 
@@ -718,13 +695,13 @@ useEffect(() => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
                 <Typography sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-                  {format(event.startDate, 'EEEE d MMMM', { locale: fr })}
+                  {format(eventDate, 'EEEE d MMMM', { locale: fr })}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
                 <Typography color="text.secondary" sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-                  {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
+                  {format(eventStartTime, 'HH:mm')} - {format(eventEndTime, 'HH:mm')}
                 </Typography>
               </Box>
             </Box>
@@ -1287,198 +1264,122 @@ useEffect(() => {
 
 
 {/* Ajouter dans la section historique, après l'historique des modifications */}
-{event.stateChanger && event.stateChanger.length > 0 && (
+{/* Historique des modifications de créneaux */}
+{event.timeSlots && event.timeSlots.some(slot => slot.modifiedBy && slot.modifiedBy.length > 0) && (
   <>
     <Divider sx={{ my: 2 }} />
     <Box>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <SwapHoriz /> Historique des validations
+        <Schedule /> Historique des créneaux
       </Typography>
       
-      <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
-        {event.stateChanger.map((change, index) => {
-          const userInfo = usersInfo[change.userId]
-          const userName = userInfo?.name || userInfo?.email || `Utilisateur ${change.userId}`
-          
-          return (
-            <TimelineItem key={index}>
-              <TimelineOppositeContent
-                sx={{ m: 'auto 0' }}
-                variant="body2"
-                color="text.secondary"
-              >
-                {formatDate(change.date)}
-              </TimelineOppositeContent>
-              
-              <TimelineSeparator>
-                {index > 0 && <TimelineConnector />}
-                <TimelineDot 
-                  color={
-                    change.toState === 'VALIDATED' ? 'success' :
-                    change.toState === 'CANCELLED' ? 'error' :
-                    change.toState === 'MOVED' ? 'info' :
-                    change.toState === 'PENDING' ? 'warning' :
-                    change.toState === 'IN_PROGRESS' ? 'info' :
-                    'grey'
-                  }
-                >
-                  {change.toState === 'VALIDATED' && <CheckCircle />}
-                  {change.toState === 'CANCELLED' && <Cancel />}
-                  {change.toState === 'MOVED' && <SwapHoriz />}
-                  {change.toState === 'PENDING' && <HourglassEmpty />}
-                  {change.toState === 'IN_PROGRESS' && <ManageHistory />}
-                </TimelineDot>
-                {event.stateChanger && index < event.stateChanger.length - 1 && <TimelineConnector />}
-              </TimelineSeparator>
-              
-              <TimelineContent sx={{ py: '12px', px: 2 }}>
-                <Typography variant="body2" component="div">
-                  <strong>{userName}</strong>
-                </Typography>
-                <Typography variant="caption" component="div"
-                sx= {{ fontWeight: 'bold', textTransform: 'uppercase' }}
-                >
-                  {getStateChangeLabel(change.fromState, change.toState)}
-                </Typography>
-                {change.reason && (
-                  <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                    Raison : {change.reason}
-                  </Typography>
-                )}
-              </TimelineContent>
-            </TimelineItem>
-          )
-        })}
-      </Timeline>
+      {event.timeSlots.map((slot, slotIndex) => {
+        if (!slot.modifiedBy || slot.modifiedBy.length === 0) return null;
+        
+        const slotStart = new Date(slot.startDate);
+        const slotEnd = new Date(slot.endDate);
+        
+        return (
+          <Box key={slot.id} sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              color: 'primary.main'
+            }}>
+              <CalendarToday fontSize="small" />
+              Créneau {slotIndex + 1}: {format(slotStart, 'dd/MM/yyyy HH:mm')} - {format(slotEnd, 'HH:mm')}
+            </Typography>
+            
+            <Timeline position="right" sx={{ mt: 1, pl: 2 }}>
+              {slot.modifiedBy.map((change, changeIndex) => {
+                const userInfo = usersInfo[change.userId];
+                const userName = userInfo?.name || userInfo?.email || `Utilisateur ${change.userId}`;
+                
+                return (
+                  <TimelineItem key={changeIndex} sx={{ minHeight: 50 }}>
+                    <TimelineSeparator>
+                      {changeIndex > 0 && <TimelineConnector sx={{ height: 10 }} />}
+                      <TimelineDot 
+                        variant="outlined"
+                        color={
+                          change.action === 'created' ? 'success' :
+                          change.action === 'modified' ? 'info' :
+                          change.action === 'deleted' ? 'error' : 'grey'
+                        }
+                        sx={{ width: 24, height: 24 }}
+                      >
+                        {change.action === 'created' && <Add sx={{ fontSize: 14 }} />}
+                        {change.action === 'modified' && <Edit sx={{ fontSize: 14 }} />}
+                        {change.action === 'deleted' && <Delete sx={{ fontSize: 14 }} />}
+                      </TimelineDot>
+                      {changeIndex < (slot.modifiedBy?.length ?? 0) - 1 && <TimelineConnector sx={{ height: 10 }} />}
+                    </TimelineSeparator>
+                    
+                    <TimelineContent sx={{ py: 0.5, px: 2 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(change.date)}
+                      </Typography>
+                      <Typography variant="body2" component="div">
+                        <strong>{userName}</strong>
+                      </Typography>
+                      <Typography variant="caption" component="div" sx={{ 
+                        fontWeight: 'bold', 
+                        textTransform: 'uppercase',
+                        color: 
+                          change.action === 'created' ? 'success.main' :
+                          change.action === 'modified' ? 'info.main' :
+                          change.action === 'deleted' ? 'error.main' : 'text.primary'
+                      }}>
+                        {change.action === 'created' ? 'Créneau créé' :
+                         change.action === 'modified' ? 'Créneau modifié' :
+                         change.action === 'deleted' ? 'Créneau supprimé' : change.action}
+                      </Typography>
+                    </TimelineContent>
+                  </TimelineItem>
+                );
+              })}
+            </Timeline>
+          </Box>
+        );
+      })}
     </Box>
   </>
 )}
         </Stack>
       </DialogContent>
       
-      <DialogActions>
-        <Box sx={{
-          display: 'flex',
-          gap: 1,
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
-          alignContent: 'center',
-          width: '100%',
-        }}>
-          <Button onClick={onClose}>Fermer</Button>
+        <DialogActions>
+          <Box sx={{
+            display: 'flex',
+            gap: 1,
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
+            alignContent: 'center',
+            width: '100%',
+          }}>
+            <Button onClick={onClose}>Fermer</Button>
 
-          {canValidate && (
-            <Grid
-              container 
-              spacing={1}
-              sx={{
-                maxWidth: isMobile || isTablet ? 200 : 400,
-                width: isMobile || isTablet ? 200 : 'auto',
-                margin: isMobile ? '0 auto' : '0 0',
-                display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
-              }}
-            >
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Button
-                  onClick={() => openValidationDialog(event, 'in-progress')}
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<ManageHistory />}
-                  fullWidth
-                  disabled={event.state === 'IN_PROGRESS'}
-                >
-                  En préparation
-                </Button>
-              </Grid>
+            {/* Utilisation du composant EventActions */}
+            <EventActions
+              event={event}
+              canEdit={onEdit ? true : false}
+              canValidate={canValidate}
+              isCreator={event?.createdBy === currentUserId}
+              isMobile={isMobile}
+              isTablet={isTablet}
+              onViewDetails={() => {}} // Pas nécessaire dans le dialogue de détails
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onStateChange={handleStateChange}
+              onMoveDate={onMoveDate}
+              onConfirmModification={onConfirmModification}
+              showAsMenu={false} // Affichage en boutons directs
+            />
+          </Box>
+        </DialogActions>
+  </Dialog>
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Button
-                  onClick={() => openValidationDialog(event, 'move')}
-                  variant="outlined"
-                  startIcon={<SwapHoriz />}
-                  fullWidth
-                  disabled={event.state === 'MOVED'}
-                >
-                  Déplacer TP
-                </Button>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Button
-                  onClick={() => openValidationDialog(event, 'cancel')}
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Cancel />}
-                  fullWidth
-                  disabled={event.state === 'CANCELLED'}
-                >
-                  Annuler TP
-                </Button>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Button
-                  onClick={() => openValidationDialog(event, 'validate')}
-                  variant="contained"
-                  color="success"
-                  startIcon={<CheckCircle />}
-                  fullWidth
-                  disabled={event.state === 'VALIDATED'}
-                >
-                  Valider TP
-                </Button>
-              </Grid>
-            </Grid>
-          )}
-
-          <Grid
-            container 
-            spacing={1}
-            sx={{
-              maxWidth: 200,
-              width: isMobile || isTablet ? 200 : 'auto',
-              margin: isMobile ? '0 auto' : '0 0',
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'column',
-              justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
-            }}
-          >
-            <Grid size={{ xs: 12, sm: 12 }}>
-              {onEdit && (
-                <Button 
-                  onClick={() => {
-                    onEdit(event)
-                    onClose()
-                  }}
-                  variant="outlined"
-                  startIcon={<Edit />}
-                  fullWidth
-                >
-                  Modifier
-                </Button>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 12 }}>
-              {onDelete && (
-                <Button 
-                  onClick={() => {
-                    onDelete(event)
-                    onClose()
-                  }}
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Delete />}
-                  fullWidth
-                >
-                  Supprimer
-                </Button>
-              )}
-            </Grid>
-          </Grid>
-        </Box>
-      </DialogActions>
       {/* Snackbar pour les messages d'erreur */}
       <Snackbar
         open={!!errorMessage}
@@ -1494,113 +1395,6 @@ useEffect(() => {
           {errorMessage}
         </MuiAlert>
       </Snackbar>
-    </Dialog>
-
-      {/* Dialog de confirmation pour annulation/déplacement */}
-{/* Dialog de confirmation pour annulation/déplacement/validation/préparation */}
-<Dialog 
-  fullScreen={isMobile}
-  open={validationDialog.open} 
-  onClose={() => {
-    setValidationDialog({ open: false, event: null, action: null })
-    setValidationReason('');
-  }}
-  maxWidth="sm"
-  fullWidth
->
-  <DialogTitle>
-    {validationDialog.action === 'cancel' ? 'Annuler le TP' : 
-     validationDialog.action === 'move' ? 'Déplacer le TP' :
-     validationDialog.action === 'validate' ? 'Valider le TP' :
-     validationDialog.action === 'in-progress' ? 'Marquer en préparation' : 
-     'Action non reconnue'}
-  </DialogTitle>
-  <DialogContent>
-    <Stack spacing={2}>
-      <Typography variant="body2">
-        {validationDialog.action === 'cancel' 
-          ? 'Êtes-vous sûr de vouloir annuler cet événement ?'
-          : validationDialog.action === 'move' 
-            ? 'Êtes-vous sûr de vouloir marquer cet événement comme déplacé ?'
-            : validationDialog.action === 'validate'
-              ? 'Êtes-vous sûr de vouloir valider cet événement ?'
-              : validationDialog.action === 'in-progress'
-                ? 'Êtes-vous sûr de vouloir marquer cet événement comme étant en préparation ?'
-                : 'Action non reconnue. Veuillez réessayer.'}
-      </Typography>
-      <Typography variant="body2" fontWeight="bold">
-        {event.title}
-      </Typography>
-      <TextField
-        autoFocus
-        margin="dense"
-        label="Raison (optionnel)"
-        fullWidth
-        multiline
-        rows={3}
-        value={validationReason}
-        onChange={(e) => setValidationReason(e.target.value)}
-        placeholder={
-          validationDialog.action === 'cancel' 
-            ? 'Indiquez la raison de l\'annulation...'
-            : validationDialog.action === 'move' 
-              ? 'Indiquez la raison du déplacement...'
-              : validationDialog.action === 'validate'
-                ? 'Indiquez la raison de la validation...'
-                : validationDialog.action === 'in-progress'
-                  ? 'Indiquez la raison de la mise en préparation...'
-                  : 'Indiquez une raison...'
-        }
-      />
-    </Stack>
-  </DialogContent>
-  <DialogActions>
-    <Button 
-      onClick={() => {
-        setValidationDialog({ open: false, event: null, action: null })
-        setValidationReason('');
-      }}
-    >
-      Annuler
-    </Button>
-    <Button
-      onClick={() => {
-        let newState: EventState;
-        switch (validationDialog.action) {
-          case 'cancel':
-            newState = 'CANCELLED';
-            break;
-          case 'move':
-            newState = 'MOVED';
-            break;
-          case 'validate':
-            newState = 'VALIDATED';
-            break;
-          case 'in-progress':
-            newState = 'IN_PROGRESS';
-            break;
-          default:
-            return; // Ne rien faire si l'action n'est pas reconnue
-        }
-        handleStateChange(newState, validationReason);
-      }}
-      variant="contained"
-      color={
-        validationDialog.action === 'cancel' 
-          ? 'error' 
-          : validationDialog.action === 'move'
-            ? 'primary'
-            : validationDialog.action === 'validate'
-              ? 'success'
-              : validationDialog.action === 'in-progress'
-                ? 'info'
-                : 'warning'
-      }
-    >
-      Confirmer
-    </Button>
-  </DialogActions>
-</Dialog>
   </>
   )
 }

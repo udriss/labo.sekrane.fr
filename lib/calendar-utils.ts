@@ -2,9 +2,33 @@
 
 import { promises as fs } from 'fs'
 import path from 'path'
-
+import { TimeSlot } from '@/types/calendar'
+import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 
 const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
+
+// Fonction pour migrer les anciennes données vers le nouveau format
+export async function migrateEventToNewFormat(event: any): Promise<any> {
+  // Si l'événement a déjà des timeSlots, pas besoin de migration
+  if (event.timeSlots && Array.isArray(event.timeSlots)) {
+    return event;
+  }
+
+  // Créer un timeSlot à partir des anciennes données startDate/endDate
+  const timeSlot: TimeSlot = {
+    id: generateTimeSlotId(),
+    startDate: event.startDate,
+    endDate: event.endDate,
+    status: 'active'
+  };
+
+  // Retourner l'événement avec le nouveau format
+  const { startDate, endDate, parentEventId, ...restEvent } = event;
+  return {
+    ...restEvent,
+    timeSlots: [timeSlot]
+  };
+}
 
 // Fonction pour écrire dans le fichier calendrier
 export async function writeCalendarFile(data: any) {
@@ -16,7 +40,6 @@ export async function writeCalendarFile(data: any) {
   }
 }
 
-
 // Fonction pour lire le fichier calendrier
 export async function readCalendarFile() {
   try {
@@ -25,5 +48,49 @@ export async function readCalendarFile() {
   } catch (error) {
     console.error('Erreur lecture fichier calendar:', error)
     return { events: [] }
+  }
+}
+
+export async function migrateCalendarData() {
+  try {
+    const calendarData = await readCalendarFile();
+    let needsMigration = false;
+
+    // Migrer tous les événements vers le nouveau format
+    const migratedEvents = await Promise.all(calendarData.events.map(async (event: any) => {
+      // Si l'événement a déjà des timeSlots, pas besoin de migration
+      if (event.timeSlots && Array.isArray(event.timeSlots)) {
+        return event;
+      }
+
+      needsMigration = true;
+
+      // Créer un timeSlot à partir des anciennes données startDate/endDate
+      const timeSlot: TimeSlot = {
+        id: generateTimeSlotId(),
+        startDate: event.startDate,
+        endDate: event.endDate,
+        status: 'active'
+      };
+
+      // Retourner l'événement avec le nouveau format
+      const { startDate, endDate, parentEventId, ...restEvent } = event;
+      return {
+        ...restEvent,
+        timeSlots: [timeSlot]
+      };
+    }));
+
+    if (needsMigration) {
+      console.log('Migration des données du calendrier vers le nouveau format...');
+      calendarData.events = migratedEvents;
+      await writeCalendarFile(calendarData);
+      console.log('Migration terminée avec succès');
+    }
+
+    return calendarData;
+  } catch (error) {
+    console.error('Erreur lors de la migration des données:', error);
+    throw error;
   }
 }

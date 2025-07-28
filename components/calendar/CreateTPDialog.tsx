@@ -7,10 +7,11 @@ import {
   Stepper, Step, StepLabel, StepContent, Button, TextField,
   Card, Chip, Autocomplete, useMediaQuery, useTheme,
   Alert, Collapse, Stack, InputAdornment, Tooltip, ClickAwayListener,
-  Snackbar, Alert as MuiAlert, Slide
+  Snackbar, Alert as MuiAlert, Slide,
+  Grid
 } from '@mui/material'
 import { 
-  Add, Close, Upload, Class, Assignment, Save, Delete, Science,
+  Add, Close, Upload, Class, Assignment, Save, Delete, Science, SwapHoriz,
   Warning, CloudUpload, School, Clear, InfoOutlined, HourglassTop
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
@@ -211,26 +212,25 @@ const updateTimeSlot = (index: number, field: keyof TimeSlot, value: string, sho
   }
 }
 
-// Fonction séparée pour l'inversion
 const performTimeSwap = (index: number) => {
-  const newTimeSlots = [...formData.timeSlots]
-  const currentSlot = { ...newTimeSlots[index] }
-  
-  // Inverser les heures
-  const tempTime = currentSlot.startTime
-  currentSlot.startTime = currentSlot.endTime
-  currentSlot.endTime = tempTime
-  
-  newTimeSlots[index] = currentSlot
-  setFormData({ ...formData, timeSlots: newTimeSlots })
-  
-  // Déclencher l'animation
+  // Démarrer l'animation
   setAnimatingSlot(index)
-  setTimeout(() => setAnimatingSlot(null), 600)
   
-  // Afficher le message
-  setSwapMessage(`Les heures ont été inversées pour le créneau ${index + 1}`)
-  setTimeout(() => setSwapMessage(null), 3000)
+  // Effectuer le swap après un petit délai pour que l'animation commence
+  setTimeout(() => {
+    const updatedSlots = [...formData.timeSlots]
+    const slot = updatedSlots[index]
+    
+    // Swap des valeurs
+    const temp = slot.startTime
+    slot.startTime = slot.endTime
+    slot.endTime = temp
+    
+    setFormData({ ...formData, timeSlots: updatedSlots })
+  }, 300) // Délai pour laisser l'animation démarrer
+  
+  // Arrêter l'animation
+  setTimeout(() => setAnimatingSlot(null), 600)
 }
 
   // Fonction pour appliquer l'échange en attente
@@ -681,7 +681,9 @@ const handleCreateCalendarEvent = async () => {
                         )}
                       </Box>
                       
-                      <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid size={{ xs: 12, sm: 3 }}>
                         <DatePicker
                           label="Date du TP"
                           value={slot.date ? new Date(slot.date) : null}
@@ -703,133 +705,188 @@ const handleCreateCalendarEvent = async () => {
                             }
                           }}
                         />
-                            <Box 
-                            sx={{
-                              display: 'flex', 
-                              gap: 2, 
-                              alignItems: 'center',
-                              position: 'relative',
-                              flexDirection: isMobile ? 'column' : 'row',
-                              ...(animatingSlot === index && {
-                                '& > *:nth-of-type(1)': {
-                                  animation: isMobile ? 'swapRightMobile 1s ease-in-out' : 'swapRight 0.6s ease-in-out',
-                                },
-                                '& > *:nth-of-type(2)': {
-                                  animation: isMobile ? 'swapLeftMobile 1s ease-in-out' : 'swapLeft 0.6s ease-in-out',
-                                },
-                                '@keyframes swapRight': {
-                                  '0%': { transform: 'translateX(0)' },
-                                  '50%': { transform: 'translateX(150px)' },
-                                  '100%': { transform: 'translateX(0)' }
-                                },
-                                '@keyframes swapLeft': {
-                                  '0%': { transform: 'translateX(0)' },
-                                  '50%': { transform: 'translateX(-150px)' },
-                                  '100%': { transform: 'translateX(0)' }
-                                },
-                                '@keyframes swapRightMobile': {
-                                  '0%': { transform: 'translateX(0) scale(1)' },
-                                  '25%': { transform: 'translateX(0) scale(1.1)' },
-                                  '50%': { transform: 'translateX(100px) scale(1.1)' },
-                                  '75%': { transform: 'translateX(0) scale(1.1)' },
-                                  '100%': { transform: 'translateX(0) scale(1)' }
-                                },
-                                '@keyframes swapLeftMobile': {
-                                  '0%': { transform: 'translateX(0) scale(1)' },
-                                  '25%': { transform: 'translateX(0) scale(1.1)' },
-                                  '50%': { transform: 'translateX(-100px) scale(1.1)' },
-                                  '75%': { transform: 'translateX(0) scale(1.1)' },
-                                  '100%': { transform: 'translateX(0) scale(1)' }
-                                }
-                              })
+                      </Grid>
+                      
+                      <Grid 
+                        size={{ xs: 12, sm: 9 }}
+                        sx={{
+                          p: 2,
+                          border: 1,
+                          borderRadius: 2,
+                          position: 'relative',
+                          display: 'flex',
+                          gap: 2,
+                          alignItems: 'center',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          overflow: 'hidden', // Important pour contenir l'animation
+                          transition: 'all 0.3s ease',
+                          transform: animatingSlot === index ? 'scale(1.02)' : 'scale(1)',
+                          backgroundColor: animatingSlot === index ? 'rgba(255, 193, 7, 0.05)' : 'transparent',
+                          '&::before': animatingSlot === index ? {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            borderRadius: 2,
+                            border: '2px solid',
+                            borderColor: 'warning.main',
+                            animation: 'pulse 1s ease-out',
+                            pointerEvents: 'none',
+                            '@keyframes pulse': {
+                              '0%': {
+                                opacity: 1,
+                                transform: 'scale(1)',
+                              },
+                              '100%': {
+                                opacity: 0,
+                                transform: 'scale(1.05)',
+                              },
+                            },
+                          } : {}
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            width: '100%',
+                            display: 'flex',
+                            gap: 2,
+                            alignItems: 'center',
+                            flexDirection: isMobile ? 'column' : 'row',
+                          }}
+                        >
+                          <TimePicker
+                            label="Début"
+                            value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                const hours = newValue.getHours().toString().padStart(2, '0')
+                                const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, !isMobile)
+                              }
                             }}
-                            >
-
-                            <TimePicker
-                              label="Début"
-                              value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
-                              onChange={(newValue) => {
-                                if (newValue) {
-                                  const hours = newValue.getHours().toString().padStart(2, '0')
-                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                                  // Sur mobile, mettre à jour sans vérifier l'inversion
-                                  updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, !isMobile)
-                                }
-                              }}
-                              onAccept={(newValue) => {
-                                // Sur mobile, vérifier l'inversion après validation
-                                if (newValue && isMobile) {
+                            onAccept={(newValue) => {
+                              if (newValue && isMobile) {
+                                // Attendre un peu pour que l'état se mette à jour
+                                setTimeout(() => {
                                   const currentSlot = formData.timeSlots[index]
-                                  if (currentSlot.startTime && currentSlot.endTime) {
+                                  if (currentSlot && currentSlot.startTime && currentSlot.endTime) {
                                     const start = new Date(`2000-01-01T${currentSlot.startTime}`)
                                     const end = new Date(`2000-01-01T${currentSlot.endTime}`)
                                     if (end < start) {
                                       performTimeSwap(index)
                                     }
                                   }
-                                }
-                              }}
-                              slotProps={{
-                                textField: { 
-                                  size: "small",
-                                  sx: { 
-                                    minWidth: { xs: '48%', sm: 120 },
-                                    transition: 'all 0.3s ease'
-                                  },
-                                  onClick: (e: any) => {
-                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                      const button = e.currentTarget.querySelector('button')
-                                      if (button) button.click()
-                                    }
+                                }, 100)
+                              }
+                            }}
+                            slotProps={{
+                              textField: { 
+                                size: "small",
+                                sx: { 
+                                  minWidth: { xs: '100%', sm: 120 },
+                                  flex: 1,
+                                  transition: animatingSlot === index ? 'transform 0.6s ease-in-out' : 'none',
+                                  transform: animatingSlot === index 
+                                    ? (isMobile ? 'translateY(40px)' : 'translateX(80px)') 
+                                    : 'translate(0, 0)',
+                                  zIndex: animatingSlot === index ? 2 : 1,
+                                },
+                                onClick: (e: any) => {
+                                  if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                    const button = e.currentTarget.querySelector('button')
+                                    if (button) button.click()
                                   }
                                 }
-                              }}
-                            />
+                              }
+                            }}
+                          />
 
-                            <TimePicker
-                              label="Fin"
-                              value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
-                              onChange={(newValue) => {
-                                if (newValue) {
-                                  const hours = newValue.getHours().toString().padStart(2, '0')
-                                  const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                                  // Sur mobile, mettre à jour sans vérifier l'inversion
-                                  updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, !isMobile)
-                                }
-                              }}
-                              onAccept={(newValue) => {
-                                // Sur mobile, vérifier l'inversion après validation
-                                if (newValue && isMobile) {
+                          <TimePicker
+                            label="Fin"
+                            value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                const hours = newValue.getHours().toString().padStart(2, '0')
+                                const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, !isMobile)
+                              }
+                            }}
+                            onAccept={(newValue) => {
+                              if (newValue && isMobile) {
+                                // Attendre un peu pour que l'état se mette à jour
+                                setTimeout(() => {
                                   const currentSlot = formData.timeSlots[index]
-                                  if (currentSlot.startTime && currentSlot.endTime) {
+                                  if (currentSlot && currentSlot.startTime && currentSlot.endTime) {
                                     const start = new Date(`2000-01-01T${currentSlot.startTime}`)
                                     const end = new Date(`2000-01-01T${currentSlot.endTime}`)
                                     if (end < start) {
                                       performTimeSwap(index)
                                     }
                                   }
-                                }
-                              }}
-                              slotProps={{
-                                textField: { 
-                                  size: "small",
-                                  sx: { 
-                                    minWidth: { xs: '100%', sm: 120 },
-                                    transition: 'all 0.3s ease'
-                                  },
-                                  onClick: (e: any) => {
-                                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                                      const button = e.currentTarget.querySelector('button')
-                                      if (button) button.click()
-                                    }
+                                }, 100)
+                              }
+                            }}
+                            slotProps={{
+                              textField: { 
+                                size: "small",
+                                sx: { 
+                                  minWidth: { xs: '100%', sm: 120 },
+                                  flex: 1,
+                                  transition: animatingSlot === index ? 'transform 0.6s ease-in-out' : 'none',
+                                  transform: animatingSlot === index 
+                                    ? (isMobile ? 'translateY(-40px)' : 'translateX(-80px)') 
+                                    : 'translate(0, 0)',
+                                  zIndex: animatingSlot === index ? 1 : 2,
+                                },
+                                onClick: (e: any) => {
+                                  if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                    const button = e.currentTarget.querySelector('button')
+                                    if (button) button.click()
                                   }
                                 }
-                              }}
-                            />
-                        
+                              }
+                            }}
+                          />
+                        </Box>
 
-                      </Box>
-                    </Box>
+                        {/* Icône de swap animée */}
+                        {animatingSlot === index && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              zIndex: 10,
+                              animation: 'swapRotate 0.6s ease-in-out',
+                              '@keyframes swapRotate': {
+                                '0%': {
+                                  transform: 'translate(-50%, -50%) rotate(0deg) scale(0)',
+                                  opacity: 0,
+                                },
+                                '25%': {
+                                  transform: 'translate(-50%, -50%) rotate(90deg) scale(1.2)',
+                                  opacity: 1,
+                                },
+                                '75%': {
+                                  transform: 'translate(-50%, -50%) rotate(270deg) scale(1.2)',
+                                  opacity: 1,
+                                },
+                                '100%': {
+                                  transform: 'translate(-50%, -50%) rotate(360deg) scale(0)',
+                                  opacity: 0,
+                                },
+                              },
+                            }}
+                          >
+                            <SwapHoriz sx={{ fontSize: 40, color: 'warning.main' }} />
+                          </Box>
+                        )}
+                      </Grid>
+                    </Grid>
                     </Box>
                   ))}
 

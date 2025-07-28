@@ -1,175 +1,81 @@
 {
   "events": [
     {
-      "id": "EVENT_1753632666836_jmv1bsr5s",
+      "id": "EVENT_1753721792877_0j545kepj",
       "title": "Administrateur",
       "name": "Administrateur",
       "description": "",
-      "startDate": "2025-07-28T06:00:00.000Z",
-      "endDate": "2025-07-28T15:00:00.000Z",
+      "timeSlots": [
+        {
+          "id": "TS_1753722119634_w8312i7",
+          "startDate": "2025-07-28T08:00:00.000Z",
+          "endDate": "2025-07-28T10:00:00.000Z",
+          "status": "active"
+        },
+        {
+          "id": "TS_1753722119634_gyvn2jr",
+          "startDate": "2025-07-28T09:00:00.000Z",
+          "endDate": "2025-07-28T20:00:00.000Z",
+          "status": "active"
+        }
+      ],
       "type": "TP",
-      "state": "VALIDATED",
+      "state": "MOVED",
       "stateChanger": [
         [
           "USER_001",
-          "2025-07-28T11:05:02.817Z",
-          "2025-07-28T11:24:46.956Z",
-          "2025-07-28T11:24:51.617Z",
-          "2025-07-28T11:36:31.340Z",
-          "2025-07-28T11:36:47.807Z",
-          "2025-07-28T11:53:09.827Z",
-          "2025-07-28T11:53:15.141Z"
+          "2025-07-28T17:01:12.157Z",
+          "2025-07-28T17:01:59.634Z",
+          "2025-07-28T17:05:25.750Z",
+          "2025-07-28T17:05:49.864Z"
         ]
       ],
-      "class": "Terminale STI2D 2",
+      "class": "Terminale ES",
       "room": "",
       "location": "",
       "materials": [
         {
           "id": "EQUIP_1753254105873_vjm5cl4wd",
           "name": "Tube à essai",
-          "quantity": 13,
+          "quantity": 6,
           "isCustom": false,
           "volume": "25 mL"
+        },
+        {
+          "id": "custom_1753721767745",
+          "name": "Line",
+          "quantity": 1,
+          "isCustom": true,
+          "volume": null
         }
       ],
       "chemicals": [
         {
           "id": "cmdd5kp7c00071f0vz4lco20j",
           "name": "Hydroxyde de sodium",
-          "requestedQuantity": 1,
+          "requestedQuantity": 1.3,
           "unit": "g",
-          "quantity": 250
-        },
-        {
-          "id": "CHEM_INV_0RUP4BADFOGF",
-          "name": "Acide phosphorique",
-          "requestedQuantity": 4.2,
-          "unit": "mL",
-          "quantity": 2000
-        }
-      ],
-      "equipment": [],
-      "fileName": null,
-      "fileUrl": null,
-      "files": [
-        {
-          "fileName": "TEST_3.jpeg",
-          "fileUrl": "/uploads/calendar/1753635970975_1pwb03_TEST_3.jpeg",
-          "filePath": "/uploads/calendar/1753635970975_1pwb03_TEST_3.jpeg",
-          "fileSize": 87534,
-          "fileType": "image/jpeg",
-          "uploadedAt": "2025-07-27T17:06:12.534Z"
-        },
-        {
-          "fileName": "TEST_3.jpeg",
-          "fileUrl": "/uploads/calendar/1753635979732_mhbfpr_TEST_3.jpeg",
-          "filePath": "/uploads/calendar/1753635979732_mhbfpr_TEST_3.jpeg",
-          "fileSize": 87534,
-          "fileType": "image/jpeg",
-          "uploadedAt": "2025-07-27T17:06:20.486Z"
-        }
-      ],
-      "remarks": "",
-      "notes": null,
-      "createdBy": "USER_001",
-      "modifiedBy": [
-        [
-          "USER_001",
-          "2025-07-27T16:11:18.372Z",
-          "2025-07-27T16:11:39.162Z",
-          "2025-07-27T16:38:07.396Z",
-          "2025-07-27T16:43:58.739Z",
-          "2025-07-27T16:44:36.725Z",
-          "2025-07-27T16:45:31.217Z",
-          "2025-07-27T16:46:20.787Z",
-          "2025-07-27T16:55:30.532Z",
-          "2025-07-27T16:56:25.383Z",
-          "2025-07-27T16:57:10.908Z",
-          "2025-07-27T17:06:12.711Z",
-          "2025-07-27T17:06:20.631Z",
-          "2025-07-27T22:43:26.741Z",
-          "2025-07-28T08:16:57.056Z"
-        ]
-      ],
-      "createdAt": "2025-07-27T16:11:06.836Z",
-      "updatedAt": "2025-07-28T11:53:15.141Z",
-      "column": 0,
-      "totalColumns": 1,
-      "visualStartDate": "2025-07-27T06:00:00.000Z",
-      "visualEndDate": "2025-07-27T15:00:00.000Z",
-      "startsBeforeDay": false,
-      "endsAfterDay": false,
-      "startsBeforeSchedule": false,
-      "endsAfterSchedule": false,
-      "stateReason": ""
-    },
-    {
-      "id": "EVENT_1753673250950_dlhn85m3r",
-      "title": "Administrateur",
-      "name": "Administrateur",
-      "description": "",
-      "startDate": "2025-07-27T00:00:00.000Z",
-      "endDate": "2025-07-27T11:00:00.000Z",
-      "type": "TP",
-      "state": "PENDING",
-      "stateChanger": [],
-      "class": "MaCLASSE 2",
-      "room": "",
-      "location": "",
-      "materials": [
-        {
-          "id": "custom_1753672912310",
-          "name": "Mon tube",
-          "quantity": 1,
-          "isCustom": true,
-          "volume": null
-        },
-        {
-          "id": "custom_1753672934824",
-          "name": "Tube perso",
-          "quantity": 1,
-          "isCustom": true,
-          "volume": null
-        }
-      ],
-      "chemicals": [
-        {
-          "id": "CHEM_1753672921409_CUSTOM",
-          "name": "Mon réactive",
-          "requestedQuantity": 3.7,
-          "unit": "g",
-          "quantity": 0,
-          "isCustom": true
-        },
-        {
-          "id": "CHEM_INV_A2ZP1BSQZBY8",
-          "name": "Sulfate de cuivre pentahydraté",
-          "requestedQuantity": 1,
-          "unit": "g",
-          "quantity": 215.6,
+          "quantity": 250,
           "isCustom": false
         },
         {
-          "id": "CHEM_1753691143086_CUSTOM",
-          "name": "MyCustom 2",
-          "requestedQuantity": 1,
+          "id": "CHEM_1753721781661_CUSTOM",
+          "name": "MINE",
+          "requestedQuantity": 2.4,
           "unit": "g",
           "quantity": 0,
           "isCustom": true
         }
       ],
       "equipment": [],
-      "fileName": null,
-      "fileUrl": null,
       "files": [
         {
           "fileName": "TEST_3.jpeg",
-          "fileUrl": "/uploads/calendar/1753672974460_h0ki2k_TEST_3.jpeg",
-          "filePath": "/uploads/calendar/1753672974460_h0ki2k_TEST_3.jpeg",
+          "fileUrl": "/uploads/calendar/1753721791340_6fkkqw_TEST_3.jpeg",
+          "filePath": "/uploads/calendar/1753721791340_6fkkqw_TEST_3.jpeg",
           "fileSize": 87534,
           "fileType": "image/jpeg",
-          "uploadedAt": "2025-07-28T03:27:30.699Z"
+          "uploadedAt": "2025-07-28T16:56:32.778Z"
         }
       ],
       "remarks": "",
@@ -178,14 +84,34 @@
       "modifiedBy": [
         [
           "USER_001",
-          "2025-07-28T08:16:29.773Z",
-          "2025-07-28T08:25:44.926Z",
-          "2025-07-28T08:51:57.882Z",
-          "2025-07-28T09:13:56.975Z"
+          "2025-07-28T18:08:07.910Z",
+          "2025-07-28T18:08:26.957Z",
+          "2025-07-28T18:11:31.880Z",
+          "2025-07-28T18:14:51.490Z",
+          "2025-07-28T18:16:18.769Z",
+          "2025-07-28T18:22:57.988Z",
+          "2025-07-28T18:23:49.030Z",
+          "2025-07-28T18:25:23.983Z",
+          "2025-07-28T18:27:53.356Z",
+          "2025-07-28T18:33:13.810Z",
+          "2025-07-28T18:34:23.648Z",
+          "2025-07-28T18:37:55.834Z"
         ]
       ],
-      "createdAt": "2025-07-28T03:27:30.950Z",
-      "updatedAt": "2025-07-28T09:13:56.975Z"
+      "createdAt": "2025-07-28T16:56:32.877Z",
+      "updatedAt": "2025-07-28T18:37:55.834Z",
+      "stateReason": "",
+      "timeSlotUpdates": [
+        {
+          "action": "update",
+          "timeSlot": {
+            "id": "TS_1753722119634_gyvn2jr",
+            "startDate": "2025-07-28T09:00:00.000Z",
+            "endDate": "2025-07-28T21:00:00.000Z",
+            "userIDAdding": "USER_001"
+          }
+        }
+      ]
     }
   ]
 }

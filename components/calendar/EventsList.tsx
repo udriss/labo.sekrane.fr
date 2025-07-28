@@ -23,6 +23,7 @@ import {
 
 // Importer les types depuis le fichier partagé
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 
 interface EventsListProps {
   events: CalendarEvent[]
@@ -184,20 +185,28 @@ const EventsList: React.FC<EventsListProps> = ({
   const groupedEvents = {
     pending: filteredEvents.filter(e => e.state === 'PENDING'),
     upcoming: filteredEvents.filter(e => {
-      const eventDate = typeof e.startDate === 'string' ? new Date(e.startDate) : e.startDate
-      return eventDate >= new Date() && e.state !== 'PENDING'
+      const activeSlots = getActiveTimeSlots(e)
+      if (activeSlots.length === 0) return false
+      const firstSlotDate = new Date(activeSlots[0].startDate)
+      return firstSlotDate >= new Date() && e.state !== 'PENDING'
     }),
     past: filteredEvents.filter(e => {
-      const eventDate = typeof e.startDate === 'string' ? new Date(e.startDate) : e.startDate
-      return eventDate < new Date() && e.state !== 'PENDING'
+      const activeSlots = getActiveTimeSlots(e)
+      if (activeSlots.length === 0) return false
+      const firstSlotDate = new Date(activeSlots[0].startDate)
+      return firstSlotDate < new Date() && e.state !== 'PENDING'
     })
   }
 
   // Trier les événements dans chaque groupe
   Object.keys(groupedEvents).forEach(key => {
     groupedEvents[key as keyof typeof groupedEvents].sort((a, b) => {
-      const dateA = typeof a.startDate === 'string' ? new Date(a.startDate) : a.startDate
-      const dateB = typeof b.startDate === 'string' ? new Date(b.startDate) : b.startDate
+      const aSlotsActive = getActiveTimeSlots(a)
+      const bSlotsActive = getActiveTimeSlots(b)
+      
+      const dateA = aSlotsActive.length > 0 ? new Date(aSlotsActive[0].startDate) : new Date()
+      const dateB = bSlotsActive.length > 0 ? new Date(bSlotsActive[0].startDate) : new Date()
+      
       return key === 'past' ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime()
     })
   })
@@ -215,7 +224,11 @@ const renderEventItem = (event: CalendarEvent) => {
   const showValidationActions = canValidateEvent && event.state === 'PENDING'
   const isCancelled = event.state === 'CANCELLED'
   const stateInfo = getStateInfo(event.state)
-  const isPast = new Date(event.startDate) < new Date()
+  
+  // Utiliser getActiveTimeSlots pour obtenir les créneaux actifs
+  const activeSlots = getActiveTimeSlots(event)
+  const firstSlot = activeSlots[0]
+  const isPast = firstSlot ? new Date(firstSlot.startDate) < new Date() : false
 
   const menuItems = []
 
@@ -475,18 +488,30 @@ const renderEventItem = (event: CalendarEvent) => {
             mb: 1,
             width: '100%',
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="body2" fontWeight={500}>
-                {format(event.startDate, 'EEEE d MMMM', { locale: fr })}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
-              </Typography>
-            </Box>
+            {firstSlot && (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={500}>
+                    {format(new Date(firstSlot.startDate), 'EEEE d MMMM', { locale: fr })}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {format(new Date(firstSlot.startDate), 'HH:mm')} - {format(new Date(firstSlot.endDate), 'HH:mm')}
+                  </Typography>
+                </Box>
+              </>
+            )}
+            {activeSlots.length > 1 && (
+              <Chip 
+                size="small" 
+                label={`+${activeSlots.length - 1} créneaux`} 
+                color="info" 
+                variant="outlined"
+              />
+            )}
           </Box>
 
           {/* Chips pour matériels et réactifs */}

@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth'; // Ajustez selon votre configuration d
 import { withAudit } from '@/lib/api/with-audit'
 import { readCalendarFile, writeCalendarFile } from '@/lib/calendar-utils'
 import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
+import { cp, existsSync } from 'fs'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -61,9 +61,39 @@ export const PUT = withAudit(
       );
     }
 
-    // Gérer le tableau stateChanger pour suivre qui a changé l'état
-    const currentStateChanger = event.stateChanger || [];
     const changeDate = new Date().toISOString();
+
+    // Si l'utilisateur n'est pas le créateur de l'événement et demande une annulation
+    if (state === 'CANCELLED' && event.createdBy !== userId) {
+      // Créer une modification en attente au lieu de changer directement l'état
+      const eventModifying = event.eventModifying || [];
+      
+      const newModification = {
+        requestDate: changeDate,
+        userId: userId || '',
+        action: 'CANCEL' as const,
+        status: 'PENDING' as const,
+        reason: reason || ''
+      };
+
+      const updatedEvent = {
+        ...event,
+        eventModifying: [...eventModifying, newModification],
+        updatedAt: changeDate
+      };
+
+      calendarData.events[eventIndex] = updatedEvent;
+      await writeCalendarFile(calendarData);
+
+      return NextResponse.json({
+        updatedEvent,
+        message: 'Demande d\'annulation envoyée au créateur',
+        isPending: true
+      });
+    }
+
+    // Si l'utilisateur est le créateur ou fait un changement d'état non critique, procéder normalement
+    const currentStateChanger = event.stateChanger || [];
     
     const userIndex = currentStateChanger.findIndex((entry: [string, ...string[]]) => entry[0] === userId);
     let updatedStateChanger: Array<[string, ...string[]]>;

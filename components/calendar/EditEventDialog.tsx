@@ -10,7 +10,7 @@ import {
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
-  Add, Delete, InfoOutlined, School
+  Add, Delete, InfoOutlined, School, SwapHoriz, CalendarToday, Edit
 } from '@mui/icons-material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
@@ -20,6 +20,9 @@ import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { useSession } from 'next-auth/react'
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
+import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { TimeSlot } from '@/types/calendar'
 
 
 interface EditEventDialogProps {
@@ -71,13 +74,17 @@ export function EditEventDialog({
   const [hasUploadingFiles, setHasUploadingFiles] = useState(false)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
   const [showCustomChemicalInfo, setShowCustomChemicalInfo] = useState(false)
-
+  const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
+  
   const { data: session } = useSession();
   const theme = useTheme()
   const [timeSlots, setTimeSlots] = useState<Array<{
+    id?: string;  // Ajouter l'id pour identifier les créneaux existants
     date: Date | null;
     startTime: string;
     endTime: string;
+    isExisting?: boolean;  // Pour différencier les créneaux existants des nouveaux
+    userIDAdding: string;
   }>>([])
   
   const [formData, setFormData] = useState({
@@ -113,43 +120,43 @@ export function EditEventDialog({
   // Initialiser le formulaire avec les données de l'événement
   useEffect(() => {
     if (event) {
-      const startDate = typeof event.startDate === 'string' 
-        ? new Date(event.startDate) 
-        : event.startDate
-      const endDate = typeof event.endDate === 'string' 
-        ? new Date(event.endDate) 
-        : event.endDate
+      // Récupérer les créneaux actifs
+      const activeSlots = getActiveTimeSlots(event)
+      const firstSlot = activeSlots[0]
+      
+      if (!firstSlot) {
+        console.warn('Aucun créneau actif trouvé pour l\'événement')
+        return
+      }
 
-      // Préparer les matériels avec quantités
+      const startDate = new Date(firstSlot.startDate)
+      const endDate = new Date(firstSlot.endDate)
+
+      // Préparer les matériels avec quantités (reste inchangé)
       const materialsWithQuantities = event.materials?.map((mat: any) => {
-        // Si c'est déjà un objet avec quantité
         if (typeof mat === 'object' && mat.quantity) {
           return mat
         }
-        // Si c'est un ID, chercher dans la liste des matériels
         const foundMaterial = materials.find(m => m.id === mat)
         if (foundMaterial) {
           return { ...foundMaterial, quantity: 1 }
         }
-        // Si c'est un objet matériel sans quantité
         return { ...mat, quantity: 1 }
       }) || []
 
-      // Préparer les réactifs chimiques avec quantités
+      // Préparer les réactifs chimiques avec quantités (reste inchangé)
       const chemicalsWithQuantities = event.chemicals?.map((chem: any) => {
-        // Si c'est déjà un objet avec quantité demandée
         if (typeof chem === 'object' && chem.requestedQuantity) {
           return chem
         }
-        // Si c'est un ID, chercher dans la liste des réactifs chimiques
         const foundChemical = chemicals.find(c => c.id === chem)
         if (foundChemical) {
           return { ...foundChemical, requestedQuantity: 1 }
         }
-        // Si c'est un objet chimique sans quantité demandée
         return { ...chem, requestedQuantity: 1 }
       }) || []
 
+      // Initialiser avec le premier créneau
       setFormData({
         title: event.title || '',
         description: event.description || '',
@@ -165,37 +172,32 @@ export function EditEventDialog({
         location: event.location || ''
       })
 
-      // Initialiser les fichiers existants
+      // Initialiser les fichiers existants (reste inchangé)
       if (event.files && Array.isArray(event.files)) {
         setFiles(event.files.map((file, index) => ({
           id: `existing_${index}`,
           file: null,
           existingFile: file
         })))
-      } else if (event.fileName) {
-        // Rétrocompatibilité
-        setFiles([{
-          id: 'existing_0',
-          file: null,
-          existingFile: {
-            fileName: event.fileName,
-            fileUrl: event.fileUrl
-          }
-        }])
       }
 
       // Initialiser les remarques
       setRemarks(event.remarks || '')
 
-      // Initialiser avec un créneau unique basé sur l'événement actuel
-      setTimeSlots([{
-        date: startDate,
-        startTime: format(startDate, 'HH:mm'),
-        endTime: format(endDate, 'HH:mm')
-      }])
+      // Initialiser tous les créneaux
+      const formattedTimeSlots = activeSlots.map(slot => ({
+        id: slot.id,
+        date: new Date(slot.startDate),
+        startTime: format(new Date(slot.startDate), 'HH:mm'),
+        endTime: format(new Date(slot.endDate), 'HH:mm'),
+        isExisting: true,
+        userIDAdding: session?.user?.id || 'INDISPONIBLE'
+      }))
+
+      setTimeSlots(formattedTimeSlots)
       
-      // Réinitialiser le mode multi-créneaux
-      setShowMultipleSlots(false)
+      // Activer le mode multi-créneaux si plus d'un créneau
+      setShowMultipleSlots(activeSlots.length > 1)
     }
   }, [event, materials, chemicals])
 
@@ -209,13 +211,34 @@ export function EditEventDialog({
     severity: 'info'
   });
 
+  // Ajouter cette fonction après les autres fonctions helper
+  const performTimeSwap = (index: number) => {
+    setAnimatingSlot(index)
+    const updatedSlots = [...timeSlots]
+    const slot = updatedSlots[index]
+    const temp = slot.startTime
+    slot.startTime = slot.endTime
+    slot.endTime = temp
+    setTimeSlots(updatedSlots)
+    
+    // Afficher un message pour informer l'utilisateur
+    setSnackbar({
+      open: true,
+      message: 'Les heures ont été inversées (l\'heure de fin était avant l\'heure de début)',
+      severity: 'info'
+    })
+    
+    setTimeout(() => setAnimatingSlot(null), 1000)
+  }
 
   // Gestion des créneaux
   const addTimeSlot = () => {
     setTimeSlots([...timeSlots, {
       date: formData.startDate,
-      startTime: formData.startTime,
-      endTime: formData.endTime
+      startTime: formData.startTime || '08:00',
+      endTime: formData.endTime || '10:00',
+      isExisting: false,
+      userIDAdding: session?.user?.id || 'INDISPONIBLE' // Utiliser l'ID de l'utilisateur de la session
     }])
   }
 
@@ -226,7 +249,7 @@ export function EditEventDialog({
     }
   }
 
-  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: any) => {
+  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime' | 'userIDAdding', value: any, checkSwap: boolean = true) => {
     const newTimeSlots = [...timeSlots]
     if (field === 'date') {
       newTimeSlots[index].date = value
@@ -234,6 +257,18 @@ export function EditEventDialog({
       newTimeSlots[index][field] = value
     }
     setTimeSlots(newTimeSlots)
+
+    // Vérifier si on doit échanger les heures
+    if (checkSwap && field !== 'date') {
+      const slot = newTimeSlots[index]
+      if (slot.startTime && slot.endTime) {
+        const start = new Date(`2000-01-01T${slot.startTime}`)
+        const end = new Date(`2000-01-01T${slot.endTime}`)
+        if (end < start) {
+          setTimeout(() => performTimeSwap(index), 100) // Petit délai pour laisser le temps à l'UI de se mettre à jour
+        }
+      }
+    }
   }
 
   // Vérifier si l'événement est en dehors des heures d'ouverture
@@ -276,6 +311,18 @@ export function EditEventDialog({
     
     return warnings
   }
+
+  const getSlotModificationSummary = (slot: TimeSlot): string => {
+  if (!slot.modifiedBy || slot.modifiedBy.length === 0) return '';
+  
+  const lastModification = slot.modifiedBy[slot.modifiedBy.length - 1];
+  const modCount = slot.modifiedBy.filter(m => m.action === 'modified').length;
+  
+  if (modCount > 0) {
+    return `Modifié ${modCount} fois`;
+  }
+  return '';
+};
 
    // Callback pour gérer l'upload réussi d'un fichier
 const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
@@ -371,11 +418,10 @@ const handleSave = async () => {
       return
     }
   }
-// .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
+
   // Vérifier les quantités de réactifs chimiques
   const insufficientChemicals = formData.chemicals.filter(c => 
     !(c.isCustom || c.id?.endsWith('_CUSTOM')) && c.requestedQuantity > (c.quantity || 0)
-    // || !c.id?.endsWith('_CUSTOM')
   )
   if (insufficientChemicals.length > 0) {
     alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
@@ -386,7 +432,7 @@ const handleSave = async () => {
   try {
     // Préparer TOUS les fichiers (existants + nouveaux)
     const allFilesData = files
-      .filter(f => f.existingFile || f.uploadedUrl || f.path) // Garder tous les fichiers valides
+      .filter(f => f.existingFile || f.uploadedUrl || f.path)
       .map(f => {
         // Si c'est un fichier existant
         if (f.existingFile) {
@@ -430,79 +476,134 @@ const handleSave = async () => {
       requestedQuantity: c.requestedQuantity || 1,
       unit: c.unit || '',
       quantity: c.quantity || 0,
-      // isCustom: c.isCustom || (c.id && c.id.endsWith('_CUSTOM')) || false,
       isCustom: c.isCustom || (c.id && c.id.endsWith('_CUSTOM')) || false,
     }))
 
-    if (showMultipleSlots && formData.type === 'TP' && timeSlots.length > 1) {
-      // Mode multi-créneaux
-      const firstSlot = timeSlots[0]
-      const additionalSlots = timeSlots.slice(1).map(slot => ({
-        date: slot.date ? format(slot.date, 'yyyy-MM-dd') : '',
-        startTime: slot.startTime,
-        endTime: slot.endTime
-      }))
-      
-      if (firstSlot.date) {
-        const startDateTime = new Date(firstSlot.date)
-        startDateTime.setHours(parseInt(firstSlot.startTime.split(':')[0]))
-        startDateTime.setMinutes(parseInt(firstSlot.startTime.split(':')[1]))
+    // Préparer les timeSlots complets avec tracking
+    let finalTimeSlots: TimeSlot[] = [];
+    const currentUserId = session?.user?.id || 'UNKNOWN';
+    const currentDate = new Date().toISOString();
 
-        const endDateTime = new Date(firstSlot.date)
-        endDateTime.setHours(parseInt(firstSlot.endTime.split(':')[0]))
-        endDateTime.setMinutes(parseInt(firstSlot.endTime.split(':')[1]))
+    if (showMultipleSlots && formData.type === 'TP') {
+      // Mode multi-créneaux : convertir tous les créneaux au format final
+      finalTimeSlots = timeSlots.map(slot => {
+        const startDateTime = new Date(slot.date ?? new Date())
+        startDateTime.setHours(parseInt(slot.startTime.split(':')[0]))
+        startDateTime.setMinutes(parseInt(slot.startTime.split(':')[1]))
 
-        const updatedEvent: Partial<CalendarEvent> & { additionalTimeSlots?: any[] } = {
-          title: formData.title,
-          description: formData.description,
-          type: formData.type,
-          startDate: startDateTime,
-          endDate: endDateTime,
-          class: formData.class,
-          room: formData.room,
-          materials: materialsData,
-          chemicals: chemicalsData,
-          location: formData.location,
-          remarks: remarks,
-          files: allFilesData, // Toujours envoyer tous les fichiers
-          additionalTimeSlots: additionalSlots
+        const endDateTime = new Date(slot.date ?? new Date())
+        endDateTime.setHours(parseInt(slot.endTime.split(':')[0]))
+        endDateTime.setMinutes(parseInt(slot.endTime.split(':')[1]))
+
+        // Si c'est un slot existant avec un ID
+        if (slot.id && slot.isExisting && event) {
+          const existingSlot = event.timeSlots?.find(s => s.id === slot.id);
+          
+          // Vérifier si le slot a été modifié
+          const hasChanged = existingSlot && (
+            new Date(existingSlot.startDate).getTime() !== startDateTime.getTime() ||
+            new Date(existingSlot.endDate).getTime() !== endDateTime.getTime()
+          );
+
+          return {
+            id: slot.id,
+            startDate: startDateTime.toISOString(),
+            endDate: endDateTime.toISOString(),
+            status: 'active' as const,
+            createdBy: existingSlot?.createdBy || currentUserId,
+            modifiedBy: hasChanged ? [
+              ...(existingSlot?.modifiedBy || []),
+              {
+                userId: currentUserId,
+                date: currentDate,
+                action: 'modified' as const
+              }
+            ] : existingSlot?.modifiedBy || []
+          }
+        } else {
+          // Nouveau slot
+          return {
+            id: slot.id || generateTimeSlotId(),
+            startDate: startDateTime.toISOString(),
+            endDate: endDateTime.toISOString(),
+            status: 'active' as const,
+            createdBy: currentUserId,
+            modifiedBy: [{
+              userId: currentUserId,
+              date: currentDate,
+              action: 'created' as const
+            }]
+          }
         }
-
-        await onSave(updatedEvent)
-      }
+      })
     } else {
-      // Mode simple
+      // Mode simple : créer ou mettre à jour un seul créneau
       const startDateTime = new Date(formData.startDate!)
       startDateTime.setHours(parseInt(formData.startTime.split(':')[0]))
       startDateTime.setMinutes(parseInt(formData.startTime.split(':')[1]))
 
-      let endDateTime: Date
-      if (formData.endDate && formData.endDate.getDate() !== formData.startDate!.getDate()) {
-        endDateTime = new Date(formData.endDate)
-      } else {
-        endDateTime = new Date(formData.startDate!)
-      }
+      const endDateTime = new Date(formData.endDate || formData.startDate!)
       endDateTime.setHours(parseInt(formData.endTime.split(':')[0]))
       endDateTime.setMinutes(parseInt(formData.endTime.split(':')[1]))
 
-      const updatedEvent: Partial<CalendarEvent> = {
-        title: formData.title,
-        description: formData.description,
-        type: formData.type,
-        startDate: startDateTime,
-        endDate: endDateTime,
-        class: formData.class,
-        room: formData.room,
-        materials: materialsData,
-        chemicals: chemicalsData,
-        location: formData.location,
-        remarks: remarks,
-        files: allFilesData // Toujours envoyer tous les fichiers
-      }
+      // Si on édite un événement existant
+      if (event && event.timeSlots && event.timeSlots[0]) {
+        const existingSlot = event.timeSlots[0];
+        
+        // Vérifier si le slot a été modifié
+        const hasChanged = 
+          new Date(existingSlot.startDate).getTime() !== startDateTime.getTime() ||
+          new Date(existingSlot.endDate).getTime() !== endDateTime.getTime();
 
-      await onSave(updatedEvent)
+        finalTimeSlots = [{
+          id: existingSlot.id,
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+          status: 'active' as const,
+          createdBy: existingSlot.createdBy || currentUserId,
+          modifiedBy: hasChanged ? [
+            ...(existingSlot.modifiedBy || []),
+            {
+              userId: currentUserId,
+              date: currentDate,
+              action: 'modified' as const
+            }
+          ] : existingSlot.modifiedBy || []
+        }]
+      } else {
+        // Nouveau créneau
+        finalTimeSlots = [{
+          id: generateTimeSlotId(),
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+          status: 'active' as const,
+          createdBy: currentUserId,
+          modifiedBy: [{
+            userId: currentUserId,
+            date: currentDate,
+            action: 'created' as const
+          }]
+        }]
+      }
     }
-    
+
+    console.log('TimeSlots finaux à envoyer:', finalTimeSlots);
+
+    const updatedEvent: Partial<CalendarEvent> = {
+      title: formData.title,
+      description: formData.description,
+      type: formData.type,
+      class: formData.class,
+      room: formData.room,
+      materials: materialsData,
+      chemicals: chemicalsData,
+      location: formData.location,
+      remarks: remarks,
+      files: allFilesData,
+      timeSlots: finalTimeSlots // Envoyer directement tous les timeSlots avec tracking
+    }
+
+    await onSave(updatedEvent)
     onClose()
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error)
@@ -641,25 +742,56 @@ const handleSave = async () => {
                   sx={{
                     p: 2,
                     border: 1,
-                    borderColor: 'divider',
+                    borderColor: slot.isExisting ? 'primary.main' : 'divider',
                     borderRadius: 2,
-                    bgcolor: 'background.default'
+                    bgcolor: slot.isExisting ? alpha(theme.palette.primary.main, 0.05) : 'background.default',
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                    transform: animatingSlot === index ? 'scale(1.02)' : 'scale(1)',
+                    '&::after': animatingSlot === index ? {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      borderRadius: 2,
+                      border: '2px solid',
+                      borderColor: 'warning.main',
+                      animation: 'pulse 1s ease-out',
+                      pointerEvents: 'none',
+                      '@keyframes pulse': {
+                        '0%': {
+                          opacity: 1,
+                          transform: 'scale(1)',
+                        },
+                        '100%': {
+                          opacity: 0,
+                          transform: 'scale(1.05)',
+                        },
+                      },
+                    } : {}
                   }}
                 >
-                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2" color="text.secondary">
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="body2" color="text.secondary" component="span">
                       Créneau {index + 1}
                     </Typography>
-                    {timeSlots.length > 1 && (
-                      <IconButton
-                        color="error"
-                        onClick={() => removeTimeSlot(index)}
-                        size="small"
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
+                    {slot.isExisting && (
+                      <Chip label="Existant" size="small" color="primary" />
                     )}
                   </Box>
+                  {timeSlots.length > 1 && (
+                    <IconButton
+                      color="error"
+                      onClick={() => removeTimeSlot(index)}
+                      size="small"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
                   
                   <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
                     <DatePicker
@@ -681,14 +813,22 @@ const handleSave = async () => {
                         if (newValue) {
                           const hours = newValue.getHours().toString().padStart(2, '0')
                           const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                          updateTimeSlot(index, 'startTime', `${hours}:${minutes}`)
+                          updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, true) // true pour vérifier le swap
                         }
                       }}
                       slotProps={{
                         textField: { 
                           size: "small",
-                          sx: { minWidth: { xs: '48%', sm: 120 } },
-                          required: true
+                          sx: { 
+                            minWidth: { xs: '48%', sm: 120 },
+                            transition: 'all 0.3s ease'
+                          },
+                          onClick: (e: any) => {
+                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                              const button = e.currentTarget.querySelector('button')
+                              if (button) button.click()
+                            }
+                          }
                         }
                       }}
                     />
@@ -699,17 +839,56 @@ const handleSave = async () => {
                         if (newValue) {
                           const hours = newValue.getHours().toString().padStart(2, '0')
                           const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                          updateTimeSlot(index, 'endTime', `${hours}:${minutes}`)
+                          updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, true) // true pour vérifier le swap
                         }
                       }}
                       slotProps={{
                         textField: { 
                           size: "small",
-                          sx: { minWidth: { xs: '48%', sm: 120 } },
-                          required: true
+                          sx: { 
+                            minWidth: { xs: '48%', sm: 120 },
+                            transition: 'all 0.3s ease'
+                          },
+                          onClick: (e: any) => {
+                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                              const button = e.currentTarget.querySelector('button')
+                              if (button) button.click()
+                            }
+                          }
                         }
                       }}
                     />
+                    {animatingSlot === index && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          animation: 'swapRotate 1s ease-in-out',
+                          '@keyframes swapRotate': {
+                            '0%': {
+                              transform: 'translate(-50%, -50%) rotate(0deg) scale(1)',
+                              opacity: 0,
+                            },
+                            '20%': {
+                              transform: 'translate(-50%, -50%) rotate(0deg) scale(1.5)',
+                              opacity: 1,
+                            },
+                            '80%': {
+                              transform: 'translate(-50%, -50%) rotate(180deg) scale(1.5)',
+                              opacity: 1,
+                            },
+                            '100%': {
+                              transform: 'translate(-50%, -50%) rotate(180deg) scale(1)',
+                              opacity: 0,
+                            },
+                          },
+                        }}
+                      >
+                        <SwapHoriz sx={{ fontSize: 48, color: 'rgba(255, 193, 7, 0.66)' }} />
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               ))}
@@ -771,12 +950,21 @@ const handleSave = async () => {
                       setFormData({ ...formData, startTime: `${hours}:${minutes}` })
                     }
                   }}
-                  slotProps={{
-                    textField: { 
-                      required: true,
-                      sx: { flexGrow: 1 }
-                    }
-                  }}
+                      slotProps={{
+                        textField: { 
+                          size: "small",
+                          sx: { 
+                            minWidth: { xs: '48%', sm: 120 },
+                            transition: 'all 0.3s ease'
+                          },
+                          onClick: (e: any) => {
+                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                              const button = e.currentTarget.querySelector('button')
+                              if (button) button.click()
+                            }
+                          }
+                        }
+                      }}
                 />
 
                 <TimePicker
@@ -789,12 +977,21 @@ const handleSave = async () => {
                       setFormData({ ...formData, endTime: `${hours}:${minutes}` })
                     }
                   }}
-                  slotProps={{
-                    textField: { 
-                      required: true,
-                      sx: { flexGrow: 1 }
-                    }
-                  }}
+                      slotProps={{
+                        textField: { 
+                          size: "small",
+                          sx: { 
+                            minWidth: { xs: '48%', sm: 120 },
+                            transition: 'all 0.3s ease'
+                          },
+                          onClick: (e: any) => {
+                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                              const button = e.currentTarget.querySelector('button')
+                              if (button) button.click()
+                            }
+                          }
+                        }
+                      }}
                 />
               </Box>
             </>
@@ -1667,7 +1864,6 @@ const handleSave = async () => {
 {formData.chemicals
   .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
   .some(c => {
-    c.id?.endsWith('_CUSTOM') ? console.log('Custom Chemical:', c.name, c.isCustom) : console.log('Standard Chemical:', c.name, c.isCustom)
     const availableStock = c.quantityPrevision !== undefined 
       ? c.quantityPrevision 
       : (c.quantity || 0)

@@ -11,6 +11,34 @@ export interface StateChange {
   reason?: string
 }
 
+export interface TimeSlot {
+  id: string;
+  startDate: string;
+  endDate: string;
+  status?: 'active' | 'deleted' | 'modified';
+  createdBy?: string;  // Ajout du créateur
+  modifiedBy?: Array<{
+    userId: string;
+    date: string;
+    action: 'created' | 'modified' | 'deleted';
+  }>;  // Ajout de l'historique des modifications
+}
+
+
+export interface EventModification {
+  requestDate: string
+  newDate?: string
+  userId: string
+  action: 'MOVE' | 'CANCEL'
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED'
+  timeSlots?: Array<{
+    date: string
+    startTime: string
+    endTime: string
+  }>
+  reason?: string
+}
+
 
 export interface FileInfo {
   fileName: string
@@ -24,8 +52,7 @@ export interface CalendarEvent {
   id: string
   title: string
   description?: string | null
-  startDate: Date | string
-  endDate: Date | string
+  timeSlots: TimeSlot[]
   type: EventType
   state?: EventState
   stateChanger?: StateChange[]
@@ -51,10 +78,9 @@ export interface CalendarEvent {
     requestedQuantity?: number
     isCustom?: boolean
   })[]
-  fileName?: string | null  // Garder pour la rétrocompatibilité
-  fileUrl?: string | null   // Ajouter pour la rétrocompatibilité
   files?: FileInfo[]        // Nouveau champ pour la gestion multiple
   remarks?: string | null   // Nouveau champ pour les remarques avec formatage
+  eventModifying?: EventModification[] // Nouveau champ pour les modifications en attente
   createdBy?: string | null 
   modifiedBy?: Array<[string, ...string[]]>
   createdAt?: string

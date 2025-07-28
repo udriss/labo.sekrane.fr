@@ -19,7 +19,7 @@ import {
   EventDetailsDialog,
   DailyCalendarView 
 } from '@/components/calendar'
-import { EventState, EventType } from '@/types/calendar'
+import { EventState, EventType, TimeSlot } from '@/types/calendar'
 
 // Import des nouveaux composants refactorisés
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
@@ -35,6 +35,7 @@ import { useCalendarData } from '@/lib//hooks/useCalendarData'
 import { useCalendarEvents } from '@/lib//hooks/useCalendarEvents'
 import { useReferenceData } from '@/lib//hooks/useReferenceData'
 import { UserRole } from "@/types/global";
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 
 const TAB_INDICES = {
   DAILY: 0,
@@ -42,6 +43,11 @@ const TAB_INDICES = {
   LIST: 2,
 }
 
+interface TimeSlotUpdate {
+  action: 'add' | 'update' | 'delete';
+  timeSlot: Partial<TimeSlot> & { id?: string };
+}
+  
 export default function CalendarPage() {
   const { data: session, status } = useSession()
   
@@ -74,6 +80,12 @@ export default function CalendarPage() {
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   const { tpPresets } = useCalendarData()
 
+  // Fonction pour déterminer si l'utilisateur est le créateur d'un événement
+  const isCreator = (event: CalendarEvent): boolean => {
+    return event.createdBy === session?.user?.email || event.createdBy === session?.user?.id
+  }
+
+  
 
   // Fonction helper pour gérer localStorage de manière sûre
   const getStoredTabValue = (): number => {
@@ -144,9 +156,12 @@ export default function CalendarPage() {
   }
 
   const getTodayEvents = () => {
-    return events.filter(event => isSameDay(event.startDate, new Date()))
+    return events.filter(event => {
+      const activeSlots = getActiveTimeSlots(event)
+      // Vérifier si au moins un créneau actif est aujourd'hui
+      return activeSlots.some(slot => isSameDay(new Date(slot.startDate), new Date()))
+    })
   }
-
   const handleCreateTPEvent = () => {
     setCreateDialogOpen(true)
   }
@@ -162,9 +177,65 @@ export default function CalendarPage() {
     setEditDialogOpen(true)
   }
 
-  // Handler pour gérer les changements d'état (validation, annulation, déplacement)
-const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventState, reason?: string) => {
+
+// Handler pour gérer la proposition de nouveaux créneaux
+const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: string, state?: EventState) => {
   try {
+    console.log('Proposition de nouveaux créneaux pour l\'événement via handleMoveDate');
+
+    const response = await fetch(`/api/calendrier/move-event?id=${event.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state: state || 'MOVED',
+        eventId: event.id,
+        timeSlots,
+        reason: reason || '',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const updatedEventFromServer = data.updatedEvent;
+
+    // Si la modification est en attente, afficher un message à l'utilisateur
+    if (data.isPending) {
+      console.log(data.message);
+      alert('Votre demande de modification a été envoyée au créateur de l\'événement pour validation.');
+    } else {
+      console.log('Événement déplacé avec succès');
+    }
+
+    // Mettre à jour l'événement avec les données du serveur
+    setEvents((prevEvents: CalendarEvent[]) => 
+      prevEvents.map(e => 
+        e.id === event.id ? updatedEventFromServer : e
+      )
+    );
+
+    if (selectedEvent?.id === event.id) {
+      setSelectedEvent(updatedEventFromServer);
+    }
+
+  } catch (error) {
+    console.error('Erreur lors de la proposition de nouveaux créneaux:', error);
+    alert('Erreur lors de la modification de l\'événement');
+  }
+};
+
+// Handler pour gérer les changements d'état (validation, annulation, déplacement)
+const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventState, reason?: string, timeSlots?: any[]) => {
+  try {
+    // Si c'est un déplacement avec timeSlots, utiliser l'API move-event
+    if (newState === 'MOVED' && timeSlots && timeSlots.length > 0) {
+      return handleMoveDate(updatedEvent, timeSlots, reason, newState);
+    }
+
     // Mettre à jour l'état localement en attendant la confirmation de l'API
     setEvents((prevEvents: CalendarEvent[]) => 
       prevEvents.map(event => 
@@ -198,80 +269,126 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
     const data = await response.json();
     const updatedEventFromServer = data.updatedEvent;
 
-    // Mettre à jour l'état local avec les données renvoyées par le serveur
+
+    // Si la modification est en attente, afficher un message à l'utilisateur
+    if (data.isPending) {
+      // Vous pourriez ajouter un toast ou un message ici
+      console.log(data.message);
+    }
+
+    // Mettre à jour l'événement avec les données du serveur
     setEvents((prevEvents: CalendarEvent[]) => 
       prevEvents.map(event => 
-        event.id === updatedEventFromServer.id ? updatedEventFromServer : event
+        event.id === updatedEvent.id ? updatedEventFromServer : event
       )
     );
 
-    if (selectedEvent?.id === updatedEventFromServer.id) {
+    if (selectedEvent?.id === updatedEvent.id) {
       setSelectedEvent(updatedEventFromServer);
     }
 
-    // Afficher un message de succès selon l'état
-    const stateMessages: Record<string, string> = {
-      'VALIDATED': 'Événement validé avec succès',
-      'CANCELLED': 'Événement annulé',
-      'MOVED': 'Événement marqué comme déplacé',
-      'PENDING': 'Événement remis à valider',
-      'IN_PROGRESS': 'Événement en cours de préparation'
-    };
-    
-    const message = stateMessages[newState] || 'État de l\'événement modifié';
-    console.log(message);
-    
-    // Optionnel : afficher une notification ou un snackbar
-    // showNotification({ message, type: 'success' });
-    
   } catch (error) {
     console.error('Erreur lors du changement d\'état:', error);
-    // Recharger les événements en cas d'erreur pour garantir la cohérence
-    await fetchEvents();
+    // Rétablir l'état précédent en cas d'erreur
+    setEvents((prevEvents: CalendarEvent[]) => 
+      prevEvents.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      )
+    );
+    if (selectedEvent?.id === updatedEvent.id) {
+      setSelectedEvent(updatedEvent);
+    }
+  }
+};
+
+
+
+// Handler pour gérer la confirmation/rejet des modifications par le créateur
+const handleConfirmModification = async (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => {
+  try {
+    const response = await fetch(`/api/calendrier/confirm-modification?eventId=${event.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        modificationId,
+        action,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const updatedEventFromServer = data.updatedEvent;
+
+    // Mettre à jour l'événement avec les données du serveur
+    setEvents((prevEvents: CalendarEvent[]) => 
+      prevEvents.map(e => 
+        e.id === event.id ? updatedEventFromServer : e
+      )
+    );
+
+    if (selectedEvent?.id === event.id) {
+      setSelectedEvent(updatedEventFromServer);
+    }
+
+    console.log(data.message);
+
+  } catch (error) {
+    console.error('Erreur lors de la confirmation/rejet de modification:', error);
   }
 };
   
   // Handler pour sauvegarder les modifications
-  const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
-    if (!eventToEdit) return
-    console.log('Enregistrement des modifications pour l\'événement via handleSaveEdit')
-    try {
-      const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...eventToEdit,
-          ...updatedEvent
-        })
+const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
+  if (!eventToEdit) return;
+  console.log('Enregistrement des modifications pour l\'événement via handleSaveEdit');
+  
+  try {
+    // Extraire timeSlots séparément pour éviter la confusion
+    const { timeSlots, ...eventDataWithoutSlots } = updatedEvent;
+    
+    // Utiliser les timeSlots mis à jour s'ils existent, sinon garder les anciens
+    const finalTimeSlots = timeSlots || eventToEdit.timeSlots || [];
+    
+    console.log('TimeSlots à sauvegarder:', finalTimeSlots);
+
+    const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...eventDataWithoutSlots,
+        timeSlots: finalTimeSlots // Envoyer directement tous les timeSlots
       })
+    });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la modification')
-      }
-
-      const result = await response.json()
-      
-      // Afficher un message de succès avec le nombre de créneaux ajoutés
-      if (result.createdEvents && result.createdEvents.length > 0) {
-        console.log(`Événement modifié et ${result.createdEvents.length} créneaux supplémentaires ajoutés avec succès`)
-      } else {
-        console.log('Événement modifié avec succès')
-      }
-
-      // Rafraîchir la liste des événements
-      await fetchEvents()
-      
-      // Fermer le dialogue et réinitialiser
-      setEditDialogOpen(false)
-      setEventToEdit(null)
-      
-    } catch (error) {
-      console.error('Erreur lors de la modification:', error)
-      alert('Erreur lors de la modification de l\'événement')
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Erreur serveur:', errorData);
+      throw new Error('Erreur lors de la modification');
     }
+
+    const result = await response.json();
+    console.log('Réponse du serveur:', result);
+    console.log('Événement modifié avec succès');
+
+    // Rafraîchir la liste des événements
+    await fetchEvents();
+    
+    // Fermer le dialogue et réinitialiser
+    setEditDialogOpen(false);
+    setEventToEdit(null);
+    
+  } catch (error) {
+    console.error('Erreur lors de la modification:', error);
+    alert('Erreur lors de la modification de l\'événement');
   }
+};
 
   // Handler pour supprimer un événement
   const handleEventDelete = async (event: CalendarEvent) => {
@@ -329,8 +446,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
   }
 
 
-  
-console.log('session:', session)
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} 
@@ -478,6 +594,10 @@ console.log('session:', session)
     canEditEvent={canEditEvent}
     canValidateEvent={canValidateEvent()}
     onStateChange={handleStateChange}
+    onMoveDate={handleMoveDate}
+    onConfirmModification={handleConfirmModification}
+    isCreator={isCreator}
+    currentUserId={session?.user?.id || session?.user?.email}
     isMobile={isMobile}
   />
 </TabPanel>
@@ -491,7 +611,10 @@ console.log('session:', session)
           onEdit={selectedEvent && canEditEvent(selectedEvent) ? handleEventEdit : undefined}
           onDelete={selectedEvent && canEditEvent(selectedEvent) ? handleEventDelete : undefined}
           onStateChange={handleStateChange}
+          onMoveDate={handleMoveDate}
+          onConfirmModification={handleConfirmModification}
           userRole={userRole}
+          currentUserId={session?.user?.id || session?.user?.email}
           isMobile={isMobile}
           isTablet={isTablet}
         />
