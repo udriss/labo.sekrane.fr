@@ -63,6 +63,12 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-26.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-27.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json"
+    ],
+    "STATE_CHANGE": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json"
+    ],
+    "UPDATE_STATE": [
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json"
     ]
   },
   "dates": {

@@ -18,7 +18,7 @@ import {
   CheckCircle, Cancel, SwapHoriz, HourglassEmpty,
   Search, FilterList, Visibility, Edit, Delete,
   ExpandMore, ExpandLess, MoreVert, CalendarToday,
-  AccessTime, Room
+  AccessTime, Room, ManageHistory
 } from '@mui/icons-material'
 
 // Importer les types depuis le fichier partagé
@@ -60,7 +60,7 @@ const getStateIcon = (state: string | undefined) => {
     case 'CANCELLED':
       return <Cancel sx={{ fontSize: 20 }} />
     case 'IN_PROGRESS':
-      return <AccessTime sx={{ fontSize: 20 }} />
+      return <ManageHistory sx={{ fontSize: 20 }} />
     case 'MOVED':
       return <SwapHoriz sx={{ fontSize: 20 }} />
     default:
@@ -132,7 +132,7 @@ const EventsList: React.FC<EventsListProps> = ({
         }
       case 'IN_PROGRESS':
         return { 
-          icon: <AccessTime sx={{ fontSize: 20 }} />, 
+          icon: <ManageHistory sx={{ fontSize: 20 }} />, 
           color: 'info',
           label: 'En préparation' 
         }
@@ -700,7 +700,7 @@ const renderEventItem = (event: CalendarEvent) => {
                 </MenuItem>
                 <MenuItem value="IN_PROGRESS">
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <AccessTime fontSize="small" color="info" />
+                  <ManageHistory fontSize="small" color="primary" />
                   <span>En préparation</span>
                 </Stack>
                 </MenuItem>

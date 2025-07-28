@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { withAudit } from '@/lib/api/with-audit';
+import { is } from "date-fns/locale";
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
@@ -51,7 +52,8 @@ export async function GET(request: NextRequest) {
       name: className,
       type: 'custom',
       createdAt: user.updatedAt || user.createdAt,
-      createdBy: user.id
+      createdBy: user.id,
+      isCustom: true
     }));
 
     return NextResponse.json({ customClasses });

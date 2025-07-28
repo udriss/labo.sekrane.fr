@@ -47,7 +47,7 @@ import {
   HourglassEmpty,
   CalendarToday,
   MoreVert,
-  AccessTime
+  ManageHistory,
 } from '@mui/icons-material'
 import { format, isToday } from 'date-fns'
 import { fr, is } from 'date-fns/locale'
@@ -87,7 +87,7 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   const [validationDialog, setValidationDialog] = useState<{
     open: boolean
     event: CalendarEvent | null
-    action: 'cancel' | 'move' | null
+    action: 'cancel' | 'move' | 'validate' | 'in-progress' | 'other' | null
   }>({ open: false, event: null, action: null })
   const [validationReason, setValidationReason] = useState('')
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -108,8 +108,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
           }
         case 'IN_PROGRESS':
           return { 
-            icon: <AccessTime sx={{ fontSize: 20 }} />, 
-            color: 'info',
+            icon: <ManageHistory sx={{ fontSize: 20 }} />, 
+            color: 'primary',
             label: 'En préparation' 
           }
         case 'VALIDATED':
@@ -167,119 +167,131 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   }
 
   // Fonction pour ouvrir le dialog de validation
-  const openValidationDialog = (event: CalendarEvent, action: 'cancel' | 'move') => {
+  const openValidationDialog = (event: CalendarEvent, action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
     setValidationDialog({ open: true, event, action })
   }
 
-  const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
-}
 
-  const renderEventItem = (event: CalendarEvent) => {
-    const typeInfo = getEventTypeInfo(event.type)
-    const showEditDelete = canEditEvent && canEditEvent(event)
-    const showValidationActions = canValidateEvent && event.state === 'PENDING'
-    const isCancelled = event.state === 'CANCELLED'
-    const stateInfo = getStateInfo(event.state)
+const renderEventItem = (event: CalendarEvent): React.ReactNode => {
+  const typeInfo = getEventTypeInfo(event.type);
+  const showEditDelete = canEditEvent && canEditEvent(event);
+  // Modification : Afficher les actions de validation pour tous les états si l'utilisateur a les droits
+  const showValidationActions = canValidateEvent;
+  const isCancelled = event.state === 'CANCELLED';
+  const stateInfo = getStateInfo(event.state);
 
-      const menuItems = []
+  const menuItems: React.ReactNode[] = [];
 
-    // Ajouter les items de modification/suppression
-    if (showEditDelete && onEventEdit && event.state !== 'VALIDATED') {
-      menuItems.push(
-        <MenuItem 
-          key="edit"
-          onClick={() => {
-            onEventEdit(event)
-            setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <Edit fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Modifier</ListItemText>
-        </MenuItem>
-      )
-    }
-    
-    if (showEditDelete && onEventDelete) {
-      menuItems.push(
-        <MenuItem 
-          key="delete"
-          onClick={() => {
-            onEventDelete(event)
-            setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <Delete fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Supprimer</ListItemText>
-        </MenuItem>
-      )
-    }
-    
-    // Ajouter les items de validation
-    if (showValidationActions) {
-      menuItems.push(
-        <MenuItem 
-          key="validate"
-          onClick={() => {
-            handleStateChange(event, 'VALIDATED')
-            setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <CheckCircle fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText>Valider</ListItemText>
-        </MenuItem>,
-        
-        <MenuItem 
-          key="move"
-          onClick={() => {
-            openValidationDialog(event, 'move')
-            setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <SwapHoriz fontSize="small" color="info" />
-          </ListItemIcon>
-          <ListItemText>Déplacer</ListItemText>
-        </MenuItem>,
-        
-        <MenuItem 
-          key="cancel"
-          onClick={() => {
-            openValidationDialog(event, 'cancel')
-            setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <Cancel fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Annuler</ListItemText>
-        </MenuItem>
-      )
-    }
-
-    return (
-      <ListItem
-        key={event.id}
-        sx={{
-          opacity: isCancelled ? 0.6 : 1,
-          bgcolor: 'background.paper',
-          mb: 1,
-          borderRadius: 1,
-          border: 1,
-          borderColor: 'divider',
-          '&:hover': {
-            bgcolor: 'action.hover',
-          }
+  // Ajouter les items de modification/suppression
+  if (showEditDelete && onEventEdit) {
+    menuItems.push(
+      <MenuItem 
+        key="edit"
+        onClick={() => {
+          onEventEdit(event);
+          setAnchorEl(null);
         }}
+      >
+        <ListItemIcon>
+          <Edit fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Modifier</ListItemText>
+      </MenuItem>
+    );
+  }
+  
+  if (showEditDelete && onEventDelete) {
+    menuItems.push(
+      <MenuItem 
+        key="delete"
+        onClick={() => {
+          onEventDelete(event);
+          setAnchorEl(null);
+        }}
+      >
+        <ListItemIcon>
+          <Delete fontSize="small" color="error" />
+        </ListItemIcon>
+        <ListItemText>Supprimer</ListItemText>
+      </MenuItem>
+    );
+  }
+  
+// Ajouter les items de validation pour tous les états si l'utilisateur peut valider
+  if (showValidationActions) {
+    menuItems.push(
+      <MenuItem 
+        key="validate"
+        onClick={() => {
+          openValidationDialog(event, 'validate');
+          setAnchorEl(null);
+        }}
+        disabled={event.state === 'VALIDATED'} // Griser si l'état est déjà VALIDATED
+      >
+        <ListItemIcon>
+          <CheckCircle fontSize="small" color="success" />
+        </ListItemIcon>
+        <ListItemText>Valider</ListItemText>
+      </MenuItem>,
+      
+      <MenuItem 
+        key="move"
+        onClick={() => {
+          openValidationDialog(event, 'move');
+          setAnchorEl(null);
+        }}
+        disabled={event.state === 'MOVED'} // Griser si l'état est déjà MOVED
+      >
+        <ListItemIcon>
+          <SwapHoriz fontSize="small" color="primary" />
+        </ListItemIcon>
+        <ListItemText>Déplacer</ListItemText>
+      </MenuItem>,
+
+      <MenuItem 
+        key="in-progress"
+        onClick={() => {
+          openValidationDialog(event, 'in-progress');
+          setAnchorEl(null);
+        }}
+        disabled={event.state === 'IN_PROGRESS'} // Griser si l'état est déjà IN_PROGRESS
+      >
+        <ListItemIcon>
+          <ManageHistory fontSize="small" color="info" />
+        </ListItemIcon>
+        <ListItemText>En préparation</ListItemText>
+      </MenuItem>,
+
+      <MenuItem 
+        key="cancel"
+        onClick={() => {
+          openValidationDialog(event, 'cancel');
+          setAnchorEl(null);
+        }}
+        disabled={event.state === 'CANCELLED'} // Griser si l'état est déjà CANCELLED
+      >
+        <ListItemIcon>
+          <Cancel fontSize="small" color="error" />
+        </ListItemIcon>
+        <ListItemText>Annuler</ListItemText>
+      </MenuItem>
+    );
+  }
+
+  return (
+    <ListItem
+      key={event.id}
+      sx={{
+        opacity: isCancelled ? 0.6 : 1,
+        bgcolor: 'background.paper',
+        mb: 1,
+        borderRadius: 1,
+        border: 1,
+        borderColor: 'divider',
+        '&:hover': {
+          bgcolor: 'action.hover',
+        }
+      }}
       secondaryAction={
         <Stack direction="row" spacing={0.5}>
           {/* Bouton Voir détails - toujours visible */}
@@ -315,163 +327,133 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
           )}
         </Stack>
       }
-
-      >
-        <ListItemIcon>
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            badgeContent={stateInfo && (
-              <Avatar 
-                sx={{ 
-                  width: 22, 
-                  height: 22, 
-                  bgcolor: `${stateInfo.color}.main`,
-                  border: '2px solid white'
-                }}
-              >
-                {React.cloneElement(stateInfo.icon, { sx: { fontSize: 14 } })}
-              </Avatar>
-            )}
-          >
+    >
+      <ListItemIcon>
+        <Badge
+          overlap="circular"
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          badgeContent={stateInfo && (
             <Avatar 
               sx={{ 
-                bgcolor: isCancelled ? 'grey.500' : typeInfo.color, 
-                width: 44, 
-                height: 44 
+                width: 22, 
+                height: 22, 
+                bgcolor: `${stateInfo.color}.main`,
+                border: '2px solid white'
               }}
             >
-              {typeInfo.icon}
+              {React.cloneElement(stateInfo.icon, { sx: { fontSize: 14 } })}
             </Avatar>
-          </Badge>
-        </ListItemIcon>
-{/* Colonne Ressources */}
-  <Box
-    component="div"
-    sx={{
-      minwidth: 200,
-      width: 'auto',
-      flexShrink: 0,   // comme TableCell
-      pl: 2,           // padding gauche si besoin
-      borderLeft: 1,   // si c’était la bordure du TableCell
-      borderColor: 'divider'
-    }}
-  >
-  <Stack spacing={0.5}>
-
-{/* Option 1 - Avec icônes et mise en page alignée 
-<Box sx={{ 
-  display: 'flex', 
-  alignItems: isMobile ? 'flex-start' : 'center', 
-  gap: isMobile ? 1 : 2,
-  py: 0.5,
-  borderLeft: 3,
-  borderColor: 'primary.main',
-  flexDirection: isMobile ? 'column' : 'row',
-  pl: 1.5,
-  mb: 1,
-  width: '100%',
-}}>
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
-    <Typography sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-      {format(event.startDate, 'EEEE d MMMM', { locale: fr })}
-    </Typography>
-  </Box>
-  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-    <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
-    <Typography color="text.secondary" sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-      {format(event.startDate, 'HH:mm')} - {format(event.endDate, 'HH:mm')}
-    </Typography>
-  </Box>
-</Box>
-*/}
-    {/* Matériel et Réactifs */}
-    {/* Chips pour matériels et réactifs */}
-    <Stack 
-    sx ={{
-      display: 'flex',
-      alignItems: isMobile ? 'flex-start' : 'center',
-      gap: 1,
-      flexWrap: 'wrap',
-      flexDirection: isMobile ? 'column' : 'row',
-    }}
-    >
-      {event.materials && event.materials.length > 0 && (
-        <Chip
-          size="small"
-          label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
-          variant='outlined'
-          sx = {{ fontWeight: 'bold' }}
-        />
-      )}
-      {event.chemicals && event.chemicals.length > 0 && (
-        <Chip
-          size="small"
-          label={`${event.chemicals.length} réactif${event.chemicals.length > 1 ? 's' : ''}`}
-          color="secondary"
-          variant='outlined'
-          sx = {{ fontWeight: 'bold' }}
-        />
-      )}
-    </Stack>
-
-{/* Documents - Liste complète */}
-{event.files && event.files.length > 0 && (
-  <Box>
-    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-      📎 {event.files.length} document{event.files.length > 1 ? 's' : ''}
-    </Typography>
-    <Stack spacing={0.3} sx={{ ml: 1 }}>
-      {event.files.map((file, index) => {
-        // Construire l'URL de manière sûre
-        const fileUrl = file?.fileUrl
-        const href = fileUrl 
-          ? (fileUrl.startsWith('/uploads/') 
-              ? `/api/calendrier/files?path=${encodeURIComponent(fileUrl)}`
-              : fileUrl)
-          : '#'
-        
-        return (
-          <Typography
-            key={index}
-            component="a"
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="caption"
-            sx={{
-              color: fileUrl ? 'primary.main' : 'text.disabled',
-              textDecoration: 'none',
-              '&:hover': {
-                textDecoration: fileUrl ? 'underline' : 'none'
-              },
-              cursor: fileUrl ? 'pointer' : 'default',
-              display: 'block',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%'
-            }}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!fileUrl) {
-                e.preventDefault()
-              }
+          )}
+        >
+          <Avatar 
+            sx={{ 
+              bgcolor: isCancelled ? 'grey.500' : typeInfo.color, 
+              width: 44, 
+              height: 44 
             }}
           >
-            • {file?.fileName || 'Document sans nom'}
-          </Typography>
-        )
-      })}
-    </Stack>
-  </Box>
-)}
-  </Stack>
-</Box>
-        </ListItem>
-    )
-  }
+            {typeInfo.icon}
+          </Avatar>
+        </Badge>
+      </ListItemIcon>
+      {/* Colonne Ressources */}
+      <Box
+        component="div"
+        sx={{
+          minwidth: 200,
+          width: 'auto',
+          flexShrink: 0,
+          pl: 2,
+          borderLeft: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Stack spacing={0.5}>
+          {/* Matériel et Réactifs */}
+          {/* Chips pour matériels et réactifs */}
+          <Stack 
+            sx={{
+              display: 'flex',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+              flexDirection: isMobile ? 'column' : 'row',
+            }}
+          >
+            {event.materials && event.materials.length > 0 && (
+              <Chip
+                size="small"
+                label={`${event.materials.length} matériel${event.materials.length > 1 ? 's' : ''}`}
+                variant='outlined'
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
+            {event.chemicals && event.chemicals.length > 0 && (
+              <Chip
+                size="small"
+                label={`${event.chemicals.length} réactif${event.chemicals.length > 1 ? 's' : ''}`}
+                color="secondary"
+                variant='outlined'
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
+          </Stack>
+
+          {/* Documents - Liste complète */}
+          {event.files && event.files.length > 0 && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                📎 {event.files.length} document{event.files.length > 1 ? 's' : ''}
+              </Typography>
+              <Stack spacing={0.3} sx={{ ml: 1 }}>
+                {event.files.map((file, index) => {
+                  const fileUrl = file?.fileUrl
+                  const href = fileUrl 
+                    ? (fileUrl.startsWith('/uploads/') 
+                        ? `/api/calendrier/files?path=${encodeURIComponent(fileUrl)}`
+                        : fileUrl)
+                    : '#'
+                  
+                  return (
+                    <Typography
+                      key={index}
+                      component="a"
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="caption"
+                      sx={{
+                        color: fileUrl ? 'primary.main' : 'text.disabled',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: fileUrl ? 'underline' : 'none'
+                        },
+                        cursor: fileUrl ? 'pointer' : 'default',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!fileUrl) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      • {file?.fileName || 'Document sans nom'}
+                    </Typography>
+                  )
+                })}
+              </Stack>
+            </Box>
+          )}
+        </Stack>
+      </Box>
+    </ListItem>
+  );
+}
 
   return (
     <>
@@ -581,71 +563,113 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
       </Paper>
 
       {/* Dialog de confirmation pour annulation/déplacement */}
-      <Dialog 
-        fullScreen={isMobile}
-        open={validationDialog.open} 
-        onClose={() => {
-          setValidationDialog({ open: false, event: null, action: null })
-          setValidationReason('')
-        }}
-        maxWidth="sm"
+{/* Dialog de confirmation pour annulation/déplacement/validation/préparation */}
+<Dialog 
+  fullScreen={isMobile}
+  open={validationDialog.open} 
+  onClose={() => {
+    setValidationDialog({ open: false, event: null, action: null })
+    setValidationReason('')
+  }}
+  maxWidth="sm"
+  fullWidth
+>
+  <DialogTitle>
+    {validationDialog.action === 'cancel' ? 'Annuler l\'événement' : 
+     validationDialog.action === 'move' ? 'Déplacer l\'événement' :
+     validationDialog.action === 'validate' ? 'Valider l\'événement' :
+     validationDialog.action === 'in-progress' ? 'Marquer en préparation' : 
+     'Action non reconnue'
+    }
+  </DialogTitle>
+  <DialogContent>
+    <Stack spacing={2}>
+      <Typography variant="body2">
+        {validationDialog.action === 'cancel' 
+          ? 'Êtes-vous sûr de vouloir annuler cet événement ?'
+          : validationDialog.action === 'move' 
+            ? 'Êtes-vous sûr de vouloir marquer cet événement comme déplacé ?'
+            : validationDialog.action === 'validate'
+              ? 'Êtes-vous sûr de vouloir valider cet événement ?'
+              : validationDialog.action === 'in-progress'
+                ? 'Êtes-vous sûr de vouloir marquer cet événement comme étant en préparation ?'
+                : 'Action non reconnue. Veuillez réessayer.'}
+      </Typography>
+      <Typography variant="body2" fontWeight="bold">
+        {validationDialog.event?.title}
+      </Typography>
+      <TextField
+        autoFocus
+        margin="dense"
+        label="Raison (optionnel)"
         fullWidth
-      >
-        <DialogTitle>
-          {validationDialog.action === 'cancel' ? 'Annuler l\'événement' : 
-           validationDialog.action === 'move' ? 'Déplacer l\'événement' : ''}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2}>
-            <Typography variant="body2">
-              {validationDialog.action === 'cancel' 
-                ? 'Êtes-vous sûr de vouloir annuler cet événement ?'
-                : 'Êtes-vous sûr de vouloir marquer cet événement comme déplacé ?'
-              }
-            </Typography>
-            <Typography variant="body2" fontWeight="bold">
-              {validationDialog.event?.title}
-            </Typography>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Raison (optionnel)"
-              fullWidth
-              multiline
-              rows={3}
-              value={validationReason}
-              onChange={(e) => setValidationReason(e.target.value)}
-              placeholder={
-                validationDialog.action === 'cancel' 
-                  ? 'Indiquez la raison de l\'annulation...'
-                  : 'Indiquez la raison du déplacement...'
-              }
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => {
-              setValidationDialog({ open: false, event: null, action: null })
-              setValidationReason('')
-            }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={() => {
-              if (validationDialog.event && validationDialog.action) {
-                const newState = validationDialog.action === 'cancel' ? 'CANCELLED' : 'MOVED'
-                handleStateChange(validationDialog.event, newState as EventState, validationReason)
-              }
-            }}
-            variant="contained"
-            color={validationDialog.action === 'cancel' ? 'error' : 'primary'}
-          >
-            Confirmer
-          </Button>
-        </DialogActions>
-      </Dialog>
+        multiline
+        rows={3}
+        value={validationReason}
+        onChange={(e) => setValidationReason(e.target.value)}
+        placeholder={
+          validationDialog.action === 'cancel' 
+            ? 'Indiquez la raison de l\'annulation...'
+            : validationDialog.action === 'move' 
+              ? 'Indiquez la raison du déplacement...'
+              : validationDialog.action === 'validate'
+                ? 'Indiquez la raison de la validation...'
+                : validationDialog.action === 'in-progress'
+                  ? 'Indiquez la raison de la mise en préparation...'
+                  : 'Indiquez une raison...'
+        }
+      />
+    </Stack>
+  </DialogContent>
+  <DialogActions>
+    <Button 
+      onClick={() => {
+        setValidationDialog({ open: false, event: null, action: null })
+        setValidationReason('')
+      }}
+    >
+      Annuler
+    </Button>
+    <Button
+      onClick={() => {
+        if (validationDialog.event && validationDialog.action) {
+          let newState: EventState;
+          switch (validationDialog.action) {
+            case 'cancel':
+              newState = 'CANCELLED';
+              break;
+            case 'move':
+              newState = 'MOVED';
+              break;
+            case 'validate':
+              newState = 'VALIDATED';
+              break;
+            case 'in-progress':
+              newState = 'IN_PROGRESS';
+              break;
+            default:
+              return; // Ne rien faire si l'action n'est pas reconnue
+          }
+          handleStateChange(validationDialog.event, newState, validationReason);
+        }
+      }}
+      variant="contained"
+      color={
+        validationDialog.action === 'cancel' 
+          ? 'error' 
+          : validationDialog.action === 'move'
+            ? 'primary'
+            : validationDialog.action === 'validate'
+              ? 'success'
+              : validationDialog.action === 'in-progress'
+                ? 'info'
+                : 'warning'
+      }
+    >
+      Confirmer
+    </Button>
+  </DialogActions>
+</Dialog>
     </>
   )
 }

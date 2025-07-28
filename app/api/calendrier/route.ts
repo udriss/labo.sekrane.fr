@@ -20,6 +20,7 @@ interface Chemical {
   unit?: string
   quantityPrevision?: number
   minQuantity?: number
+  isCustom?: boolean
 }
 
 interface ChemicalInventoryFile {
@@ -485,7 +486,7 @@ export const PUT = withAudit(
     const canEdit = userRole === 'ADMIN' || 
                    userRole === 'ADMINLABO' || 
                    event.createdBy === userId
-
+                   
     if (!canEdit) {
       return NextResponse.json(
         { error: 'Vous n\'avez pas la permission de modifier cet événement' },
@@ -849,7 +850,7 @@ export const PATCH = withAudit(
   {
     module: 'CALENDAR',
     entity: 'event',
-    action: 'STATE_CHANGE',
+    action: 'UPDATE_STATE',
     extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
     extractEntityIdFromResponse: (response) => response?.id,
     customDetails: (req, response) => ({

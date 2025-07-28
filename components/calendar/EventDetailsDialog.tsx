@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { format } from "date-fns"
-import { fr } from "date-fns/locale"
+import { fr, is } from "date-fns/locale"
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, Box, Grid, Typography, Chip, Stack, Divider,
@@ -18,7 +18,9 @@ import {
   Snackbar,
   TextField,
   Alert as MuiAlert,
-  AlertTitle
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material'
 import {
   Timeline, TimelineItem, TimelineSeparator,
@@ -30,15 +32,13 @@ import {
   History, Person, PictureAsPdf, Description, Image, Build,
   InsertDriveFile, OpenInNew, Download, CheckCircle, Cancel, SwapHoriz,
   HourglassEmpty, CalendarToday, AccessTime, Room, School, HourglassTop,
-  InfoOutlined,
+  InfoOutlined, ManageHistory
 } from '@mui/icons-material'
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { UserRole } from "@/types/global";
 import { SiMoleculer } from "react-icons/si";
-
-
 import { useSession } from 'next-auth/react'
-import { cp } from 'fs'
+
 
 interface DocumentFile {
   fileName: string
@@ -54,7 +54,7 @@ interface EventDetailsDialogProps {
   onClose: () => void
   onEdit?: (event: CalendarEvent) => void
   onDelete?: (event: CalendarEvent) => void
-  onStateChange?: (event: CalendarEvent) => void
+  onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
   userRole?: UserRole
   isMobile?: boolean
   isTablet?: boolean
@@ -133,7 +133,7 @@ const formatFileSize = (bytes?: number): string => {
 // Composant pour afficher une carte de document - VERSION CORRIGÉE
 const DocumentCard: React.FC<{ 
   document: DocumentFile,
-  onOpenError?: (error: string) => void 
+  onOpenError?: (error: string) => void
 }> = ({ document, onOpenError }) => {
   const fileType = document.fileType || getFileType(document.fileName)
   const fileInfo = getFileTypeInfo(fileType)
@@ -395,15 +395,16 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     isConsecutive: boolean
   }>>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   // Récupérer les informations de session pour le rôle de l'utilisateur
   const { data: session } = useSession()
 
   // Vérifier si l'utilisateur a le droit de modifier ou supprimer l'événement
   const [validationDialog, setValidationDialog] = useState<{
     open: boolean
-    action: 'validate' | 'cancel' | 'move' | null
-  }>({ open: false, action: null })
+    event: CalendarEvent | null
+    action: 'cancel' | 'move' | 'validate' | 'in-progress' | 'other' | null
+  }>({ open: false, event: null, action: null })
+  
   const [validationReason, setValidationReason] = useState('')
 
     // Vérifier si l'utilisateur peut valider
@@ -451,36 +452,17 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     return documents
   }
 
-    // Fonction pour gérer le changement d'état
-  const handleStateChange = async (newState: EventState, reason?: string) => {
-    try {
-      const response = await fetch(`/api/calendrier?id=${event?.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          state: newState,
-          reason
-        })
-      })
+  // Fonction pour gérer le changement d'état
+  const handleStateChange = (newState: EventState, reason?: string) => {
+    if (!event) return;
 
-      if (response.ok) {
-        const updatedEvent = await response.json()
-        if (onStateChange) {
-          onStateChange(updatedEvent)
-        }
-        setValidationDialog({ open: false, action: null })
-        setValidationReason('')
-        onClose()
-      } else {
-        console.error('Erreur lors du changement d\'état')
-      }
-    } catch (error) {
-      console.error('Erreur:', error)
+    if (onStateChange) {
+      onStateChange(event, newState, reason);
     }
-  }
-
+    setValidationDialog({ open: false, action: null, event: null });
+    setValidationReason('');
+    onClose();
+  };
 useEffect(() => {
   const fetchUsersAndPrepareTimeline = async () => {
     if (!event) return
@@ -587,6 +569,9 @@ useEffect(() => {
   }
 }, [event, open])
 
+ const openValidationDialog = (event: CalendarEvent, action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
+    setValidationDialog({ open: true, event, action })
+  }
   // Fonction helper pour formater les dates en toute sécurité
   const formatDate = (dateString: string) => {
     try {
@@ -659,7 +644,7 @@ useEffect(() => {
                     event.state === 'VALIDATED' ? <CheckCircle /> :
                     event.state === 'CANCELLED' ? <Cancel /> :
                     event.state === 'MOVED' ? <SwapHoriz /> :
-                    event.state === 'IN_PROGRESS' ? <AccessTime /> :
+                    event.state === 'IN_PROGRESS' ? <ManageHistory /> :
                     event.state === 'PENDING' ? <History /> :
                     undefined
                   }
@@ -804,7 +789,7 @@ useEffect(() => {
         {/* Table combinée pour Matériel et Réactifs chimiques */}
         <TableContainer 
           sx={{ mt: 2,
-            maxWidth: 400,
+            maxWidth: 600,
             margin: '0 auto',
           }}>
           <Table size="small" sx={{ minWidth: 300 }}>
@@ -1005,39 +990,64 @@ useEffect(() => {
         </TableContainer>
       </Box>
         {/* Alert pour les réactifs personnalisés */}
-        {event.chemicals && event.chemicals.some(c => 
-          typeof c === 'object' && c.isCustom
+        {event.chemicals && event.chemicals.some(c =>
+          typeof c === 'object' && (c.isCustom || c.id?.endsWith('_CUSTOM'))
         ) && (
-          <MuiAlert 
-            severity="info" 
-            sx={{ 
-              mt: 2, 
-              width: 'auto',
-              maxWidth: 400,
-              margin: '16px auto 0'
-            }}
-            icon={<InfoOutlined />}
-          >
-            <Typography variant="body2">
-              {(() => {
-                const customChemicals = event.chemicals.filter(c => 
-                  typeof c === 'object' && c.isCustom
-                )
-                const customNames = customChemicals.map(c => 
-                  typeof c === 'object' ? c.name : ''
-                ).filter(Boolean)
-                
-                if (customNames.length === 1) {
-                  return `Le réactif "${customNames[0]}" n'est pas inventorié.`
-                } else {
-                  return `${customNames.length} réactifs ne sont pas inventoriés : ${customNames.join(', ')}.`
-                }
-              })()}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Le laboratoire sera informé de cette demande personnalisée.
-            </Typography>
-          </MuiAlert>
+<MuiAlert
+      severity="info" 
+      sx={{
+        mt: 2,
+        width: 'auto',
+        maxWidth: 600,
+        margin: '16px auto 0'
+      }}
+      icon={<InfoOutlined />}
+    >
+      {(() => {
+        // La logique pour trouver les réactifs custom non inventoriés
+        const customChemicals = event.chemicals.filter(c =>
+          // Garde la vérification de type au cas où 'c' ne serait pas un objet valide
+          typeof c === 'object' && (c.isCustom || c.id?.endsWith('_CUSTOM')) // Correction de la condition CUSTOM ici
+        );
+
+        const customNames = customChemicals.map(c =>
+          typeof c === 'object' ? c.name : ''
+        ).filter(Boolean); // .filter(Boolean) retire les chaînes vides ou null/undefined
+
+        if (customNames.length === 1) {
+          // Cas où il y a un seul réactif custom non inventorié
+          return (
+            <>
+              <Typography variant="body2">
+                Le réactif "{customNames[0]}" n'est pas inventorié.
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Le laboratoire sera informé de cette demande personnalisée.
+              </Typography>
+            </>
+          );
+        } else {
+          // Cas où il y a plusieurs réactifs custom non inventoriés
+          return (
+            <>
+              <Typography variant="body2">
+                {customNames.length} réactifs ne sont pas inventoriés :
+              </Typography>
+              <List dense sx={{ mt: 0, p: 0, gap:0 }}> {/* 'dense' pour une liste plus compacte, 'p:0' pour retirer le padding par défaut de la List */}
+                {customNames.map((name, index) => (
+                  <ListItem key={name || index} disablePadding> {/* 'disablePadding' pour retirer le padding par défaut du ListItem */}
+                    <ListItemText primary={name} />
+                  </ListItem>
+                ))}
+              </List>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Le laboratoire sera informé de ces demandes personnalisées.
+              </Typography>
+            </>
+          );
+        }
+      })()}
+    </MuiAlert>
         )}
     </Box>
   </>
@@ -1316,7 +1326,7 @@ useEffect(() => {
                   {change.toState === 'CANCELLED' && <Cancel />}
                   {change.toState === 'MOVED' && <SwapHoriz />}
                   {change.toState === 'PENDING' && <HourglassEmpty />}
-                  {change.toState === 'IN_PROGRESS' && <AccessTime />}
+                  {change.toState === 'IN_PROGRESS' && <ManageHistory />}
                 </TimelineDot>
                 {event.stateChanger && index < event.stateChanger.length - 1 && <TimelineConnector />}
               </TimelineSeparator>
@@ -1347,90 +1357,128 @@ useEffect(() => {
       </DialogContent>
       
       <DialogActions>
-
-          {/* Boutons pour les laborantins */}
-          <Box sx ={{
-              display: 'flex',
-              gap: 1,
-              flexDirection: 'row',
-              justifyContent: isMobile || isTablet ? 'space-around' : 'flex-end',
-              width: '100%',
-            }}
-          >
+        <Box sx={{
+          display: 'flex',
+          gap: 1,
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
+          alignContent: 'center',
+          width: '100%',
+        }}>
           <Button onClick={onClose}>Fermer</Button>
 
-          {canValidate && event?.state === 'PENDING' && (
-          <Box sx ={{
-              display: 'flex',
-              gap: 1,
-              flexDirection: isMobile ? 'column' : 'row',
-              justifyContent: 'space-around',
-            }}
-          >
-              <Button
-                onClick={() => handleStateChange('VALIDATED')}
-                variant="contained"
-                color="success"
-                startIcon={<CheckCircle />}
-              >
-                Valider TP
-              </Button>
-              <Button
-                onClick={() => setValidationDialog({ open: true, action: 'move' })}
-                variant="outlined"
-                startIcon={<SwapHoriz />}
-              >
-                Déplacer TP
-              </Button>
-              <Button
-                onClick={() => setValidationDialog({ open: true, action: 'cancel' })}
-                variant="outlined"
-                color="error"
-                startIcon={<Cancel />}
-              >
-                Annuler TP
-              </Button>
-            </Box>
-          )}
-        
+          {canValidate && (
+            <Grid
+              container 
+              spacing={1}
+              sx={{
+                maxWidth: isMobile || isTablet ? 200 : 400,
+                width: isMobile || isTablet ? 200 : 'auto',
+                margin: isMobile ? '0 auto' : '0 0',
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+              }}
+            >
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Button
+                  onClick={() => openValidationDialog(event, 'in-progress')}
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<ManageHistory />}
+                  fullWidth
+                  disabled={event.state === 'IN_PROGRESS'}
+                >
+                  En préparation
+                </Button>
+              </Grid>
 
-        {/* Boutons existants pour modification/suppression */}
-          <Box sx ={{
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Button
+                  onClick={() => openValidationDialog(event, 'move')}
+                  variant="outlined"
+                  startIcon={<SwapHoriz />}
+                  fullWidth
+                  disabled={event.state === 'MOVED'}
+                >
+                  Déplacer TP
+                </Button>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Button
+                  onClick={() => openValidationDialog(event, 'cancel')}
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Cancel />}
+                  fullWidth
+                  disabled={event.state === 'CANCELLED'}
+                >
+                  Annuler TP
+                </Button>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Button
+                  onClick={() => openValidationDialog(event, 'validate')}
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckCircle />}
+                  fullWidth
+                  disabled={event.state === 'VALIDATED'}
+                >
+                  Valider TP
+                </Button>
+              </Grid>
+            </Grid>
+          )}
+
+          <Grid
+            container 
+            spacing={1}
+            sx={{
+              maxWidth: 200,
+              width: isMobile || isTablet ? 200 : 'auto',
+              margin: isMobile ? '0 auto' : '0 0',
               display: 'flex',
-              gap: 1,
-              flexDirection: isMobile ? 'column' : 'row',
-              justifyContent: 'space-around',
+              flexDirection: isMobile ? 'column' : 'column',
+              justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
             }}
           >
-        {onEdit && (
-          <Button 
-            onClick={() => {
-              onEdit(event)
-              onClose()
-            }}
-            variant="outlined"
-            startIcon={<Edit />}
-          >
-            Modifier
-          </Button>
-        )}
-        {onDelete && (
-          <Button 
-            onClick={() => {
-              onDelete(event)
-              onClose()
-            }}
-            variant="outlined"
-            color="error"
-            startIcon={<Delete />}
-          >
-            Supprimer
-          </Button>
-        )}
-        </Box>
+            <Grid size={{ xs: 12, sm: 12 }}>
+              {onEdit && (
+                <Button 
+                  onClick={() => {
+                    onEdit(event)
+                    onClose()
+                  }}
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  fullWidth
+                >
+                  Modifier
+                </Button>
+              )}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 12 }}>
+              {onDelete && (
+                <Button 
+                  onClick={() => {
+                    onDelete(event)
+                    onClose()
+                  }}
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Delete />}
+                  fullWidth
+                >
+                  Supprimer
+                </Button>
+              )}
+            </Grid>
+          </Grid>
         </Box>
       </DialogActions>
-
       {/* Snackbar pour les messages d'erreur */}
       <Snackbar
         open={!!errorMessage}
@@ -1449,45 +1497,110 @@ useEffect(() => {
     </Dialog>
 
       {/* Dialog de confirmation pour annulation/déplacement */}
-      <Dialog 
-        fullScreen={isMobile}
-        open={validationDialog.open} 
-        onClose={() => setValidationDialog({ open: false, action: null })}
-        maxWidth="sm"
+{/* Dialog de confirmation pour annulation/déplacement/validation/préparation */}
+<Dialog 
+  fullScreen={isMobile}
+  open={validationDialog.open} 
+  onClose={() => {
+    setValidationDialog({ open: false, event: null, action: null })
+    setValidationReason('');
+  }}
+  maxWidth="sm"
+  fullWidth
+>
+  <DialogTitle>
+    {validationDialog.action === 'cancel' ? 'Annuler le TP' : 
+     validationDialog.action === 'move' ? 'Déplacer le TP' :
+     validationDialog.action === 'validate' ? 'Valider le TP' :
+     validationDialog.action === 'in-progress' ? 'Marquer en préparation' : 
+     'Action non reconnue'}
+  </DialogTitle>
+  <DialogContent>
+    <Stack spacing={2}>
+      <Typography variant="body2">
+        {validationDialog.action === 'cancel' 
+          ? 'Êtes-vous sûr de vouloir annuler cet événement ?'
+          : validationDialog.action === 'move' 
+            ? 'Êtes-vous sûr de vouloir marquer cet événement comme déplacé ?'
+            : validationDialog.action === 'validate'
+              ? 'Êtes-vous sûr de vouloir valider cet événement ?'
+              : validationDialog.action === 'in-progress'
+                ? 'Êtes-vous sûr de vouloir marquer cet événement comme étant en préparation ?'
+                : 'Action non reconnue. Veuillez réessayer.'}
+      </Typography>
+      <Typography variant="body2" fontWeight="bold">
+        {event.title}
+      </Typography>
+      <TextField
+        autoFocus
+        margin="dense"
+        label="Raison (optionnel)"
         fullWidth
-      >
-        <DialogTitle>
-          {validationDialog.action === 'cancel' ? 'Annuler le TP' : 
-           validationDialog.action === 'move' ? 'Déplacer le TP' : ''}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Raison (optionnel)"
-            fullWidth
-            multiline
-            rows={3}
-            value={validationReason}
-            onChange={(e) => setValidationReason(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setValidationDialog({ open: false, action: null })}>
-            Annuler
-          </Button>
-          <Button
-            onClick={() => {
-              const newState = validationDialog.action === 'cancel' ? 'CANCELLED' : 'MOVED'
-              handleStateChange(newState, validationReason)
-            }}
-            variant="contained"
-            color={validationDialog.action === 'cancel' ? 'error' : 'primary'}
-          >
-            Confirmer
-          </Button>
-        </DialogActions>
-      </Dialog>
+        multiline
+        rows={3}
+        value={validationReason}
+        onChange={(e) => setValidationReason(e.target.value)}
+        placeholder={
+          validationDialog.action === 'cancel' 
+            ? 'Indiquez la raison de l\'annulation...'
+            : validationDialog.action === 'move' 
+              ? 'Indiquez la raison du déplacement...'
+              : validationDialog.action === 'validate'
+                ? 'Indiquez la raison de la validation...'
+                : validationDialog.action === 'in-progress'
+                  ? 'Indiquez la raison de la mise en préparation...'
+                  : 'Indiquez une raison...'
+        }
+      />
+    </Stack>
+  </DialogContent>
+  <DialogActions>
+    <Button 
+      onClick={() => {
+        setValidationDialog({ open: false, event: null, action: null })
+        setValidationReason('');
+      }}
+    >
+      Annuler
+    </Button>
+    <Button
+      onClick={() => {
+        let newState: EventState;
+        switch (validationDialog.action) {
+          case 'cancel':
+            newState = 'CANCELLED';
+            break;
+          case 'move':
+            newState = 'MOVED';
+            break;
+          case 'validate':
+            newState = 'VALIDATED';
+            break;
+          case 'in-progress':
+            newState = 'IN_PROGRESS';
+            break;
+          default:
+            return; // Ne rien faire si l'action n'est pas reconnue
+        }
+        handleStateChange(newState, validationReason);
+      }}
+      variant="contained"
+      color={
+        validationDialog.action === 'cancel' 
+          ? 'error' 
+          : validationDialog.action === 'move'
+            ? 'primary'
+            : validationDialog.action === 'validate'
+              ? 'success'
+              : validationDialog.action === 'in-progress'
+                ? 'info'
+                : 'warning'
+      }
+    >
+      Confirmer
+    </Button>
+  </DialogActions>
+</Dialog>
   </>
   )
 }

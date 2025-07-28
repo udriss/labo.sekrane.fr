@@ -9,7 +9,7 @@ import { fr } from "date-fns/locale"
 import { isSameDay } from "date-fns"
 import { useSession } from "next-auth/react"
 import { usePersistedTab } from '@/lib/hooks/usePersistedTab'
-
+import { ViewWeek, ListAlt, CalendarToday } from '@mui/icons-material'
 // Import des composants existants
 import {
   CalendarStats,
@@ -19,6 +19,7 @@ import {
   EventDetailsDialog,
   DailyCalendarView 
 } from '@/components/calendar'
+import { EventState, EventType } from '@/types/calendar'
 
 // Import des nouveaux composants refactorisés
 import { CalendarHeader } from '@/components/calendar/CalendarHeader'
@@ -162,46 +163,78 @@ export default function CalendarPage() {
   }
 
   // Handler pour gérer les changements d'état (validation, annulation, déplacement)
-  const handleStateChange = async (updatedEvent: CalendarEvent) => {
-    try {
-      // Mettre à jour localement l'état des événements
-      setEvents((prevEvents: CalendarEvent[]) => 
-        prevEvents.map(event => 
-          event.id === updatedEvent.id ? updatedEvent : event
-        )
+const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventState, reason?: string) => {
+  try {
+    // Mettre à jour l'état localement en attendant la confirmation de l'API
+    setEvents((prevEvents: CalendarEvent[]) => 
+      prevEvents.map(event => 
+        event.id === updatedEvent.id ? { ...event, state: newState } : event
       )
-      
-      // Mettre à jour l'événement sélectionné si c'est celui qui a été modifié
-      if (selectedEvent?.id === updatedEvent.id) {
-        setSelectedEvent(updatedEvent)
-      }
+    );
+    
+    console.log('Enregistrement des modifications pour l\'événement via handleStateChange')
 
-      // Afficher un message de succès selon l'état
-      const stateMessages: Record<string, string> = {
-        'VALIDATED': 'Événement validé avec succès',
-        'CANCELLED': 'Événement annulé',
-        'MOVED': 'Événement marqué comme déplacé',
-        'PENDING': 'Événement remis à valider',
-        'IN_PROGRESS': 'Événement en cours de préparation'
-      }
-      
-      const message = stateMessages[updatedEvent.state || ''] || 'État de l\'événement modifié'
-      console.log(message)
-      
-      // Optionnel : afficher une notification ou un snackbar
-      // showNotification({ message, type: 'success' })
-      
-    } catch (error) {
-      console.error('Erreur lors du changement d\'état:', error)
-      // Recharger les événements en cas d'erreur
-      await fetchEvents()
+    // Mettre à jour l'événement sélectionné si c'est celui qui a été modifié
+    if (selectedEvent?.id === updatedEvent.id) {
+      setSelectedEvent({ ...updatedEvent, state: newState });
     }
+
+    // Envoyer la requête à l'API pour enregistrer le changement d'état
+    const response = await fetch(`/api/calendrier/state-change?id=${updatedEvent.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state: newState,
+        reason: reason || '',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const updatedEventFromServer = data.updatedEvent;
+
+    // Mettre à jour l'état local avec les données renvoyées par le serveur
+    setEvents((prevEvents: CalendarEvent[]) => 
+      prevEvents.map(event => 
+        event.id === updatedEventFromServer.id ? updatedEventFromServer : event
+      )
+    );
+
+    if (selectedEvent?.id === updatedEventFromServer.id) {
+      setSelectedEvent(updatedEventFromServer);
+    }
+
+    // Afficher un message de succès selon l'état
+    const stateMessages: Record<string, string> = {
+      'VALIDATED': 'Événement validé avec succès',
+      'CANCELLED': 'Événement annulé',
+      'MOVED': 'Événement marqué comme déplacé',
+      'PENDING': 'Événement remis à valider',
+      'IN_PROGRESS': 'Événement en cours de préparation'
+    };
+    
+    const message = stateMessages[newState] || 'État de l\'événement modifié';
+    console.log(message);
+    
+    // Optionnel : afficher une notification ou un snackbar
+    // showNotification({ message, type: 'success' });
+    
+  } catch (error) {
+    console.error('Erreur lors du changement d\'état:', error);
+    // Recharger les événements en cas d'erreur pour garantir la cohérence
+    await fetchEvents();
   }
+};
   
   // Handler pour sauvegarder les modifications
   const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     if (!eventToEdit) return
-
+    console.log('Enregistrement des modifications pour l\'événement via handleSaveEdit')
     try {
       const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
         method: 'PUT',
@@ -351,7 +384,7 @@ console.log('session:', session)
             <Tabs 
               value={tabValue} 
               variant="scrollable"
-              scrollButtons={isMobile ? "auto" : false} // Boutons uniquement sur mobile
+              scrollButtons={isMobile ? "auto" : false}
               allowScrollButtonsMobile
               onChange={handleTabChange}
               sx={{ 
@@ -368,9 +401,33 @@ console.log('session:', session)
                   }
                 }}
             >
-              <Tab label="Planning du jour" />
-              <Tab label="Vue hebdomadaire" />
-              <Tab label="Liste des événements" />
+              <Tab 
+                label="Planning du jour" 
+                icon={
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <CalendarToday fontSize="small" sx={{ color: 'primary.main' }} />
+                  </span>
+                }
+                iconPosition="start"
+              />
+              <Tab 
+                label="Vue hebdomadaire" 
+                icon={
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <ViewWeek fontSize="small" sx={{ color: 'primary.main' }} />
+                  </span>
+                }
+                iconPosition="start"
+              />
+              <Tab 
+                label="Liste des événements" 
+                icon={
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <ListAlt fontSize="small" sx={{ color: 'primary.main' }} />
+                  </span>
+                }
+                iconPosition="start"
+              />
             </Tabs>
           </Box>
 
@@ -433,7 +490,7 @@ console.log('session:', session)
           onClose={() => setDetailsOpen(false)}
           onEdit={selectedEvent && canEditEvent(selectedEvent) ? handleEventEdit : undefined}
           onDelete={selectedEvent && canEditEvent(selectedEvent) ? handleEventDelete : undefined}
-          onStateChange={canValidateEvent() ? handleStateChange : undefined}
+          onStateChange={handleStateChange}
           userRole={userRole}
           isMobile={isMobile}
           isTablet={isTablet}

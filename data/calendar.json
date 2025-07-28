@@ -5,11 +5,22 @@
       "title": "Administrateur",
       "name": "Administrateur",
       "description": "",
-      "startDate": "2025-07-27T06:00:00.000Z",
-      "endDate": "2025-07-27T15:00:00.000Z",
+      "startDate": "2025-07-28T06:00:00.000Z",
+      "endDate": "2025-07-28T15:00:00.000Z",
       "type": "TP",
-      "state": "PENDING",
-      "stateChanger": [],
+      "state": "VALIDATED",
+      "stateChanger": [
+        [
+          "USER_001",
+          "2025-07-28T11:05:02.817Z",
+          "2025-07-28T11:24:46.956Z",
+          "2025-07-28T11:24:51.617Z",
+          "2025-07-28T11:36:31.340Z",
+          "2025-07-28T11:36:47.807Z",
+          "2025-07-28T11:53:09.827Z",
+          "2025-07-28T11:53:15.141Z"
+        ]
+      ],
       "class": "Terminale STI2D 2",
       "room": "",
       "location": "",
@@ -77,11 +88,12 @@
           "2025-07-27T16:57:10.908Z",
           "2025-07-27T17:06:12.711Z",
           "2025-07-27T17:06:20.631Z",
-          "2025-07-27T22:43:26.741Z"
+          "2025-07-27T22:43:26.741Z",
+          "2025-07-28T08:16:57.056Z"
         ]
       ],
       "createdAt": "2025-07-27T16:11:06.836Z",
-      "updatedAt": "2025-07-27T22:43:26.741Z",
+      "updatedAt": "2025-07-28T11:53:15.141Z",
       "column": 0,
       "totalColumns": 1,
       "visualStartDate": "2025-07-27T06:00:00.000Z",
@@ -89,21 +101,22 @@
       "startsBeforeDay": false,
       "endsAfterDay": false,
       "startsBeforeSchedule": false,
-      "endsAfterSchedule": false
+      "endsAfterSchedule": false,
+      "stateReason": ""
     },
     {
       "id": "EVENT_1753673250950_dlhn85m3r",
       "title": "Administrateur",
       "name": "Administrateur",
-      "description": null,
+      "description": "",
       "startDate": "2025-07-27T00:00:00.000Z",
       "endDate": "2025-07-27T11:00:00.000Z",
       "type": "TP",
       "state": "PENDING",
       "stateChanger": [],
       "class": "MaCLASSE 2",
-      "room": null,
-      "location": null,
+      "room": "",
+      "location": "",
       "materials": [
         {
           "id": "custom_1753672912310",
@@ -136,6 +149,14 @@
           "unit": "g",
           "quantity": 215.6,
           "isCustom": false
+        },
+        {
+          "id": "CHEM_1753691143086_CUSTOM",
+          "name": "MyCustom 2",
+          "requestedQuantity": 1,
+          "unit": "g",
+          "quantity": 0,
+          "isCustom": true
         }
       ],
       "equipment": [],
@@ -151,12 +172,20 @@
           "uploadedAt": "2025-07-28T03:27:30.699Z"
         }
       ],
-      "remarks": null,
+      "remarks": "",
       "notes": null,
       "createdBy": "USER_001",
-      "modifiedBy": [],
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-28T08:16:29.773Z",
+          "2025-07-28T08:25:44.926Z",
+          "2025-07-28T08:51:57.882Z",
+          "2025-07-28T09:13:56.975Z"
+        ]
+      ],
       "createdAt": "2025-07-28T03:27:30.950Z",
-      "updatedAt": "2025-07-28T03:27:30.950Z"
+      "updatedAt": "2025-07-28T09:13:56.975Z"
     }
   ]
 }

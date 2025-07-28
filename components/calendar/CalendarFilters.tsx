@@ -107,22 +107,24 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
           placeholder="Rechercher un événement..."
           value={filters.search}
           onChange={(e) => handleFilterChange('search', e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-            endAdornment: filters.search && (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={() => handleFilterChange('search', '')}
-                >
-                  <Clear fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            )
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+              endAdornment: filters.search && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleFilterChange('search', '')}
+                  >
+                    <Clear fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
           }}
         />
         

@@ -371,10 +371,11 @@ const handleSave = async () => {
       return
     }
   }
-
+// .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
   // Vérifier les quantités de réactifs chimiques
   const insufficientChemicals = formData.chemicals.filter(c => 
-    c.requestedQuantity > (c.quantity || 0)
+    !(c.isCustom || c.id?.endsWith('_CUSTOM')) && c.requestedQuantity > (c.quantity || 0)
+    // || !c.id?.endsWith('_CUSTOM')
   )
   if (insufficientChemicals.length > 0) {
     alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
@@ -428,7 +429,9 @@ const handleSave = async () => {
       name: c.name || '',
       requestedQuantity: c.requestedQuantity || 1,
       unit: c.unit || '',
-      quantity: c.quantity || 0
+      quantity: c.quantity || 0,
+      // isCustom: c.isCustom || (c.id && c.id.endsWith('_CUSTOM')) || false,
+      isCustom: c.isCustom || (c.id && c.id.endsWith('_CUSTOM')) || false,
     }))
 
     if (showMultipleSlots && formData.type === 'TP' && timeSlots.length > 1) {
@@ -1662,8 +1665,9 @@ const handleSave = async () => {
               </Box>
               {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
 {formData.chemicals
-  .filter(c => !c.isCustom) // Exclure les réactifs custom
+  .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
   .some(c => {
+    c.id?.endsWith('_CUSTOM') ? console.log('Custom Chemical:', c.name, c.isCustom) : console.log('Standard Chemical:', c.name, c.isCustom)
     const availableStock = c.quantityPrevision !== undefined 
       ? c.quantityPrevision 
       : (c.quantity || 0)
@@ -1680,7 +1684,7 @@ const handleSave = async () => {
     {/* Détails des réactifs concernés */}
     <Box sx={{ mt: 1 }}>
       {formData.chemicals
-        .filter(c => !c.isCustom) // Exclure les réactifs custom
+        .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
         .filter(c => {
           const availableStock = c.quantityPrevision !== undefined 
             ? c.quantityPrevision 
