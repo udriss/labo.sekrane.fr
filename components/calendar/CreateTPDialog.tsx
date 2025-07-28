@@ -10,8 +10,8 @@ import {
   Snackbar, Alert as MuiAlert, Slide
 } from '@mui/material'
 import { 
-  Add, Close, Upload, Class, Assignment, Save, Delete,
-  Warning, CloudUpload, InsertDriveFile, Clear, InfoOutlined, HourglassTop
+  Add, Close, Upload, Class, Assignment, Save, Delete, Science,
+  Warning, CloudUpload, School, Clear, InfoOutlined, HourglassTop
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { FileUploadSection } from './FileUploadSection'
@@ -70,7 +70,17 @@ export function CreateTPDialog({
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
   const [pendingSwap, setPendingSwap] = useState<{index: number, field: keyof TimeSlot, value: string} | null>(null)
+  const [classInputValue, setClassInputValue] = useState<string>('');
 
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -241,8 +251,11 @@ const handleCreateCalendarEvent = async () => {
       }
     }
 
-    // Vérifier les quantités de réactifs chimiques
-    const insufficientChemicals = formData.chemicals.filter(c => 
+    // Filtrer les réactifs non-custom pour la vérification des quantités
+    const nonCustomChemicals = formData.chemicals.filter(c => !c.isCustom)
+    
+    // Vérifier les quantités de réactifs chimiques (uniquement pour les non-custom)
+    const insufficientChemicals = nonCustomChemicals.filter(c => 
       c.requestedQuantity > (c.quantity || 0)
     )
     if (insufficientChemicals.length > 0) {
@@ -292,7 +305,8 @@ const handleCreateCalendarEvent = async () => {
         name: c.name || '',
         requestedQuantity: c.requestedQuantity || 1,
         unit: c.unit || '',
-        quantity: c.quantity || 0  // Stock disponible
+        quantity: c.quantity || 0,  // Stock disponible
+        isCustom: c.isCustom || false  // Ajouter le flag isCustom
       })),
       files: filesData,
       remarks: remarks,
@@ -315,13 +329,13 @@ const handleCreateCalendarEvent = async () => {
       throw new Error(errorData.error || 'Erreur lors de la création des événements')
     }
 
-    // Mettre à jour les quantités prévisionnelles des réactifs chimiques
-    if (formData.chemicals.length > 0) {
+    // Mettre à jour les quantités prévisionnelles uniquement pour les réactifs non-custom
+    if (nonCustomChemicals.length > 0) {
       const updateResponse = await fetch('/api/chemicals/update-forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chemicals: formData.chemicals.map(c => ({
+          chemicals: nonCustomChemicals.map(c => ({
             id: c.id,
             requestedQuantity: c.requestedQuantity || 1
           }))
@@ -344,6 +358,7 @@ const handleCreateCalendarEvent = async () => {
   }
 }
   return (
+    <>
     <Dialog
       open={open}
       onClose={handleClose}
@@ -898,339 +913,284 @@ const handleCreateCalendarEvent = async () => {
           </Snackbar>
           </Step>
 
-          {/* Étape 4: Classes concernées */}
-          <Step>
-            <StepLabel
-              onClick={() => handleStepClick(3)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <Typography variant="h6">Classes concernées</Typography>
-            </StepLabel>
-            <StepContent>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Sélectionnez les classes qui participeront à cette séance
-              </Typography>
-
-              <Autocomplete
-                multiple
-                freeSolo
-                options={[...userClasses, ...customClasses]}
-                value={formData.classes}
-                onChange={async (_, newValue) => {
-                  const uniqueClasses = [...new Set(newValue)]
-                  handleFormDataChange('classes', uniqueClasses)
-                  
-                  const newCustom = uniqueClasses.filter(c => 
-                    !userClasses.includes(c) && !customClasses.includes(c)
-                  )
-                  if (newCustom.length > 0) {
-                    const successfulClasses: string[] = []
-                    
-                    for (const newClass of newCustom) {
-                      const result = await saveNewClass(newClass, 'custom')
-                      if (result.success) {
-                        successfulClasses.push(newClass)
-                      } else {
-                        console.error(`Erreur lors de l'ajout de la classe "${newClass}":`, result.error)
-                      }
-                    }
-                    
-                    // N'ajouter que les classes créées avec succès
-                    if (successfulClasses.length > 0) {
-                      setCustomClasses(prev => [...prev, ...successfulClasses])
-                    }
-                  }
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Classes"
-                    placeholder="Choisir les classes ou en ajouter une nouvelle..."
-                    helperText="Vous pouvez taper pour ajouter une nouvelle classe"
-                  />
-                )}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((option, index) => (
-                    <Chip
-                    key={option}
-                    variant="outlined"
-                    label={option}
-                    color={userClasses.includes(option) ? "primary" : "secondary"}
-                    sx={{ m: 0.5 }}
-                    />
-                  ))}
-                  </Box>
-                )}
-              />
-
-              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                <Button onClick={handleStepBack}>
-                  Retour
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleStepNext}
-                  disabled={formData.classes.length === 0}
-                >
-                  Continuer
-                </Button>
-              </Box>
-            </StepContent>
-          </Step>
-
-          {/* Étape 5: Matériel nécessaire */}
+{/* Étape 4: Classes concernées */}
 <Step>
   <StepLabel
-    onClick={() => handleStepClick(4)}
+    onClick={() => handleStepClick(3)}
     sx={{ cursor: 'pointer' }}
   >
-    <Typography variant="h6">Matériel nécessaire</Typography>
+    <Typography variant="h6">Classes concernées</Typography>
   </StepLabel>
   <StepContent>
     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-      Sélectionnez le matériel qui sera utilisé pendant cette séance
+      Sélectionnez les classes qui participeront à cette séance
     </Typography>
 
-    {/* Autocomplete pour sélectionner le matériel */}
     <Autocomplete
-      freeSolo // Permet d'entrer du texte libre
-      options={materials}
-      getOptionLabel={(option) => {
-        if (typeof option === 'string') return option;
-        return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
-      }}
-      value={null}
-      inputValue={materialInputValue || ''}
-      onInputChange={(event, newInputValue, reason) => {
-        if (reason !== 'reset') {
-          setMaterialInputValue(newInputValue);
-        }
-      }}
-      onChange={(_, newValue) => {
-        if (typeof newValue === 'string') {
-          // Si c'est une string (texte libre), ne rien faire ici
-          return;
+      multiple
+      freeSolo
+      options={userClasses}
+      value={formData.classes}
+      onChange={async (_, newValue) => {
+        // newValue est un tableau car c'est un Autocomplete multiple
+        const uniqueClasses = [...new Set(newValue)]
+        
+        // Mettre à jour le formulaire
+        handleFormDataChange('classes', uniqueClasses)
+        
+        // Identifier les nouvelles classes personnalisées
+        const newCustom = uniqueClasses.filter(c => 
+          !userClasses.includes(c) && !customClasses.includes(c)
+        )
+        
+        if (newCustom.length > 0) {
+          const successfulClasses: string[] = []
+          const failedClasses: { name: string; error: string }[] = []
+          
+          // Traiter chaque nouvelle classe
+          for (const newClass of newCustom) {
+            try {
+              // Sauvegarder la nouvelle classe
+              const result = await saveNewClass(newClass, 'custom')
+              
+              if (result.success) {
+                successfulClasses.push(newClass)
+                console.log(`Classe personnalisée "${newClass}" créée avec succès`)
+              } else {
+                failedClasses.push({ 
+                  name: newClass, 
+                  error: result.error || 'Erreur inconnue' 
+                })
+                console.error(`Erreur lors de l'ajout de la classe "${newClass}":`, result.error)
+              }
+            } catch (error) {
+              failedClasses.push({ 
+                name: newClass, 
+                error: 'Erreur réseau' 
+              })
+              console.error(`Erreur inattendue pour la classe "${newClass}":`, error)
+            }
+          }
+          
+          // Ajouter les classes créées avec succès aux classes personnalisées locales
+          if (successfulClasses.length > 0) {
+            setCustomClasses(prev => {
+              const updated = [...prev]
+              successfulClasses.forEach(className => {
+                if (!updated.includes(className)) {
+                  updated.push(className)
+                }
+              })
+              return updated
+            })
+            
+            // Notification de succès
+            setSnackbar({
+              open: true,
+              message: successfulClasses.length === 1 
+                ? `Classe "${successfulClasses[0]}" créée avec succès`
+                : `${successfulClasses.length} classes créées avec succès`,
+              severity: 'success'
+            })
+          }
+          
+          // Si des classes ont échoué, notifier l'utilisateur
+          if (failedClasses.length > 0) {
+            const errorMessage = failedClasses.length === 1
+              ? `Erreur pour "${failedClasses[0].name}": ${failedClasses[0].error}`
+              : `Erreur lors de la création de ${failedClasses.length} classe(s)`
+            
+            setSnackbar({
+              open: true,
+              message: errorMessage,
+              severity: 'error'
+            })
+            
+            // Optionnel : retirer les classes qui ont échoué de la sélection
+            const finalClasses = uniqueClasses.filter(c => 
+              !failedClasses.some(f => f.name === c)
+            )
+            handleFormDataChange('classes', finalClasses)
+          }
         }
         
-        if (newValue && !formData.materials.some((m) => 
-          (m.itemName || m.name) === (newValue.itemName || newValue.name)
-        )) {
-          handleFormDataChange('materials', [
-            ...formData.materials,
-            { ...newValue, quantity: 1 }
-          ]);
-          setMaterialInputValue('');
-        }
+        // Réinitialiser l'input après la sélection
+        setClassInputValue('')
+      }}
+      inputValue={classInputValue || ''}
+      onInputChange={(event, newInputValue) => {
+        setClassInputValue(newInputValue)
       }}
       renderInput={(params) => (
         <TextField
           {...params}
-          label="Ajouter du matériel"
-          placeholder="Rechercher ou créer..."
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
-              e.preventDefault();
-              const trimmedValue = materialInputValue.trim();
-              if (!formData.materials.some(m => (m.itemName || m.name) === trimmedValue)) {
-                const customMaterial = {
-                  id: `custom_${Date.now()}`,
-                  itemName: trimmedValue,
-                  name: trimmedValue,
-                  isCustom: true,
-                  quantity: 1
-                };
-                
-                handleFormDataChange('materials', [
-                  ...formData.materials,
-                  customMaterial
-                ]);
-                setMaterialInputValue('');
-              }
-            }
-            }}
-            slotProps={{
+          label="Classes"
+          placeholder="Choisir les classes ou en ajouter une nouvelle..."
+          helperText={
+            customClasses.filter(c => formData.classes.includes(c)).length > 0
+              ? `${customClasses.filter(c => formData.classes.includes(c)).length} classe(s) personnalisée(s) sélectionnée(s)`
+              : "Vous pouvez taper pour ajouter une nouvelle classe"
+          }
+          slotProps={{
             input: {
               ...params.InputProps,
               endAdornment: (
-              <>
-                {params.InputProps.endAdornment}
-                {materialInputValue && materialInputValue.trim() && (
-                <InputAdornment position="end">
-                  <IconButton
-                  size="small"
-                  onClick={() => {
-                    const trimmedValue = materialInputValue.trim();
-                    if (!formData.materials.some(m => 
-                      (m.itemName || m.name) === trimmedValue
-                    )) {
-                      const customMaterial = {
-                        id: `custom_${Date.now()}`,
-                        itemName: trimmedValue,
-                        name: trimmedValue,
-                        isCustom: true,
-                        quantity: 1
-                      };
-                      
-                      handleFormDataChange('materials', [
-                        ...formData.materials,
-                        customMaterial
-                      ]);
-                      setMaterialInputValue('');
-                      
-                      // Retirer le focus du TextField
-                      (document.activeElement as HTMLElement)?.blur();
-                    }
-                  }}
-                  edge="end"
-                  sx={{ mr: -1,
-                    "&:hover": {
-                    color: 'success.main',
-                    borderColor: 'primary.main',
-                    borderRadius: '0%',
-                    } 
-                  }}
-                  >
-                  <Add />
-                  <Typography variant="body2" color="text.secondary">
-                    Ajouter "{materialInputValue}"
-                  </Typography>
-                  </IconButton>
-                </InputAdornment>
-                )}
-              </>
+                <>
+                  {params.InputProps.endAdornment}
+                  {classInputValue && classInputValue.trim() && 
+                   !userClasses.includes(classInputValue.trim()) && 
+                   !formData.classes.includes(classInputValue.trim()) && (
+                    <InputAdornment position="end" sx={{ mr: 3 }}>
+                      <IconButton
+                        size="small"
+                        onClick={async () => {
+                          const trimmedValue = classInputValue.trim()
+                          
+                          try {
+                            // Sauvegarder la nouvelle classe
+                            const result = await saveNewClass(trimmedValue, 'custom')
+                            
+                            if (result.success) {
+                              // Ajouter la classe aux classes sélectionnées
+                              handleFormDataChange('classes', [
+                                ...formData.classes,
+                                trimmedValue
+                              ]);
+                              
+                              // Ajouter aux classes personnalisées
+                              setCustomClasses(prev => {
+                                if (!prev.includes(trimmedValue)) {
+                                  return [...prev, trimmedValue]
+                                }
+                                return prev
+                              });
+                              
+                              // Réinitialiser l'input
+                              setClassInputValue('');
+
+                              
+                              // Retirer le focus
+                              (document.activeElement as HTMLElement)?.blur();
+                              
+                              console.log(`Classe personnalisée "${trimmedValue}" créée avec succès`);
+                              
+                              setSnackbar({
+                                open: true,
+                                message: `Classe "${trimmedValue}" créée et ajoutée`,
+                                severity: 'success'
+                              });
+                            } else {
+                              console.error('Erreur:', result.error)
+                              setSnackbar({
+                                open: true,
+                                message: result.error || `Erreur lors de la création de la classe`,
+                                severity: 'error'
+                              })
+                            }
+                          } catch (error) {
+                            console.error('Erreur inattendue:', error)
+                            setSnackbar({
+                              open: true,
+                              message: 'Erreur réseau lors de la création de la classe',
+                              severity: 'error'
+                            })
+                          }
+                        }}
+                        edge="end"
+                        sx={{ 
+                          mr: -1,
+                          bgcolor: 'action.hover',
+                          borderRadius: 1,
+                          px: 1,
+                          "&:hover": {
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            '& .MuiTypography-root': {
+                              color: 'white',
+                            }
+                          } 
+                        }}
+                      >
+                        <Add fontSize="small" />
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary"
+                          sx={{ ml: 0.5, mr: 0.5 }}
+                        >
+                          Créer "{classInputValue}"
+                        </Typography>
+                      </IconButton>
+                    </InputAdornment>
+                  )}
+                </>
               ),
             }
-            }}
-          />
-          )}
-          isOptionEqualToValue={(option, value) => 
-          (option.itemName || option.name) === (value.itemName || value.name)
-          }
-      // Filtrer pour n'afficher que les éléments uniques par nom
-      filterOptions={(options, state) => {
-        // Obtenir les noms déjà sélectionnés
-        const selectedNames = formData.materials.map(m => m.itemName || m.name);
-        
-        // Filtrer les options non sélectionnées
-        const availableOptions = options.filter(option => {
-          const optionName = option.itemName || option.name;
-          return !selectedNames.includes(optionName);
-        });
-        
-        // Créer un Map pour garder uniquement la première occurrence de chaque nom
-        const uniqueByName = new Map();
-        availableOptions.forEach(option => {
-          const optionName = option.itemName || option.name;
-          if (!uniqueByName.has(optionName)) {
-            uniqueByName.set(optionName, option);
-          }
-        });
-        
-        // Convertir le Map en array
-        const uniqueOptions = Array.from(uniqueByName.values());
-        
-        // Appliquer le filtre de recherche
-        if (state.inputValue) {
-          const filtered = uniqueOptions.filter(option => {
-            const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase();
-            return label.includes(state.inputValue.toLowerCase());
-          });
-          
-          // Si aucun résultat et qu'il y a du texte, suggérer de créer
-          if (filtered.length === 0 && state.inputValue.trim()) {
-            return [];
-          }
-          
-          return filtered;
-        }
-        
-        return uniqueOptions;
-      }}
-      renderOption={(props, option) => (
-        <li {...props}>
-          {option.itemName || option.name || 'Matériel'}
-          {option.volume && ` (${option.volume})`}
-        </li>
+          }}
+        />
       )}
-      noOptionsText={
-        materialInputValue && materialInputValue.trim() 
-          ? "Aucun matériel trouvé. Cliquez sur + pour créer"
-          : "Aucun matériel disponible"
+      renderOption={(props, option) => {
+        const { key, ...other } = props
+        return (
+          <li key={key} {...other}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <School fontSize="small" color="action" />
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="body2">
+                  {option}
+                </Typography>
+                {customClasses.includes(option) && (
+                  <Typography variant="caption" color="text.secondary">
+                    Classe personnalisée
+                  </Typography>
+                )}
+              </Box>
+              {customClasses.includes(option) && session?.user?.role === 'TEACHER' && (
+                <Chip 
+                  label="Ma classe" 
+                  size="small" 
+                  color="secondary" 
+                  sx={{ height: 20 }}
+                />
+              )}
+            </Box>
+          </li>
+        )
+      }}
+      renderTags={(value: string[], getTagProps) =>
+        value.map((option: string, index: number) => (
+          <Chip
+            {...getTagProps({ index })}
+            key={option}
+            variant="outlined"
+            label={option}
+            size="small"
+            color={customClasses.includes(option) ? "secondary" : "primary"}
+            icon={<School fontSize="small" />}
+            sx={{ m: 0.5 }}
+          />
+        ))
       }
+      filterOptions={(options, state) => {
+        const selectedClasses = formData.classes || []
+        const filtered = options.filter(option => 
+          !selectedClasses.includes(option) &&
+          option.toLowerCase().includes(state.inputValue.toLowerCase())
+        )
+        
+        return filtered
+      }}
+      isOptionEqualToValue={(option, value) => 
+        option.toLowerCase() === value.toLowerCase()
+      }
+      noOptionsText={classInputValue ? "Aucune classe trouvée" : "Tapez pour rechercher"}
     />
 
-    {/* Liste du matériel sélectionné avec quantités */}
-    {formData.materials.length > 0 && (
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 2 }}>
-          Matériel sélectionné :
+    {/* Afficher les classes sélectionnées si besoin */}
+    {formData.classes.length > 0 && (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="caption" color="text.secondary">
+          {formData.classes.length} classe{formData.classes.length > 1 ? 's' : ''} sélectionnée{formData.classes.length > 1 ? 's' : ''}
         </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {formData.materials.map((material, index) => (
-            <Box
-              key={`${material.itemName || material.name}-${index}`}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                p: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                backgroundColor: 'background.paper'
-              }}
-            >
-              {/* Nom du matériel */}
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body1" component="div">
-                  {material.itemName || material.name || 'Matériel'}
-                  {material.volume && (
-                    <Typography component="span" variant="body2" color="text.secondary">
-                      {' '}({material.volume})
-                    </Typography>
-                  )}
-                  {material.isCustom && (
-                    <Chip 
-                      label="Personnalisé" 
-                      size="small" 
-                      color="primary" 
-                      sx={{ ml: 1 }}
-                    />
-                  )}
-                </Typography>
-              </Box>
-
-              {/* Input pour la quantité */}
-              <TextField
-                label="Quantité"
-                type="number"
-                value={material.quantity || 1}
-                onChange={(e) => {
-                  const newQuantity = parseInt(e.target.value) || 1;
-                  const updatedMaterials = [...formData.materials];
-                  updatedMaterials[index] = { ...material, quantity: newQuantity };
-                  handleFormDataChange('materials', updatedMaterials);
-                }}
-                inputProps={{ min: 1 }}
-                sx={{ width: 120 }}
-                size="small"
-              />
-
-              {/* Bouton supprimer */}
-              <IconButton
-                onClick={() => {
-                  const updatedMaterials = formData.materials.filter((_, i) => i !== index);
-                  handleFormDataChange('materials', updatedMaterials);
-                }}
-                color="error"
-                size="small"
-              >
-                <Delete />
-              </IconButton>
-            </Box>
-          ))}
-        </Box>
       </Box>
     )}
 
@@ -1241,6 +1201,7 @@ const handleCreateCalendarEvent = async () => {
       <Button
         variant="contained"
         onClick={handleStepNext}
+        disabled={formData.classes.length === 0}
       >
         Continuer
       </Button>
@@ -1248,343 +1209,752 @@ const handleCreateCalendarEvent = async () => {
   </StepContent>
 </Step>
 
-          {/* Étape 6: Réactifs chimiques */}
-<Step>
-  <StepLabel
-    onClick={() => handleStepClick(5)}
-    sx={{ cursor: 'pointer' }}
-  >
-    <Typography variant="h6">Réactifs chimiques</Typography>
-  </StepLabel>
-  <StepContent>
-    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-      Sélectionnez les réactifs chimiques qui seront utilisés
-    </Typography>
-
-    {/* Autocomplete pour sélectionner les réactifs chimiques */}
-    <Autocomplete
-      options={chemicals}
-      getOptionLabel={(option) => {
-        if (typeof option === 'string') return option;
-        return `${option.name || 'Réactif chimique'} - ${option.quantity || 0}${option.unit || ''}`;
-      }}
-      value={null} // Toujours null pour permettre de nouvelles sélections
-      inputValue={chemicalInputValue || ''} // Contrôler la valeur du TextField
-      onInputChange={(event, newInputValue) => {
-        setChemicalInputValue(newInputValue);
-      }}
-      onChange={(_, newValue) => {
-        if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
-          // Ajouter le réactif chimique avec une quantité par défaut
-          handleFormDataChange('chemicals', [
-            ...formData.chemicals,
-            { ...newValue, requestedQuantity: 1 }
-          ]);
-          // Réinitialiser le champ de recherche
-          setChemicalInputValue('');
-        }
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Ajouter un réactif chimique"
-          placeholder="Rechercher et sélectionner..."
-        />
-      )}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
-      // Filtrer pour n'afficher que les éléments uniques non déjà sélectionnés
-      filterOptions={(options, state) => {
-        const selectedIds = formData.chemicals.map(c => c.id);
-        const filtered = options.filter(option => !selectedIds.includes(option.id));
-        
-        // Supprimer les doublons basés sur l'ID
-        const uniqueOptions = filtered.reduce((acc, current) => {
-          const exists = acc.find((item: { id: string }) => item.id === current.id);
-          if (!exists) {
-            acc.push(current);
-          }
-          return acc;
-        }, []);
-        
-        // Appliquer le filtre de recherche
-        if (state.inputValue) {
-          return uniqueOptions.filter((option: { name?: string; quantity?: number; unit?: string }) => {
-            const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase();
-            return label.includes(state.inputValue.toLowerCase());
-          });
-        }
-        
-        return uniqueOptions;
-      }}
-    />
-
-{/* Liste des réactifs chimiques sélectionnés avec quantités */}
-{formData.chemicals.length > 0 && (
-  <Box sx={{ mt: 3 }}>
-    <Typography variant="subtitle2" sx={{ mb: 2 }}>
-      Réactifs chimiques sélectionnés :
-    </Typography>
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {formData.chemicals.map((chemical, index) => {
-        // Utiliser quantityPrevision si disponible, sinon quantity
-        const availableStock = chemical.quantityPrevision !== undefined 
-          ? chemical.quantityPrevision 
-          : (chemical.quantity || 0)
-        
-        const tooltipKey = `${chemical.id || index}`
-        const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
-        const stockAfterRequest = availableStock - (chemical.requestedQuantity || 0)
-        
-        const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
-          setTooltipStates(prev => ({
-            ...prev,
-            [tooltipKey]: {
-              ...tooltipOpen,
-              [type]: !tooltipOpen[type]
-            }
-          }))
-        }
-
-        return (
-          <Box
-            key={chemical.id || index}
-            sx={{
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              alignItems: 'center',
-              gap: 2,
-              p: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 1,
-              backgroundColor: 'background.paper'
-            }}
-          >
-            {/* Nom du réactif chimique */}
-            <Box sx={{ display: 'flex', 
-              flexDirection: 'column', 
-              width: isMobile ? '100%' : 'auto',}}>
-              <Typography variant="body1">
-                {chemical.name || 'Réactif chimique'}
+          {/* Étape 5: Matériel nécessaire */}
+          <Step>
+            <StepLabel
+              onClick={() => handleStepClick(4)}
+              sx={{ cursor: 'pointer' }}
+            >
+              <Typography variant="h6">Matériel nécessaire</Typography>
+            </StepLabel>
+            <StepContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Sélectionnez le matériel qui sera utilisé pendant cette séance
               </Typography>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
-                
-                {/* Stock actuel */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
-                  </Typography>
-                  <ClickAwayListener onClickAway={() => {
-                    if (tooltipOpen.actual) handleTooltipToggle('actual')
-                  }}>
-                    <div>
-                      <Tooltip 
-                        title="Quantité physique actuellement disponible dans l'inventaire"
-                        arrow
-                        open={tooltipOpen.actual}
-                        onClose={() => {
-                          if (tooltipOpen.actual) handleTooltipToggle('actual')
-                        }}
-                        disableHoverListener
-                        disableFocusListener
-                        disableTouchListener
-                      >
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleTooltipToggle('actual')}
-                          sx={{ p: 0.25 }}
-                        >
-                          <InfoOutlined sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                    </div>
-                  </ClickAwayListener>
-                </Box>
-                
-                {/* Stock prévisionnel */}
-                {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="body2" color="warning.main">
-                      Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
-                    </Typography>
-                    <ClickAwayListener onClickAway={() => {
-                      if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-                    }}>
-                      <div>
-                        <Tooltip 
-                          title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
-                          arrow
-                          open={tooltipOpen.prevision}
-                          onClose={() => {
-                            if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-                          }}
-                          disableHoverListener
-                          disableFocusListener
-                          disableTouchListener
-                        >
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleTooltipToggle('prevision')}
-                            sx={{ p: 0.25 }}
-                          >
-                            <InfoOutlined sx={{ fontSize: 16, color: 'warning.main' }} />
-                          </IconButton>
-                        </Tooltip>
-                      </div>
-                    </ClickAwayListener>
-                  </Box>
-                )}
-                
-                {/* Stock après commande */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography 
-                    variant="body2" 
-                    color={
-                      stockAfterRequest < 0 ? 'error' : 
-                      stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
-                      'success.main'
-                    }
-                  >
-                    Après ce TP : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
-                  </Typography>
-                  <ClickAwayListener onClickAway={() => {
-                    if (tooltipOpen.after) handleTooltipToggle('after')
-                  }}>
-                    <div>
-                      <Tooltip 
-                        title={
-                          stockAfterRequest < 0 
-                            ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
-                            : stockAfterRequest < (chemical.minQuantity || 0)
-                            ? "Attention : le stock passera sous le seuil minimum recommandé"
-                            : "Stock restant après validation de ce TP"
+              {/* Autocomplete pour sélectionner le matériel */}
+              <Autocomplete
+                freeSolo // Permet d'entrer du texte libre
+                options={materials}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option;
+                  return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
+                }}
+                value={null}
+                inputValue={materialInputValue || ''}
+                onInputChange={(event, newInputValue, reason) => {
+                  if (reason !== 'reset') {
+                    setMaterialInputValue(newInputValue);
+                  }
+                }}
+                onChange={(_, newValue) => {
+                  if (typeof newValue === 'string') {
+                    // Si c'est une string (texte libre), ne rien faire ici
+                    return;
+                  }
+                  
+                  if (newValue && !formData.materials.some((m) => 
+                    (m.itemName || m.name) === (newValue.itemName || newValue.name)
+                  )) {
+                    handleFormDataChange('materials', [
+                      ...formData.materials,
+                      { ...newValue, quantity: 1 }
+                    ]);
+                    setMaterialInputValue('');
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ajouter du matériel"
+                    placeholder="Rechercher ou demander un nouveau matériel..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
+                        e.preventDefault();
+                        const trimmedValue = materialInputValue.trim();
+                        if (!formData.materials.some(m => (m.itemName || m.name) === trimmedValue)) {
+                          const customMaterial = {
+                            id: `custom_${Date.now()}`,
+                            itemName: trimmedValue,
+                            name: trimmedValue,
+                            isCustom: true,
+                            quantity: 1
+                          };
+                          
+                          handleFormDataChange('materials', [
+                            ...formData.materials,
+                            customMaterial
+                          ]);
+                          setMaterialInputValue('');
                         }
-                        arrow
-                        open={tooltipOpen.after}
-                        onClose={() => {
-                          if (tooltipOpen.after) handleTooltipToggle('after')
+                      }
+                      }}
+                      slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        endAdornment: (
+                        <>
+                          {params.InputProps.endAdornment}
+                          {materialInputValue && materialInputValue.trim() && (
+                          <InputAdornment position="end">
+                            <IconButton
+                            size="small"
+                            onClick={() => {
+                              const trimmedValue = materialInputValue.trim();
+                              if (!formData.materials.some(m => 
+                                (m.itemName || m.name) === trimmedValue
+                              )) {
+                                const customMaterial = {
+                                  id: `custom_${Date.now()}`,
+                                  itemName: trimmedValue,
+                                  name: trimmedValue,
+                                  isCustom: true,
+                                  quantity: 1
+                                };
+                                
+                                handleFormDataChange('materials', [
+                                  ...formData.materials,
+                                  customMaterial
+                                ]);
+                                setMaterialInputValue('');
+                                
+                                // Retirer le focus du TextField
+                                (document.activeElement as HTMLElement)?.blur();
+                              }
+                            }}
+                            edge="end"
+                            sx={{ mr: -1,
+                              "&:hover": {
+                              color: 'success.main',
+                              borderColor: 'primary.main',
+                              borderRadius: '0%',
+                              } 
+                            }}
+                            >
+                            <Add />
+                            <Typography variant="body2" color="text.secondary">
+                              Ajouter "{materialInputValue}"
+                            </Typography>
+                            </IconButton>
+                          </InputAdornment>
+                          )}
+                        </>
+                        ),
+                      }
+                      }}
+                    />
+                    )}
+                    isOptionEqualToValue={(option, value) => 
+                    (option.itemName || option.name) === (value.itemName || value.name)
+                    }
+                // Filtrer pour n'afficher que les éléments uniques par nom
+                filterOptions={(options, state) => {
+                  // Obtenir les noms déjà sélectionnés
+                  const selectedNames = formData.materials.map(m => m.itemName || m.name);
+                  
+                  // Filtrer les options non sélectionnées
+                  const availableOptions = options.filter(option => {
+                    const optionName = option.itemName || option.name;
+                    return !selectedNames.includes(optionName);
+                  });
+                  
+                  // Créer un Map pour garder uniquement la première occurrence de chaque nom
+                  const uniqueByName = new Map();
+                  availableOptions.forEach(option => {
+                    const optionName = option.itemName || option.name;
+                    if (!uniqueByName.has(optionName)) {
+                      uniqueByName.set(optionName, option);
+                    }
+                  });
+                  
+                  // Convertir le Map en array
+                  const uniqueOptions = Array.from(uniqueByName.values());
+                  
+                  // Appliquer le filtre de recherche
+                  if (state.inputValue) {
+                    const filtered = uniqueOptions.filter(option => {
+                      const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase();
+                      return label.includes(state.inputValue.toLowerCase());
+                    });
+                    
+                    // Si aucun résultat et qu'il y a du texte, suggérer de créer
+                    if (filtered.length === 0 && state.inputValue.trim()) {
+                      return [];
+                    }
+                    
+                    return filtered;
+                  }
+                  
+                  return uniqueOptions;
+                }}
+                renderOption={({ key, ...otherProps }, option) => (
+                  <li key={key} {...otherProps}>
+                    {option.itemName || option.name || 'Matériel'}
+                    {option.volume && ` (${option.volume})`}
+                  </li>
+                )}
+                noOptionsText={
+                  materialInputValue && materialInputValue.trim() 
+                    ? "Aucun matériel trouvé. Cliquez sur + pour créer"
+                    : "Aucun matériel disponible"
+                }
+              />
+
+              {/* Liste du matériel sélectionné avec quantités */}
+              {formData.materials.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                    Matériel sélectionné :
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {formData.materials.map((material, index) => (
+                      <Box
+                        key={`${material.itemName || material.name}-${index}`}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          p: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper'
                         }}
-                        disableHoverListener
-                        disableFocusListener
-                        disableTouchListener
                       >
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleTooltipToggle('after')}
-                          sx={{ p: 0.25 }}
+                        {/* Nom du matériel */}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body1" component="div">
+                            {material.itemName || material.name || 'Matériel'}
+                            {material.volume && (
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                {' '}({material.volume})
+                              </Typography>
+                            )}
+                            {material.isCustom && (
+                              <Chip 
+                                label="Personnalisé" 
+                                size="small" 
+                                color="primary" 
+                                sx={{ ml: 1 }}
+                              />
+                            )}
+                          </Typography>
+                        </Box>
+
+                        {/* Input pour la quantité */}
+                        <TextField
+                          label="Quantité"
+                          type="number"
+                          value={material.quantity || 1}
+                          onChange={(e) => {
+                            const newQuantity = parseInt(e.target.value) || 1;
+                            const updatedMaterials = [...formData.materials];
+                            updatedMaterials[index] = { ...material, quantity: newQuantity };
+                            handleFormDataChange('materials', updatedMaterials);
+                          }}
+                          inputProps={{ min: 1 }}
+                          sx={{ width: 120 }}
+                          size="small"
+                        />
+
+                        {/* Bouton supprimer */}
+                        <IconButton
+                          onClick={() => {
+                            const updatedMaterials = formData.materials.filter((_, i) => i !== index);
+                            handleFormDataChange('materials', updatedMaterials);
+                          }}
+                          color="error"
+                          size="small"
                         >
-                          <InfoOutlined 
-                            sx={{ 
-                              fontSize: 16,
-                              color: stockAfterRequest < 0 ? 'error.main' : 
-                                    stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
-                                    'success.main'
-                            }} 
-                          />
+                          <Delete />
                         </IconButton>
-                      </Tooltip>
-                    </div>
-                  </ClickAwayListener>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button onClick={handleStepBack}>
+                  Retour
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleStepNext}
+                >
+                  Continuer
+                </Button>
+              </Box>
+            </StepContent>
+          </Step>
+
+          {/* Étape 6: Réactifs chimiques */}
+        <Step>
+          <StepLabel
+            onClick={() => handleStepClick(5)}
+            sx={{ cursor: 'pointer' }}
+          >
+            <Typography variant="h6">Réactifs chimiques</Typography>
+          </StepLabel>
+          <StepContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Sélectionnez les réactifs chimiques qui seront utilisés
+            </Typography>
+
+            {/* Autocomplete pour sélectionner les réactifs chimiques */}
+            <Autocomplete
+              options={chemicals}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') return option;
+                const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity;
+                return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`;
+              }}
+              value={null}
+              inputValue={chemicalInputValue || ''}
+              onInputChange={(event, newInputValue) => {
+                setChemicalInputValue(newInputValue);
+              }}
+              onChange={(_, newValue) => {
+                if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
+                  handleFormDataChange('chemicals', [
+                    ...formData.chemicals,
+                    { ...newValue, requestedQuantity: 1 }
+                  ]);
+                  setChemicalInputValue('');
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Ajouter un réactif chimique"
+                  placeholder="Rechercher et sélectionner..."
+                  slotProps={{
+                    input: {
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {params.InputProps.endAdornment}
+                          {chemicalInputValue && chemicalInputValue.trim() && 
+                          !chemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase()) && (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  const trimmedValue = chemicalInputValue.trim();
+                                  
+                                  // Créer un réactif personnalisé
+                                  const customChemical = {
+                                    id: `CHEM_${Date.now()}_CUSTOM`,
+                                    name: trimmedValue,
+                                    quantity: 0,
+                                    unit: 'g', // Unité par défaut
+                                    requestedQuantity: 1,
+                                    isCustom: true,
+                                  };
+                                  
+                                  // Ajouter le réactif personnalisé à la liste
+                                  if (!formData.chemicals.some(c => c.name === trimmedValue)) {
+                                    handleFormDataChange('chemicals', [
+                                      ...formData.chemicals,
+                                      customChemical
+                                    ]);
+                                    
+                                    // Réinitialiser l'input
+                                    setChemicalInputValue('');
+                                    
+                                    // Retirer le focus
+                                    (document.activeElement as HTMLElement)?.blur();
+                                    
+                                    // Afficher une notification si showSnackbar existe
+                                    setSnackbar({
+                                      open: true,
+                                      message: `Réactif personnalisé "${trimmedValue}" ajouté`,
+                                      severity: 'info'
+                                    });
+                                  }
+                                }}
+                                edge="end"
+                                sx={{ 
+                                  mr: -1,
+                                  bgcolor: 'action.hover',
+                                  borderRadius: 1,
+                                  px: 1,
+                                  "&:hover": {
+                                    bgcolor: 'primary.main',
+                                    color: 'white',
+                                    '& .MuiTypography-root': {
+                                      color: 'white',
+                                    }
+                                  } 
+                                }}
+                              >
+                                <Add fontSize="small" />
+                                <Typography 
+                                  variant="caption" 
+                                  color="text.secondary"
+                                  sx={{ ml: 0.5, mr: 0.5 }}
+                                >
+                                  Ajouter "{chemicalInputValue}"
+                                </Typography>
+                              </IconButton>
+                            </InputAdornment>
+                          )}
+                        </>
+                      ),
+                    }
+                  }}
+                />
+              )}
+              renderOption={(props, option) => {
+                const { key, ...other } = props;
+                return (
+                  <li key={key} {...other}>
+                    <Box sx={{ width: '100%' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Science fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          {option.name}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Stock actuel : {option.quantity || 0}{option.unit || ''}
+                        </Typography>
+                        {option.forecastQuantity !== undefined && (
+                          <Typography 
+                            variant="caption" 
+                            color={option.forecastQuantity < (option.minQuantity || 0) ? 'error' : 'text.secondary'}
+                          >
+                            Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit || ''}
+                            {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit || ''})`}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </li>
+                );
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={(options, state) => {
+                const selectedIds = formData.chemicals.map(c => c.id);
+                const availableOptions = options.filter(option => 
+                  !selectedIds.includes(option.id)
+                );
+                
+                // Supprimer les doublons basés sur l'ID
+                const uniqueByName = new Map();
+                availableOptions.forEach(option => {
+                  if (!uniqueByName.has(option.name)) {
+                    uniqueByName.set(option.name, option);
+                  }
+                });
+                
+                const uniqueOptions = Array.from(uniqueByName.values());
+                
+                // Appliquer le filtre de recherche
+                if (state.inputValue) {
+                  return uniqueOptions.filter(option => {
+                    const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase();
+                    return label.includes(state.inputValue.toLowerCase());
+                  });
+                }
+                
+                return uniqueOptions;
+              }}
+              noOptionsText={chemicalInputValue ? "Aucun réactif trouvé" : "Tapez pour rechercher"}
+            />
+
+            {/* Liste des réactifs chimiques sélectionnés avec quantités */}
+            {formData.chemicals.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                  Réactifs chimiques sélectionnés :
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {formData.chemicals.map((chemical, index) => {
+                    // Utiliser quantityPrevision si disponible, sinon quantity
+                    const availableStock = chemical.quantityPrevision !== undefined 
+                      ? chemical.quantityPrevision 
+                      : (chemical.quantity || 0)
+                    
+                    const tooltipKey = `${chemical.id || index}`
+                    const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
+                    const stockAfterRequest = availableStock - (chemical.requestedQuantity || 0)
+                    
+                    const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
+                      setTooltipStates(prev => ({
+                        ...prev,
+                        [tooltipKey]: {
+                          ...tooltipOpen,
+                          [type]: !tooltipOpen[type]
+                        }
+                      }))
+                    }
+
+                    return (
+                      <Box
+                        key={chemical.id || index}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          alignItems: 'center',
+                          gap: 2,
+                          p: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper'
+                        }}
+                      >
+                        {/* Nom du réactif chimique */}
+                        <Box sx={{ display: 'flex', 
+                          flexDirection: 'column', 
+                          width: isMobile ? '100%' : 'auto',}}>
+                          <Typography variant="body1">
+                            {chemical.name || 'Réactif chimique'}
+                          </Typography>
+
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
+                            
+                            {/* Stock actuel ou message pour custom */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                {(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) 
+                                  ? "Réactif non référencé dans l'inventaire" 
+                                  : `Stock actuel : ${chemical.quantity || 0}${chemical.unit || ''}`}
+                              </Typography>
+                              {!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && (
+                                <ClickAwayListener onClickAway={() => {
+                                  if (tooltipOpen.actual) handleTooltipToggle('actual')
+                                }}>
+                                  <div>
+                                    <Tooltip 
+                                      title="Quantité physique actuellement disponible dans l'inventaire"
+                                      arrow
+                                      open={tooltipOpen.actual}
+                                      onClose={() => {
+                                        if (tooltipOpen.actual) handleTooltipToggle('actual')
+                                      }}
+                                      disableHoverListener
+                                      disableFocusListener
+                                      disableTouchListener
+                                    >
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleTooltipToggle('actual')}
+                                        sx={{ p: 0.25 }}
+                                      >
+                                        <InfoOutlined sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </div>
+                                </ClickAwayListener>
+                              )}
+                            </Box>
+                            
+                            {/* Stock prévisionnel */}
+                            {/* Stock prévisionnel - uniquement pour les réactifs de l'inventaire */}
+                            {!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && 
+                            chemical.quantityPrevision !== undefined && 
+                            chemical.quantityPrevision !== chemical.quantity && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography variant="body2" color="warning.main">
+                                  Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
+                                </Typography>
+                                <ClickAwayListener onClickAway={() => {
+                                  if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                                }}>
+                                  <div>
+                                    <Tooltip 
+                                      title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
+                                      arrow
+                                      open={tooltipOpen.prevision}
+                                      onClose={() => {
+                                        if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                                      }}
+                                      disableHoverListener
+                                      disableFocusListener
+                                      disableTouchListener
+                                    >
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleTooltipToggle('prevision')}
+                                        sx={{ p: 0.25 }}
+                                      >
+                                        <InfoOutlined sx={{ fontSize: 16, color: 'warning.main' }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </div>
+                                </ClickAwayListener>
+                              </Box>
+                            )}
+                            
+                            {/* Stock après commande - uniquement pour les réactifs de l'inventaire */}
+                            {!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Typography 
+                                variant="body2" 
+                                color={
+                                  stockAfterRequest < 0 ? 'error' : 
+                                  stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                  'success.main'
+                                }
+                              >
+                                Après ce TP : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
+                              </Typography>
+                              <ClickAwayListener onClickAway={() => {
+                                if (tooltipOpen.after) handleTooltipToggle('after')
+                              }}>
+                                <div>
+                                  <Tooltip 
+                                    title={
+                                      stockAfterRequest < 0 
+                                        ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
+                                        : stockAfterRequest < (chemical.minQuantity || 0)
+                                        ? "Attention : le stock passera sous le seuil minimum recommandé"
+                                        : "Stock restant après validation de ce TP"
+                                    }
+                                    arrow
+                                    open={tooltipOpen.after}
+                                    onClose={() => {
+                                      if (tooltipOpen.after) handleTooltipToggle('after')
+                                    }}
+                                    disableHoverListener
+                                    disableFocusListener
+                                    disableTouchListener
+                                  >
+                                    <IconButton 
+                                      size="small" 
+                                      onClick={() => handleTooltipToggle('after')}
+                                      sx={{ p: 0.25 }}
+                                    >
+                                      <InfoOutlined 
+                                        sx={{ 
+                                          fontSize: 16,
+                                          color: stockAfterRequest < 0 ? 'error.main' : 
+                                                stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                                'success.main'
+                                        }} 
+                                      />
+                                    </IconButton>
+                                  </Tooltip>
+                                </div>
+                              </ClickAwayListener>
+                            </Box>
+                            )}
+                          </Box>
+
+                        </Box>
+                        {/* Input pour la quantité demandée */}
+                        <TextField
+                          label={`Quantité (${chemical.unit || 'unité'})`}
+                          type="number"
+                          value={chemical.requestedQuantity || 1}
+                          onChange={(e) => {
+                            const newQuantity = parseFloat(e.target.value) || 1;
+                            const updatedChemicals = [...formData.chemicals];
+                            updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity };
+                            handleFormDataChange('chemicals', updatedChemicals);
+                          }}
+                          slotProps={{
+                            htmlInput: {
+                              min: 0.1,
+                              step: 0.1,
+                              // Pas de max pour les réactifs custom
+                              ...(!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && { max: availableStock })
+                            }
+                          }}
+                          sx={{ width: 150 }}
+                          size="small"
+                          error={!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && chemical.requestedQuantity > availableStock}
+                          helperText={
+                            (chemical.isCustom || chemical.id?.endsWith('_CUSTOM'))
+                              ? '' // Pas de message d'erreur pour les custom
+                              : chemical.requestedQuantity > availableStock 
+                                ? 'Quantité insuffisante' 
+                                : stockAfterRequest < (chemical.minQuantity || 0)
+                                  ? 'Stock faible'
+                                  : ''
+                          }
+                        />
+                        <IconButton
+                          onClick={() => {
+                            const updatedChemicals = formData.chemicals.filter((_, i) => i !== index);
+                            handleFormDataChange('chemicals', updatedChemicals);
+                          }}
+                          color="error"
+                          size="small"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    )
+                  })}
                 </Box>
               </Box>
+            )}
 
+            {/* Ajouter un avertissement global si des réactifs seront en stock faible */}
+            {formData.chemicals.some(c => {
+              // Ignorer les réactifs personnalisés
+              if (c.isCustom || c.id?.endsWith('_CUSTOM')) {
+                return false;
+              }
+              
+              const availableStock = c.quantityPrevision !== undefined 
+                ? c.quantityPrevision 
+                : (c.quantity || 0)
+              const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+              return stockAfterRequest < (c.minQuantity || 0) && stockAfterRequest >= 0
+            }) && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Attention : stock faible
+                </Typography>
+                <Typography variant="body2">
+                  Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Erreur si des réactifs ont un stock insuffisant (sauf custom) */}
+            {formData.chemicals.some(c => {
+              if (c.isCustom || c.id?.endsWith('_CUSTOM')) return false;
+              const availableStock = c.quantityPrevision !== undefined 
+                ? c.quantityPrevision 
+                : (c.quantity || 0)
+              return (c.requestedQuantity || 0) > availableStock
+            }) && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Erreur : Stock insuffisant
+                </Typography>
+                <Typography variant="body2">
+                  Certains réactifs chimiques n'ont pas assez de stock disponible.
+                </Typography>
+              </Alert>
+            )}
+            {/* Avertissement pour les réactifs personnalisés */}
+            {formData.chemicals.some(c => c.isCustom || c.id?.endsWith('_CUSTOM')) && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Information : réactifs non référencés
+                </Typography>
+                <Typography variant="body2">
+                  Certains réactifs ne sont pas enregistrés dans l'inventaire et leur disponibilité devra être vérifiée manuellement.
+                </Typography>
+              </Alert>
+            )}
+
+            <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+              <Button onClick={handleStepBack}>
+                Retour
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleStepNext}
+                disabled={formData.chemicals.some(c => 
+                  !(c.isCustom || c.id?.endsWith('_CUSTOM')) && 
+                  c.requestedQuantity > (c.quantity || 0)
+                )}
+              >
+                Continuer
+              </Button>
             </Box>
-            {/* Input pour la quantité demandée */}
-            <TextField
-              label={`Quantité (${chemical.unit || 'unité'})`}
-              type="number"
-              value={chemical.requestedQuantity || 1}
-              onChange={(e) => {
-                const newQuantity = parseFloat(e.target.value) || 1;
-                const updatedChemicals = [...formData.chemicals];
-                updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity };
-                handleFormDataChange('chemicals', updatedChemicals);
-                }}
-                slotProps={{
-                    htmlInput: {
-                    min: 0.1,
-                    step: 0.1,
-                    max: availableStock
-                    }
-                }}
-                sx={{ width: 150 }}
-                size="small"
-                error={chemical.requestedQuantity > availableStock}
-                helperText={
-                  chemical.requestedQuantity > availableStock 
-                  ? 'Quantité insuffisante' 
-                  : stockAfterRequest < (chemical.minQuantity || 0)
-                  ? 'Stock faible'
-                  : ''
-                }
-                />
-            <IconButton
-              onClick={() => {
-                const updatedChemicals = formData.chemicals.filter((_, i) => i !== index);
-                handleFormDataChange('chemicals', updatedChemicals);
-              }}
-              color="error"
-              size="small"
-            >
-              <Delete />
-            </IconButton>
-          </Box>
-        )
-      })}
-    </Box>
-  </Box>
-)}
+          </StepContent>
+        </Step>
 
-{/* Ajouter un avertissement global si des réactifs seront en stock faible */}
-{formData.chemicals.some(c => {
-  const availableStock = c.quantityPrevision !== undefined 
-    ? c.quantityPrevision 
-    : (c.quantity || 0)
-  const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
-  return stockAfterRequest < (c.minQuantity || 0) && stockAfterRequest >= 0
-}) && (
-  <Alert severity="warning" sx={{ mt: 2 }}>
-    <Typography variant="body2" fontWeight="bold">
-      Attention : Stock faible
-    </Typography>
-    <Typography variant="body2">
-      Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
-    </Typography>
-  </Alert>
-)}
-
-{/* Ajouter aussi une erreur si des réactifs ont un stock insuffisant */}
-{formData.chemicals.some(c => {
-  const availableStock = c.quantityPrevision !== undefined 
-    ? c.quantityPrevision 
-    : (c.quantity || 0)
-  return (c.requestedQuantity || 0) > availableStock
-}) && (
-  <Alert severity="error" sx={{ mt: 2 }}>
-    <Typography variant="body2" fontWeight="bold">
-      Erreur : Stock insuffisant
-    </Typography>
-    <Typography variant="body2">
-      Certains réactifs chimiques n'ont pas assez de stock disponible.
-    </Typography>
-  </Alert>
-)}
-
-    <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-      <Button onClick={handleStepBack}>
-        Retour
-      </Button>
-      <Button
-        variant="contained"
-        onClick={handleStepNext}
-        disabled={formData.chemicals.some(c => c.requestedQuantity > (c.quantity || 0))}
-      >
-        Continuer
-      </Button>
-    </Box>
-  </StepContent>
-</Step>
+          {/* Étape 7: Matériel */}
 
           {/* Étape 7: Documents joints */}
           <Step>
@@ -1641,5 +2011,22 @@ const handleCreateCalendarEvent = async () => {
         </Stepper>
       </DialogContent>
     </Dialog>
+    {/* Snackbar pour les notifications */}
+    <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   )
+
 }

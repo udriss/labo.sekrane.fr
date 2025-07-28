@@ -195,7 +195,8 @@
       "notes": null,
       "createdAt": "2025-07-23T08:54:05.051Z",
       "updatedAt": "2025-07-23T08:56:13.226Z",
-      "supplier": null
+      "supplier": null,
+      "quantityPrevision": 214.6
     },
     {
       "id": "CHEM_INV_A2ZF1BSLZBW8",

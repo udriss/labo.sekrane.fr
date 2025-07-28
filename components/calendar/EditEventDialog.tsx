@@ -4,9 +4,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, IconButton,
-  TextField, Button, FormControl, InputLabel, Select, MenuItem,
+  TextField, Button, FormControl, InputLabel, Select, MenuItem, Snackbar,
   Autocomplete, Chip, Alert, Collapse, Stack, Divider, InputAdornment,
-  ClickAwayListener, Tooltip, CircularProgress
+  ClickAwayListener, Tooltip, CircularProgress, alpha, useTheme
 } from '@mui/material'
 import { 
   Close, Save, Warning, Science, Schedule, Assignment, EventAvailable,
@@ -20,6 +20,7 @@ import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { useSession } from 'next-auth/react'
+
 
 interface EditEventDialogProps {
   open: boolean
@@ -69,9 +70,10 @@ export function EditEventDialog({
   // Ajouter un état pour suivre les uploads
   const [hasUploadingFiles, setHasUploadingFiles] = useState(false)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
+  const [showCustomChemicalInfo, setShowCustomChemicalInfo] = useState(false)
 
   const { data: session } = useSession();
-
+  const theme = useTheme()
   const [timeSlots, setTimeSlots] = useState<Array<{
     date: Date | null;
     startTime: string;
@@ -93,7 +95,13 @@ export function EditEventDialog({
     location: ''
   })
 
-
+  // useEffect pour détecter la présence de réactifs custom
+  useEffect(() => {
+    const hasCustomChemicals = formData.chemicals.some(c => c.isCustom)
+    if (hasCustomChemicals) {
+      setShowCustomChemicalInfo(true)
+    }
+  }, [formData.chemicals])
 
   // Surveiller l'état des uploads
   useEffect(() => {
@@ -191,6 +199,15 @@ export function EditEventDialog({
     }
   }, [event, materials, chemicals])
 
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
 
   // Gestion des créneaux
@@ -498,6 +515,7 @@ const handleSave = async () => {
     formData.startDate.getDate() !== formData.endDate.getDate()
 
   return (
+    <>
     <Dialog
       fullScreen={isMobile}
       open={open}
@@ -835,11 +853,20 @@ const handleSave = async () => {
             }
             return prev;
           });
+          setSnackbar({
+            open: true,
+            message: `Classe "${newValue}" ajoutée avec succès`,
+            severity: 'success'
+          });
           
           console.log(`Classe personnalisée "${newValue}" créée avec succès`);
         } else {
           console.error(`Erreur lors de l'ajout de la classe "${newValue}":`, result.error);
-          
+          setSnackbar({
+            open: true,
+            message: result.error || 'Erreur lors de l\'ajout de la classe',
+            severity: 'error'
+          });
           // Optionnel : réinitialiser la valeur en cas d'erreur
           // setFormData({ ...formData, class: '' });
           
@@ -1219,9 +1246,10 @@ const handleSave = async () => {
                   Réactifs chimiques
                 </Typography>
                 
+
                 {/* Autocomplete pour ajouter des réactifs chimiques */}
                 <Autocomplete
-                  options={chemicalsWithForecast}
+                  options={chemicals}
                   getOptionLabel={(option) => {
                     if (typeof option === 'string') return option
                     const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity
@@ -1249,25 +1277,109 @@ const handleSave = async () => {
                       {...params}
                       label="Ajouter un réactif chimique"
                       placeholder="Rechercher et sélectionner..."
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {params.InputProps.endAdornment}
+                              {chemicalInputValue && chemicalInputValue.trim() && 
+                              !chemicalsWithForecast.some(c => c.name.toLowerCase() === chemicalInputValue.trim().toLowerCase()) && (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      const trimmedValue = chemicalInputValue.trim();
+                                      
+                                      // Créer un réactif personnalisé
+                                      const customChemical = {
+                                        id: `CHEM_${Date.now()}_CUSTOM`,
+                                        name: trimmedValue,
+                                        quantity: 0,
+                                        unit: 'g', // Unité par défaut
+                                        requestedQuantity: 1,
+                                        isCustom: true,
+                                        // Pas de forecastQuantity pour les réactifs personnalisés
+                                      };
+                                      
+                                      // Ajouter le réactif personnalisé à la liste
+                                      if (!formData.chemicals.some(c => c.name === trimmedValue)) {
+                                        setFormData({ 
+                                          ...formData, 
+                                          chemicals: [
+                                            ...formData.chemicals,
+                                            customChemical
+                                          ]
+                                        });
+                                        
+                                        // Réinitialiser l'input
+                                        setChemicalInputValue('');
+                                        
+                                        // Retirer le focus
+                                        (document.activeElement as HTMLElement)?.blur();
+                                        
+                                        // Afficher une notification
+                                        setSnackbar({
+                                          open: true,
+                                          message: `Réactif personnalisé "${trimmedValue}" ajouté`,
+                                          severity: 'info'
+                                        });
+                                      }
+                                    }}
+                                    edge="end"
+                                    sx={{ 
+                                      mr: -1,
+                                      bgcolor: 'action.hover',
+                                      borderRadius: 1,
+                                      px: 1,
+                                      "&:hover": {
+                                        bgcolor: 'primary.main',
+                                        color: 'white',
+                                        '& .MuiTypography-root': {
+                                          color: 'white',
+                                        }
+                                      } 
+                                    }}
+                                  >
+                                    <Add fontSize="small" />
+                                    <Typography 
+                                      variant="caption" 
+                                      color="text.secondary"
+                                      sx={{ ml: 0.5, mr: 0.5 }}
+                                    >
+                                      Ajouter "{chemicalInputValue}"
+                                    </Typography>
+                                  </IconButton>
+                                </InputAdornment>
+                              )}
+                            </>
+                          ),
+                        }
+                      }}
                     />
                   )}
                   renderOption={(props, option) => (
                     <li {...props}>
                       <Box sx={{ width: '100%' }}>
-                        <Typography variant="body2">
-                          {option.name}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Science fontSize="small" color="action" />
+                          <Typography variant="body2">
+                            {option.name}
+                          </Typography>
+                        </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
                           <Typography variant="caption" color="text.secondary">
                             Stock actuel : {option.quantity}{option.unit}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
-                            color={option.forecastQuantity < option.minQuantity ? 'error' : 'text.secondary'}
-                          >
-                            Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit}
-                            {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit})`}
-                          </Typography>
+                          {option.forecastQuantity !== undefined && (
+                            <Typography 
+                              variant="caption" 
+                              color={option.forecastQuantity < option.minQuantity ? 'error' : 'text.secondary'}
+                            >
+                              Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit}
+                              {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit})`}
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     </li>
@@ -1299,271 +1411,327 @@ const handleSave = async () => {
                   }}
                 />
 
-                {/* Liste des réactifs chimiques sélectionnés avec quantités */}
-                {formData.chemicals.length > 0 && (
-                  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {formData.chemicals.map((chemical, index) => {
-                      // Créer une clé unique pour ce chemical
-                      const tooltipKey = `formChemical-${chemical.id || index}`
-                      const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
-                      
-                      // Utiliser quantityPrevision si disponible, sinon quantity
-                      const availableStock = chemical.quantityPrevision !== undefined 
-                        ? chemical.quantityPrevision 
-                        : (chemical.quantity || 0)
-                      
-                      const stockAfterRequest = availableStock - (chemical.requestedQuantity || 0)
-                      
-                      const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
-                        setTooltipStates(prev => ({
-                          ...prev,
-                          [tooltipKey]: {
-                            ...tooltipOpen,
-                            [type]: !tooltipOpen[type]
-                          }
-                        }))
-                      }
-                      
-                      return (
-                        <Box
-                          key={chemical.id || index}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            p: 1.5,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            backgroundColor: 'background.paper'
-                          }}
+
+{/* Liste des réactifs chimiques sélectionnés avec quantités */}
+{formData.chemicals.length > 0 && (
+  <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+    {formData.chemicals.map((chemical, index) => {
+      // Créer une clé unique pour ce chemical
+      const tooltipKey = `formChemical-${chemical.id || index}`
+      const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
+      
+      // Vérifier si c'est un réactif personnalisé
+      const isCustomChemical = chemical.isCustom || chemical.id?.endsWith('_CUSTOM')
+      
+      // Utiliser quantityPrevision si disponible, sinon quantity
+      const availableStock = isCustomChemical ? Infinity : (chemical.quantityPrevision !== undefined 
+        ? chemical.quantityPrevision 
+        : (chemical.quantity || 0))
+      
+      const stockAfterRequest = isCustomChemical ? null : (availableStock - (chemical.requestedQuantity || 0))
+      
+      const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
+        setTooltipStates(prev => ({
+          ...prev,
+          [tooltipKey]: {
+            ...tooltipOpen,
+            [type]: !tooltipOpen[type]
+          }
+        }))
+      }
+      
+      return (
+        <Box
+          key={chemical.id || index}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            p: 1.5,
+            border: '1px solid',
+            borderColor: isCustomChemical ? 'secondary.main' : 'divider',
+            borderRadius: 1,
+            backgroundColor: isCustomChemical ? alpha(theme.palette.secondary.main, 0.05) : 'background.paper'
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Typography variant="body2">
+                {chemical.name || 'Réactif chimique'}
+              </Typography>
+              {isCustomChemical && (
+                <Chip 
+                  label="Personnalisé" 
+                  size="small" 
+                  color="secondary" 
+                  icon={<Science fontSize="small" />}
+                  sx={{ height: 22 }}
+                />
+              )}
+            </Box>
+            
+            {/* Affichage différent pour les réactifs personnalisés */}
+            {isCustomChemical ? (
+              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Réactif non référencé dans l'inventaire
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
+                {/* Stock actuel */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
+                  </Typography>
+                  <ClickAwayListener onClickAway={() => {
+                    if (tooltipOpen.actual) handleTooltipToggle('actual')
+                  }}>
+                  <div>
+                    <Tooltip 
+                      title="Quantité physique actuellement disponible dans l'inventaire"
+                      arrow
+                      open={tooltipOpen.actual}
+                      onClose={() => {
+                        if (tooltipOpen.actual) handleTooltipToggle('actual')
+                      }}
+                      disableHoverListener
+                      disableFocusListener
+                      disableTouchListener
+                      slotProps={{
+                        popper: {
+                        disablePortal: true,
+                        },
+                      }}
+                      >
+                      <Box component="span" sx={{ display: 'inline-block' }}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleTooltipToggle('actual')}
+                          sx={{ p: 0.25 }}
+                          disableRipple={false}
                         >
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2">
-                              {chemical.name || 'Réactif chimique'}
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: .1, flexWrap: 'wrap' }}>
-                              {/* Stock actuel */}
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
-                                </Typography>
-                                <ClickAwayListener onClickAway={() => {
-                                  if (tooltipOpen.actual) handleTooltipToggle('actual')
-                                }}>
-                                <div>
-                                  <Tooltip 
-                                    title="Quantité physique actuellement disponible dans l'inventaire"
-                                    arrow
-                                    open={tooltipOpen.actual}
-                                    onClose={() => {
-                                      if (tooltipOpen.actual) handleTooltipToggle('actual')
-                                    }}
-                                    disableHoverListener
-                                    disableFocusListener
-                                    disableTouchListener
-                                    slotProps={{
-                                      popper: {
-                                      disablePortal: true,
-                                      },
-                                    }}
-                                    >
-                                    <Box component="span" sx={{ display: 'inline-block' }}>
-                                      <IconButton 
-                                        size="small" 
-                                        onClick={() => handleTooltipToggle('actual')}
-                                        sx={{ p: 0.25 }}
-                                        disableRipple={false}
-                                      >
-                                        <InfoOutlined sx={{ fontSize: 14 }} />
-                                      </IconButton>
-                                    </Box>
-                                  </Tooltip>
-                                </div>
-                                </ClickAwayListener>
-                              </Box>
+                          <InfoOutlined sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    </Tooltip>
+                  </div>
+                  </ClickAwayListener>
+                </Box>
 
-                              {/* Stock prévisionnel */}
-                              {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <Typography variant="caption" color="warning.main">
-                                    Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
-                                  </Typography>
-                                  <ClickAwayListener onClickAway={() => {
-                                    if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-                                  }}>
-                                  <div>
-                                    <Tooltip 
-                                      title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
-                                      arrow
-                                      open={tooltipOpen.prevision}
-                                      onClose={() => {
-                                        if (tooltipOpen.prevision) handleTooltipToggle('prevision')
-                                      }}
-                                      disableHoverListener
-                                      disableFocusListener
-                                      disableTouchListener
-                                      slotProps={{
-                                      popper: {
-                                      disablePortal: true,
-                                      },
-                                    }}
-                                    >
-                                      <Box component="span" sx={{ display: 'inline-flex' }}>
-                                        <IconButton 
-                                          size="small" 
-                                          onClick={() => handleTooltipToggle('prevision')}
-                                          sx={{ p: 0.25 }}
-                                        >
-                                          <InfoOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
-                                        </IconButton>
-                                      </Box>
-                                    </Tooltip>
-                                  </div>
-                                  </ClickAwayListener>
-                                </Box>
-                              )}
-
-                              {/* Stock après ce TP */}
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Typography 
-                                  variant="caption" 
-                                  color={stockAfterRequest < 0 ? 'error' : stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 'success.main'}
-                                >
-                                  Après ce TP EDIT : {stockAfterRequest.toFixed(1)}{chemical.unit || ''}
-                                </Typography>
-                                <ClickAwayListener onClickAway={() => {
-                                  if (tooltipOpen.after) handleTooltipToggle('after')
-                                }}>
-                                  <div>
-                                    <Tooltip 
-                                      title={
-                                        stockAfterRequest < 0 
-                                          ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
-                                          : stockAfterRequest < (chemical.minQuantity || 0)
-                                          ? "Attention : le stock passera sous le seuil minimum recommandé"
-                                          : "Stock restant après validation de ce TP"
-                                      }
-                                      arrow
-                                      slotProps={{
-                                      popper: {
-                                      disablePortal: true,
-                                      },
-                                    }}
-                                      open={tooltipOpen.after}
-                                      onClose={() => {
-                                        if (tooltipOpen.after) handleTooltipToggle('after')
-                                      }}
-                                      disableHoverListener
-                                      disableFocusListener
-                                      disableTouchListener
-                                    >
-                                      <Box component="span" sx={{ display: 'inline-flex' }}>
-                                      <IconButton 
-                                        size="small" 
-                                        onClick={() => handleTooltipToggle('after')}
-                                        sx={{ p: 0.25 }}
-                                      >
-                                        <InfoOutlined 
-                                          sx={{ 
-                                            fontSize: 14,
-                                            color: stockAfterRequest < 0 ? 'error.main' : 
-                                                  stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
-                                                  'success.main'
-                                          }} 
-                                        />
-                                      </IconButton>
-                                      </Box>
-                                    </Tooltip>
-                                  </div>
-                                </ClickAwayListener>
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          <TextField
-                            label={`Quantité (${chemical.unit || 'unité'})`}
-                            type="number"
-                            value={chemical.requestedQuantity || 1}
-                            onChange={(e) => {
-                              const newQuantity = parseFloat(e.target.value) || 1
-                              const updatedChemicals = [...formData.chemicals]
-                              updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
-                              setFormData({ ...formData, chemicals: updatedChemicals })
-                            }}
-                            slotProps={{
-                              htmlInput: {
-                              min: 0.1,
-                              step: 0.1,
-                              max: availableStock
-                              }
-                            }}
-                            sx={{ width: 130 }}
-                            size="small"
-                            error={chemical.requestedQuantity > availableStock}
-                            helperText={
-                              chemical.requestedQuantity > availableStock
-                              ? 'Stock insuffisant' 
-                              : ''
-                            }
-                            />
-
-                          <IconButton
-                            onClick={() => {
-                              const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
-                              setFormData({ ...formData, chemicals: updatedChemicals })
-                            }}
-                            color="error"
-                            size="small"
+                {/* Stock prévisionnel */}
+                {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" color="warning.main">
+                      Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
+                    </Typography>
+                    <ClickAwayListener onClickAway={() => {
+                      if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                    }}>
+                    <div>
+                      <Tooltip 
+                        title="Quantité disponible après déduction de toutes les demandes en cours (événements futurs)"
+                        arrow
+                        open={tooltipOpen.prevision}
+                        onClose={() => {
+                          if (tooltipOpen.prevision) handleTooltipToggle('prevision')
+                        }}
+                        disableHoverListener
+                        disableFocusListener
+                        disableTouchListener
+                        slotProps={{
+                        popper: {
+                        disablePortal: true,
+                        },
+                      }}
+                      >
+                        <Box component="span" sx={{ display: 'inline-flex' }}>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleTooltipToggle('prevision')}
+                            sx={{ p: 0.25 }}
                           >
-                            <DeleteIcon />
+                            <InfoOutlined sx={{ fontSize: 14, color: 'warning.main' }} />
                           </IconButton>
                         </Box>
-                      )
-                    })}
+                      </Tooltip>
+                    </div>
+                    </ClickAwayListener>
                   </Box>
                 )}
+
+                {/* Stock après ce TP */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography 
+                    variant="caption" 
+                    color={stockAfterRequest !== null && stockAfterRequest < 0 ? 'error' : stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 'success.main'}
+                  >
+                    Après ce TP : {stockAfterRequest !== null ? stockAfterRequest.toFixed(1) : 'N/A'}{chemical.unit || ''}
+                  </Typography>
+                  <ClickAwayListener onClickAway={() => {
+                    if (tooltipOpen.after) handleTooltipToggle('after')
+                  }}>
+                    <div>
+                      <Tooltip 
+                        title={
+                          stockAfterRequest !== null && stockAfterRequest < 0 
+                            ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
+                            : stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0)
+                            ? "Attention : le stock passera sous le seuil minimum recommandé"
+                            : "Stock restant après validation de ce TP"
+                        }
+                        arrow
+                        slotProps={{
+                        popper: {
+                        disablePortal: true,
+                        },
+                      }}
+                        open={tooltipOpen.after}
+                        onClose={() => {
+                          if (tooltipOpen.after) handleTooltipToggle('after')
+                        }}
+                        disableHoverListener
+                        disableFocusListener
+                        disableTouchListener
+                      >
+                        <Box component="span" sx={{ display: 'inline-flex' }}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleTooltipToggle('after')}
+                          sx={{ p: 0.25 }}
+                        >
+                          <InfoOutlined 
+                            sx={{ 
+                              fontSize: 14,
+                              color: stockAfterRequest !== null && stockAfterRequest < 0 ? 'error.main' : 
+                                    stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                    'success.main'
+                            }} 
+                          />
+                        </IconButton>
+                        </Box>
+                      </Tooltip>
+                    </div>
+                  </ClickAwayListener>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          <TextField
+            label={`Quantité (${chemical.unit || 'unité'})`}
+            type="number"
+            value={chemical.requestedQuantity || 1}
+            onChange={(e) => {
+              const newQuantity = parseFloat(e.target.value) || 1
+              const updatedChemicals = [...formData.chemicals]
+              updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
+              setFormData({ ...formData, chemicals: updatedChemicals })
+            }}
+            slotProps={{
+              htmlInput: {
+                min: 0.1,
+                step: 0.1,
+                // Pas de limite max pour les réactifs personnalisés
+                ...(isCustomChemical ? {} : { max: availableStock })
+              }
+            }}
+            sx={{ width: 130 }}
+            size="small"
+            error={!isCustomChemical && chemical.requestedQuantity > availableStock}
+            helperText={
+              !isCustomChemical && chemical.requestedQuantity > availableStock
+              ? 'Stock insuffisant' 
+              : ''
+            }
+          />
+
+          <IconButton
+            onClick={() => {
+              const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
+              setFormData({ ...formData, chemicals: updatedChemicals })
+            }}
+            color="error"
+            size="small"
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      )
+    })}
+  </Box>
+)}
               </Box>
               {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
-              {formData.chemicals.some(c => {
-                const availableStock = c.quantityPrevision !== undefined 
-                  ? c.quantityPrevision 
-                  : (c.quantity || 0)
-                const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
-                return stockAfterRequest < (c.minQuantity || 0)
-              }) && (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Attention : Stock faible
-                  </Typography>
-                  <Typography variant="body2">
-                    Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
-                  </Typography>
-                  {/* Optionnel : Afficher les détails des réactifs concernés */}
-                  <Box sx={{ mt: 1 }}>
-                    {formData.chemicals
-                      .filter(c => {
-                        const availableStock = c.quantityPrevision !== undefined 
-                          ? c.quantityPrevision 
-                          : (c.quantity || 0)
-                        const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
-                        return stockAfterRequest < (c.minQuantity || 0)
-                      })
-                      .map((c, index) => {
-                        const availableStock = c.quantityPrevision !== undefined 
-                          ? c.quantityPrevision 
-                          : (c.quantity || 0)
-                        const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
-                        return (
-                          <Typography key={index} variant="caption" color="warning.dark" component="div">
-                            • {c.name}: {stockAfterRequest.toFixed(1)}{c.unit} restants (minimum: {c.minQuantity || 0}{c.unit})
-                          </Typography>
-                        )
-                      })
-                    }
-                  </Box>
-                </Alert>
-              )}
+{formData.chemicals
+  .filter(c => !c.isCustom) // Exclure les réactifs custom
+  .some(c => {
+    const availableStock = c.quantityPrevision !== undefined 
+      ? c.quantityPrevision 
+      : (c.quantity || 0)
+    const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+    return stockAfterRequest < (c.minQuantity || 0)
+  }) && (
+  <Alert severity="warning" sx={{ mt: 2 }}>
+    <Typography variant="body2" fontWeight="bold">
+      Attention : Stock faible
+    </Typography>
+    <Typography variant="body2">
+      Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
+    </Typography>
+    {/* Détails des réactifs concernés */}
+    <Box sx={{ mt: 1 }}>
+      {formData.chemicals
+        .filter(c => !c.isCustom) // Exclure les réactifs custom
+        .filter(c => {
+          const availableStock = c.quantityPrevision !== undefined 
+            ? c.quantityPrevision 
+            : (c.quantity || 0)
+          const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+          return stockAfterRequest < (c.minQuantity || 0)
+        })
+        .map((c, index) => {
+          const availableStock = c.quantityPrevision !== undefined 
+            ? c.quantityPrevision 
+            : (c.quantity || 0)
+          const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
+          return (
+            <Typography key={index} variant="caption" color="warning.dark" component="div">
+              • {c.name}: {stockAfterRequest.toFixed(1)}{c.unit} restants (minimum: {c.minQuantity || 0}{c.unit})
+            </Typography>
+          )
+        })
+      }
+    </Box>
+  </Alert>
+)}
+
+{/* Snackbar pour informer de la présence de réactifs custom */}
+<Snackbar
+  open={showCustomChemicalInfo}
+  autoHideDuration={6000}
+  onClose={() => setShowCustomChemicalInfo(false)}
+  anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+>
+  <Alert 
+    onClose={() => setShowCustomChemicalInfo(false)} 
+    severity="info" 
+    sx={{ width: '100%',  }}
+  >
+    <Typography variant="body2" fontWeight="bold">
+      Demande personnalisée détectée
+    </Typography>
+    <Typography variant="body2">
+      {(() => {
+        const customChemicals = formData.chemicals.filter(c => c.isCustom)
+        const count = customChemicals.length
+        if (count === 1) {
+          return `Le réactif "${customChemicals[0].name}" est une demande personnalisée qui sera traitée manuellement.`
+        } else {
+          return `${count} réactifs sont des demandes personnalisées qui seront traitées manuellement.`
+        }
+      })()}
+    </Typography>
+  </Alert>
+</Snackbar>
             </>
           )}
 
@@ -1613,5 +1781,20 @@ const handleSave = async () => {
         </Button>
       </DialogActions>
     </Dialog>
+          <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      </>
   )
 }

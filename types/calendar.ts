@@ -47,6 +47,7 @@ export interface CalendarEvent {
     unit?: string
     quantityPrevision?: number
     requestedQuantity?: number
+    isCustom?: boolean
   })[]
   fileName?: string | null  // Garder pour la rétrocompatibilité
   fileUrl?: string | null   // Ajouter pour la rétrocompatibilité

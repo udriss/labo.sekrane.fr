@@ -8,7 +8,7 @@
       "role": "ADMIN",
       "isActive": true,
       "createdAt": "2025-01-01T00:00:00Z",
-      "updatedAt": "2025-07-24T08:21:01.060Z",
+      "updatedAt": "2025-07-28T03:19:13.717Z",
       "siteConfig": {
         "materialsViewMode": "list",
         "chemicalsViewMode": "list",
@@ -28,9 +28,10 @@
         },
         "lastUpdated": "2025-07-27T22:09:57.032Z"
       },
-      "associatedClasses": [
-        "1ère ES",
-        "Terminale ES"
+      "associatedClasses": [],
+      "customClasses": [
+        "MaClasse",
+        "MaCLASSE 2"
       ]
     },
     {
@@ -50,9 +51,7 @@
         "1ère ES",
         "Terminale ES"
       ],
-      "customClasses": [
-        "Mine"
-      ]
+      "customClasses": []
     },
     {
       "id": "USER_003",

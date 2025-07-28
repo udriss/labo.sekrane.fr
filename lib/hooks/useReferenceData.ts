@@ -119,26 +119,16 @@ export function useReferenceData() {
         }
       }
 
-      // Déterminer automatiquement le type si nécessaire
-      let classType: 'predefined' | 'custom' = 'custom'
-      
-      if (type === 'auto') {
-        classType = session?.user?.role === 'ADMIN' ? 'predefined' : 'custom'
-      } else {
-        classType = type
-      }
-
       // Vérifier les permissions pour les classes prédéfinies
-      if (classType === 'predefined' && session?.user?.role !== 'ADMIN') {
+      if (type === 'predefined' && session?.user?.role !== 'ADMIN') {
         return { 
           success: false, 
-          error: 'Seuls les administrateurs peuvent créer des classes prédéfinies' 
+          error: 'Seuls les administrateurs peuvent ajouter des classes prédéfinies' 
         }
       }
 
       // Déterminer l'API à utiliser
-            // Déterminer l'API à utiliser
-      const apiEndpoint = classType === 'predefined' || session?.user?.role === 'ADMIN' 
+      const apiEndpoint = type === 'predefined'
         ? '/api/classes' 
         : '/api/user/classes'
 
@@ -150,7 +140,7 @@ export function useReferenceData() {
         },
         body: JSON.stringify({
           name: className.trim(),
-          type: classType
+          type: type
         })
       })
 
@@ -161,7 +151,7 @@ export function useReferenceData() {
         setUserClasses(prev => [...prev, newClass.name])
         
         // Si c'est une classe custom, l'ajouter aussi à customClasses
-        if (classType === 'custom') {
+        if (type === 'custom') {
           setCustomClasses(prev => [...prev, newClass.name])
         }
         

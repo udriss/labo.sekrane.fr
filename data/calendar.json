@@ -90,6 +90,73 @@
       "endsAfterDay": false,
       "startsBeforeSchedule": false,
       "endsAfterSchedule": false
+    },
+    {
+      "id": "EVENT_1753673250950_dlhn85m3r",
+      "title": "Administrateur",
+      "name": "Administrateur",
+      "description": null,
+      "startDate": "2025-07-27T00:00:00.000Z",
+      "endDate": "2025-07-27T11:00:00.000Z",
+      "type": "TP",
+      "state": "PENDING",
+      "stateChanger": [],
+      "class": "MaCLASSE 2",
+      "room": null,
+      "location": null,
+      "materials": [
+        {
+          "id": "custom_1753672912310",
+          "name": "Mon tube",
+          "quantity": 1,
+          "isCustom": true,
+          "volume": null
+        },
+        {
+          "id": "custom_1753672934824",
+          "name": "Tube perso",
+          "quantity": 1,
+          "isCustom": true,
+          "volume": null
+        }
+      ],
+      "chemicals": [
+        {
+          "id": "CHEM_1753672921409_CUSTOM",
+          "name": "Mon réactive",
+          "requestedQuantity": 3.7,
+          "unit": "g",
+          "quantity": 0,
+          "isCustom": true
+        },
+        {
+          "id": "CHEM_INV_A2ZP1BSQZBY8",
+          "name": "Sulfate de cuivre pentahydraté",
+          "requestedQuantity": 1,
+          "unit": "g",
+          "quantity": 215.6,
+          "isCustom": false
+        }
+      ],
+      "equipment": [],
+      "fileName": null,
+      "fileUrl": null,
+      "files": [
+        {
+          "fileName": "TEST_3.jpeg",
+          "fileUrl": "/uploads/calendar/1753672974460_h0ki2k_TEST_3.jpeg",
+          "filePath": "/uploads/calendar/1753672974460_h0ki2k_TEST_3.jpeg",
+          "fileSize": 87534,
+          "fileType": "image/jpeg",
+          "uploadedAt": "2025-07-28T03:27:30.699Z"
+        }
+      ],
+      "remarks": null,
+      "notes": null,
+      "createdBy": "USER_001",
+      "modifiedBy": [],
+      "createdAt": "2025-07-28T03:27:30.950Z",
+      "updatedAt": "2025-07-28T03:27:30.950Z"
     }
   ]
 }
