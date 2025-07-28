@@ -187,7 +187,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
       
       const positioned: PositionedEvent = {
         ...event,
-        id: `${event.id}-slot-${slotIndex}`, // ID unique pour chaque créneau
+        id: `${event.id}`, // ID unique pour chaque créneau
         column: columnIndex,
         totalColumns: 1, // Sera mis à jour après
         visualStartDate,
@@ -785,9 +785,9 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
           sx={{ justifyContent: 'center' }}
           flexWrap="wrap"
         >
-          {Object.entries(EVENT_TYPES).map(([key, value]) => (
+          {Object.entries(EVENT_TYPES).map(([key, value], index) => (
             <Chip
-              key={key}
+              key={key+'_'+index}
               icon={<Circle sx={{ fontSize: 12 }} />}
               label={value.label}
               size="small"

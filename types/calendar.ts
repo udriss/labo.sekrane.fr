@@ -53,6 +53,7 @@ export interface CalendarEvent {
   title: string
   description?: string | null
   timeSlots: TimeSlot[]
+  actuelTimeSlots?: TimeSlot[] // NOUVEAU: créneaux actuellement retenus après validation
   type: EventType
   state?: EventState
   stateChanger?: StateChange[]
@@ -80,7 +81,6 @@ export interface CalendarEvent {
   })[]
   files?: FileInfo[]        // Nouveau champ pour la gestion multiple
   remarks?: string | null   // Nouveau champ pour les remarques avec formatage
-  eventModifying?: EventModification[] // Nouveau champ pour les modifications en attente
   createdBy?: string | null 
   modifiedBy?: Array<[string, ...string[]]>
   createdAt?: string

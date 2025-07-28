@@ -115,7 +115,11 @@ export const PUT = withAudit(
       state,
       stateChanger: updatedStateChanger,
       stateReason: reason || event.stateReason || '',
-      updatedAt: changeDate
+      updatedAt: changeDate,
+      // NOUVEAU: Si c'est le créateur qui valide (état VALIDATED), mettre à jour actuelTimeSlots
+      ...(state === 'VALIDATED' && event.createdBy === userId && {
+        actuelTimeSlots: event.timeSlots.filter((slot: any) => slot.status === 'active')
+      })
     };
     
     calendarData.events[eventIndex] = updatedEvent;

@@ -29,9 +29,13 @@ export default function DailyCalendarView({
   onEventDelete,
   canEditEvent
 }: DailyCalendarViewProps) {
-  const dayEvents = events.filter(event => 
-    isSameDay(new Date(event.startDate), currentDate)
-  )
+  const dayEvents = events.filter(event => {
+    // Utiliser actuelTimeSlots en priorité, sinon timeSlots actifs
+    const slotsToCheck = event.actuelTimeSlots || event.timeSlots?.filter(slot => slot.status === 'active') || []
+    return slotsToCheck.some(slot => 
+      isSameDay(new Date(slot.startDate), currentDate)
+    )
+  })
 
   const handlePreviousDay = () => {
     setCurrentDate(subDays(currentDate, 1))
@@ -105,7 +109,15 @@ export default function DailyCalendarView({
         ) : (
           <Stack spacing={2}>
             {dayEvents
-              .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+              .sort((a, b) => {
+                // Utiliser actuelTimeSlots en priorité pour le tri
+                const aSlots = a.actuelTimeSlots || a.timeSlots?.filter(s => s.status === 'active') || []
+                const bSlots = b.actuelTimeSlots || b.timeSlots?.filter(s => s.status === 'active') || []
+                const aFirstSlot = aSlots[0]
+                const bFirstSlot = bSlots[0]
+                if (!aFirstSlot || !bFirstSlot) return 0
+                return new Date(aFirstSlot.startDate).getTime() - new Date(bFirstSlot.startDate).getTime()
+              })
               .map((event) => {
                 const showActions = canEditEvent && canEditEvent(event)
                 
@@ -191,7 +203,19 @@ export default function DailyCalendarView({
                             {event.title}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {format(new Date(event.startDate), 'HH:mm')} - {format(new Date(event.endDate), 'HH:mm')}
+                            {(() => {
+                              // Utiliser actuelTimeSlots en priorité pour l'affichage
+                              const displaySlots = event.actuelTimeSlots || event.timeSlots?.filter(s => s.status === 'active') || []
+                              if (displaySlots.length > 0) {
+                                return (
+                                  <>
+                                    {format(new Date(displaySlots[0].startDate), 'HH:mm')} - {format(new Date(displaySlots[0].endDate), 'HH:mm')}
+                                    {displaySlots.length > 1 && ` (+${displaySlots.length - 1} autres créneaux)`}
+                                  </>
+                                )
+                              }
+                              return 'Aucun créneau défini'
+                            })()}
                           </Typography>
                           {event.description && (
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -236,9 +260,13 @@ export default function DailyCalendarView({
         <Box display="flex" gap={1} justifyContent="space-between">
           {[...Array(7)].map((_, index) => {
             const day = addDays(startOfDay(subDays(currentDate, currentDate.getDay())), index)
-            const hasEvents = events.some(event => 
-              isSameDay(new Date(event.startDate), day)
-            )
+            const hasEvents = events.some(event => {
+              // Utiliser actuelTimeSlots en priorité pour détecter les événements
+              const slotsToCheck = event.actuelTimeSlots || event.timeSlots?.filter(s => s.status === 'active') || []
+              return slotsToCheck.some(slot => 
+                isSameDay(new Date(slot.startDate), day)
+              )
+            })
             const isToday = isSameDay(day, new Date())
             const isSelected = isSameDay(day, currentDate)
 

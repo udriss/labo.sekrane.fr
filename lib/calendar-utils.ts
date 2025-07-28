@@ -9,9 +9,16 @@ const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
 
 // Fonction pour migrer les anciennes données vers le nouveau format
 export async function migrateEventToNewFormat(event: any): Promise<any> {
-  // Si l'événement a déjà des timeSlots, pas besoin de migration
+  // Si l'événement a déjà des timeSlots, vérifier les nouveaux champs
   if (event.timeSlots && Array.isArray(event.timeSlots)) {
-    return event;
+    // S'assurer que actuelTimeSlots est présent
+    const migratedEvent = {
+      ...event,
+      actuelTimeSlots: event.actuelTimeSlots || event.timeSlots.filter((slot: any) => slot.status === 'active')
+    };
+    // Supprimer eventModifying s'il existe (n'est plus utilisé)
+    delete migratedEvent.eventModifying;
+    return migratedEvent;
   }
 
   // Créer un timeSlot à partir des anciennes données startDate/endDate
@@ -22,11 +29,12 @@ export async function migrateEventToNewFormat(event: any): Promise<any> {
     status: 'active'
   };
 
-  // Retourner l'événement avec le nouveau format
-  const { startDate, endDate, parentEventId, ...restEvent } = event;
+  // Retourner l'événement avec le nouveau format complet
+  const { startDate, endDate, parentEventId, eventModifying, ...restEvent } = event;
   return {
     ...restEvent,
-    timeSlots: [timeSlot]
+    timeSlots: [timeSlot],
+    actuelTimeSlots: [timeSlot] // NOUVEAU: créneaux actuellement retenus
   };
 }
 

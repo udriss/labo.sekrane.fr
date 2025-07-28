@@ -14,7 +14,11 @@ import {
 } from '@mui/icons-material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
-import { DatePicker, TimePicker } from '@mui/x-date-pickers'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { fr } from 'date-fns/locale'
 import { CalendarEvent, EventType } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
@@ -23,8 +27,6 @@ import { useSession } from 'next-auth/react'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { TimeSlot } from '@/types/calendar'
-
-
 interface EditEventDialogProps {
   open: boolean
   event: CalendarEvent | null
@@ -78,13 +80,20 @@ export function EditEventDialog({
   
   const { data: session } = useSession();
   const theme = useTheme()
+  
+  // Type des timeSlots locaux avec traçabilité complète
   const [timeSlots, setTimeSlots] = useState<Array<{
-    id?: string;  // Ajouter l'id pour identifier les créneaux existants
+    id?: string;
     date: Date | null;
     startTime: string;
     endTime: string;
-    isExisting?: boolean;  // Pour différencier les créneaux existants des nouveaux
-    userIDAdding: string;
+    isExisting?: boolean;
+    createdBy?: string;
+    modifiedBy?: Array<{
+      userId: string;
+      date: string;
+      action: 'created' | 'modified' | 'deleted';
+    }>;
   }>>([])
   
   const [formData, setFormData] = useState({
@@ -184,14 +193,15 @@ export function EditEventDialog({
       // Initialiser les remarques
       setRemarks(event.remarks || '')
 
-      // Initialiser tous les créneaux
+      // Initialiser tous les créneaux avec conservation de l'historique
       const formattedTimeSlots = activeSlots.map(slot => ({
         id: slot.id,
         date: new Date(slot.startDate),
         startTime: format(new Date(slot.startDate), 'HH:mm'),
         endTime: format(new Date(slot.endDate), 'HH:mm'),
         isExisting: true,
-        userIDAdding: session?.user?.id || 'INDISPONIBLE'
+        createdBy: slot.createdBy,
+        modifiedBy: slot.modifiedBy || [] // Conservation complète de l'historique
       }))
 
       setTimeSlots(formattedTimeSlots)
@@ -200,6 +210,7 @@ export function EditEventDialog({
       setShowMultipleSlots(activeSlots.length > 1)
     }
   }, [event, materials, chemicals])
+
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -219,6 +230,26 @@ export function EditEventDialog({
     const temp = slot.startTime
     slot.startTime = slot.endTime
     slot.endTime = temp
+    
+    // Ajouter une entrée de modification avec traçabilité complète
+    if (slot.modifiedBy) {
+      slot.modifiedBy = [
+        ...slot.modifiedBy,
+        {
+          userId: session?.user?.id || 'INDISPONIBLE',
+          date: new Date().toISOString(),
+          action: 'modified' as const
+        }
+      ]
+    } else {
+      // Initialiser modifiedBy pour les nouveaux slots
+      slot.modifiedBy = [{
+        userId: session?.user?.id || 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }]
+    }
+    
     setTimeSlots(updatedSlots)
     
     // Afficher un message pour informer l'utilisateur
@@ -231,15 +262,22 @@ export function EditEventDialog({
     setTimeout(() => setAnimatingSlot(null), 1000)
   }
 
-  // Gestion des créneaux
+  // Gestion des créneaux - Ajout avec traçabilité complète
   const addTimeSlot = () => {
-    setTimeSlots([...timeSlots, {
+    const newSlot = {
+      id: generateTimeSlotId(),
       date: formData.startDate,
       startTime: formData.startTime || '08:00',
       endTime: formData.endTime || '10:00',
       isExisting: false,
-      userIDAdding: session?.user?.id || 'INDISPONIBLE' // Utiliser l'ID de l'utilisateur de la session
-    }])
+      createdBy: session?.user?.id || 'INDISPONIBLE',
+      modifiedBy: [{
+        userId: session?.user?.id || 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'created' as const
+      }]
+    }
+    setTimeSlots([...timeSlots, newSlot])
   }
 
   const removeTimeSlot = (index: number) => {
@@ -249,18 +287,39 @@ export function EditEventDialog({
     }
   }
 
-  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime' | 'userIDAdding', value: any, checkSwap: boolean = true) => {
+  const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: any, checkSwap: boolean = true) => {
     const newTimeSlots = [...timeSlots]
+    const slot = newTimeSlots[index]
+    
     if (field === 'date') {
-      newTimeSlots[index].date = value
+      slot.date = value
     } else {
-      newTimeSlots[index][field] = value
+      slot[field] = value
     }
+    
+    // Ajouter une entrée de modification avec traçabilité complète
+    if (slot.modifiedBy) {
+      slot.modifiedBy = [
+        ...slot.modifiedBy,
+        {
+          userId: session?.user?.id || 'INDISPONIBLE',
+          date: new Date().toISOString(),
+          action: 'modified' as const
+        }
+      ]
+    } else {
+      // Initialiser modifiedBy pour les nouveaux slots
+      slot.modifiedBy = [{
+        userId: session?.user?.id || 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }]
+    }
+    
     setTimeSlots(newTimeSlots)
 
     // Vérifier si on doit échanger les heures
     if (checkSwap && field !== 'date') {
-      const slot = newTimeSlots[index]
       if (slot.startTime && slot.endTime) {
         const start = new Date(`2000-01-01T${slot.startTime}`)
         const end = new Date(`2000-01-01T${slot.endTime}`)
@@ -281,7 +340,7 @@ export function EditEventDialog({
         if (slot.startTime) {
           const [startHour] = slot.startTime.split(':').map(Number)
           if (startHour < 8) {
-            warnings.push(`Créneau ${index + 1} : début avant 8h00`)
+                        warnings.push(`Créneau ${index + 1} : début avant 8h00`)
           }
         }
         
@@ -312,17 +371,18 @@ export function EditEventDialog({
     return warnings
   }
 
-  const getSlotModificationSummary = (slot: TimeSlot): string => {
-  if (!slot.modifiedBy || slot.modifiedBy.length === 0) return '';
-  
-  const lastModification = slot.modifiedBy[slot.modifiedBy.length - 1];
-  const modCount = slot.modifiedBy.filter(m => m.action === 'modified').length;
-  
-  if (modCount > 0) {
-    return `Modifié ${modCount} fois`;
-  }
-  return '';
-};
+  const getSlotModificationSummary = (slot: any): string => {
+    if (!slot.modifiedBy || slot.modifiedBy.length === 0) return '';
+    
+    const lastModification = slot.modifiedBy[slot.modifiedBy.length - 1];
+    const modCount = slot.modifiedBy.filter((m: any) => m.action === 'modified').length;
+    
+    if (modCount > 0) {
+      return `Modifié ${modCount} fois`;
+    }
+    return '';
+  };
+
 
    // Callback pour gérer l'upload réussi d'un fichier
 const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
@@ -393,225 +453,219 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
     }
   }, [event?.id])
 
-const handleSave = async () => {
-  if (!formData.title) {
-    alert('Veuillez remplir le titre')
-    return
-  }
-
-  if (hasUploadingFiles) {
-    alert('Des fichiers sont encore en cours d\'upload. Veuillez patienter.')
-    return
-  }
-
-  // Vérifier les créneaux selon le mode
-  if (showMultipleSlots && formData.type === 'TP') {
-    for (const slot of timeSlots) {
-      if (!slot.date || !slot.startTime || !slot.endTime) {
-        alert('Veuillez remplir tous les créneaux horaires')
-        return
-      }
-    }
-  } else {
-    if (!formData.startDate || !formData.startTime || !formData.endTime) {
-      alert('Veuillez remplir tous les champs obligatoires')
+    const handleSubmit = async () => {
+    if (!formData.title.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Le titre est requis',
+        severity: 'error'
+      })
       return
     }
-  }
 
-  // Vérifier les quantités de réactifs chimiques
-  const insufficientChemicals = formData.chemicals.filter(c => 
-    !(c.isCustom || c.id?.endsWith('_CUSTOM')) && c.requestedQuantity > (c.quantity || 0)
-  )
-  if (insufficientChemicals.length > 0) {
-    alert('Certains réactifs chimiques ont des quantités insuffisantes en stock.')
-    return
-  }
-
-  setLoading(true)
-  try {
-    // Préparer TOUS les fichiers (existants + nouveaux)
-    const allFilesData = files
-      .filter(f => f.existingFile || f.uploadedUrl || f.path)
-      .map(f => {
-        // Si c'est un fichier existant
-        if (f.existingFile) {
-          return {
-            fileName: f.existingFile.fileName,
-            fileUrl: f.existingFile.fileUrl,
-            filePath: f.existingFile.filePath || f.existingFile.fileUrl,
-            fileSize: f.existingFile.fileSize || 0,
-            fileType: f.existingFile.fileType || '',
-            uploadedAt: f.existingFile.uploadedAt || ''
-          }
-        }
-        // Si c'est un nouveau fichier uploadé
-        else if (f.uploadedUrl || f.path) {
-          return {
-            fileName: f.file?.name || f.fileName || '',
-            fileUrl: f.uploadedUrl || f.path || '',
-            filePath: f.uploadedUrl || f.path || '',
-            fileSize: f.file?.size || f.fileSize || 0,
-            fileType: f.file?.type || f.fileType || '',
-            uploadedAt: new Date().toISOString()
-          }
-        }
-        return null
+    // Vérifier qu'il y a des uploads en cours
+    if (hasUploadingFiles) {
+      setSnackbar({
+        open: true,
+        message: 'Veuillez attendre la fin des uploads en cours',
+        severity: 'warning'
       })
-      .filter((file): file is NonNullable<typeof file> => file !== null)
+      return
+    }
 
-    // Préparer les matériels avec quantités
-    const materialsData = formData.materials.map((m) => ({
-      id: m.id,
-      name: m.itemName || m.name || '',
-      quantity: m.quantity || 1,
-      isCustom: m.isCustom || false,
-      volume: m.volume || null
-    }))
+    setLoading(true)
+    try {
+      // Préparer les données à sauvegarder
+      const dataToSave: Partial<CalendarEvent> = {
+        id: event?.id,
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        class: formData.class,
+        room: formData.room,
+        location: formData.location,
+        materials: formData.materials.map(mat => ({
+          ...mat,
+          quantity: mat.quantity || 1
+        })),
+        chemicals: formData.chemicals.map(chem => ({
+          ...chem,
+          requestedQuantity: chem.requestedQuantity || 1
+        })),
+        files: files.map(f => f.existingFile || f.file).filter(Boolean),
+        remarks: remarks,
+        updatedAt: new Date().toISOString()
+      }
 
-    // Préparer les réactifs chimiques avec quantités
-    const chemicalsData = formData.chemicals.map((c) => ({
-      id: c.id,
-      name: c.name || '',
-      requestedQuantity: c.requestedQuantity || 1,
-      unit: c.unit || '',
-      quantity: c.quantity || 0,
-      isCustom: c.isCustom || (c.id && c.id.endsWith('_CUSTOM')) || false,
-    }))
+      // Gérer les créneaux horaires
+      if (showMultipleSlots) {
+        // Préparer les nouveaux timeSlots avec la nouvelle interface
+        const updatedTimeSlots: TimeSlot[] = []
+        const currentDate = new Date().toISOString()
+        const userId = session?.user?.id || 'INDISPONIBLE'
 
-    // Préparer les timeSlots complets avec tracking
-    let finalTimeSlots: TimeSlot[] = [];
-    const currentUserId = session?.user?.id || 'UNKNOWN';
-    const currentDate = new Date().toISOString();
+        // D'abord, marquer tous les créneaux existants comme supprimés
+        if (event?.timeSlots) {
+          event.timeSlots.forEach(existingSlot => {
+            if (existingSlot.status === 'active') {
+              updatedTimeSlots.push({
+                ...existingSlot,
+                status: 'deleted' as const,
+                modifiedBy: [
+                  ...(existingSlot.modifiedBy || []),
+                  {
+                    userId,
+                    date: currentDate,
+                    action: 'deleted' as const
+                  }
+                ]
+              })
+            } else {
+              // Garder les slots déjà supprimés
+              updatedTimeSlots.push(existingSlot)
+            }
+          })
+        }
 
-    if (showMultipleSlots && formData.type === 'TP') {
-      // Mode multi-créneaux : convertir tous les créneaux au format final
-      finalTimeSlots = timeSlots.map(slot => {
-        const startDateTime = new Date(slot.date ?? new Date())
-        startDateTime.setHours(parseInt(slot.startTime.split(':')[0]))
-        startDateTime.setMinutes(parseInt(slot.startTime.split(':')[1]))
-
-        const endDateTime = new Date(slot.date ?? new Date())
-        endDateTime.setHours(parseInt(slot.endTime.split(':')[0]))
-        endDateTime.setMinutes(parseInt(slot.endTime.split(':')[1]))
-
-        // Si c'est un slot existant avec un ID
-        if (slot.id && slot.isExisting && event) {
-          const existingSlot = event.timeSlots?.find(s => s.id === slot.id);
-          
-          // Vérifier si le slot a été modifié
-          const hasChanged = existingSlot && (
-            new Date(existingSlot.startDate).getTime() !== startDateTime.getTime() ||
-            new Date(existingSlot.endDate).getTime() !== endDateTime.getTime()
-          );
-
-          return {
-            id: slot.id,
-            startDate: startDateTime.toISOString(),
-            endDate: endDateTime.toISOString(),
-            status: 'active' as const,
-            createdBy: existingSlot?.createdBy || currentUserId,
-            modifiedBy: hasChanged ? [
-              ...(existingSlot?.modifiedBy || []),
-              {
-                userId: currentUserId,
-                date: currentDate,
-                action: 'modified' as const
+        // Ensuite, ajouter les nouveaux créneaux
+        timeSlots.forEach(slot => {
+          if (slot.date && slot.startTime && slot.endTime) {
+            const startDateTime = new Date(slot.date)
+            startDateTime.setHours(parseInt(slot.startTime.split(':')[0]), parseInt(slot.startTime.split(':')[1]))
+            
+            const endDateTime = new Date(slot.date)
+            endDateTime.setHours(parseInt(slot.endTime.split(':')[0]), parseInt(slot.endTime.split(':')[1]))
+            
+            if (slot.isExisting && slot.id) {
+              // Si c'est un créneau existant qu'on garde, on le marque comme modifié
+              const existingSlot = event?.timeSlots?.find(s => s.id === slot.id)
+              if (existingSlot) {
+                updatedTimeSlots.push({
+                  ...existingSlot,
+                  startDate: startDateTime.toISOString(),
+                  endDate: endDateTime.toISOString(),
+                  status: 'active' as const,
+                  modifiedBy: [
+                    ...(existingSlot.modifiedBy || []),
+                    {
+                      userId,
+                      date: currentDate,
+                      action: 'modified' as const
+                    }
+                  ]
+                })
               }
-            ] : existingSlot?.modifiedBy || []
+            } else {
+              // Nouveau créneau
+              updatedTimeSlots.push({
+                id: generateTimeSlotId(),
+                startDate: startDateTime.toISOString(),
+                endDate: endDateTime.toISOString(),
+                status: 'active' as const,
+                createdBy: slot.createdBy || userId,
+                modifiedBy: [{
+                  userId,
+                  date: currentDate,
+                  action: 'created' as const
+                }]
+              })
+            }
           }
-        } else {
-          // Nouveau slot
-          return {
-            id: slot.id || generateTimeSlotId(),
+        })
+
+        dataToSave.timeSlots = updatedTimeSlots
+      } else {
+        // Mode créneau unique
+        if (formData.startDate && formData.startTime && formData.endTime) {
+          const startDateTime = new Date(formData.startDate)
+          startDateTime.setHours(parseInt(formData.startTime.split(':')[0]), parseInt(formData.startTime.split(':')[1]))
+          
+          const endDateTime = new Date(formData.startDate)
+          endDateTime.setHours(parseInt(formData.endTime.split(':')[0]), parseInt(formData.endTime.split(':')[1]))
+          
+          const currentDate = new Date().toISOString()
+          const userId = session?.user?.id || 'INDISPONIBLE'
+          
+          // Marquer tous les anciens créneaux comme supprimés
+          const updatedTimeSlots: TimeSlot[] = []
+          if (event?.timeSlots) {
+            event.timeSlots.forEach(slot => {
+              if (slot.status === 'active') {
+                updatedTimeSlots.push({
+                  ...slot,
+                  status: 'deleted' as const,
+                  modifiedBy: [
+                    ...(slot.modifiedBy || []),
+                    {
+                      userId,
+                      date: currentDate,
+                      action: 'deleted' as const
+                    }
+                  ]
+                })
+              } else {
+                updatedTimeSlots.push(slot)
+              }
+            })
+          }
+          
+          // Ajouter le nouveau créneau
+          updatedTimeSlots.push({
+            id: generateTimeSlotId(),
             startDate: startDateTime.toISOString(),
             endDate: endDateTime.toISOString(),
             status: 'active' as const,
-            createdBy: currentUserId,
+            createdBy: userId,
             modifiedBy: [{
-              userId: currentUserId,
+              userId,
               date: currentDate,
               action: 'created' as const
             }]
-          }
+          })
+          
+          dataToSave.timeSlots = updatedTimeSlots
         }
-      })
-    } else {
-      // Mode simple : créer ou mettre à jour un seul créneau
-      const startDateTime = new Date(formData.startDate!)
-      startDateTime.setHours(parseInt(formData.startTime.split(':')[0]))
-      startDateTime.setMinutes(parseInt(formData.startTime.split(':')[1]))
-
-      const endDateTime = new Date(formData.endDate || formData.startDate!)
-      endDateTime.setHours(parseInt(formData.endTime.split(':')[0]))
-      endDateTime.setMinutes(parseInt(formData.endTime.split(':')[1]))
-
-      // Si on édite un événement existant
-      if (event && event.timeSlots && event.timeSlots[0]) {
-        const existingSlot = event.timeSlots[0];
-        
-        // Vérifier si le slot a été modifié
-        const hasChanged = 
-          new Date(existingSlot.startDate).getTime() !== startDateTime.getTime() ||
-          new Date(existingSlot.endDate).getTime() !== endDateTime.getTime();
-
-        finalTimeSlots = [{
-          id: existingSlot.id,
-          startDate: startDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-          status: 'active' as const,
-          createdBy: existingSlot.createdBy || currentUserId,
-          modifiedBy: hasChanged ? [
-            ...(existingSlot.modifiedBy || []),
-            {
-              userId: currentUserId,
-              date: currentDate,
-              action: 'modified' as const
-            }
-          ] : existingSlot.modifiedBy || []
-        }]
-      } else {
-        // Nouveau créneau
-        finalTimeSlots = [{
-          id: generateTimeSlotId(),
-          startDate: startDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-          status: 'active' as const,
-          createdBy: currentUserId,
-          modifiedBy: [{
-            userId: currentUserId,
-            date: currentDate,
-            action: 'created' as const
-          }]
-        }]
       }
+
+      await onSave(dataToSave)
+      handleClose()
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error)
+      setSnackbar({
+        open: true,
+        message: 'Erreur lors de la sauvegarde de l\'événement',
+        severity: 'error'
+      })
+    } finally {
+      setLoading(false)
     }
-
-    console.log('TimeSlots finaux à envoyer:', finalTimeSlots);
-
-    const updatedEvent: Partial<CalendarEvent> = {
-      title: formData.title,
-      description: formData.description,
-      type: formData.type,
-      class: formData.class,
-      room: formData.room,
-      materials: materialsData,
-      chemicals: chemicalsData,
-      location: formData.location,
-      remarks: remarks,
-      files: allFilesData,
-      timeSlots: finalTimeSlots // Envoyer directement tous les timeSlots avec tracking
-    }
-
-    await onSave(updatedEvent)
-    onClose()
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error)
-    alert('Erreur lors de la sauvegarde de l\'événement')
-  } finally {
-    setLoading(false)
   }
-}
+
+  const handleClose = () => {
+    // Réinitialiser le formulaire
+    setFormData({
+      title: '',
+      description: '',
+      type: 'TP',
+      startDate: null,
+      endDate: null,
+      startTime: '',
+      endTime: '',
+      class: '',
+      room: '',
+      materials: [],
+      chemicals: [],
+      location: ''
+    })
+    setTimeSlots([])
+    setShowMultipleSlots(false)
+    setFiles([])
+    setRemarks('')
+    setChemicalsWithForecast([])
+    setUploadErrors([])
+    setSnackbar({ open: false, message: '', severity: 'info' })
+    onClose()
+  }
 
   if (!event) return null
 
@@ -619,11 +673,11 @@ const handleSave = async () => {
     formData.startDate.getDate() !== formData.endDate.getDate()
 
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
     <Dialog
       fullScreen={isMobile}
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="md"
       fullWidth
       slotProps={{
@@ -634,14 +688,16 @@ const handleSave = async () => {
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Modifier l'événement</Typography>
-          <IconButton onClick={onClose}>
+          <Typography variant="h6">
+            Modifier l'événement
+          </Typography>
+          <IconButton onClick={handleClose} size="small">
             <Close />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent dividers>
         <Stack spacing={3} sx={{ mt: 2 }}>
           {/* Type d'événement */}
           <FormControl fullWidth>
@@ -1965,36 +2021,33 @@ const handleSave = async () => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
+        <Button onClick={handleClose}>
+          Annuler
+        </Button>
         <Button
-          onClick={handleSave}
+          onClick={handleSubmit}
           variant="contained"
           disabled={loading || hasUploadingFiles}
-          startIcon={hasUploadingFiles ? <CircularProgress size={20} /> : <Save />}
+          startIcon={loading ? <CircularProgress size={20} /> : <Save />}
         >
-          {hasUploadingFiles 
-            ? `Upload en cours (${files.filter(f => f.uploadStatus === 'uploading').length} fichier(s))...` 
-            : loading 
-            ? 'Enregistrement...' 
-            : 'Enregistrer'
-          }
+          {loading ? 'Enregistrement...' : 'Enregistrer'}
         </Button>
       </DialogActions>
-    </Dialog>
-          <Snackbar
+
+      <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
         <Alert
-          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
-      </>
+    </Dialog>
+    </LocalizationProvider>
   )
 }

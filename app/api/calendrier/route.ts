@@ -54,14 +54,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Nouveau format avec timeSlots
+// POST - Nouveau format avec timeSlots et tracking
 export const POST = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions)
     const userRole = session?.user?.role
     const userId = session?.user?.id
-    const initialState = (userRole === 'TEACHER' || userRole === 'ADMIN') ? 'PENDING' : 'VALIDATED'
-    
+    const initialState = (userRole === 'TEACHER' || userRole === 'ADMIN') ? 'PENDING' : (userRole === 'LABORANTIN') ? 'PENDING' : 'VALIDATED'
+
     const body = await request.json()
     const { 
       title, 
@@ -90,8 +90,9 @@ export const POST = withAudit(
     // Préparer et sauvegarder les fichiers
     const savedFiles = await prepareAndSaveFiles(files, userId);
 
-    // Créer les timeSlots avec IDs uniques
+    // Créer les timeSlots avec IDs uniques et tracking
     const formattedTimeSlots: TimeSlot[] = [];
+    const currentDate = new Date().toISOString();
 
     if (date && timeSlots && Array.isArray(timeSlots)) {
       // Nouveau format pour les TP avec créneaux multiples
@@ -110,8 +111,13 @@ export const POST = withAudit(
           id: generateTimeSlotId(),
           startDate: startDateTime.toISOString(),
           endDate: endDateTime.toISOString(),
-          status: 'active',
-          userIDAdding: userId || 'INDISPONIBLE'
+          status: 'active' as const,
+          createdBy: userId || 'INDISPONIBLE',
+          modifiedBy: [{
+            userId: userId || 'INDISPONIBLE',
+            date: currentDate,
+            action: 'created' as const
+          }]
         });
       }
     } else if (body.startDate && body.endDate) {
@@ -120,13 +126,55 @@ export const POST = withAudit(
         id: generateTimeSlotId(),
         startDate: new Date(body.startDate).toISOString(),
         endDate: new Date(body.endDate).toISOString(),
-        status: 'active'
+        status: 'active' as const,
+        createdBy: userId || 'INDISPONIBLE',
+        modifiedBy: [{
+          userId: userId || 'INDISPONIBLE',
+          date: currentDate,
+          action: 'created' as const
+        }]
       });
+    } else if (body.timeSlots && Array.isArray(body.timeSlots)) {
+      // Support du format direct avec timeSlots complets (depuis CreateEventDialog)
+      for (const slot of body.timeSlots) {
+        if (!slot.startDate || !slot.endDate) {
+          return NextResponse.json(
+            { error: 'Tous les créneaux doivent avoir des dates de début et de fin' },
+            { status: 400 }
+          )
+        }
+
+        formattedTimeSlots.push({
+          id: slot.id || generateTimeSlotId(),
+          startDate: slot.startDate,
+          endDate: slot.endDate,
+          status: slot.status || ('active' as const),
+          createdBy: slot.createdBy || userId || 'INDISPONIBLE',
+          modifiedBy: slot.modifiedBy || [{
+            userId: userId || 'INDISPONIBLE',
+            date: currentDate,
+            action: 'created' as const
+          }]
+        });
+      }
     } else {
       return NextResponse.json(
-        { error: 'Format de données invalide. Utilisez soit (date + timeSlots) soit (startDate + endDate)' },
+        { error: 'Format de données invalide. Utilisez soit (date + timeSlots) soit (startDate + endDate) soit timeSlots complets' },
         { status: 400 }
       )
+    }
+
+    // Valider que tous les créneaux sont dans le futur pour les enseignants
+    if (userRole === 'TEACHER') {
+      const now = new Date();
+      for (const slot of formattedTimeSlots) {
+        if (new Date(slot.startDate) < now) {
+          return NextResponse.json(
+            { error: 'Les enseignants ne peuvent pas créer d\'événements dans le passé' },
+            { status: 400 }
+          )
+        }
+      }
     }
 
     // Créer l'événement unique avec tous les créneaux
@@ -136,9 +184,16 @@ export const POST = withAudit(
       name: type === 'TP' ? session?.user?.name : (title || 'TP'),
       description: description || null,
       timeSlots: formattedTimeSlots,
+      actuelTimeSlots: formattedTimeSlots, // NOUVEAU: créneaux actuellement retenus (identiques au début)
       type: type || 'Type inconnu',
       state: initialState,
-      stateChanger: [],
+      stateChanger: initialState === 'PENDING' ? [] : [{
+        userId: userId || 'INDISPONIBLE',
+        date: currentDate,
+        fromState: 'NEW' as const,
+        toState: initialState,
+        reason: 'Création automatique'
+      }],
       class: classes ? (Array.isArray(classes) ? classes[0] : classes) : null,
       room: room || null,
       location: location || null,
@@ -150,8 +205,8 @@ export const POST = withAudit(
       notes: notes || null,
       createdBy: userId || null,
       modifiedBy: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: currentDate,
+      updatedAt: currentDate
     };
 
     // Lire le fichier existant et ajouter le nouvel événement
@@ -164,6 +219,8 @@ export const POST = withAudit(
     // Enrichir le nouvel événement avec les données de stock
     const enrichedEvent = (await enrichEventsWithChemicalData([newEvent]))[0];
 
+    console.log(`Événement créé avec ${formattedTimeSlots.length} créneau(x) par ${session?.user?.email || 'utilisateur inconnu'}`);
+
     return NextResponse.json(enrichedEvent, { status: 201 });
   },
   {
@@ -174,7 +231,8 @@ export const POST = withAudit(
     customDetails: (req, response) => ({
       eventTitle: response?.title,
       timeSlotsCount: response?.timeSlots?.length || 0,
-      filesCount: response?.files?.length || 0
+      filesCount: response?.files?.length || 0,
+      createdByUser: response?.createdBy || 'INDISPONIBLE'
     })
   }
 );
@@ -253,8 +311,12 @@ export const PUT = withAudit(
 
     // Valider et formater les timeSlots si fournis
     let finalTimeSlots = event.timeSlots || []
+    let shouldUpdateStateToPending = false
     
     if (timeSlots !== undefined) {
+      // Vérifier si c'est le propriétaire qui modifie les timeSlots
+      const isOwnerModification = event.createdBy === userId
+      
       // S'assurer que chaque timeSlot a un ID et le bon format
       finalTimeSlots = timeSlots.map((slot: any) => {
         // Si le slot a déjà un ID et les bonnes propriétés, le garder tel quel
@@ -267,9 +329,20 @@ export const PUT = withAudit(
           id: slot.id || generateTimeSlotId(),
           startDate: slot.startDate,
           endDate: slot.endDate,
-          status: slot.status || 'active'
+          status: slot.status || 'active',
+          createdBy: slot.createdBy || userId || 'INDISPONIBLE',
+          modifiedBy: slot.modifiedBy || [{
+            userId: userId || 'INDISPONIBLE',
+            date: modificationDate,
+            action: 'created' as const
+          }]
         };
       });
+      
+      // Si c'est le propriétaire qui modifie, changer l'état vers PENDING
+      if (isOwnerModification) {
+        shouldUpdateStateToPending = true
+      }
       
       console.log('TimeSlots formatés:', finalTimeSlots);
     }
@@ -327,15 +400,11 @@ export const PUT = withAudit(
       ...filesUpdate,
       timeSlots: finalTimeSlots,  // Remplacer directement tous les timeSlots
       modifiedBy: updatedModifiedBy,
-      updatedAt: modificationDate
+      updatedAt: modificationDate,
+      // Si le propriétaire modifie les timeSlots, remettre l'état à PENDING
+      ...(shouldUpdateStateToPending && { state: 'PENDING' })
     }
     
-    console.log('Événement final à sauvegarder:', {
-      id: updatedEvent.id,
-      title: updatedEvent.title,
-      timeSlotsCount: updatedEvent.timeSlots.length,
-      timeSlots: updatedEvent.timeSlots
-    });
     
     calendarData.events[eventIndex] = updatedEvent
     

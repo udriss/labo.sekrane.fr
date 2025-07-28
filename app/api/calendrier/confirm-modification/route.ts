@@ -84,10 +84,18 @@ export const PUT = withAudit(
         
         // Si l'annulation inclut de nouveaux créneaux, les ajouter
         if (modification.timeSlots && modification.timeSlots.length > 0) {
-          // Marquer les timeSlots actuels comme supprimés
+          // Marquer les timeSlots actuels comme supprimés et ajouter l'historique
           updatedEvent.timeSlots = updatedEvent.timeSlots.map((slot: TimeSlot) => ({
             ...slot,
-            status: 'deleted' as const
+            status: 'deleted' as const,
+            modifiedBy: [
+              ...(slot.modifiedBy || []),
+              {
+                userId: userId || 'INDISPONIBLE',
+                date: changeDate,
+                action: 'deleted' as const
+              }
+            ]
           }));
 
           // Ajouter les nouveaux créneaux
@@ -102,7 +110,12 @@ export const PUT = withAudit(
               startDate: startDateTime.toISOString(),
               endDate: endDateTime.toISOString(),
               status: 'active' as const,
-              userIDAdding: userId || 'INDISPONIBLE'
+              createdBy: userId || 'INDISPONIBLE',
+              modifiedBy: [{
+                userId: userId || 'INDISPONIBLE',
+                date: changeDate,
+                action: 'created' as const
+              }]
             });
           }
         }
@@ -111,10 +124,18 @@ export const PUT = withAudit(
         updatedEvent.state = 'MOVED';
         updatedEvent.stateReason = modification.reason || '';
         
-        // Marquer les timeSlots actuels comme supprimés
+        // Marquer les timeSlots actuels comme supprimés avec historique
         updatedEvent.timeSlots = updatedEvent.timeSlots.map((slot: TimeSlot) => ({
           ...slot,
-          status: 'deleted' as const
+          status: 'deleted' as const,
+          modifiedBy: [
+            ...(slot.modifiedBy || []),
+            {
+              userId: userId || 'INDISPONIBLE',
+              date: changeDate,
+              action: 'deleted' as const
+            }
+          ]
         }));
 
         // Ajouter les nouveaux créneaux
@@ -129,7 +150,12 @@ export const PUT = withAudit(
             startDate: startDateTime.toISOString(),
             endDate: endDateTime.toISOString(),
             status: 'active' as const,
-            userIDAdding: userId || 'INDISPONIBLE'
+            createdBy: userId || 'INDISPONIBLE',
+            modifiedBy: [{
+              userId: userId || 'INDISPONIBLE',
+              date: changeDate,
+              action: 'created' as const
+            }]
           });
         }
       }
@@ -144,7 +170,9 @@ export const PUT = withAudit(
         ...updatedEvent,
         eventModifying: updatedEventModifying,
         stateChanger: updatedStateChanger,
-        updatedAt: changeDate
+        updatedAt: changeDate,
+        // NOUVEAU: Mettre à jour actuelTimeSlots avec les créneaux actifs après confirmation
+        actuelTimeSlots: updatedEvent.timeSlots.filter((slot: TimeSlot) => slot.status === 'active')
       };
 
       calendarData.events[eventIndex] = updatedEvent;

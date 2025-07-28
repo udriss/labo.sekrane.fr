@@ -15,6 +15,20 @@ import {
 import { CalendarEvent, EventState } from '@/types/calendar'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 
+interface TimeSlotFormData {
+  id: string
+  date: string
+  startTime: string
+  endTime: string
+  userIDAdding: string
+  createdBy: string
+  modifiedBy: Array<{
+    userId: string
+    date: string
+    action: 'created' | 'modified' | 'deleted'
+  }>
+}
+
 interface EventActionsProps {
   event: CalendarEvent
   canEdit: boolean
@@ -28,6 +42,8 @@ interface EventActionsProps {
   onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string, timeSlots?: any[]) => void
   onMoveDate?: (event: CalendarEvent, timeSlots: any[], reason?: string, state?: EventState) => void // Nouvelle prop pour gérer les déplacements avec timeSlots
   onConfirmModification?: (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => void // Nouveau
+  onApproveTimeSlotChanges?: (event: CalendarEvent) => void // NOUVEAU: approuver les créneaux proposés
+  onRejectTimeSlotChanges?: (event: CalendarEvent) => void // NOUVEAU: rejeter les créneaux proposés
   showAsMenu?: boolean // Si true, affiche sous forme de menu déroulant
   anchorEl?: HTMLElement | null // Pour le menu déroulant
   setAnchorEl?: (el: HTMLElement | null) => void // Pour gérer l'ouverture/fermeture du menu
@@ -46,10 +62,31 @@ const EventActions: React.FC<EventActionsProps> = ({
   onStateChange,
   onMoveDate,
   onConfirmModification,
+  onApproveTimeSlotChanges,
+  onRejectTimeSlotChanges,
   showAsMenu = false,
   anchorEl,
   setAnchorEl
 }) => {
+  // NOUVEAU: Fonction pour détecter s'il y a des changements en attente
+  const hasPendingChanges = (event: CalendarEvent) => {
+    if (!event.actuelTimeSlots || !event.timeSlots) return false
+    
+    // Comparer les créneaux actuels avec les créneaux proposés
+    if (event.actuelTimeSlots.length !== event.timeSlots.length) return true
+    
+    return event.actuelTimeSlots.some((actual, index) => {
+      const proposed = event.timeSlots[index]
+      if (!proposed) return true
+      
+      return (
+        actual.startDate !== proposed.startDate ||
+        actual.endDate !== proposed.endDate ||
+        actual.id !== proposed.id
+      )
+    })
+  }
+
   const [unifiedDialog, setUnifiedDialog] = useState<{
     open: boolean
     action: 'cancel' | 'move' | 'validate' | 'in-progress' | null
@@ -57,16 +94,40 @@ const EventActions: React.FC<EventActionsProps> = ({
   }>({ open: false, action: null, step: 'confirmation' })
   const [validationReason, setValidationReason] = useState('')
   const [stateChangeCompleted, setStateChangeCompleted] = useState(false)
-  const [formData, setFormData] = useState({
-    timeSlots: [{ date: '', startTime: '', endTime: '', userIDAdding: 'INDISPONIBLE' }]
+  const [formData, setFormData] = useState<{
+    timeSlots: TimeSlotFormData[]
+    slotStates: { [key: number]: 'initial' | 'replaced' | 'kept' }
+  }>({
+    timeSlots: [{ 
+      id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
+      date: '', 
+      startTime: '', 
+      endTime: '', 
+      userIDAdding: 'INDISPONIBLE',
+      createdBy: '',
+      modifiedBy: []
+    }],
+    slotStates: {}
   })
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
 
-  // Gestion des créneaux horaires
+  // Gestion des créneaux horaires avec traçabilité
   const addTimeSlot = () => {
     setFormData({
       ...formData,
-      timeSlots: [...formData.timeSlots, { date: '', startTime: '', endTime: '', userIDAdding: 'INDISPONIBLE' }]
+      timeSlots: [...formData.timeSlots, { 
+        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
+        date: '', 
+        startTime: '', 
+        endTime: '', 
+        userIDAdding: 'INDISPONIBLE',
+        createdBy: '',
+        modifiedBy: [{
+          userId: 'INDISPONIBLE',
+          date: new Date().toISOString(),
+          action: 'created'
+        }]
+      }]
     })
   }
   const performTimeSwap = (index: number) => {
@@ -76,6 +137,17 @@ const EventActions: React.FC<EventActionsProps> = ({
     const temp = slot.startTime
     slot.startTime = slot.endTime
     slot.endTime = temp
+    
+    // Ajouter une entrée de modification pour le swap
+    slot.modifiedBy = [
+      ...slot.modifiedBy,
+      {
+        userId: 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }
+    ]
+    
     setFormData({ ...formData, timeSlots: updatedSlots })
     setTimeout(() => setAnimatingSlot(null), 1000)
   }
@@ -83,6 +155,17 @@ const EventActions: React.FC<EventActionsProps> = ({
   const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: string, checkSwap: boolean = true) => {
     const updatedSlots = [...formData.timeSlots]
     updatedSlots[index][field] = value
+    
+    // Ajouter une entrée de modification avec traçabilité
+    updatedSlots[index].modifiedBy = [
+      ...updatedSlots[index].modifiedBy,
+      {
+        userId: 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }
+    ]
+    
     setFormData({ ...formData, timeSlots: updatedSlots })
 
     if (checkSwap && field !== 'date') {
@@ -95,6 +178,90 @@ const EventActions: React.FC<EventActionsProps> = ({
         }
       }
     }
+  }
+
+  // NOUVEAU: Fonctions pour gérer les créneaux actuels
+  const handleReplaceSlot = (index: number) => {
+    const updatedStates = { ...formData.slotStates }
+    updatedStates[index] = 'replaced'
+    
+    const updatedSlots = [...formData.timeSlots]
+    updatedSlots[index] = {
+      id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
+      date: '',
+      startTime: '',
+      endTime: '',
+      userIDAdding: 'INDISPONIBLE',
+      createdBy: '',
+      modifiedBy: [{
+        userId: 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'created'
+      }]
+    }
+    
+    setFormData({ timeSlots: updatedSlots, slotStates: updatedStates })
+  }
+
+  const handleKeepSlot = (index: number, currentSlot: any) => {
+    const updatedStates = { ...formData.slotStates }
+    updatedStates[index] = 'kept'
+    
+    const updatedSlots = [...formData.timeSlots]
+    updatedSlots[index] = {
+      id: currentSlot.id,
+      date: new Date(currentSlot.startDate).toISOString().split('T')[0],
+      startTime: new Date(currentSlot.startDate).toTimeString().slice(0, 5),
+      endTime: new Date(currentSlot.endDate).toTimeString().slice(0, 5),
+      userIDAdding: currentSlot.createdBy || 'INDISPONIBLE',
+      createdBy: currentSlot.createdBy || '',
+      modifiedBy: currentSlot.modifiedBy || []
+    }
+    
+    setFormData({ timeSlots: updatedSlots, slotStates: updatedStates })
+  }
+
+  const handleRemoveSlot = (index: number) => {
+    const updatedSlots = formData.timeSlots.filter((_, i) => i !== index)
+    const updatedStates = { ...formData.slotStates }
+    delete updatedStates[index]
+    
+    // Réindexer les états
+    const newStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {}
+    Object.keys(updatedStates).forEach(key => {
+      const numKey = parseInt(key)
+      if (numKey > index) {
+        newStates[numKey - 1] = updatedStates[numKey]
+      } else if (numKey < index) {
+        newStates[numKey] = updatedStates[numKey]
+      }
+    })
+    
+    setFormData({ timeSlots: updatedSlots, slotStates: newStates })
+  }
+
+  // Initialiser les créneaux avec les créneaux actuels de l'événement
+  const initializeWithCurrentSlots = () => {
+    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || []
+    const initialSlots = currentSlots.map((slot: any) => ({
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
+      date: '',
+      startTime: '',
+      endTime: '',
+      userIDAdding: 'INDISPONIBLE',
+      createdBy: '',
+      modifiedBy: []
+    }))
+    
+    const initialStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {}
+    currentSlots.forEach((_: any, index: number) => {
+      initialStates[index] = 'initial'
+    })
+    
+    setFormData({ 
+      timeSlots: initialSlots.length > 0 ? initialSlots : formData.timeSlots, 
+      slotStates: initialStates 
+    })
   }
 
 
@@ -110,6 +277,11 @@ const EventActions: React.FC<EventActionsProps> = ({
   const openUnifiedDialog = (action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
     setUnifiedDialog({ open: true, action, step: 'confirmation' })
     setStateChangeCompleted(false)
+    
+    // Initialiser avec les créneaux actuels si on va gérer les créneaux
+    if (action === 'move' || action === 'validate') {
+      initializeWithCurrentSlots()
+    }
   }
 
   const handleConfirmStateChange = () => {
@@ -143,12 +315,25 @@ const EventActions: React.FC<EventActionsProps> = ({
     setUnifiedDialog({ open: false, action: null, step: 'confirmation' })
     setValidationReason('')
     setStateChangeCompleted(false)
-    setFormData({ timeSlots: [{ date: '', startTime: '', endTime: '', userIDAdding: 'INDISPONIBLE' }] })
+    setFormData({ 
+      timeSlots: [{ 
+        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
+        date: '', 
+        startTime: '', 
+        endTime: '', 
+        userIDAdding: 'INDISPONIBLE',
+        createdBy: '',
+        modifiedBy: []
+      }],
+      slotStates: {}
+    })
   }
 
   const handleConfirmTimeSlots = () => {
     if (onMoveDate && formData.timeSlots.length > 0) {
-      onMoveDate(event, formData.timeSlots, validationReason, 'MOVED');
+      // Si c'est le propriétaire qui modifie les dates, changer l'état vers PENDING
+      const newState = isCreator ? 'PENDING' : 'MOVED';
+      onMoveDate(event, formData.timeSlots, validationReason, newState);
     }
     handleFinishDialog();
   }
@@ -160,52 +345,8 @@ const EventActions: React.FC<EventActionsProps> = ({
     }
   }
 
-  // Vérifier s'il y a des modifications en attente
-  const pendingModifications = event.eventModifying?.filter(mod => mod.status === 'PENDING') || []
-
   // Boutons d'action sous forme de menu déroulant ou directement affichés
   const menuItems: React.ReactNode[] = []
-
-  // Ajouter les actions de confirmation si l'utilisateur est le créateur et qu'il y a des modifications en attente
-  if (isCreator && pendingModifications.length > 0) {
-    pendingModifications.forEach((modification, index) => {
-      const modificationId = `${modification.requestDate}_${modification.userId}`
-      
-      menuItems.push(
-        <MenuItem 
-          key={`confirm-${modificationId}`}
-          onClick={() => {
-            handleConfirmModification(modificationId, 'confirm')
-            if (setAnchorEl) setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <CheckCircle fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText>
-            Accepter {modification.action === 'MOVE' ? 'déplacement' : 'annulation'}
-          </ListItemText>
-        </MenuItem>
-      )
-
-      menuItems.push(
-        <MenuItem 
-          key={`reject-${modificationId}`}
-          onClick={() => {
-            handleConfirmModification(modificationId, 'reject')
-            if (setAnchorEl) setAnchorEl(null)
-          }}
-        >
-          <ListItemIcon>
-            <Cancel fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>
-            Refuser {modification.action === 'MOVE' ? 'déplacement' : 'annulation'}
-          </ListItemText>
-        </MenuItem>
-      )
-    })
-  }
 
   if (onViewDetails) {
     menuItems.push(
@@ -501,118 +642,186 @@ const EventActions: React.FC<EventActionsProps> = ({
                           </Button>
                         </Box>
                         
-                        {formData.timeSlots.map((slot, index) => (
-                          <Box key={index} display="flex" gap={2} alignItems="center" flexWrap="wrap">
-                            <DatePicker
-                              label="Date du TP"
-                              value={slot.date ? new Date(slot.date) : null}
-                              onChange={(newValue) => {
-                                if (newValue) {
-                                  updateTimeSlot(index, 'date', newValue.toISOString().split('T')[0])
-                                }
-                              }}
-                              slotProps={{
-                                textField: { 
-                                  size: "small",
-                                  sx: { minWidth: { xs: '100%', sm: 200 } }
-                                }
-                              }}
-                            />
-                            <Box 
-                              sx={{
-                                display: 'flex', 
-                                gap: 2, 
-                                alignItems: 'center',
-                                flexDirection: isMobile ? 'column' : 'row',
-                              }}
-                            >
-                              <TimePicker
-                                label="Début"
-                                value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
-                                onChange={(newValue) => {
-                                  if (newValue) {
-                                    const hours = newValue.getHours().toString().padStart(2, '0')
-                                    const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                                    updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, !isMobile)
-                                  }
-                                }}
-                      slotProps={{
-                        textField: { 
-                          size: "small",
-                          sx: { 
-                            minWidth: { xs: '48%', sm: 120 },
-                            transition: 'all 0.3s ease'
-                          },
-                          onClick: (e: any) => {
-                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                              const button = e.currentTarget.querySelector('button')
-                              if (button) button.click()
-                            }
-                          }
-                        }
-                      }}
-                              />
+                        {formData.timeSlots.map((slot, index) => {
+                          const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((s: any) => s.status === 'active') || []
+                          const currentSlot = currentSlots[index]
+                          const slotState = formData.slotStates[index] || 'initial'
+                          
+                          return (
+                            <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                              {/* Affichage du créneau actuel si disponible */}
+                              {currentSlot && slotState === 'initial' && (
+                                <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                    Créneau actuel :
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ mb: 1 }}>
+                                    {new Date(currentSlot.startDate).toLocaleDateString()} de {' '}
+                                    {new Date(currentSlot.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} à {' '}
+                                    {new Date(currentSlot.endDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="primary"
+                                      onClick={() => handleKeepSlot(index, currentSlot)}
+                                    >
+                                      Conserver
+                                    </Button>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="warning"
+                                      onClick={() => handleReplaceSlot(index)}
+                                    >
+                                      Remplacer
+                                    </Button>
+                                  </Box>
+                                </Box>
+                              )}
+                              
+                              {/* Affichage du statut du créneau */}
+                              {slotState !== 'initial' && (
+                                <Box sx={{ mb: 2, p: 1, bgcolor: slotState === 'kept' ? '#e8f5e8' : '#fff3e0', borderRadius: 1 }}>
+                                  <Typography variant="caption" color={slotState === 'kept' ? 'success.main' : 'warning.main'}>
+                                    {slotState === 'kept' ? '✓ Créneau conservé' : '⚡ Créneau remplacé'}
+                                  </Typography>
+                                </Box>
+                              )}
+                              
+                              {/* Formulaire de modification/création de créneau */}
+                              {(slotState === 'replaced' || !currentSlot) && (
+                                <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                                  <DatePicker
+                                    label="Date du TP"
+                                    value={slot.date ? new Date(slot.date) : null}
+                                    onChange={(newValue) => {
+                                      if (newValue) {
+                                        updateTimeSlot(index, 'date', newValue.toISOString().split('T')[0])
+                                      }
+                                    }}
+                                    slotProps={{
+                                      textField: { 
+                                        size: "small",
+                                        sx: { minWidth: { xs: '100%', sm: 200 } },
+                                        onClick: (e: any) => {
+                                          if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                            const button = e.currentTarget.querySelector('button')
+                                            if (button) button.click()
+                                          }
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <Box 
+                                    sx={{
+                                      display: 'flex', 
+                                      gap: 2, 
+                                      alignItems: 'center',
+                                      flexDirection: isMobile ? 'column' : 'row',
+                                    }}
+                                  >
+                                    <TimePicker
+                                      label="Début"
+                                      value={slot.startTime ? new Date(`2000-01-01T${slot.startTime}`) : null}
+                                      onChange={(newValue) => {
+                                        if (newValue) {
+                                          const hours = newValue.getHours().toString().padStart(2, '0')
+                                          const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                          updateTimeSlot(index, 'startTime', `${hours}:${minutes}`, !isMobile)
+                                        }
+                                      }}
+                                      slotProps={{
+                                        textField: { 
+                                          size: "small",
+                                          sx: { 
+                                            minWidth: { xs: '48%', sm: 120 },
+                                            transition: 'all 0.3s ease'
+                                          },
+                                          onClick: (e: any) => {
+                                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                              const button = e.currentTarget.querySelector('button')
+                                              if (button) button.click()
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    />
 
-                              <TimePicker
-                                label="Fin"
-                                value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
-                                onChange={(newValue) => {
-                                  if (newValue) {
-                                    const hours = newValue.getHours().toString().padStart(2, '0')
-                                    const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                                    updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, !isMobile)
-                                  }
-                                }}
-                      slotProps={{
-                        textField: { 
-                          size: "small",
-                          sx: { 
-                            minWidth: { xs: '48%', sm: 120 },
-                            transition: 'all 0.3s ease'
-                          },
-                          onClick: (e: any) => {
-                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                              const button = e.currentTarget.querySelector('button')
-                              if (button) button.click()
-                            }
-                          }
-                        }
-                      }}
-                              />
-                            {animatingSlot === index && (
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  top: '50%',
-                                  left: '50%',
-                                  transform: 'translate(-50%, -50%)',
-                                  animation: 'swapRotate 1s ease-in-out',
-                                  '@keyframes swapRotate': {
-                                    '0%': {
-                                      transform: 'translate(-50%, -50%) rotate(0deg) scale(1)',
-                                      opacity: 0,
-                                    },
-                                    '20%': {
-                                      transform: 'translate(-50%, -50%) rotate(0deg) scale(1.5)',
-                                      opacity: 1,
-                                    },
-                                    '80%': {
-                                      transform: 'translate(-50%, -50%) rotate(180deg) scale(1.5)',
-                                      opacity: 1,
-                                    },
-                                    '100%': {
-                                      transform: 'translate(-50%, -50%) rotate(180deg) scale(1)',
-                                      opacity: 0,
-                                    },
-                                  },
-                                }}
-                              >
-                                <SwapHoriz sx={{ fontSize: 48, color: 'rgba(255, 193, 7, 0.56)' }} />
-                              </Box>
-                            )}                              
+                                    <TimePicker
+                                      label="Fin"
+                                      value={slot.endTime ? new Date(`2000-01-01T${slot.endTime}`) : null}
+                                      onChange={(newValue) => {
+                                        if (newValue) {
+                                          const hours = newValue.getHours().toString().padStart(2, '0')
+                                          const minutes = newValue.getMinutes().toString().padStart(2, '0')
+                                          updateTimeSlot(index, 'endTime', `${hours}:${minutes}`, !isMobile)
+                                        }
+                                      }}
+                                      slotProps={{
+                                        textField: { 
+                                          size: "small",
+                                          sx: { 
+                                            minWidth: { xs: '48%', sm: 120 },
+                                            transition: 'all 0.3s ease'
+                                          },
+                                          onClick: (e: any) => {
+                                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                              const button = e.currentTarget.querySelector('button')
+                                              if (button) button.click()
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    {animatingSlot === index && (
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          top: '50%',
+                                          left: '50%',
+                                          transform: 'translate(-50%, -50%)',
+                                          animation: 'swapRotate 1s ease-in-out',
+                                          '@keyframes swapRotate': {
+                                            '0%': {
+                                              transform: 'translate(-50%, -50%) rotate(0deg) scale(1)',
+                                              opacity: 0,
+                                            },
+                                            '20%': {
+                                              transform: 'translate(-50%, -50%) rotate(0deg) scale(1.5)',
+                                              opacity: 1,
+                                            },
+                                            '80%': {
+                                              transform: 'translate(-50%, -50%) rotate(180deg) scale(1.5)',
+                                              opacity: 1,
+                                            },
+                                            '100%': {
+                                              transform: 'translate(-50%, -50%) rotate(180deg) scale(1)',
+                                              opacity: 0,
+                                            },
+                                          },
+                                        }}
+                                      >
+                                        <SwapHoriz sx={{ fontSize: 48, color: 'rgba(255, 193, 7, 0.56)' }} />
+                                      </Box>
+                                    )}                              
+                                  </Box>
+                                  
+                                  {/* Bouton de suppression pour les créneaux remplacés */}
+                                  <Button
+                                    onClick={() => handleRemoveSlot(index)}
+                                    color="error"
+                                    size="small"
+                                    startIcon={<Delete />}
+                                  >
+                                    Supprimer
+                                  </Button>
+                                </Box>
+                              )}
                             </Box>
-                          </Box>
-                        ))}
+                          )
+                        })}
                         
                         <Box sx={{ mb: 2 }}>
                           <Button

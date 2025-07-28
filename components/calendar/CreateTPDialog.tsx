@@ -1,7 +1,7 @@
 // components/calendar/CreateTPDialog.tsx
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography, IconButton,
   Stepper, Step, StepLabel, StepContent, Button, TextField,
@@ -14,10 +14,15 @@ import {
   Add, Close, Upload, Class, Assignment, Save, Delete, Science, SwapHoriz,
   Warning, CloudUpload, School, Clear, InfoOutlined, HourglassTop
 } from '@mui/icons-material'
-import { DatePicker, TimePicker } from '@mui/x-date-pickers'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { fr } from 'date-fns/locale'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
+import { CalendarEvent } from '@/types/calendar'
 import { useSession } from "next-auth/react"
 
 
@@ -39,6 +44,7 @@ interface CreateTPDialogProps {
   setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
   saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
   tpPresets: any[]
+  eventToCopy?: CalendarEvent | null // NOUVEAU: événement à copier
   isMobile?: boolean
 }
 
@@ -53,6 +59,7 @@ export function CreateTPDialog({
   setCustomClasses,
   saveNewClass,
   tpPresets,
+  eventToCopy,
   isMobile = false
 }: CreateTPDialogProps) {
   const theme = useTheme()
@@ -92,6 +99,41 @@ export function CreateTPDialog({
     materials: [] as any[],
     chemicals: [] as any[]
   })
+
+  // Pre-fill form data when copying an event
+  useEffect(() => {
+    if (eventToCopy && open) {
+      setFormData({
+        title: `Copie - ${eventToCopy.title}`,
+        description: eventToCopy.description || '',
+        date: '',
+        timeSlots: eventToCopy.timeSlots?.map(slot => {
+          // Extract time from ISO date strings
+          const startTime = slot.startDate ? new Date(slot.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+          const endTime = slot.endDate ? new Date(slot.endDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+          return {
+            date: '',
+            startTime,
+            endTime
+          };
+        }) || [{ date: '', startTime: '', endTime: '' }],
+        classes: eventToCopy.class ? [eventToCopy.class] : [],
+        materials: eventToCopy.materials || [],
+        chemicals: eventToCopy.chemicals || []
+      })
+    } else if (!eventToCopy && open) {
+      // Reset form when not copying
+      setFormData({
+        title: '',
+        description: '',
+        date: '',
+        timeSlots: [{ date: '', startTime: '', endTime: '' }],
+        classes: [],
+        materials: [],
+        chemicals: []
+      })
+    }
+  }, [eventToCopy, open])
 
   // Correction du style pour RichTextEditor
   const richTextEditorStyles = {
@@ -358,6 +400,7 @@ const handleCreateCalendarEvent = async () => {
   }
 }
   return (
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
     <>
     <Dialog
       open={open}
@@ -375,7 +418,9 @@ const handleCreateCalendarEvent = async () => {
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             <Add color="primary" />
-            <Typography variant="h6">Ajouter une nouvelle séance TP</Typography>
+            <Typography variant="h6">
+              {eventToCopy ? 'Copier la séance TP' : 'Ajouter une nouvelle séance TP'}
+            </Typography>
           </Box>
           <IconButton onClick={handleClose}>
             <Close />
@@ -2084,6 +2129,7 @@ const handleCreateCalendarEvent = async () => {
         </Alert>
       </Snackbar>
     </>
+    </LocalizationProvider>
   )
 
 }

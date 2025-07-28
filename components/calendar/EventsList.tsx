@@ -18,7 +18,7 @@ import {
   CheckCircle, Cancel, SwapHoriz, HourglassEmpty,
   Search, FilterList, Visibility, Edit, Delete,
   ExpandMore, ExpandLess, MoreVert, CalendarToday,
-  AccessTime, Room, ManageHistory
+  AccessTime, Room, ManageHistory, ContentCopy
 } from '@mui/icons-material'
 
 // Importer les types depuis le fichier partagé
@@ -30,6 +30,7 @@ interface EventsListProps {
   onEventClick: (event: CalendarEvent) => void
   onEventEdit?: (event: CalendarEvent) => void
   onEventDelete?: (event: CalendarEvent) => void
+  onEventCopy?: (event: CalendarEvent) => void // NOUVEAU: copier un événement
   canEditEvent?: (event: CalendarEvent) => boolean
   canValidateEvent?: boolean
   onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
@@ -76,6 +77,7 @@ const EventsList: React.FC<EventsListProps> = ({
   onEventClick,
   onEventEdit,
   onEventDelete,
+  onEventCopy,
   canEditEvent,
   canValidateEvent,
   onStateChange,
@@ -246,6 +248,24 @@ const renderEventItem = (event: CalendarEvent) => {
           <Edit fontSize="small" />
         </ListItemIcon>
         <ListItemText>Modifier</ListItemText>
+      </MenuItem>
+    )
+  }
+
+  // Ajouter le bouton de copie si l'utilisateur est le propriétaire
+  if (showEditDelete && onEventCopy) {
+    menuItems.push(
+      <MenuItem 
+        key="copy"
+        onClick={() => {
+          onEventCopy(event)
+          setAnchorEl(null)
+        }}
+      >
+        <ListItemIcon>
+          <ContentCopy fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Copier</ListItemText>
       </MenuItem>
     )
   }
@@ -827,7 +847,25 @@ const renderEventItem = (event: CalendarEvent) => {
                   <Edit fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Modifier</ListItemText>
-                            </MenuItem>
+              </MenuItem>
+            )
+          }
+
+          // Ajouter le bouton de copie si l'utilisateur est le propriétaire
+          if (showEditDelete && onEventCopy) {
+            menuItems.push(
+              <MenuItem 
+                key="copy"
+                onClick={() => {
+                  onEventCopy(selectedEvent)
+                  handleMenuClose()
+                }}
+              >
+                <ListItemIcon>
+                  <ContentCopy fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Copier</ListItemText>
+              </MenuItem>
             )
           }
           

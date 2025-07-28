@@ -17,13 +17,10 @@ export function useCalendarEvents() {
       }
       
       const eventsData = await response.json()
-      const eventsWithDates = eventsData.map((event: any) => ({
-        ...event,
-        startDate: new Date(event.startDate),
-        endDate: new Date(event.endDate)
-      }))
       
-      setEvents(eventsWithDates)
+      // Les événements n'ont plus de startDate/endDate directement
+      // On les traite tels qu'ils viennent de l'API avec leurs timeSlots
+      setEvents(eventsData)
     } catch (error) {
       console.error('Erreur lors du chargement du calendrier:', error)
       setError(error instanceof Error ? error.message : "Erreur de chargement")

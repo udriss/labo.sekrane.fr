@@ -9,7 +9,7 @@ import { readCalendarFile, writeCalendarFile,
 import { updateStateChanger, generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { TimeSlot } from '@/types/calendar';
 
-// app/api/calendrier/move-event/route.ts
+
 export const PUT = withAudit(
   async (request: NextRequest) => {
     const session = await getServerSession(authOptions);
@@ -53,9 +53,15 @@ export const PUT = withAudit(
     }
 
     const body = await request.json();
-    const { state, reason, timeSlots } = body;
+    const { state, reason, timeSlots, isOwnerModification } = body;
 
-    if (!state || state !== 'MOVED') {
+    // Déterminer l'état final selon si c'est le propriétaire qui modifie
+    let finalState = state;
+    if (isOwnerModification && event.createdBy === userId) {
+      finalState = 'PENDING'; // Le propriétaire remet l'événement en PENDING après modification
+    }
+
+    if (!finalState || !['MOVED', 'PENDING'].includes(finalState)) {
       return NextResponse.json(
         { error: 'État requis pour le déplacement' },
         { status: 400 }
@@ -91,7 +97,6 @@ export const PUT = withAudit(
       const updatedEvent = {
         ...event,
         eventModifying: [...eventModifying, newModification],
-        // Suite de app/api/calendrier/move-event/route.ts
         updatedAt: changeDate
       };
 
@@ -105,10 +110,18 @@ export const PUT = withAudit(
       });
     }
 
-    // Si l'utilisateur est le créateur, marquer tous les timeSlots actuels comme supprimés
+    // Si l'utilisateur est le créateur, marquer tous les timeSlots actuels comme supprimés avec historique
     const updatedTimeSlots = event.timeSlots.map((slot: TimeSlot) => ({
       ...slot,
-      status: 'deleted' as const
+      status: 'deleted' as const,
+      modifiedBy: [
+        ...(slot.modifiedBy || []),
+        {
+          userId: userId || 'INDISPONIBLE',
+          date: changeDate,
+          action: 'deleted' as const
+        }
+      ]
     }));
 
     // Ajouter les nouveaux timeSlots
@@ -123,7 +136,12 @@ export const PUT = withAudit(
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
         status: 'active' as const,
-        userIDAdding: userId || 'INDISPONIBLE',
+        createdBy: userId || 'INDISPONIBLE',
+        modifiedBy: [{
+          userId: userId || 'INDISPONIBLE',
+          date: changeDate,
+          action: 'created' as const
+        }]
       });
     }
 
@@ -133,7 +151,7 @@ export const PUT = withAudit(
     // Mettre à jour l'événement
     const updatedEvent = {
       ...event,
-      state,
+      state: finalState,
       stateChanger: updatedStateChanger,
       stateReason: reason || event.stateReason || '',
       timeSlots: updatedTimeSlots,
@@ -143,9 +161,14 @@ export const PUT = withAudit(
     calendarData.events[eventIndex] = updatedEvent;
     await writeCalendarFile(calendarData);
 
+    const message = isOwnerModification && event.createdBy === userId 
+      ? 'Événement modifié par le propriétaire - état changé vers PENDING'
+      : 'Événement déplacé avec succès';
+
     return NextResponse.json({
       updatedEvent,
-      message: 'Événement déplacé avec succès'
+      message,
+      isOwnerModification: isOwnerModification && event.createdBy === userId
     });
   },
   {
