@@ -384,7 +384,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                 borderColor: 'divider',
                 height: '80px',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
                 bgcolor: 'background.default'
               }}>
@@ -448,7 +448,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
           {getWeekDays().map((day, dayIndex) => {
             const positionedEvents = getPositionedEventsForDay(day)
             
-            return positionedEvents.map((event, eventIndex) => {
+            return positionedEvents.map((event, index) => {
               const typeInfo = getEventTypeInfo(event.type)
               const showActions = canEditEvent && canEditEvent(event)
               
@@ -484,7 +484,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
 
               return (
               <Tooltip 
-                key={`${event.id}-${dayIndex}`}
+                key={`${event.id}-${index}`}
                 title={
                   <Box>
                     <Typography variant="subtitle2">{event.title}</Typography>
@@ -599,10 +599,9 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         left: 0,
                         right: 0,
                         margin: 'auto',
-                        width: '50%',
                         aspectRatio: '1 / 1',
-                        maxWidth: '50%',
-                        maxHeight: '50%',
+                        maxWidth: height > 10 ? 25 : 50,
+                        maxHeight: height > 10 ? 25 : 50,
                         zIndex: 4,
                         bgcolor: 'rgba(87, 87, 87, 0.46)',
                         borderRadius: '50%',
@@ -615,7 +614,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         border: `1px solid rgba(0, 0, 0, 0.2)`
                       }}
                     >
-                      {getStateIcon(event.state, height > 50 ? 'medium' : 'large')}
+                      {getStateIcon(event.state, height > 10 ? 'small' : 'medium')}
                     </Box>
                   )}
 

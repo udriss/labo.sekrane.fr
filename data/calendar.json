@@ -4,7 +4,7 @@
       "id": "EVENT_1753744131273_yk23zpxef",
       "title": "Administrateur",
       "name": "Administrateur",
-      "description": null,
+      "description": "",
       "timeSlots": [
         {
           "id": "TS_1753744131273_s8k38va",
@@ -388,13 +388,18 @@
           "id": "TS_1753747345869_0hu209y",
           "startDate": "2025-07-29T15:00:00.000Z",
           "endDate": "2025-07-29T18:00:00.000Z",
-          "status": "active",
+          "status": "deleted",
           "createdBy": "USER_001",
           "modifiedBy": [
             {
               "userId": "USER_001",
               "date": "2025-07-29T00:02:25.869Z",
               "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T03:58:59.096Z",
+              "action": "deleted"
             }
           ]
         },
@@ -402,6 +407,25 @@
           "id": "TS_1753747345869_ttds5ud",
           "startDate": "2025-07-29T06:00:00.000Z",
           "endDate": "2025-07-29T07:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T03:58:59.096Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753747345869_0hu209y",
+          "startDate": "2025-07-29T15:00:00.000Z",
+          "endDate": "2025-07-29T18:00:00.000Z",
           "status": "active",
           "createdBy": "USER_001",
           "modifiedBy": [
@@ -409,6 +433,30 @@
               "userId": "USER_001",
               "date": "2025-07-29T00:02:25.869Z",
               "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T03:58:59.096Z",
+              "action": "modified"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753747345869_ttds5ud",
+          "startDate": "2025-07-29T06:00:00.000Z",
+          "endDate": "2025-07-29T11:00:00.000Z",
+          "status": "active",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T03:58:59.096Z",
+              "action": "modified"
             }
           ]
         }
@@ -454,7 +502,7 @@
         }
       ],
       "type": "TP",
-      "state": "VALIDATED",
+      "state": "PENDING",
       "stateChanger": [
         {
           "userId": "USER_001",
@@ -486,18 +534,23 @@
         ]
       ],
       "class": "1ère STI2D",
-      "room": null,
-      "location": null,
+      "room": "",
+      "location": "",
       "materials": [],
       "chemicals": [],
       "equipment": [],
       "files": [],
-      "remarks": null,
+      "remarks": "",
       "notes": null,
       "createdBy": "USER_001",
-      "modifiedBy": [],
+      "modifiedBy": [
+        [
+          "USER_001",
+          "2025-07-29T03:58:59.258Z"
+        ]
+      ],
       "createdAt": "2025-07-28T23:08:51.273Z",
-      "updatedAt": "2025-07-29T00:20:20.305Z",
+      "updatedAt": "2025-07-29T03:58:59.258Z",
       "stateReason": ""
     }
   ]

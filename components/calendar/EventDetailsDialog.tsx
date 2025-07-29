@@ -43,12 +43,27 @@ import StateChangeHandler from '@/components/calendar/StateChangeHandler'
 import EventActions from '@/components/calendar/EventActions'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client';
 
+
 interface DocumentFile {
   fileName: string
   fileUrl?: string
   fileType?: string
   fileSize?: number
   uploadedAt?: string
+}
+
+interface TimeSlotFormData {
+  id: string
+  date: string
+  startTime: string
+  endTime: string
+  userIDAdding: string
+  createdBy: string
+  modifiedBy: Array<{
+    userId: string
+    date: string
+    action: 'created' | 'modified' | 'deleted'
+  }>
 }
 
 interface EventDetailsDialogProps {
@@ -75,7 +90,6 @@ const EVENT_TYPES = {
   INVENTORY: { label: "Inventaire", color: "#388e3c", icon: <Assignment /> },
   OTHER: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
 }
-
 
 // Fonction helper pour les labels de changement d'état
 const getStateChangeLabel = (fromState: string, toState: string): string => {
@@ -415,6 +429,71 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   // États pour gérer le chargement des boutons de timeslot
   const [loadingTimeslotActions, setLoadingTimeslotActions] = useState<Record<number, 'approve' | 'reject' | null>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  
+  const [unifiedDialog, setUnifiedDialog] = useState<{
+    open: boolean
+    action: 'cancel' | 'move' | 'validate' | 'in-progress' | null
+    step: 'confirmation' | 'timeSlots'
+  }>({ open: false, action: null, step: 'confirmation' })
+
+
+  const [formData, setFormData] = useState<{
+      timeSlots: TimeSlotFormData[]
+      slotStates: { [key: number]: 'initial' | 'replaced' | 'kept' }
+    }>({
+      timeSlots: [{ 
+        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
+        date: '', 
+        startTime: '', 
+        endTime: '', 
+        userIDAdding: 'INDISPONIBLE',
+        createdBy: '',
+        modifiedBy: []
+      }],
+      slotStates: {}
+    })
+
+
+  const [stateChangeCompleted, setStateChangeCompleted] = useState(false)
+
+  // Initialiser les créneaux avec les créneaux actuels de l'événement
+    const initializeWithCurrentSlots = () => {
+    if (!event) return;
+    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || []
+    const initialSlots = currentSlots.map((slot: any) => ({
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
+      date: '',
+      startTime: '',
+      endTime: '',
+      userIDAdding: 'INDISPONIBLE',
+      createdBy: '',
+      modifiedBy: []
+    }))
+    
+    const initialStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {}
+    currentSlots.forEach((_: any, index: number) => {
+      initialStates[index] = 'initial'
+    })
+    
+    setFormData({ 
+      timeSlots: initialSlots.length > 0 ? initialSlots : formData.timeSlots, 
+      slotStates: initialStates 
+    })
+  }
+
+    
+  const openUnifiedDialog = (action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
+    setUnifiedDialog({ open: true, action, step: 'confirmation' })
+    setStateChangeCompleted(false)
+    
+    // Initialiser avec les créneaux actuels si on va gérer les créneaux
+    if (action === 'move' || action === 'validate') {
+      initializeWithCurrentSlots()
+    }
+  }
+
+
 
   // Fonctions pour gérer les actions de timeslot avec optimisme
   const handleApproveTimeslot = async (slotIndex: number, slotId: string) => {
@@ -907,29 +986,6 @@ useEffect(() => {
                 </Box>
               </Grid>
             )}
-
-            {/* Actions EventActions en haut pour tous */}
-            <Grid size={{ xs: 12 }}>
-              <Box sx={{ mb: 2 }}>
-                <EventActions
-                  event={event}
-                  canEdit={onEdit ? true : false}
-                  canValidate={canValidate}
-                  isCreator={event?.createdBy === currentUserId}
-                  isMobile={isMobile}
-                  isTablet={isTablet}
-                  onViewDetails={() => {}}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onStateChange={handleStateChange}
-                  onMoveDate={onMoveDate}
-                  onConfirmModification={onConfirmModification}
-                  onApproveTimeSlotChanges={onApproveTimeSlotChanges}
-                  onRejectTimeSlotChanges={onRejectTimeSlotChanges}
-                  showAsMenu={false}
-                />
-              </Box>
-            </Grid>
             
             <Grid size = {{ xs: 12, sm: 12 }}>
             {/* Option 1 - Avec icônes et mise en page alignée */}
@@ -1603,16 +1659,143 @@ useEffect(() => {
       </DialogContent>
       
         <DialogActions>
-          <Box sx={{
-            display: 'flex',
-            gap: 1,
-            flexDirection: isMobile ? 'column' : 'row',
-            justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
-            alignContent: 'center',
-            width: '100%',
-          }}>
-            <Button onClick={onClose}>Fermer</Button>
-          </Box>
+            {/* Actions EventActions en haut pour tous */}
+<Box sx={{ 
+  display: 'flex',
+  flexDirection: isTablet || isMobile ? 'column' : 'row',
+  width: '100%',
+  gap:isTablet || isMobile ? 1 : 2,
+   }}>
+  {/* Bloc 1 : 4 boutons d'état (2x2 sur grand écran, 4x1 sur mobile/tablette) */}
+  {canValidate && (
+    <Grid
+      container
+      spacing={1}
+      sx={{
+        mb: 1,
+        width: '100%',
+        minWidth: isMobile || isTablet ? 300 : '40%',
+        maxWidth: isMobile || isTablet ? 400 : '40%',
+        margin: isMobile ? '0 auto' : '0 auto',
+      }}
+    >
+      {[
+        {
+          label: 'En préparation',
+          onClick: () => openUnifiedDialog('in-progress'),
+          variant: 'outlined',
+          color: 'primary',
+          icon: <ManageHistory />,
+          disabled: event.state === 'IN_PROGRESS',
+        },
+        {
+          label: 'Déplacer TP',
+          onClick: () => openUnifiedDialog('move'),
+          variant: 'outlined',
+          color: 'inherit',
+          icon: <SwapHoriz />,
+          disabled: event.state === 'MOVED',
+        },
+        {
+          label: 'Annuler TP',
+          onClick: () => openUnifiedDialog('cancel'),
+          variant: 'outlined',
+          color: 'error',
+          icon: <Cancel />,
+          disabled: event.state === 'CANCELLED',
+        },
+        {
+          label: 'Valider TP',
+          onClick: () => openUnifiedDialog('validate'),
+          variant: 'contained',
+          color: 'success',
+          icon: <CheckCircle />,
+          disabled: event.state === 'VALIDATED',
+        },
+      ].map((btn, idx) => (
+        <Grid
+          key={btn.label}
+          size={{ xs: 12, sm: 6 }} // Responsive sizing
+        >
+          <Button
+            onClick={btn.onClick}
+            variant={btn.variant as any}
+            color={btn.color as any}
+            startIcon={btn.icon}
+            fullWidth
+            disabled={btn.disabled}
+            sx={{ minWidth: 120 }}
+          >
+            {btn.label}
+          </Button>
+        </Grid>
+      ))}
+    </Grid>
+  )}
+
+  {/* Bloc 2 : Modifier/Supprimer (1x2 sur grand écran, 2x1 sur mobile/tablette) */}
+  {(onEdit || (onEdit && onDelete)) && (
+    <Grid
+      container
+      spacing={1}
+      sx={{
+        mb: 1,
+        width: '100%',
+        minWidth: isMobile || isTablet ? 300 : '40%',
+        maxWidth: isMobile || isTablet ? 400 : '40%',
+        margin: isMobile ? '0 auto' : '0 auto',
+      }}
+    >
+      {onEdit && (
+        <Grid size={{ xs: 12,  sm: 6 }} >
+          <Button
+            onClick={() => onEdit(event)}
+            variant="outlined"
+            startIcon={<Edit />}
+            fullWidth
+            sx={{ minWidth: 120 }}
+          >
+            Modifier
+          </Button>
+        </Grid>
+      )}
+      {onDelete && (
+        <Grid size={{ xs: 12, sm: 6 }} >
+          <Button
+            onClick={() => onDelete(event)}
+            variant="outlined"
+            color="error"
+            startIcon={<Delete />}
+            fullWidth
+            sx={{ minWidth: 120 }}
+          >
+            Supprimer
+          </Button>
+        </Grid>
+      )}
+    </Grid>
+  )}
+
+  {/* Bloc 3 : Fermer */}
+  <Box
+    sx={{
+      display: 'flex',
+      gap: 1,
+      flexDirection: isMobile ? 'column' : 'row',
+      justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
+      alignContent: 'center',
+      minWidth: (isMobile || isTablet) && (onEdit && canValidate) ? 100 : '15%',
+      maxWidth: (isMobile || isTablet) && (onEdit && canValidate) ? 100 : '15%',
+      width: 'auto',
+      margin: isMobile ? '0 auto' : '0 auto',
+    }}
+  >
+    <Button 
+    variant='contained'
+    fullWidth
+    onClick={onClose}>Fermer</Button>
+  </Box>
+</Box>
         </DialogActions>
   </Dialog>
 

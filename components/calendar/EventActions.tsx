@@ -92,6 +92,7 @@ const EventActions: React.FC<EventActionsProps> = ({
     action: 'cancel' | 'move' | 'validate' | 'in-progress' | null
     step: 'confirmation' | 'timeSlots'
   }>({ open: false, action: null, step: 'confirmation' })
+  
   const [validationReason, setValidationReason] = useState('')
   const [stateChangeCompleted, setStateChangeCompleted] = useState(false)
   const [formData, setFormData] = useState<{
