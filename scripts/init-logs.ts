@@ -4,7 +4,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 
 async function initializeLogs() {
-  console.log('Initialisation du système de logs...');
+  
   
   try {
     // Créer les répertoires nécessaires
@@ -19,14 +19,14 @@ async function initializeLogs() {
 
     for (const dir of dirs) {
       await fs.mkdir(dir, { recursive: true });
-      console.log(`✓ Répertoire créé/vérifié: ${dir}`);
+      
     }
 
     // Créer l'index principal s'il n'existe pas
     const indexPath = path.join(baseDir, 'indexes', 'main-index.json');
     try {
       await fs.access(indexPath);
-      console.log('✓ Index principal existe déjà');
+      
     } catch {
       const emptyIndex = {
         users: {},
@@ -35,7 +35,7 @@ async function initializeLogs() {
         dates: {}
       };
       await fs.writeFile(indexPath, JSON.stringify(emptyIndex, null, 2));
-      console.log('✓ Index principal créé');
+      
     }
 
     // Créer un log de démarrage
@@ -66,8 +66,8 @@ async function initializeLogs() {
     );
 
     await auditLogger.forceFlush();
-    console.log('✓ Log de démarrage créé');
-    console.log('✅ Initialisation terminée avec succès');
+    
+    
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation:', error);
     process.exit(1);

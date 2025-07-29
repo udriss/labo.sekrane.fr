@@ -228,31 +228,16 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
   // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
   const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
-    console.log('🔍 DEBUG findCorrespondingActualSlot:', {
-      proposedSlot: {
-        id: proposedSlot?.id,
-        startDate: proposedSlot?.startDate,
-        endDate: proposedSlot?.endDate
-      },
-      actualSlots: actualSlots?.map(slot => ({
-        id: slot?.id,
-        startDate: slot?.startDate,
-        endDate: slot?.endDate
-      }))
-    });
     
     if (!actualSlots || actualSlots.length === 0) {
-      console.log('❌ Pas de actualSlots disponibles');
       return null;
     }
     
     // Recherche d'abord par ID (cas où le créneau n'a pas été modifié)
     const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
     if (byId) {
-      console.log('✅ Trouvé par ID:', byId);
       return byId;
     }
-    console.log('⚠️ Pas de correspondance par ID, recherche par proximité temporelle...');
     
     // Sinon, recherche par proximité temporelle (pour les créneaux modifiés)
     const proposedStart = new Date(proposedSlot.startDate).getTime();
@@ -267,23 +252,13 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
       const startDiff = Math.abs(proposedStart - actualStart);
       const endDiff = Math.abs(proposedEnd - actualEnd);
       
-      console.log('🔍 Comparaison temporelle:', {
-        actualSlot: { id: actualSlot.id, startDate: actualSlot.startDate, endDate: actualSlot.endDate },
-        startDiff: `${Math.round(startDiff / 60000)} minutes`,
-        endDiff: `${Math.round(endDiff / 60000)} minutes`,
-        tolerance: `${tolerance / 60000} minutes`,
-        matches: startDiff <= tolerance && endDiff <= tolerance
-      });
-      
+
       return startDiff <= tolerance && endDiff <= tolerance;
     });
     
     if (found) {
-      console.log('✅ Trouvé par proximité temporelle:', found);
       return found;
     }
-    
-    console.log('⚠️ Aucune correspondance exacte, recherche du créneau le plus proche...');
     
     // Si aucune correspondance exacte, trouver le créneau le plus proche temporellement
     const closestSlot = actualSlots.reduce((closest, actualSlot) => {
@@ -296,24 +271,13 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
       
       if (!closest) return { slot: actualSlot, diff: totalDiff };
       
-      console.log('🔍 Comparaison proximité:', {
-        actualSlot: { id: actualSlot.id, startDate: actualSlot.startDate, endDate: actualSlot.endDate },
-        totalDiff: `${Math.round(totalDiff / 60000)} minutes`,
-        currentBest: `${Math.round(closest.diff / 60000)} minutes`
-      });
-      
       return totalDiff < closest.diff ? { slot: actualSlot, diff: totalDiff } : closest;
     }, null as { slot: any, diff: number } | null);
     
     if (closestSlot) {
-      console.log('✅ Créneau le plus proche trouvé:', {
-        slot: closestSlot.slot,
-        diffMinutes: `${Math.round(closestSlot.diff / 60000)} minutes`
-      });
       return closestSlot.slot;
     }
     
-    console.log('❌ Aucune correspondance trouvée');
     return null;
   };
 
@@ -347,25 +311,10 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
   // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
   const getSlotStatus = (proposedSlot: any, event: CalendarEvent) => {
-    console.log('🎯 DEBUG getSlotStatus pour:', {
-      eventId: event.id,
-      eventTitle: event.title,
-      proposedSlot: {
-        id: proposedSlot?.id,
-        startDate: proposedSlot?.startDate,
-        endDate: proposedSlot?.endDate
-      },
-      eventActuelTimeSlots: event.actuelTimeSlots?.map(s => ({
-        id: s?.id,
-        startDate: s?.startDate,
-        endDate: s?.endDate
-      }))
-    });
-    
+
     const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
     
     if (!correspondingActual) {
-      console.log('❌ getSlotStatus: Aucun correspondingActual trouvé -> status = "new"');
       return 'new'; // Nouveau créneau
     }
     
@@ -373,17 +322,6 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     const isExactMatch = correspondingActual.id === proposedSlot.id;
     const isSameDate = correspondingActual.startDate === proposedSlot.startDate && 
                       correspondingActual.endDate === proposedSlot.endDate;
-    
-    console.log('✅ getSlotStatus: correspondingActual trouvé:', {
-      correspondingActual: {
-        id: correspondingActual.id,
-        startDate: correspondingActual.startDate,
-        endDate: correspondingActual.endDate
-      },
-      isExactMatch,
-      isSameDate,
-      status: isSameDate ? 'approved' : 'pending'
-    });
     
     if (isSameDate) {
       return 'approved'; // Créneau validé (identique)
@@ -653,7 +591,7 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                 border: '1px solid',
                 borderColor: hasPendingChanges(event) ? 'warning.200' : 'info.200'
               }}>
-                {hasPendingChanges(event) ? (
+                {hasPendingChanges(event) && (
                   <>
                     <Alert 
                       severity="warning" 
@@ -677,24 +615,6 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                       {/* Tableau de comparaison des créneaux */}
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot) => {
-                          console.log('🔧 DEBUG EVENT COMPLET:', {
-                            eventId: event.id,
-                            eventTitle: event.title,
-                            eventState: event.state,
-                            proposedSlotId: proposedSlot.id,
-                            proposedSlotTime: `${proposedSlot.startDate} - ${proposedSlot.endDate}`,
-                            allTimeSlots: event.timeSlots?.map(s => ({
-                              id: s.id,
-                              startDate: s.startDate,
-                              endDate: s.endDate,
-                              status: s.status
-                            })),
-                            allActuelTimeSlots: event.actuelTimeSlots?.map(s => ({
-                              id: s.id,
-                              startDate: s.startDate,
-                              endDate: s.endDate
-                            }))
-                          });
                           
                           const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
                           const slotStatus = getSlotStatus(proposedSlot, event);
@@ -858,40 +778,6 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                         )
                       })()}
                     </Box>
-                  </>
-                ) : (
-                  <>
-                    <Alert 
-                      severity="info" 
-                      sx={{ mb: 2 }}
-                    >
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Créateur - État des créneaux
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {(() => {
-                          const activeSlots = event.timeSlots?.filter(slot => slot.status === 'active') || [];
-                          const actualSlots = event.actuelTimeSlots || [];
-                          const pendingSlots = activeSlots.filter(slot => getSlotStatus(slot, event) !== 'approved');
-                          const approvedSlots = activeSlots.filter(slot => getSlotStatus(slot, event) === 'approved');
-                          const newSlots = activeSlots.filter(slot => getSlotStatus(slot, event) === 'new');
-                          
-                          return (
-                            <>
-                              • Créneaux proposés: {activeSlots.length}
-                              <br />
-                              • Créneaux actuels: {actualSlots.length}
-                              <br />
-                              • Créneaux validés: {approvedSlots.length}
-                              <br />
-                              • Nouveaux créneaux: {newSlots.length}
-                              <br />
-                              • Modifications en attente: {pendingSlots.length - newSlots.length}
-                            </>
-                          );
-                        })()}
-                      </Typography>
-                    </Alert>
                   </>
                 )}
               </Box>

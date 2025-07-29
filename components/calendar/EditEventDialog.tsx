@@ -391,8 +391,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   fileSize: number
   fileType: string
 }) => {
-  console.log('handleFileUploaded appelé avec event:', event)
-  console.log('handleFileUploaded - event.id:', event?.id)
+  
+  
 
     if (!event?.id) {
       console.warn('Pas d\'ID d\'événement pour persister le fichier')
@@ -418,7 +418,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       }
 
       const result = await response.json()
-      console.log('Fichier persisté:', result)
+      
 
       // Mettre à jour l'état local pour marquer le fichier comme uploadé et persisté
       setFiles(prevFiles => 
@@ -1135,7 +1135,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             severity: 'success'
           });
           
-          console.log(`Classe personnalisée "${newValue}" créée avec succès`);
+          
         } else {
           console.error(`Erreur lors de l'ajout de la classe "${newValue}":`, result.error);
           setSnackbar({
@@ -1205,7 +1205,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                           // Retirer le focus
                           (document.activeElement as HTMLElement)?.blur();
                           
-                          console.log(`Classe personnalisée "${trimmedValue}" créée avec succès`);
+                          
                         } else {
                           console.error('Erreur:', result.error);
                           // Gérer l'erreur avec une notification

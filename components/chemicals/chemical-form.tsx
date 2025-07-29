@@ -217,7 +217,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
         }))
       );
 
-      console.log("Résultats de la recherche par nom (aplaties):", flattenedResults);
+      
       setNameOptions(flattenedResults);
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
@@ -247,7 +247,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
         }))
       );
       setCasOptions(flattenedResults);
-      console.log("Résultats de la recherche par CAS (aplaties):", flattenedResults);
+      
     } catch (error) {
       console.error('Erreur lors de la recherche:', error)
     } finally {

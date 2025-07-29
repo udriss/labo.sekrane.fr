@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log("Identifiants manquants");
+          
           return null;
         }
 
@@ -30,17 +30,17 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!user) {
-            console.log("Authentification échouée pour :", credentials.email);
+            
             return null;
           }
 
           // Vérifier que l'utilisateur est actif
           if (!user.isActive) {
-            console.log("Compte désactivé pour :", credentials.email);
+            
             return null;
           }
 
-          console.log("Authentification réussie pour :", user.email);
+          
           
           return {
             id: user.id,

@@ -332,12 +332,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
   // Gestionnaire pour la soumission avec gestion des onglets
   const handleSubmitWithTabSwitch = async () => {
-    try {
-      console.log('=== DEBUG handleSubmitWithTabSwitch ===');
-      console.log('formData:', form.formData);
-      console.log('selectedCategory:', form.selectedCategory);
-      console.log('selectedItem:', form.selectedItem);
-      
+    try {  
       const newEquipment = await equipmentService.submitEquipment(
         form.formData,
         form.selectedCategory,
@@ -1160,7 +1155,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             const success = await deletion.confirmDeletion()
             if (success) {
               await equipmentData.loadEquipmentTypes()
-              console.log(`${deletion.deleteState.type === 'category' ? 'Catégorie' : 'Équipement'} supprimé${deletion.deleteState.type === 'category' ? 'e' : ''} avec succès`)
+              
             } else {
               console.error('Erreur lors de la suppression')
             }

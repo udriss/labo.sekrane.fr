@@ -327,7 +327,7 @@ const handleCreateCalendarEvent = async () => {
       throw new Error(`Erreur lors du téléchargement de ${errorFiles.length} fichier(s). Veuillez les supprimer ou réessayer.`)
     }
 
-    console.log('session user:', session?.user)
+    
     const eventData = {
       title: session?.user?.name || formData.title || 'Séance TP',
       description: formData.description,
@@ -1059,7 +1059,7 @@ const handleCreateCalendarEvent = async () => {
               
               if (result.success) {
                 successfulClasses.push(newClass)
-                console.log(`Classe personnalisée "${newClass}" créée avec succès`)
+                
               } else {
                 failedClasses.push({ 
                   name: newClass, 
@@ -1176,7 +1176,7 @@ const handleCreateCalendarEvent = async () => {
                               // Retirer le focus
                               (document.activeElement as HTMLElement)?.blur();
                               
-                              console.log(`Classe personnalisée "${trimmedValue}" créée avec succès`);
+                              
                               
                               setSnackbar({
                                 open: true,
