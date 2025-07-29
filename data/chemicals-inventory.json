@@ -258,7 +258,7 @@
       "createdAt": "2025-07-26T14:41:46.376Z",
       "updatedAt": "2025-07-26T14:41:46.376Z",
       "supplier": null,
-      "quantityPrevision": 1998
+      "quantityPrevision": 1997
     },
     {
       "id": "CHEM_INV_4GA1WP5SXVMG",
@@ -288,7 +288,8 @@
       "notes": null,
       "createdAt": "2025-07-27T22:08:22.920Z",
       "updatedAt": "2025-07-27T22:08:22.920Z",
-      "supplier": null
+      "supplier": null,
+      "quantityPrevision": 2999
     }
   ],
   "stats": {

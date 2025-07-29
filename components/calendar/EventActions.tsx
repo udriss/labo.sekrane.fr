@@ -27,6 +27,7 @@ interface TimeSlotFormData {
     date: string
     action: 'created' | 'modified' | 'deleted'
   }>
+  referentActuelTimeID?: string | null
 }
 
 interface EventActionsProps {
@@ -72,11 +73,20 @@ const EventActions: React.FC<EventActionsProps> = ({
   const hasPendingChanges = (event: CalendarEvent) => {
     if (!event.actuelTimeSlots || !event.timeSlots) return false
     
-    // Comparer les créneaux actuels avec les créneaux proposés
-    if (event.actuelTimeSlots.length !== event.timeSlots.length) return true
+    // Filtrer les créneaux valides (exclure ceux avec status "invalid")
+    const activeTimeSlots = event.timeSlots.filter(slot => slot.status === 'active')
+    
+    // Si l'événement est PENDING et que c'est le propriétaire qui a fait les modifications,
+    // ne pas considérer comme ayant des changements en attente
+    if (event.state === 'PENDING' && isCreator) {
+      return false;
+    }
+    
+    // Comparer les créneaux actuels avec les créneaux proposés actifs valides
+    if (event.actuelTimeSlots.length !== activeTimeSlots.length) return true
     
     return event.actuelTimeSlots.some((actual, index) => {
-      const proposed = event.timeSlots[index]
+      const proposed = activeTimeSlots[index]
       if (!proposed) return true
       
       return (
@@ -185,8 +195,10 @@ const EventActions: React.FC<EventActionsProps> = ({
   const handleReplaceSlot = (index: number) => {
     const updatedStates = { ...formData.slotStates }
     updatedStates[index] = 'replaced'
-    
     const updatedSlots = [...formData.timeSlots]
+    // Ajoute la référence au créneau actuel remplacé
+    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || []
+    const referentId = currentSlots[index]?.id || null
     updatedSlots[index] = {
       id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
       date: '',
@@ -198,16 +210,15 @@ const EventActions: React.FC<EventActionsProps> = ({
         userId: 'INDISPONIBLE',
         date: new Date().toISOString(),
         action: 'created'
-      }]
+      }],
+      referentActuelTimeID: referentId
     }
-    
     setFormData({ timeSlots: updatedSlots, slotStates: updatedStates })
   }
 
   const handleKeepSlot = (index: number, currentSlot: any) => {
     const updatedStates = { ...formData.slotStates }
     updatedStates[index] = 'kept'
-    
     const updatedSlots = [...formData.timeSlots]
     updatedSlots[index] = {
       id: currentSlot.id,
@@ -216,9 +227,9 @@ const EventActions: React.FC<EventActionsProps> = ({
       endTime: new Date(currentSlot.endDate).toTimeString().slice(0, 5),
       userIDAdding: currentSlot.createdBy || 'INDISPONIBLE',
       createdBy: currentSlot.createdBy || '',
-      modifiedBy: currentSlot.modifiedBy || []
+      modifiedBy: currentSlot.modifiedBy || [],
+      referentActuelTimeID: currentSlot.id || null
     }
-    
     setFormData({ timeSlots: updatedSlots, slotStates: updatedStates })
   }
 
@@ -243,7 +254,8 @@ const EventActions: React.FC<EventActionsProps> = ({
 
   // Initialiser les créneaux avec les créneaux actuels de l'événement
   const initializeWithCurrentSlots = () => {
-    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || []
+    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || [];
+    // Préremplir autant de slots que de créneaux actuels
     const initialSlots = currentSlots.map((slot: any) => ({
       id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
       date: '',
@@ -251,20 +263,36 @@ const EventActions: React.FC<EventActionsProps> = ({
       endTime: '',
       userIDAdding: 'INDISPONIBLE',
       createdBy: '',
-      modifiedBy: []
-    }))
-    
-    const initialStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {}
+      modifiedBy: [],
+      referentActuelTimeID: slot.id || null
+    }));
+    const initialStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {};
     currentSlots.forEach((_: any, index: number) => {
-      initialStates[index] = 'initial'
-    })
-    
-    setFormData({ 
-      timeSlots: initialSlots.length > 0 ? initialSlots : formData.timeSlots, 
-      slotStates: initialStates 
-    })
-  }
+      initialStates[index] = 'initial';
+    });
+    setFormData({
 
+      timeSlots: initialSlots.length > 0 ? initialSlots : [{
+        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
+        date: '',
+        startTime: '',
+        endTime: '',
+        userIDAdding: 'INDISPONIBLE',
+        createdBy: '',
+        modifiedBy: []
+      }],
+
+      slotStates: initialStates
+    });
+  }
+  // Nouvelle version simplifiée de findCorrespondingActualSlot utilisant referentActuelTimeID
+  const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
+    if (!proposedSlot || !actualSlots || actualSlots.length === 0) return null;
+    if (proposedSlot.referentActuelTimeID) {
+      return actualSlots.find((slot: any) => slot.id === proposedSlot.referentActuelTimeID) || null;
+    }
+    return null;
+  }
 
 
   // Gestion des actions de changement d'état
@@ -276,12 +304,11 @@ const EventActions: React.FC<EventActionsProps> = ({
   }
 
   const openUnifiedDialog = (action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
-    setUnifiedDialog({ open: true, action, step: 'confirmation' })
-    setStateChangeCompleted(false)
-    
+    setUnifiedDialog({ open: true, action, step: 'confirmation' });
+    setStateChangeCompleted(false);
     // Initialiser avec les créneaux actuels si on va gérer les créneaux
     if (action === 'move' || action === 'validate') {
-      initializeWithCurrentSlots()
+      initializeWithCurrentSlots();
     }
   }
 
@@ -653,6 +680,7 @@ const EventActions: React.FC<EventActionsProps> = ({
                               {/* Affichage du créneau actuel si disponible */}
                               {currentSlot && slotState === 'initial' && (
                                 <Box sx={{ mb: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+
                                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                     Créneau actuel :
                                   </Typography>

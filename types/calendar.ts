@@ -15,13 +15,14 @@ export interface TimeSlot {
   id: string;
   startDate: string;
   endDate: string;
-  status?: 'active' | 'deleted' | 'modified';
+  status: 'active' | 'deleted' | 'invalid';
   createdBy?: string;  // Ajout du créateur
   modifiedBy?: Array<{
     userId: string;
     date: string;
-    action: 'created' | 'modified' | 'deleted';
+    action: 'created' | 'modified' | 'deleted' | 'invalidated';
   }>;  // Ajout de l'historique des modifications
+  referentActuelTimeID?: string; // NOUVEAU: ID du créneau actuel référent pour les modifications
 }
 
 

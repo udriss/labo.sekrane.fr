@@ -4,184 +4,186 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { withAudit } from '@/lib/api/with-audit'
-import { readCalendarFile, writeCalendarFile,
-   migrateEventToNewFormat } from '@/lib/calendar-utils'
-import { updateStateChanger, generateTimeSlotId } from '@/lib/calendar-utils-client'
-import { TimeSlot } from '@/types/calendar';
-
+import { readCalendarFile, writeCalendarFile, migrateEventToNewFormat } from '@/lib/calendar-utils'
+import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { TimeSlot } from '@/types/calendar'
 
 export const PUT = withAudit(
   async (request: NextRequest) => {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
-    const userRole = session?.user?.role;
+    try {
+      const session = await getServerSession(authOptions);
+      const userId = session?.user?.id;
+      const userRole = session?.user?.role;
 
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get('id');
-    
-    if (!eventId) {
-      return NextResponse.json(
-        { error: 'ID de l\'événement requis' },
-        { status: 400 }
-      );
-    }
+      // Vérifier l'authentification
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'Authentification requise' },
+          { status: 401 }
+        );
+      }
 
-    const calendarData = await readCalendarFile();
-    const eventIndex = calendarData.events.findIndex((event: any) => event.id === eventId);
-    
-    if (eventIndex === -1) {
-      return NextResponse.json(
-        { error: 'Événement non trouvé' },
-        { status: 404 }
-      );
-    }
-
-    const event = calendarData.events[eventIndex].timeSlots 
-  ? calendarData.events[eventIndex] 
-  : await migrateEventToNewFormat(calendarData.events[eventIndex]);
-
-    // Vérifier les permissions
-    const canEdit = userRole === 'LABORANTIN' || 
-                   userRole === 'ADMINLABO' || 
-                   event.createdBy === userId;
-                   
-    if (!canEdit) {
-      return NextResponse.json(
-        { error: 'Vous n\'avez pas la permission de modifier cet événement' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const { state, reason, timeSlots, isOwnerModification } = body;
-
-    // Déterminer l'état final selon si c'est le propriétaire qui modifie
-    let finalState = state;
-    if (isOwnerModification && event.createdBy === userId) {
-      finalState = 'PENDING'; // Le propriétaire remet l'événement en PENDING après modification
-    }
-
-    if (!finalState || !['MOVED', 'PENDING'].includes(finalState)) {
-      return NextResponse.json(
-        { error: 'État requis pour le déplacement' },
-        { status: 400 }
-      );
-    }
-
-    if (!timeSlots || !Array.isArray(timeSlots) || timeSlots.length === 0) {
-      return NextResponse.json(
-        { error: 'Créneaux horaires requis pour le déplacement' },
-        { status: 400 }
-      );
-    }
-
-    const changeDate = new Date().toISOString();
-
-    // Si l'utilisateur n'est pas le créateur, créer une demande de modification
-    if (event.createdBy !== userId) {
-      const eventModifying = event.eventModifying || [];
+      const { searchParams } = new URL(request.url);
+      const eventId = searchParams.get('id');
       
-      const newModification = {
-        requestDate: changeDate,
-        userId: userId || '',
-        action: 'MOVE' as const,
-        status: 'PENDING' as const,
-        reason: reason || '',
-        timeSlots: timeSlots.map((slot: any) => ({
-          date: slot.date,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        }))
-      };
+      if (!eventId) {
+        return NextResponse.json(
+          { error: 'ID de l\'événement requis' },
+          { status: 400 }
+        );
+      }
 
+      const calendarData = await readCalendarFile();
+      const eventIndex = calendarData.events.findIndex((event: any) => event.id === eventId);
+      
+      if (eventIndex === -1) {
+        return NextResponse.json(
+          { error: 'Événement non trouvé' },
+          { status: 404 }
+        );
+      }
+
+      const event = calendarData.events[eventIndex].timeSlots 
+        ? calendarData.events[eventIndex] 
+        : await migrateEventToNewFormat(calendarData.events[eventIndex]);
+
+      const body = await request.json();
+      const { timeSlots, reason } = body;
+
+      if (!timeSlots || !Array.isArray(timeSlots) || timeSlots.length === 0) {
+        return NextResponse.json(
+          { error: 'Créneaux horaires requis pour la proposition' },
+          { status: 400 }
+        );
+      }
+
+      const changeDate = new Date().toISOString();
+
+      // 1. Invalider TOUS les anciens timeSlots (validés ou non) SAUF ceux dans actuelTimeSlots
+      const invalidatedTimeSlots = event.timeSlots.map((slot: TimeSlot) => ({
+        ...slot,
+        status: 'invalid' as const,
+        modifiedBy: [
+          ...(slot.modifiedBy || []),
+          {
+            userId: userId,
+            date: changeDate,
+            action: 'invalidated' as const
+          }
+        ]
+      }));
+
+      // 2. Créer les nouveaux créneaux proposés avec status 'active'
+      const newTimeSlots: TimeSlot[] = [];
+      
+      for (let i = 0; i < timeSlots.length; i++) {
+        const slot = timeSlots[i];
+        
+        if (!slot.date || !slot.startTime || !slot.endTime) {
+          return NextResponse.json(
+            { error: `Créneau ${i + 1}: date, heure de début et heure de fin sont requis` },
+            { status: 400 }
+          );
+        }
+
+        const startDateTime = new Date(`${slot.date}T${slot.startTime}`);
+        const endDateTime = new Date(`${slot.date}T${slot.endTime}`);
+
+        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+          return NextResponse.json(
+            { error: `Créneau ${i + 1}: format de date/heure invalide` },
+            { status: 400 }
+          );
+        }
+
+        if (endDateTime <= startDateTime) {
+          return NextResponse.json(
+            { error: `Créneau ${i + 1}: l'heure de fin doit être après l'heure de d��but` },
+            { status: 400 }
+          );
+        }
+
+        // Déterminer referentActuelTimeID
+        // Si le slot a une propriété referentActuelTimeID explicite, l'utiliser
+        // Sinon, essayer de faire correspondre par index avec les créneaux actuels
+        let referentActuelTimeID: string | null = null;
+        
+        if (slot.referentActuelTimeID !== undefined) {
+          // Référence explicite fournie par l'utilisateur
+          referentActuelTimeID = slot.referentActuelTimeID;
+        } else {
+          // Correspondance automatique par index avec actuelTimeSlots
+          const currentActiveSlots = event.actuelTimeSlots || [];
+          
+          if (currentActiveSlots[i]) {
+            referentActuelTimeID = currentActiveSlots[i].id;
+          }
+          // Sinon reste null (nouveau créneau sans correspondance)
+        }
+
+        const newTimeSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+          status: 'active',
+          createdBy: userId,
+          modifiedBy: [{
+            userId: userId,
+            date: changeDate,
+            action: 'created'
+          }],
+          ...(referentActuelTimeID !== null ? { referentActuelTimeID } : {})
+        };
+
+        newTimeSlots.push(newTimeSlot);
+      }
+
+      // 3. Conserver les actuelTimeSlots inchangés (ils restent toujours en vigueur)
+      // et ajouter les nouveaux créneaux proposés
       const updatedEvent = {
         ...event,
-        eventModifying: [...eventModifying, newModification],
+        timeSlots: [...invalidatedTimeSlots, ...newTimeSlots],
+        // actuelTimeSlots reste inchangé - c'est la référence stable
         updatedAt: changeDate
       };
-
+      
       calendarData.events[eventIndex] = updatedEvent;
       await writeCalendarFile(calendarData);
 
-      return NextResponse.json({
+      console.log(`Nouveaux créneaux proposés pour l'événement ${eventId} par ${session?.user?.email || userId}`);
+      console.log(`- ${invalidatedTimeSlots.length} créneaux invalidés`);
+      console.log(`- ${newTimeSlots.length} nouveaux créneaux proposés`);
+      console.log(`- actuelTimeSlots conservés: ${event.actuelTimeSlots?.length || 0}`);
+
+      const response = {
         updatedEvent,
-        message: 'Demande de déplacement de l\'événement envoyée',
-        isPending: true
-      });
-    }
-
-    // Si l'utilisateur est le créateur, marquer tous les timeSlots actuels comme supprimés avec historique
-    const updatedTimeSlots = event.timeSlots.map((slot: TimeSlot) => ({
-      ...slot,
-      status: 'deleted' as const,
-      modifiedBy: [
-        ...(slot.modifiedBy || []),
-        {
-          userId: userId || 'INDISPONIBLE',
-          date: changeDate,
-          action: 'deleted' as const
-        }
-      ]
-    }));
-
-    // Ajouter les nouveaux timeSlots
-    for (const slot of timeSlots) {
-      if (!slot.date || !slot.startTime || !slot.endTime) continue;
-
-      const startDateTime = new Date(`${slot.date}T${slot.startTime}`);
-      const endDateTime = new Date(`${slot.date}T${slot.endTime}`);
+        message: `${newTimeSlots.length} nouveau(x) créneau(x) proposé(s) avec succès`,
+        invalidatedCount: invalidatedTimeSlots.length,
+        newSlotsCount: newTimeSlots.length,
+        actuelTimeSlotsCount: event.actuelTimeSlots?.length || 0
+      };
       
-      updatedTimeSlots.push({
-        id: generateTimeSlotId(),
-        startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
-        status: 'active' as const,
-        createdBy: userId || 'INDISPONIBLE',
-        modifiedBy: [{
-          userId: userId || 'INDISPONIBLE',
-          date: changeDate,
-          action: 'created' as const
-        }]
-      });
+      return NextResponse.json(response);
+
+    } catch (error) {
+      console.error('Erreur lors de la proposition de nouveaux créneaux:', error);
+      return NextResponse.json(
+        { error: 'Erreur serveur interne' },
+        { status: 500 }
+      );
     }
-
-    // Mettre à jour stateChanger
-    const updatedStateChanger = updateStateChanger(event.stateChanger || [], userId, changeDate);
-
-    // Mettre à jour l'événement
-    const updatedEvent = {
-      ...event,
-      state: finalState,
-      stateChanger: updatedStateChanger,
-      stateReason: reason || event.stateReason || '',
-      timeSlots: updatedTimeSlots,
-      updatedAt: changeDate
-    };
-    
-    calendarData.events[eventIndex] = updatedEvent;
-    await writeCalendarFile(calendarData);
-
-    const message = isOwnerModification && event.createdBy === userId 
-      ? 'Événement modifié par le propriétaire - état changé vers PENDING'
-      : 'Événement déplacé avec succès';
-
-    return NextResponse.json({
-      updatedEvent,
-      message,
-      isOwnerModification: isOwnerModification && event.createdBy === userId
-    });
   },
   {
     module: 'CALENDAR',
     entity: 'event_move',
-    action: 'MOVE_EVENT',
+    action: 'PROPOSE_TIMESLOTS',
     extractEntityIdFromResponse: (response) => response?.updatedEvent?.id,
     extractEntityId: (req) => new URL(req.url).searchParams.get('id') || undefined,
     customDetails: (req, response) => ({
-      newState: response?.updatedEvent?.state || 'UNKNOWN',
-      newTimeSlotsCount: response?.updatedEvent?.timeSlots?.filter((s: TimeSlot) => s.status === 'active').length || 0,
-      isPending: response?.isPending || false
+      newSlotsCount: response?.newSlotsCount || 0,
+      invalidatedCount: response?.invalidatedCount || 0,
+      actuelTimeSlotsCount: response?.actuelTimeSlotsCount || 0,
+      hasReferentIds: response?.updatedEvent?.timeSlots?.some((s: TimeSlot) => s.referentActuelTimeID) || false
     })
   }
 );
-

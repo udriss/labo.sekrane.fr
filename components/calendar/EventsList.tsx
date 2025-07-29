@@ -89,6 +89,7 @@ const EventsList: React.FC<EventsListProps> = ({
   const [filterState, setFilterState] = useState<'all' | string>('all')
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     pending: true,
+    ongoing: true,
     upcoming: true,
     past: false
   })
@@ -186,17 +187,39 @@ const EventsList: React.FC<EventsListProps> = ({
   // Grouper les événements
   const groupedEvents = {
     pending: filteredEvents.filter(e => e.state === 'PENDING'),
-    upcoming: filteredEvents.filter(e => {
+    
+    ongoing: filteredEvents.filter(e => {
+      if (e.state === 'PENDING') return false
       const activeSlots = getActiveTimeSlots(e)
       if (activeSlots.length === 0) return false
-      const firstSlotDate = new Date(activeSlots[0].startDate)
-      return firstSlotDate >= new Date() && e.state !== 'PENDING'
+      
+      const now = new Date()
+      // Un événement est "en cours" si au moins un créneau a commencé mais n'est pas encore terminé
+      const hasOngoingSlot = activeSlots.some(slot => 
+        new Date(slot.startDate) <= now && new Date(slot.endDate) > now
+      )
+      return hasOngoingSlot
     }),
-    past: filteredEvents.filter(e => {
+    
+    upcoming: filteredEvents.filter(e => {
+      if (e.state === 'PENDING') return false
       const activeSlots = getActiveTimeSlots(e)
       if (activeSlots.length === 0) return false
-      const firstSlotDate = new Date(activeSlots[0].startDate)
-      return firstSlotDate < new Date() && e.state !== 'PENDING'
+      
+      const now = new Date()
+      // Un événement est "à venir" si tous ses créneaux n'ont pas encore commencé
+      const allSlotsUpcoming = activeSlots.every(slot => new Date(slot.startDate) > now)
+      return allSlotsUpcoming
+    }),
+    
+    past: filteredEvents.filter(e => {
+      if (e.state === 'PENDING') return false
+      const activeSlots = getActiveTimeSlots(e)
+      if (activeSlots.length === 0) return false
+      
+      // Un événement est "passé" seulement si TOUS ses créneaux sont terminés
+      const allSlotsEnded = activeSlots.every(slot => new Date(slot.endDate) < new Date())
+      return allSlotsEnded
     })
   }
 
@@ -230,8 +253,8 @@ const renderEventItem = (event: CalendarEvent) => {
   // Utiliser getActiveTimeSlots pour obtenir les créneaux actifs
   const activeSlots = getActiveTimeSlots(event)
   const firstSlot = activeSlots[0]
-  const isPast = firstSlot ? new Date(firstSlot.startDate) < new Date() : false
-
+  // Un événement est "passé" seulement si TOUS ses créneaux sont terminés
+  const isPast = activeSlots.length > 0 ? activeSlots.every(slot => new Date(slot.endDate) < new Date()) : false
   const menuItems = []
 
   // Ajouter les items de modification/suppression
@@ -495,44 +518,60 @@ const renderEventItem = (event: CalendarEvent) => {
         }}
       >
         <Stack spacing={0.5}>
-          {/* Date et heure avec icônes */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: isMobile ? 'flex-start' : 'center', 
-            gap: isMobile ? 1 : 2,
-            py: 0.5,
-            borderLeft: 3,
-            borderColor: 'primary.main',
-            flexDirection: isMobile ? 'column' : 'row',
-            pl: 1.5,
-            mb: 1,
-            width: '100%',
-          }}>
-            {firstSlot && (
-              <>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
-                  <Typography variant="body2" fontWeight={500}>
-                    {format(new Date(firstSlot.startDate), 'EEEE d MMMM', { locale: fr })}
-                  </Typography>
+            {/* Afficher tous les créneaux les uns en dessous des autres, dates alignées à gauche, horaires alignés ensemble */}
+            <Box
+              sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+              py: 0.5,
+              borderLeft: 3,
+              borderColor: 'primary.main',
+              pl: 1.5,
+              mb: 1,
+              width: '100%',
+              }}
+            >
+              {activeSlots.map((slot, idx) => {
+              const currentDate = format(new Date(slot.startDate), 'EEEE d MMMM', { locale: fr })
+              const prevSlot = idx > 0 ? activeSlots[idx - 1] : null
+              const prevDate = prevSlot
+                ? format(new Date(prevSlot.startDate), 'EEEE d MMMM', { locale: fr })
+                : null
+              const showDate = idx === 0 || currentDate !== prevDate
+              return (
+                <Box
+                key={idx}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  mb: 0.5,
+                  flexWrap: 'wrap',
+                }}
+                >
+                {/* Colonne date (affichée une seule fois par groupe de date) */}
+                <Box sx={{ minWidth: 170, pr: 2 }}>
+                  {showDate ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2" fontWeight={500}>
+                    {currentDate}
+                    </Typography>
+                  </Box>
+                  ) : null}
                 </Box>
+                {/* Colonne horaire (toujours affichée) */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
-                    {format(new Date(firstSlot.startDate), 'HH:mm')} - {format(new Date(firstSlot.endDate), 'HH:mm')}
+                  {format(new Date(slot.startDate), 'HH:mm')} - {format(new Date(slot.endDate), 'HH:mm')}
                   </Typography>
                 </Box>
-              </>
-            )}
-            {activeSlots.length > 1 && (
-              <Chip 
-                size="small" 
-                label={`+${activeSlots.length - 1} créneaux`} 
-                color="info" 
-                variant="outlined"
-              />
-            )}
-          </Box>
+                </Box>
+              )
+              })}
+            </Box>
 
           {/* Chips pour matériels et réactifs */}
           <Stack 
@@ -773,6 +812,16 @@ const renderEventItem = (event: CalendarEvent) => {
             {groupedEvents.pending.length > 0 && (
               <>
                 {renderGroup('En attente de validation', groupedEvents.pending, 'pending', 'warning')}
+                {(groupedEvents.ongoing.length > 0 || groupedEvents.upcoming.length > 0 || groupedEvents.past.length > 0) && (
+                  <Divider sx={{ my: 2 }} />
+                )}
+              </>
+            )}
+            
+            {/* Événements en cours */}
+            {groupedEvents.ongoing.length > 0 && (
+              <>
+                {renderGroup('Événements en cours', groupedEvents.ongoing, 'ongoing', 'error')}
                 {(groupedEvents.upcoming.length > 0 || groupedEvents.past.length > 0) && (
                   <Divider sx={{ my: 2 }} />
                 )}

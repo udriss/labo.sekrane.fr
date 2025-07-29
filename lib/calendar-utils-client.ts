@@ -3,6 +3,8 @@
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
 
 // Fonction utilitaire pour obtenir tous les créneaux actifs d'un événement
+// Selon les nouvelles exigences : afficher uniquement les propositions des nouveaux créneaux
+// Si pas de nouveaux créneaux proposés, afficher les actuelTimeSlots
 export function getActiveTimeSlots(event: CalendarEvent): TimeSlot[] {
   if (!event.timeSlots || !Array.isArray(event.timeSlots)) {
     // Pour la rétrocompatibilité, si l'événement n'a pas de timeSlots
@@ -17,7 +19,31 @@ export function getActiveTimeSlots(event: CalendarEvent): TimeSlot[] {
     }
     return [];
   }
+  
+  // Obtenir les nouveaux créneaux proposés (status 'active' dans timeSlots)
+  const proposedSlots = event.timeSlots.filter(slot => slot.status === 'active');
+  
+  // Si il y a des créneaux proposés, les afficher uniquement
+  if (proposedSlots.length > 0) {
+    return proposedSlots;
+  }
+  
+  // Sinon, afficher les actuelTimeSlots (créneaux validés en vigueur)
+  return event.actuelTimeSlots || [];
+}
+
+// Fonction pour obtenir uniquement les nouveaux créneaux proposés (status 'active' dans timeSlots)
+export function getProposedTimeSlots(event: CalendarEvent): TimeSlot[] {
+  if (!event.timeSlots || !Array.isArray(event.timeSlots)) {
+    return [];
+  }
+  
   return event.timeSlots.filter(slot => slot.status === 'active');
+}
+
+// Fonction pour obtenir les créneaux actuels validés
+export function getActuelTimeSlots(event: CalendarEvent): TimeSlot[] {
+  return event.actuelTimeSlots || [];
 }
 
 // Fonction pour afficher un événement dans le calendrier (pour FullCalendar)

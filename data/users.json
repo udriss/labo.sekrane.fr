@@ -36,10 +36,10 @@
     },
     {
       "id": "USER_002",
-      "email": "teacher@labo.fr",
-      "password": "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYpfQYGFRY1xUl.",
+      "email": "laborantin@labo.fr",
+      "password": "$2b$12$w5lQjiA9imZCBq09e537JuoJwFh5Fi6QSKTJ1CF1FFHv.WtHQPZY.",
       "name": "Professeur Martin",
-      "role": "TEACHER",
+      "role": "LABORANTIN",
       "isActive": true,
       "createdAt": "2025-01-01T00:00:00Z",
       "updatedAt": "2025-07-24T09:05:03.295Z",

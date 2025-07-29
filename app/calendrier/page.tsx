@@ -190,10 +190,14 @@ export default function CalendarPage() {
 
 
 // Handler pour gérer la proposition de nouveaux créneaux
+// Si jamais une logique de correspondance de créneaux est nécessaire ici, utiliser referentActuelTimeID
 const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: string, state?: EventState) => {
   try {
     // Déterminer l'état final : si c'est le créateur, passer à PENDING
     const finalState = isCreator(event) ? 'PENDING' : (state || 'MOVED');
+
+    // Si jamais il faut faire correspondre les créneaux proposés aux créneaux actuels ici, utiliser referentActuelTimeID
+    // (Actuellement, la logique de correspondance est gérée côté composants et API)
 
     const response = await fetch(`/api/calendrier/move-event?id=${event.id}`, {
       method: 'PUT',

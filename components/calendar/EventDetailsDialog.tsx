@@ -427,7 +427,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   
   // États pour gérer le chargement des boutons de timeslot
-  const [loadingTimeslotActions, setLoadingTimeslotActions] = useState<Record<number, 'approve' | 'reject' | null>>({})
+  const [loadingTimeslotActions, setLoadingTimeslotActions] = useState<Record<string, 'approve' | 'reject' | null>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   
@@ -499,7 +499,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   const handleApproveTimeslot = async (slotIndex: number, slotId: string) => {
     if (!event) return
     
-    setLoadingTimeslotActions(prev => ({ ...prev, [slotIndex]: 'approve' }))
+    const slotKey = `${event.id}-${slotId}`
+    setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'approve' }))
     
     try {
       const response = await fetch('/api/calendrier/approve-single-timeslot', {
@@ -529,14 +530,15 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
       setErrorMessage('Erreur de connexion')
       setTimeout(() => setErrorMessage(null), 3000)
     } finally {
-      setLoadingTimeslotActions(prev => ({ ...prev, [slotIndex]: null }))
+      setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: null }))
     }
   }
 
   const handleRejectTimeslot = async (slotIndex: number, slotId: string) => {
     if (!event) return
     
-    setLoadingTimeslotActions(prev => ({ ...prev, [slotIndex]: 'reject' }))
+    const slotKey = `${event.id}-${slotId}`
+    setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'reject' }))
     
     try {
       const response = await fetch('/api/calendrier/reject-single-timeslot', {
@@ -566,30 +568,80 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
       setErrorMessage('Erreur de connexion')
       setTimeout(() => setErrorMessage(null), 3000)
     } finally {
-      setLoadingTimeslotActions(prev => ({ ...prev, [slotIndex]: null }))
+      setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: null }))
     }
   }
+
+  // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
+  // Nouvelle version : utilise referentActuelTimeID pour la correspondance directe
+  const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
+    if (!actualSlots || actualSlots.length === 0) {
+      return null;
+    }
+
+    // Correspondance directe par referentActuelTimeID si présent
+    if (proposedSlot.referentActuelTimeID) {
+      const byRef = actualSlots.find(slot => slot.id === proposedSlot.referentActuelTimeID);
+      if (byRef) return byRef;
+    }
+
+    // Sinon, correspondance par ID (créneau inchangé)
+    const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
+    if (byId) return byId;
+
+    // Si aucune correspondance, retourner null (plus de matching heuristique)
+    return null;
+  };
+
+  // Fonction pour vérifier si un créneau proposé est différent du créneau actuel
+  const isSlotChanged = (proposedSlot: any, event: CalendarEvent) => {
+    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
+    
+    if (!correspondingActual) {
+      // Nouveau créneau proposé
+      return true;
+    }
+    
+    // Comparer les dates
+    return correspondingActual.startDate !== proposedSlot.startDate || 
+           correspondingActual.endDate !== proposedSlot.endDate;
+  };
+
+  // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
+  const getSlotStatus = (proposedSlot: any, event: CalendarEvent) => {
+    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
+    
+    if (!correspondingActual) {
+      return 'new'; // Nouveau créneau
+    }
+    
+    // Vérifier d'abord si c'est une correspondance par ID (créneau inchangé)
+    const isExactMatch = correspondingActual.id === proposedSlot.id;
+    const isSameDate = correspondingActual.startDate === proposedSlot.startDate && 
+                      correspondingActual.endDate === proposedSlot.endDate;
+    
+    if (isSameDate) {
+      return 'approved'; // Créneau validé (identique)
+    }
+    
+    return 'pending'; // Créneau modifié en attente (remplace le créneau correspondingActual)
+  };
 
   // NOUVEAU: Fonction pour détecter s'il y a des changements en attente
   const hasPendingChanges = (event: CalendarEvent) => {
     if (!event.actuelTimeSlots || !event.timeSlots) return false
     
-    // Prendre seulement les créneaux actifs pour la comparaison
+    // Prendre seulement les créneaux actifs pour la comparaison (exclure les "invalid")
     const activeTimeSlots = event.timeSlots.filter(slot => slot.status === 'active')
     
-    // Comparer les créneaux actuels avec les créneaux proposés actifs
-    if (event.actuelTimeSlots.length !== activeTimeSlots.length) return true
+    // Si l'événement est PENDING et que c'est le propriétaire qui a fait les modifications,
+    // ne pas considérer comme ayant des changements en attente
+    if (event.state === 'PENDING' && event.createdBy === currentUserId) {
+      return false;
+    }
     
-    return event.actuelTimeSlots.some((actual, index) => {
-      const proposed = activeTimeSlots[index]
-      if (!proposed) return true
-      
-      return (
-        actual.startDate !== proposed.startDate ||
-        actual.endDate !== proposed.endDate ||
-        actual.id !== proposed.id
-      )
-    })
+    // Vérifier si chaque créneau proposé valide a été modifié
+    return activeTimeSlots.some(proposedSlot => isSlotChanged(proposedSlot, event));
   }
 
     // Vérifier si l'utilisateur peut valider
@@ -854,7 +906,7 @@ useEffect(() => {
 
           {/* Informations temporelles avec modifications en attente intégrées */}
           <Grid container spacing={2}>
-            {/* Modifications en attente - affichage en haut si owner */}
+            {/* Modifications en attente - affichage en haut si owner ET des changements valides */}
             {event.createdBy === currentUserId && hasPendingChanges(event) && (
               <Grid size={{ xs: 12 }}>
                 <MuiAlert 
@@ -876,23 +928,22 @@ useEffect(() => {
                     Comparaison des créneaux :
                   </Typography>
                   
-                  {/* Tableau de comparaison des créneaux */}
+                  {/* Tableau de comparaison des créneaux - exclure les créneaux invalid */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot, index) => {
-                      const actualSlot = event.actuelTimeSlots?.[index]
-                      const isChanged = actualSlot && (
-                        actualSlot.startDate !== proposedSlot.startDate ||
-                        actualSlot.endDate !== proposedSlot.endDate ||
-                        actualSlot.id !== proposedSlot.id
-                      )
+                    {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot) => {
+                      const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
+                      const slotStatus = getSlotStatus(proposedSlot, event);
+                      const slotKey = `${event.id}-${proposedSlot.id}`;
                       
                       return (
                         <Box key={proposedSlot.id} sx={{ 
                           p: 2, 
                           border: '1px solid', 
-                          borderColor: isChanged ? 'warning.main' : 'success.main',
+                          borderColor: slotStatus === 'approved' ? 'success.main' : 
+                                      slotStatus === 'new' ? 'info.main' : 'warning.main',
                           borderRadius: 1,
-                          bgcolor: isChanged ? 'warning.50' : 'success.50'
+                          bgcolor: slotStatus === 'approved' ? 'success.50' : 
+                                  slotStatus === 'new' ? 'info.50' : 'warning.50'
                         }}>
                           <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, md: 4 }}>
@@ -900,11 +951,16 @@ useEffect(() => {
                                 <strong>Actuel :</strong>
                               </Typography>
                               <Typography variant="body2">
-                                {actualSlot ? 
-                                  `${format(new Date(actualSlot.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - ${format(new Date(actualSlot.endDate), 'HH:mm', { locale: fr })}` :
-                                  'Nouveau créneau'
+                                {correspondingActual ? 
+                                  `${format(new Date(correspondingActual.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - ${format(new Date(correspondingActual.endDate), 'HH:mm', { locale: fr })}` :
+                                  'Aucun créneau correspondant'
                                 }
                               </Typography>
+                              {correspondingActual && correspondingActual.id !== proposedSlot.id && (
+                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                  (sera remplacé)
+                                </Typography>
+                              )}
                             </Grid>
                             
                             <Grid size={{ xs: 12, md: 4 }}>
@@ -918,45 +974,66 @@ useEffect(() => {
                             </Grid>
 
                             <Grid size={{ xs: 12, md: 4 }}>
-                              {isChanged ? (
+                              {slotStatus === 'approved' ? (
+                                <Chip 
+                                  label="✓ Validé" 
+                                  color="success" 
+                                  size="small" 
+                                  variant="outlined"
+                                />
+                              ) : (
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                   <Button
                                     size="small"
                                     variant="contained"
                                     color="success"
-                                    startIcon={loadingTimeslotActions[index] === 'approve' ? 
+                                    startIcon={loadingTimeslotActions[slotKey] === 'approve' ? 
                                       <CircularProgress size={16} color="inherit" /> : 
                                       <CheckCircle />
                                     }
-                                    disabled={loadingTimeslotActions[index] !== null}
-                                    onClick={() => handleApproveTimeslot(index, proposedSlot.id)}
+                                    disabled={!!loadingTimeslotActions[slotKey]}
+                                    onClick={() => handleApproveTimeslot(0, proposedSlot.id)}
                                   >
-                                    {loadingTimeslotActions[index] === 'approve' ? 'Approbation...' : 'Approuver'}
+                                    {loadingTimeslotActions[slotKey] === 'approve' ? 'Validation...' : 
+                                      slotStatus === 'new' ? 'Valider nouveau' : 'Valider modif'}
                                   </Button>
                                   <Button
                                     size="small"
                                     variant="outlined"
                                     color="error"
-                                    startIcon={loadingTimeslotActions[index] === 'reject' ? 
+                                    startIcon={loadingTimeslotActions[slotKey] === 'reject' ? 
                                       <CircularProgress size={16} color="inherit" /> : 
                                       <Cancel />
                                     }
-                                    disabled={loadingTimeslotActions[index] !== null}
-                                    onClick={() => handleRejectTimeslot(index, proposedSlot.id)}
+                                    disabled={!!loadingTimeslotActions[slotKey]}
+                                    onClick={() => handleRejectTimeslot(0, proposedSlot.id)}
                                   >
-                                    {loadingTimeslotActions[index] === 'reject' ? 'Rejet...' : 'Rejeter'}
+                                    {loadingTimeslotActions[slotKey] === 'reject' ? 'Rejet...' : 'Rejeter'}
                                   </Button>
                                 </Box>
-                              ) : (
-                                <Chip 
-                                  label="✓ Approuvé" 
-                                  color="success" 
-                                  size="small" 
-                                  variant="outlined"
-                                />
                               )}
                             </Grid>
                           </Grid>
+                          
+                          {/* Indicateur de statut */}
+                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Statut: 
+                            </Typography>
+                            <Chip
+                              size="small"
+                              label={
+                                slotStatus === 'approved' ? 'Validé' :
+                                slotStatus === 'new' ? 'Nouveau créneau' : 
+                                'Modification en attente'
+                              }
+                              color={
+                                slotStatus === 'approved' ? 'success' :
+                                slotStatus === 'new' ? 'info' : 'warning'
+                              }
+                              variant="outlined"
+                            />
+                          </Box>
                         </Box>
                       )
                     })}
@@ -970,7 +1047,24 @@ useEffect(() => {
                     color="success"
                     size="small"
                     startIcon={<CheckCircle />}
-                    onClick={() => onApproveTimeSlotChanges?.(event)}
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/calendrier/approve-timeslots', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ eventId: event.id })
+                        });
+                        
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (onApproveTimeSlotChanges && data.event) {
+                            onApproveTimeSlotChanges(data.event);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Erreur lors de l\'approbation:', error);
+                      }
+                    }}
                   >
                     Approuver tous les créneaux
                   </Button>
@@ -979,7 +1073,24 @@ useEffect(() => {
                     color="error"
                     size="small"
                     startIcon={<Cancel />}
-                    onClick={() => onRejectTimeSlotChanges?.(event)}
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/calendrier/reject-timeslots', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ eventId: event.id })
+                        });
+                        
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (onRejectTimeSlotChanges && data.event) {
+                            onRejectTimeSlotChanges(data.event);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Erreur lors du rejet:', error);
+                      }
+                    }}
                   >
                     Rejeter tous les créneaux
                   </Button>

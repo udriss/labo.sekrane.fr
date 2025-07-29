@@ -1,4 +1,4 @@
-// components/calendar/DailyPlanning.tsx
+  // components/calendar/DailyPlanning.tsx
 
 "use client"
 
@@ -48,6 +48,7 @@ import {
 import { format, isToday, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
+import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import EventActions from './EventActions'
 
 
@@ -227,57 +228,23 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   }
 
   // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
+  // Nouvelle version : utilise referentActuelTimeID pour la correspondance directe
   const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
-    
     if (!actualSlots || actualSlots.length === 0) {
       return null;
     }
-    
-    // Recherche d'abord par ID (cas où le créneau n'a pas été modifié)
+
+    // Correspondance directe par referentActuelTimeID si présent
+    if (proposedSlot.referentActuelTimeID) {
+      const byRef = actualSlots.find(slot => slot.id === proposedSlot.referentActuelTimeID);
+      if (byRef) return byRef;
+    }
+
+    // Sinon, correspondance par ID (créneau inchangé)
     const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
-    if (byId) {
-      return byId;
-    }
-    
-    // Sinon, recherche par proximité temporelle (pour les créneaux modifiés)
-    const proposedStart = new Date(proposedSlot.startDate).getTime();
-    const proposedEnd = new Date(proposedSlot.endDate).getTime();
-    
-    const found = actualSlots.find(actualSlot => {
-      const actualStart = new Date(actualSlot.startDate).getTime();
-      const actualEnd = new Date(actualSlot.endDate).getTime();
+    if (byId) return byId;
 
-      // Tolérance de 10 minutes (600000 ms) pour considérer que c'est le même créneau
-      const tolerance = 10 * 60 * 1000;
-      const startDiff = Math.abs(proposedStart - actualStart);
-      const endDiff = Math.abs(proposedEnd - actualEnd);
-      
-
-      return startDiff <= tolerance && endDiff <= tolerance;
-    });
-    
-    if (found) {
-      return found;
-    }
-    
-    // Si aucune correspondance exacte, trouver le créneau le plus proche temporellement
-    const closestSlot = actualSlots.reduce((closest, actualSlot) => {
-      const actualStart = new Date(actualSlot.startDate).getTime();
-      const actualEnd = new Date(actualSlot.endDate).getTime();
-      
-      const startDiff = Math.abs(proposedStart - actualStart);
-      const endDiff = Math.abs(proposedEnd - actualEnd);
-      const totalDiff = startDiff + endDiff;
-      
-      if (!closest) return { slot: actualSlot, diff: totalDiff };
-      
-      return totalDiff < closest.diff ? { slot: actualSlot, diff: totalDiff } : closest;
-    }, null as { slot: any, diff: number } | null);
-    
-    if (closestSlot) {
-      return closestSlot.slot;
-    }
-    
+    // Si aucune correspondance, retourner null (plus de matching heuristique)
     return null;
   };
 
@@ -299,14 +266,18 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   const hasPendingChanges = (event: CalendarEvent): boolean => {
     if (!event.timeSlots || !event.actuelTimeSlots) return false;
     
+    // Filtrer les créneaux valides (exclure ceux avec status "invalid")
     const activeTimeSlots = event.timeSlots.filter(slot => slot.status === 'active');
-    const actualTimeSlots = event.actuelTimeSlots;
     
-    // Comparer le nombre de créneaux
-    if (activeTimeSlots.length !== actualTimeSlots.length) return true;
+    // Si l'événement est PENDING et que c'est le propriétaire qui a fait les modifications,
+    // ne pas considérer comme ayant des changements en attente
+    if (event.state === 'PENDING' && event.createdBy === currentUserId) {
+      return false;
+    }
     
-    // Vérifier si chaque créneau proposé a été modifié
-    return activeTimeSlots.some(proposedSlot => isSlotChanged(proposedSlot, event));
+    // Vérifier s'il y a des créneaux en attente d'approbation (pas encore approuvés)
+    const pendingSlots = activeTimeSlots.filter(slot => getSlotStatus(slot, event) !== 'approved');
+    return pendingSlots.length > 0;
   };
 
   // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
@@ -403,8 +374,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
   // Filtrer uniquement les événements qui ont des créneaux aujourd'hui
   const todayEvents = events.filter(event => {
-    // Utiliser actuelTimeSlots en priorité, sinon timeSlots actifs
-    const slotsToCheck = event.actuelTimeSlots || event.timeSlots?.filter(slot => slot.status === 'active') || []
+    // Utiliser la nouvelle logique : propositions en priorité, sinon actuelTimeSlots
+    const slotsToCheck = getActiveTimeSlots(event)
     return slotsToCheck.some(slot => isToday(new Date(slot.startDate)));
   });
 
@@ -436,8 +407,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     const isCancelled = event.state === 'CANCELLED';
     const stateInfo = getStateInfo(event.state);
     
-    // Utiliser actuelTimeSlots en priorité, sinon timeSlots actifs
-    const slotsToUse = event.actuelTimeSlots || event.timeSlots?.filter(slot => slot.status === 'active') || []
+    // Utiliser la nouvelle logique : propositions en priorité, sinon actuelTimeSlots
+    const slotsToUse = getActiveTimeSlots(event)
     const todaySlots = slotsToUse.filter(slot => slot && slot.startDate && isToday(new Date(slot.startDate)));
 
     return (
@@ -532,21 +503,22 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                   </Typography>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    {todaySlots.length} créneaux aujourd'hui
+                    {todaySlots.length} créneaux aujourd'hui :
                   </Typography>
                 )}
               </Stack>
 
               {/* Affichage détaillé si plusieurs créneaux */}
               {todaySlots.length > 1 && (
-                <Box sx={{ ml: 3 }}>
-                  {todaySlots.map((slot, index) => (
-                    <Typography key={slot.id} variant="caption" color="text.secondary">
-                      • {format(new Date(slot.startDate), 'HH:mm')} - 
-                      {format(new Date(slot.endDate), 'HH:mm')}
+              <Stack spacing={0.5}>
+                {todaySlots.map((slot, idx) => (
+                  <Box key={slot.id || idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {format(new Date(slot.startDate), 'HH:mm')} - {format(new Date(slot.endDate), 'HH:mm')}
                     </Typography>
-                  ))}
-                </Box>
+                  </Box>
+                ))}
+              </Stack>
               )}
             </Stack>
           }
@@ -608,7 +580,7 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                       Comparaison des créneaux :
                     </Typography>
                     
-                    {/* Tableau de comparaison des créneaux */}
+                    {/* Tableau de comparaison des créneaux - exclure les créneaux invalid */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot) => {
                         
@@ -736,10 +708,22 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                             color="success"
                             startIcon={<CheckCircle />}
                             disabled={!hasAnyPending}
-                            onClick={() => {
-                              // Approuver : mettre à jour actuelTimeSlots avec les timeSlots proposés
-                              if (onApproveTimeSlotChanges) {
-                                onApproveTimeSlotChanges(event)
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/calendrier/approve-timeslots', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ eventId: event.id })
+                                });
+                                
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  if (onApproveTimeSlotChanges && data.event) {
+                                    onApproveTimeSlotChanges(data.event);
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Erreur lors de l\'approbation:', error);
                               }
                             }}
                           >
@@ -751,10 +735,22 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                             color="error"
                             startIcon={<Cancel />}
                             disabled={!hasAnyPending}
-                            onClick={() => {
-                              // Rejeter : remettre timeSlots = actuelTimeSlots
-                              if (onRejectTimeSlotChanges) {
-                                onRejectTimeSlotChanges(event)
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/calendrier/reject-timeslots', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ eventId: event.id })
+                                });
+                                
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  if (onRejectTimeSlotChanges && data.event) {
+                                    onRejectTimeSlotChanges(data.event);
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Erreur lors du rejet:', error);
                               }
                             }}
                           >

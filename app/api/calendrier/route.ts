@@ -31,9 +31,9 @@ export async function GET(request: NextRequest) {
       const end = new Date(endDate)
       
       events = events.filter((event: any) => {
-        // Vérifier si au moins un timeSlot est dans la période
+        // Vérifier si au moins un timeSlot actif est dans la période (exclure les invalid et deleted)
         return event.timeSlots.some((slot: TimeSlot) => {
-          if (slot.status === 'deleted') return false;
+          if (slot.status === 'deleted' || slot.status === 'invalid') return false;
           const slotStart = new Date(slot.startDate)
           const slotEnd = new Date(slot.endDate)
           return slotStart <= end && slotEnd >= start
@@ -108,6 +108,7 @@ export const POST = withAudit(
         const endDateTime = new Date(`${date}T${slot.endTime}`);
 
         formattedTimeSlots.push({
+
           id: generateTimeSlotId(),
           startDate: startDateTime.toISOString(),
           endDate: endDateTime.toISOString(),
@@ -115,6 +116,7 @@ export const POST = withAudit(
           createdBy: userId || 'INDISPONIBLE',
           modifiedBy: [{
             userId: userId || 'INDISPONIBLE',
+
             date: currentDate,
             action: 'created' as const
           }]
@@ -311,6 +313,7 @@ export const PUT = withAudit(
 
     // Valider et formater les timeSlots si fournis
     let finalTimeSlots = event.timeSlots || []
+    let finalActuelTimeSlots = event.actuelTimeSlots || []
     let shouldUpdateStateToPending = false
     
     if (timeSlots !== undefined) {
@@ -339,9 +342,53 @@ export const PUT = withAudit(
         };
       });
       
-      // Si c'est le propriétaire qui modifie, changer l'état vers PENDING
+      // Si c'est le propriétaire qui modifie, changer l'état vers PENDING et synchroniser actuelTimeSlots
       if (isOwnerModification) {
         shouldUpdateStateToPending = true
+
+        // Marquer tous les anciens timeSlots comme "invalid"
+        const oldActiveSlots = (event.timeSlots || []).filter((slot: any) => slot.status === 'active');
+        const invalidatedSlots = (event.timeSlots || []).map((slot: any) => ({
+          ...slot,
+          status: slot.status === 'active' ? 'invalid' : slot.status,
+          modifiedBy: [
+            ...(slot.modifiedBy || []),
+            {
+              userId: userId || 'INDISPONIBLE',
+              date: modificationDate,
+              action: 'invalidated' as const
+            }
+          ]
+        }));
+
+        // Ajouter les nouveaux créneaux avec referentActuelTimeID pour correspondance directe
+        const newSlotsWithRef = finalTimeSlots.map((slot: any, i: number) => {
+          // Si le slot a déjà un referentActuelTimeID, ne pas l'écraser
+          if (slot.referentActuelTimeID !== undefined) return slot;
+          const referentId = oldActiveSlots[i] ? oldActiveSlots[i].id : undefined;
+          return {
+            ...slot,
+            referentActuelTimeID: referentId
+          };
+        });
+
+        finalTimeSlots = [
+          ...invalidatedSlots,
+          ...newSlotsWithRef
+        ];
+
+        // Synchroniser actuelTimeSlots avec les nouveaux timeSlots actifs
+        finalActuelTimeSlots = newSlotsWithRef.filter((slot: any) => slot.status === 'active').map((slot: any) => ({
+          ...slot,
+          modifiedBy: [
+            ...(slot.modifiedBy || []),
+            {
+              userId: userId || 'INDISPONIBLE',
+              date: modificationDate,
+              action: 'modified' as const
+            }
+          ]
+        }));
       }
       
       console.log('TimeSlots formatés:', finalTimeSlots);
@@ -399,6 +446,7 @@ export const PUT = withAudit(
       ...eventUpdates,
       ...filesUpdate,
       timeSlots: finalTimeSlots,  // Remplacer directement tous les timeSlots
+      actuelTimeSlots: finalActuelTimeSlots,  // NOUVEAU: Synchroniser actuelTimeSlots quand le propriétaire modifie
       modifiedBy: updatedModifiedBy,
       updatedAt: modificationDate,
       // Si le propriétaire modifie les timeSlots, remettre l'état à PENDING
@@ -556,6 +604,7 @@ export const DELETE = withAudit(
     })
   }
 );
+
 
 // PATCH reste inchangé
 export const PATCH = withAudit(
