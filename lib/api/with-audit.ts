@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { auditLogger } from '@/lib/services/audit-logger';
+import { notificationService } from '@/lib/notifications/notification-service';
+import { notificationPreferencesService } from '@/scripts/init-notification-preferences';
 import { AuditAction, AuditUser, AuditContext } from '@/types/audit';
 
 type RouteHandler = (req: NextRequest, context?: any) => Promise<NextResponse> | NextResponse;
@@ -12,10 +14,108 @@ interface AuditOptions {
   module: AuditAction['module'];
   entity: string;
   extractEntityId?: (req: NextRequest, params?: any) => string | undefined;
-  // Nouvelle option pour extraire l'ID depuis la réponse
   extractEntityIdFromResponse?: (response: any) => string | undefined;
   skipAuth?: boolean;
   customDetails?: (req: NextRequest, response?: any) => any;
+  // Nouvelles options pour les notifications
+  notifyUsers?: 'all' | 'admins' | 'teachers' | 'custom';
+  customNotifyUsers?: string[]; // IDs d'utilisateurs spécifiques
+  skipNotifications?: boolean;
+}
+
+async function triggerNotifications(
+  triggeredBy: AuditUser,
+  module: string,
+  actionType: string,
+  details: any,
+  notifyUsers: 'all' | 'admins' | 'teachers' | 'custom' = 'all',
+  customNotifyUsers?: string[],
+  entityId?: string,
+  entityType?: string
+) {
+  try {
+    // Déterminer les utilisateurs à notifier
+    let targetUsers: AuditUser[] = [];
+    
+    if (notifyUsers === 'custom' && customNotifyUsers) {
+      // TODO: Récupérer les utilisateurs spécifiques depuis la base de données
+      // Pour l'instant, on utilise un exemple
+      targetUsers = customNotifyUsers.map(id => ({
+        id,
+        email: `user${id}@labolims.com`,
+        name: `User ${id}`,
+        role: 'USER'
+      }));
+    } else {
+      // Récupérer tous les utilisateurs selon le type
+      // TODO: Remplacer par une vraie requête à la base de données
+      const allUsers: AuditUser[] = [
+        { id: 'admin1', email: 'admin@labolims.com', name: 'Admin', role: 'ADMIN' },
+        { id: 'teacher1', email: 'teacher@labolims.com', name: 'Teacher', role: 'TEACHER' },
+        { id: 'student1', email: 'student@labolims.com', name: 'Student', role: 'STUDENT' }
+      ];
+      
+      switch (notifyUsers) {
+        case 'admins':
+          targetUsers = allUsers.filter(u => u.role === 'ADMIN');
+          break;
+        case 'teachers':
+          targetUsers = allUsers.filter(u => u.role === 'TEACHER' || u.role === 'ADMIN');
+          break;
+        case 'all':
+        default:
+          targetUsers = allUsers;
+          break;
+      }
+    }
+    
+    // Exclure l'utilisateur qui a déclenché l'action
+    targetUsers = targetUsers.filter(u => u.id !== triggeredBy.id);
+    
+    if (targetUsers.length > 0) {
+      await notificationService.createNotification(
+        targetUsers,
+        module,
+        actionType,
+        details,
+        triggeredBy,
+        entityId,
+        entityType
+      );
+    }
+    
+  } catch (error) {
+    console.error('Error triggering notifications:', error);
+  }
+}
+
+// Helper pour déterminer le type d'action depuis la méthode HTTP
+function getActionTypeFromMethod(method: string): AuditAction['type'] {
+  switch (method.toUpperCase()) {
+    case 'POST': return 'CREATE';
+    case 'GET': return 'READ';
+    case 'PUT':
+    case 'PATCH': return 'UPDATE';
+    case 'DELETE': return 'DELETE';
+    default: return 'READ';
+  }
+}
+
+// Helper pour extraire l'ID depuis le path
+function getEntityIdFromPath(pathname: string): string | undefined {
+  const segments = pathname.split('/').filter(Boolean);
+  const lastSegment = segments[segments.length - 1];
+  
+  // Vérifier si le dernier segment ressemble à un ID
+  if (lastSegment && (
+    lastSegment.match(/^[0-9a-f-]{36}$/i) || // UUID
+    lastSegment.match(/^\d+$/) || // Nombre
+    lastSegment.match(/^[a-zA-Z0-9_-]+$/) // ID alphanumérique
+  )) {
+    return lastSegment;
+  }
+  
+  return undefined;
 }
 
 /**
@@ -31,6 +131,10 @@ export function withAudit(handler: RouteHandler, options: AuditOptions): RouteHa
     let responseData: any = null;
     
     try {
+      // Initialiser les services de notifications
+      await notificationPreferencesService.initializeDefaultPreferences();
+      await notificationService.initializeNotificationsFile();
+      
       // Récupérer la session utilisateur
       const session = options.skipAuth ? null : await getServerSession(authOptions);
       
@@ -61,7 +165,6 @@ export function withAudit(handler: RouteHandler, options: AuditOptions): RouteHa
 
       // Déterminer l'action basée sur la méthode HTTP ou l'option fournie
       const actionType = options.action || getActionTypeFromMethod(req.method);
-
 
       // Récupérer le body de la requête pour les mutations
       let requestBody: any = null;
@@ -137,6 +240,20 @@ export function withAudit(handler: RouteHandler, options: AuditOptions): RouteHa
 
       await auditLogger.log(action, user, finalContext, { ...details, status });
 
+      // Déclencher les notifications si l'opération a réussi et que les notifications ne sont pas désactivées
+      if (status === 'SUCCESS' && !options.skipNotifications) {
+        await triggerNotifications(
+          user,
+          options.module,
+          actionType,
+          details,
+          options.notifyUsers,
+          options.customNotifyUsers,
+          entityId,
+          options.entity
+        );
+      }
+
       return response;
 
     } catch (err) {
@@ -196,35 +313,6 @@ export function withAudit(handler: RouteHandler, options: AuditOptions): RouteHa
       throw error;
     }
   };
-}
-
-// Helper pour déterminer le type d'action depuis la méthode HTTP
-function getActionTypeFromMethod(method: string): AuditAction['type'] {
-  switch (method.toUpperCase()) {
-    case 'POST': return 'CREATE';
-    case 'GET': return 'READ';
-    case 'PUT':
-    case 'PATCH': return 'UPDATE';
-    case 'DELETE': return 'DELETE';
-    default: return 'READ';
-  }
-}
-
-// Helper pour extraire l'ID depuis le path
-function getEntityIdFromPath(pathname: string): string | undefined {
-  const segments = pathname.split('/').filter(Boolean);
-  const lastSegment = segments[segments.length - 1];
-  
-  // Vérifier si le dernier segment ressemble à un ID
-  if (lastSegment && (
-    lastSegment.match(/^[0-9a-f-]{36}$/i) || // UUID
-    lastSegment.match(/^\d+$/) || // Nombre
-    lastSegment.match(/^[a-zA-Z0-9_-]+$/) // ID alphanumérique
-  )) {
-    return lastSegment;
-  }
-  
-  return undefined;
 }
 
 // Helper pour nettoyer les données sensibles

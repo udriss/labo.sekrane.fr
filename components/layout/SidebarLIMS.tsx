@@ -1,253 +1,317 @@
-import { 
-  Drawer, List, ListItem, ListItemIcon, ListItemText, ListItemButton,
-  Divider, Box, Typography, Collapse, Avatar, Chip, IconButton,
-  Tooltip, alpha
-} from '@mui/material';
-import { 
-  Science, Inventory, Assignment, CalendarMonth, Dashboard, 
-  Person, Settings, School, Room, ExpandLess, ExpandMore,
-  AdminPanelSettings, ShoppingCart, QrCodeScanner, Analytics,
-  ChevronLeft, ChevronRight, Construction
-} from '@mui/icons-material';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import Image from 'next/image';
+'use client';
+
 import React from 'react';
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Typography,
+  Collapse,
+  Chip
+} from '@mui/material';
+import {
+  Dashboard,
+  People,
+  Science,
+  Biotech,
+  Room,
+  CalendarMonth,
+  ShoppingCart,
+  Security,
+  Settings,
+  AdminPanelSettings,
+  Assessment,
+  Inventory,
+  ExpandLess,
+  ExpandMore,
+  Notifications,
+  History
+} from '@mui/icons-material';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useState } from 'react';
+
+interface SidebarProps {
+  onClose?: () => void;
+}
 
 interface MenuItem {
-  title: string;
-  icon: React.ReactElement;
-  href?: string;
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  path?: string;
   children?: MenuItem[];
-  badge?: number | string;
-  disabled?: boolean;
+  roles?: string[];
+  badge?: string | number;
 }
 
-const mainMenuItems: MenuItem[] = [
-  { title: 'Tableau de bord', icon: <Dashboard />, href: '/' },
-  { title: 'Réactifs chimiques', icon: <Science />, href: '/chemicals', badge: 'New' },
-  { title: 'Matériel', icon: <Inventory />, href: '/materiel' },
-  { title: 'Cahier TP', icon: <Assignment />, href: '/notebook' },
-  { title: 'Calendrier', icon: <CalendarMonth />, href: '/calendrier' },
-  { title: 'Commandes', icon: <ShoppingCart />, href: '/orders', disabled: true },
-  { title: 'Scanner', icon: <QrCodeScanner />, href: '/scanner', disabled: true },
-];
-
-const adminMenuItems: MenuItem[] = [
-  { 
-    title: 'Administration', 
+const menuItems: MenuItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Tableau de bord',
+    icon: <Dashboard />,
+    path: '/',
+    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+  },
+  {
+    id: 'users',
+    label: 'Utilisateurs',
+    icon: <People />,
+    path: '/users',
+    roles: ['ADMIN', 'TEACHER']
+  },
+  {
+    id: 'laboratory',
+    label: 'Laboratoire',
+    icon: <Science />,
+    children: [
+      {
+        id: 'chemicals',
+        label: 'Produits chimiques',
+        icon: <Biotech />,
+        path: '/chemicals',
+        roles: ['ADMIN', 'TEACHER', 'STUDENT']
+      },
+      {
+        id: 'equipment',
+        label: 'Équipements',
+        icon: <Inventory />,
+        path: '/equipment',
+        roles: ['ADMIN', 'TEACHER', 'STUDENT']
+      },
+      {
+        id: 'rooms',
+        label: 'Salles',
+        icon: <Room />,
+        path: '/rooms',
+        roles: ['ADMIN', 'TEACHER']
+      }
+    ],
+    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+  },
+  {
+    id: 'calendar',
+    label: 'Calendrier',
+    icon: <CalendarMonth />,
+    path: '/calendar',
+    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+  },
+  {
+    id: 'orders',
+    label: 'Commandes',
+    icon: <ShoppingCart />,
+    path: '/orders',
+    roles: ['ADMIN', 'TEACHER']
+  },
+  {
+    id: 'reports',
+    label: 'Rapports',
+    icon: <Assessment />,
+    path: '/reports',
+    roles: ['ADMIN', 'TEACHER']
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: <Notifications />,
+    path: '/notifications',
+    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+  },
+  {
+    id: 'logs',
+    label: 'Journaux',
+    icon: <History />,
+    path: '/logs',
+    roles: ['ADMIN']
+  },
+  {
+    id: 'admin',
+    label: 'Administration',
     icon: <AdminPanelSettings />,
     children: [
-      { title: 'Utilisateurs', icon: <Person />, href: '/admin/users' },
-      { title: 'Salles', icon: <Room />, href: '/admin/rooms' },
-      { title: 'Classes', icon: <School />, href: '/admin/classes' },
-      { title: 'Paramètres', icon: <Settings />, href: '/admin/settings' },
-      { title: 'Analytics', icon: <Analytics />, href: '/admin/analytics' },
-    ]
-  },
+      {
+        id: 'admin-notifications',
+        label: 'Gestion notifications',
+        icon: <Notifications />,
+        path: '/admin/notifications',
+        roles: ['ADMIN']
+      },
+      {
+        id: 'admin-security',
+        label: 'Sécurité',
+        icon: <Security />,
+        path: '/admin/security',
+        roles: ['ADMIN']
+      },
+      {
+        id: 'admin-settings',
+        label: 'Paramètres système',
+        icon: <Settings />,
+        path: '/admin/settings',
+        roles: ['ADMIN']
+      }
+    ],
+    roles: ['ADMIN']
+  }
 ];
 
-interface SidebarLIMSProps {
-  collapsed: boolean;
-}
-
-export function SidebarLIMS({ collapsed }: SidebarLIMSProps) {
-  const pathname = usePathname();
-  const router = useRouter();
+export function SidebarLIMS({ onClose }: SidebarProps) {
   const { data: session } = useSession();
-  const [openItems, setOpenItems] = useState<string[]>(['Administration']);
-  const isAdmin = (session?.user as any)?.role === 'ADMIN';
+  const pathname = usePathname();
+  const [openItems, setOpenItems] = useState<string[]>(['laboratory', 'admin']);
 
-  const handleClick = (title: string) => {
-    setOpenItems(prev => 
-      prev.includes(title) 
-        ? prev.filter(item => item !== title)
-        : [...prev, title]
-    );
+  const userRole = (session?.user as any)?.role || 'GUEST';
+
+  const handleItemClick = (itemId: string) => {
+    if (openItems.includes(itemId)) {
+      setOpenItems(openItems.filter(id => id !== itemId));
+    } else {
+      setOpenItems([...openItems, itemId]);
+    }
   };
 
-  const renderMenuItem = (item: MenuItem, depth = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const isOpen = openItems.includes(item.title);
-    const isActive = pathname === item.href;
+  const hasPermission = (roles?: string[]) => {
+    if (!roles || roles.length === 0) return true;
+    return roles.includes(userRole);
+  };
 
-    return (
-      <Box key={item.title}>
-        <ListItem disablePadding sx={{ display: 'block' }}>
-          <ListItemButton
-            onClick={() => {
-              if (hasChildren) {
-                handleClick(item.title);
-              } else if (item.href && !item.disabled) {
-                router.push(item.href);
-              }
-            }}
-            disabled={item.disabled}
-            selected={isActive}
-            sx={{
-              minHeight: 48,
-              justifyContent: collapsed ? 'center' : 'initial',
-              px: collapsed ? 1 : 2.5,
-              ml: depth * 2,
-              borderRadius: 2,
-              mx: 1,
-              mb: 0.5,
-              '&.Mui-selected': {
-                bgcolor: alpha('#667eea', 0.15),
-                '&:hover': {
-                  bgcolor: alpha('#667eea', 0.25),
-                }
-              }
-            }}
-          >
-            <ListItemIcon
+  const isActive = (path?: string) => {
+    if (!path) return false;
+    return pathname === path || (path !== '/' && pathname.startsWith(path));
+  };
+
+  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+    if (!hasPermission(item.roles)) {
+      return null;
+    }
+
+    const hasChildren = item.children && item.children.length > 0;
+    const isItemOpen = openItems.includes(item.id);
+    const active = isActive(item.path);
+
+    if (hasChildren) {
+      return (
+        <React.Fragment key={item.id}>
+          <ListItem disablePadding>
+            <ListItemButton
+              onClick={() => handleItemClick(item.id)}
               sx={{
-                minWidth: 0,
-                mr: collapsed ? 0 : 3,
-                justifyContent: 'center',
-                color: isActive ? 'primary.main' : 'inherit',
+                pl: 2 + level * 2,
+                bgcolor: active ? 'action.selected' : undefined,
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
               }}
             >
-              {item.disabled ? (
-                <Tooltip title="En développement">
-                  <Construction fontSize="small" />
-                </Tooltip>
-              ) : (
-                item.icon
-              )}
-            </ListItemIcon>
-            {!collapsed && (
-              <>
-                <ListItemText 
-                  primary={item.title} 
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: isActive ? 600 : 400,
-                  }}
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.label}
+                primaryTypographyProps={{
+                  fontSize: level > 0 ? '0.875rem' : '1rem',
+                  fontWeight: active ? 600 : 400
+                }}
+              />
+              {item.badge && (
+                <Chip 
+                  label={item.badge} 
+                  size="small" 
+                  color="primary"
+                  sx={{ mr: 1 }}
                 />
-                {item.badge && (
-                  <Chip 
-                    label={item.badge} 
-                    size="small" 
-                    color={item.badge === 'New' ? 'primary' : 'default'}
-                    sx={{ height: 20 }}
-                  />
-                )}
-                {hasChildren && (isOpen ? <ExpandLess /> : <ExpandMore />)}
-              </>
-            )}
-          </ListItemButton>
-        </ListItem>
-        {hasChildren && !collapsed && (
-          <Collapse in={isOpen} timeout="auto" unmountOnExit>
+              )}
+              {isItemOpen ? <ExpandLess /> : <ExpandMore />}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={isItemOpen} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
-              {item.children!.map(child => renderMenuItem(child, depth + 1))}
+              {item.children?.map(child => renderMenuItem(child, level + 1))}
             </List>
           </Collapse>
-        )}
-      </Box>
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <ListItem key={item.id} disablePadding>
+        <ListItemButton
+          component={Link}
+          href={item.path || '#'}
+          onClick={onClose}
+          sx={{
+            pl: 2 + level * 2,
+            bgcolor: active ? 'action.selected' : undefined,
+            '&:hover': {
+              bgcolor: 'action.hover',
+            },
+            borderRight: active ? 3 : 0,
+            borderColor: 'primary.main',
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            {item.icon}
+          </ListItemIcon>
+          <ListItemText 
+            primary={item.label}
+            primaryTypographyProps={{
+              fontSize: level > 0 ? '0.875rem' : '1rem',
+              fontWeight: active ? 600 : 400,
+              color: active ? 'primary.main' : undefined
+            }}
+          />
+          {item.badge && (
+            <Chip 
+              label={item.badge} 
+              size="small" 
+              color="primary"
+            />
+          )}
+        </ListItemButton>
+      </ListItem>
     );
   };
 
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: collapsed ? 64 : 240,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: collapsed ? 64 : 240,
-          boxSizing: 'border-box',
-          transition: 'width 0.3s ease',
-          borderRight: 1,
-          borderColor: 'divider',
-          overflowX: 'hidden',
-        },
-      }}
-    >
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <Box 
-        sx={{ 
-          p: 2, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: collapsed ? 'center' : 'space-between',
-          minHeight: 64,
-        }}
-      >
-        {collapsed ? (
-          <Science sx={{ color: 'primary.main' }} />
-        ) : (
-          <>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Image src="/logo.png" alt="LIMS" width={32} height={32} />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                LIMS Lab
-              </Typography>
-            </Box>
-          </>
-        )}
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+          LIMS
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Laboratory Information Management
+        </Typography>
       </Box>
-      
-      <Divider />
-      
-      {/* User Info */}
-      {!collapsed && session?.user && (
-        <Box sx={{ p: 2 }}>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 2,
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: 'action.hover',
-            }}
-          >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-              {session.user.name?.[0]}
-            </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {session.user.name}
-              </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                {isAdmin ? 'Administrateur' : 'Utilisateur'}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      )}
-      
-      <Divider />
-      
-      {/* Menu Items */}
-      <List sx={{ pt: 1 }}>
-        {mainMenuItems.map(item => renderMenuItem(item))}
-      </List>
-      
-      {/* Admin Section */}
-      {isAdmin && (
-        <>
-          <Divider sx={{ my: 1 }} />
-          <List>
-            {adminMenuItems.map(item => renderMenuItem(item))}
-          </List>
-        </>
-      )}
-      
-      {/* Bottom Space */}
-      <Box sx={{ flexGrow: 1 }} />
-      
-      {/* Version */}
-      {!collapsed && (
-        <Box sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            Version 2.0.0
-          </Typography>
-        </Box>
-      )}
-    </Drawer>
+
+      {/* Menu principal */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <List>
+          {menuItems.map(item => renderMenuItem(item))}
+        </List>
+      </Box>
+
+      {/* Footer */}
+      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="caption" color="text.secondary" display="block">
+          Connecté en tant que
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {session?.user?.name || 'Utilisateur'}
+        </Typography>
+        <Chip 
+          label={userRole} 
+          size="small" 
+          color="primary" 
+          variant="outlined"
+          sx={{ mt: 0.5 }}
+        />
+      </Box>
+    </Box>
   );
 }

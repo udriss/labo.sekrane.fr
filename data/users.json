@@ -5,7 +5,7 @@
       "email": "admin@labo.fr",
       "password": "$2b$12$w5lQjiA9imZCBq09e537JuoJwFh5Fi6QSKTJ1CF1FFHv.WtHQPZY.",
       "name": "Administrateur",
-      "role": "ADMINLABO",
+      "role": "ADMIN",
       "isActive": true,
       "createdAt": "2025-01-01T00:00:00Z",
       "updatedAt": "2025-07-28T03:19:13.717Z",

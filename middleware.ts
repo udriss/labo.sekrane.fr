@@ -143,7 +143,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protection des routes dashboard
-  if (path.startsWith('/dashboard')) {
+/*   if (path.startsWith('/dashboard')) {
     if (!token) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
@@ -158,7 +158,7 @@ export async function middleware(request: NextRequest) {
     } else if ((token.role === 'ADMIN' || token.role === 'ADMINLABO') && !path.startsWith('/dashboard/admin')) {
       return NextResponse.redirect(new URL('/dashboard/admin', request.url));
     }
-  }
+  } */
 
   return response;
 }

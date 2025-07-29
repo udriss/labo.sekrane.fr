@@ -7,9 +7,9 @@ export interface AuditUser {
 }
 
 export interface AuditAction {
-  type: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT' |
+  type: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'IMPORT' | 'READ' |
    'UPDATE_STATE' | 'MOVE_EVENT' | 'VALIDATE_EVENT' | 'PROPOSE_TIMESLOTS' | 'REJECT_SINGLE' | 'REJECT_ALL' | 'APPROVE_SINGLE' | 'APPROVE_ALL';
-  module: 'USERS' | 'CHEMICALS' | 'EQUIPMENT' | 'ROOMS' | 'CALENDAR' | 'ORDERS' | 'SECURITY' | 'SYSTEM';
+  module: 'USERS' | 'CHEMICALS' | 'EQUIPMENT' | 'ROOMS' | 'CALENDAR' | 'ORDERS' | 'SECURITY' | 'SYSTEM' | 'NOTIFICATIONS' | 'AUDIT';
   entity: string;
   entityId?: string;
 }

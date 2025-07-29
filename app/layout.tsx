@@ -1,26 +1,29 @@
 "use client";
 
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
-import { useState, useEffect, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { fr } from 'date-fns/locale';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// Composants de layout (à créer)
+import { Inter } from 'next/font/google';
+import { CssBaseline, Box, Drawer, useMediaQuery } from '@mui/material';
+
+// Composants de layout
 import { NavbarLIMS } from '@/components/layout/NavbarLIMS';
 import { SidebarLIMS } from '@/components/layout/SidebarLIMS';
 import { FooterLIMS } from '@/components/layout/FooterLIMS';
 import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
+import { NotificationProvider } from '@/components/notifications/NotificationProvider';
+import { Toaster } from 'react-hot-toast';
 
-
-
+const inter = Inter({ subsets: ['latin'] });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,28 +36,36 @@ const geistMono = Geist_Mono({
 });
 
 // Context pour les paramètres de l'application
-export const AppSettingsContext = createContext<any>(null);
-export function useAppSettings() {
-  return useContext(AppSettingsContext);
+interface AppSettingsContextType {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
 }
 
-// Configuration du thème Material-UI avec gradient et effets visuels
-const createAppTheme = (mode: 'light' | 'dark', settings?: any) => {
-  const primaryColor = settings?.primaryColor || '#667eea';
-  const secondaryColor = settings?.secondaryColor || '#84fab0';
-  
+const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
+const DRAWER_WIDTH = 280;
+const userId = "user-123"; // Remplacez par votre logique d'auth
+
+export function useAppSettings() {
+  const context = useContext(AppSettingsContext);
+  if (!context) {
+    throw new Error('useAppSettings must be used within AppSettingsProvider');
+  }
+  return context;
+}
+
+
+// Configuration du thème Material-UI
+const createAppTheme = (mode: 'light' | 'dark') => {
   return createTheme({
     palette: {
       mode,
       primary: {
-        main: primaryColor,
-        light: '#764ba222',
-        dark: '#5a4fcf',
+        main: mode === 'light' ? '#1976d2' : '#90caf9',
       },
       secondary: {
-        main: secondaryColor,
-        light: '#8fd3f4',
-        dark: '#6bc88e',
+        main: mode === 'light' ? '#dc004e' : '#f48fb1',
       },
       background: {
         default: mode === 'light' ? '#f5f5f5' : '#121212',
@@ -102,124 +113,136 @@ const createAppTheme = (mode: 'light' | 'dark', settings?: any) => {
   });
 };
 
+
+function AppSettingsProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width:768px)');
+
+  // Charger le thème depuis localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      // Détecter la préférence système
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'dark' : 'light');
+    }
+  }, []);
+
+  // Sauvegarder le thème dans localStorage
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  // Fermer la sidebar sur mobile lors du changement de route
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const handleMenuClick = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleSidebarClose = () => {
+    setSidebarOpen(false);
+  };
+
+  const currentTheme = createAppTheme(theme);
+
+  return (
+    <AppSettingsContext.Provider value={{ 
+      theme, 
+      toggleTheme, 
+      sidebarOpen, 
+      setSidebarOpen 
+    }}>
+      <ThemeProvider theme={currentTheme}>
+        <CssBaseline />
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+          {/* Navbar */}
+          <NavbarLIMS 
+            onMenuClick={handleMenuClick}
+            onThemeToggle={toggleTheme}
+          />
+
+          {/* Sidebar */}
+          <Drawer
+            variant={isMobile ? 'temporary' : 'persistent'}
+            open={sidebarOpen}
+            onClose={handleSidebarClose}
+            sx={{
+              width: sidebarOpen ? DRAWER_WIDTH : 0,
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: DRAWER_WIDTH,
+                boxSizing: 'border-box',
+                top: '64px', // Hauteur de la navbar
+                height: 'calc(100vh - 64px)',
+                borderRight: `1px solid ${currentTheme.palette.divider}`,
+              },
+            }}
+            ModalProps={{
+              keepMounted: true, // Meilleure performance sur mobile
+            }}
+          >
+            <SidebarLIMS onClose={handleSidebarClose} />
+          </Drawer>
+
+          {/* Contenu principal */}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              transition: currentTheme.transitions.create(['margin'], {
+                easing: currentTheme.transitions.easing.sharp,
+                duration: currentTheme.transitions.duration.leavingScreen,
+              }),
+              marginLeft: isMobile ? 0 : (sidebarOpen ? 0 : `-${DRAWER_WIDTH}px`),
+              marginTop: '64px', // Hauteur de la navbar
+              minHeight: 'calc(100vh - 64px)',
+              bgcolor: 'background.default',
+              p: { xs: 1, sm: 2, md: 3 },
+            }}
+          >
+            {children}
+          </Box>
+        </Box>
+      </ThemeProvider>
+    </AppSettingsContext.Provider>
+  );
+}
+
+// Déterminer la page actuelle
+const getCurrentPageInfo = (path: string) => {
+  const normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+  
+  if (normalizedPath === '' || normalizedPath === '/') return { name: 'Accueil', showLayout: false };
+  if (normalizedPath.startsWith('/auth')) return { name: 'Auth', showLayout: false };
+  if (normalizedPath.startsWith('/admin')) return { name: 'Admin', showLayout: true, isAdmin: true };
+  if (normalizedPath === '/chemicals') return { name: 'Réactifs chimiques', showLayout: true };
+  if (normalizedPath === '/materiel') return { name: 'Matériel', showLayout: true };
+  if (normalizedPath === '/notebook') return { name: 'Cahier TP', showLayout: true };
+  if (normalizedPath === '/calendrier') return { name: 'Calendrier', showLayout: true };
+  if (normalizedPath === '/notifications') return { name: 'Notifications', showLayout: true };
+  
+  return { name: 'Page', showLayout: true };
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [appSettings, setAppSettings] = useState<any>({
-    theme: 'light',
-    sidebarCollapsed: false,
-    notificationsEnabled: true,
-    gradientType: 'linear',
-    gradientColors: ['#f0fdf014', '#0052b00f'],
-    primaryColor: '#5569c2ff',
-    secondaryColor: '#009135ff',
-  });
   const pathname = usePathname();
-
-  // Charger les paramètres depuis localStorage ou API
-  useEffect(() => {
-    async function loadSettings() {
-      try {
-        // Charger depuis localStorage
-        const savedSettings = localStorage.getItem('limsAppSettings');
-        if (savedSettings) {
-          setAppSettings(JSON.parse(savedSettings));
-        }
-        
-        // Optionnel : charger depuis l'API
-        // const response = await fetch('/api/app-settings');
-        // if (response.ok) {
-        //   const data = await response.json();
-        //   setAppSettings(data);
-        // }
-      } catch (error) {
-        console.error('Erreur lors du chargement des paramètres:', error);
-      }
-    }
-    loadSettings();
-  }, []);
-
-  // Sauvegarder les paramètres
-  const updateSettings = (newSettings: any) => {
-    setAppSettings(newSettings);
-    localStorage.setItem('limsAppSettings', JSON.stringify(newSettings));
-  };
-
-  // Fonction pour basculer le thème
-  const toggleTheme = () => {
-    const newTheme = appSettings.theme === 'light' ? 'dark' : 'light';
-    updateSettings({ ...appSettings, theme: newTheme });
-  };
-
-  // Fonction pour basculer la sidebar
-  const toggleSidebar = () => {
-    updateSettings({ ...appSettings, sidebarCollapsed: !appSettings.sidebarCollapsed });
-  };
-
-  // Générer le gradient de fond
-  const getBackgroundGradient = () => {
-    if (!appSettings.gradientType || appSettings.gradientType === 'none') {
-      return undefined;
-    }
-    
-    const colors = appSettings.gradientColors || ['#0025c925', '#764ba225'];
-    const angle = appSettings.gradientAngle || 135;
-    
-    switch (appSettings.gradientType) {
-      case 'radial':
-        return `radial-gradient(circle at ${appSettings.gradientCenter || '50% 50%'}, ${colors.join(', ')})`;
-      case 'conic':
-        return `conic-gradient(from ${angle}deg at ${appSettings.gradientCenter || '50% 50%'}, ${colors.join(', ')})`;
-      case 'linear':
-      default:
-        return `linear-gradient(${angle}deg, ${colors.join(', ')})`;
-    }
-  };
-
-  // Déterminer la page actuelle
-  const getCurrentPageInfo = (path: string) => {
-    const normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
-    
-    if (normalizedPath === '' || normalizedPath === '/') return { name: 'Accueil', showLayout: false };
-    if (normalizedPath.startsWith('/auth')) return { name: 'Auth', showLayout: false };
-    if (normalizedPath.startsWith('/admin')) return { name: 'Admin', showLayout: true, isAdmin: true };
-    if (normalizedPath === '/chemicals') return { name: 'Réactifs chimiques', showLayout: true };
-    if (normalizedPath === '/materiel') return { name: 'Matériel', showLayout: true };
-    if (normalizedPath === '/notebook') return { name: 'Cahier TP', showLayout: true };
-    if (normalizedPath === '/calendrier') return { name: 'Calendrier', showLayout: true };
-    
-    return { name: 'Page', showLayout: true };
-  };
-
   const pageInfo = getCurrentPageInfo(pathname || '/');
-  const theme = createAppTheme(appSettings.theme, appSettings);
-
-  
-  // Appliquer les styles globaux
-  useEffect(() => {
-    if (appSettings.theme) {
-      document.documentElement.setAttribute('data-theme', appSettings.theme);
-    }
-    
-    // Gérer l'overflow pour les pages admin
-    if (pageInfo.isAdmin) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.height = '100vh';
-    } else {
-      document.body.style.overflow = 'visible';
-      document.body.style.height = 'auto';
-    }
-
-    // Appliquer le gradient de fond si configuré
-    const gradient = getBackgroundGradient();
-    if (gradient && !pageInfo.showLayout) {
-      document.body.style.background = gradient;
-    } else {
-      document.body.style.background = '';
-    }
-  }, [appSettings, pageInfo]);
 
   return (
     <html lang="fr">
@@ -235,7 +258,6 @@ export default function RootLayout({
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://labo.sekrane.fr" />
         <meta property="og:image" content="https://labo.sekrane.fr/og-image.jpg" />
-        <meta property="og:url" content="https://labo.sekrane.fr" />
         <meta name="twitter:image" content="https://labo.sekrane.fr/og-image.jpg" />
 
         {/* Favicon */}
@@ -263,107 +285,80 @@ export default function RootLayout({
       </head>
       
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SessionProvider>
-          <AppSettingsContext.Provider value={{ 
-            ...appSettings,
-            updateSettings,
-            toggleTheme,
-            toggleSidebar
-          }}>
-            <ThemeProvider theme={theme}>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-                <SnackbarProvider 
-                  maxSnack={3}
-                  anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
+        <NotificationProvider userId={userId} showToasts={true}>
+          <SessionProvider>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+              <SnackbarProvider
+                maxSnack={3}
+                anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              autoHideDuration={5000}
+              preventDuplicate
+            >
+              {pageInfo.showLayout ? (
+                // Layout avec navigation pour les pages internes
+                <AppSettingsProvider>
+                  {children}
+                </AppSettingsProvider>
+              ) : (
+                // Pages sans layout (accueil, auth)
+                <Box 
+                  sx={{ 
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   }}
-                  autoHideDuration={5000}
-                  preventDuplicate
                 >
-                  <CssBaseline />
-                  
-                  {pageInfo.showLayout ? (
-                    // Layout avec navigation pour les pages internes
-                    <Box sx={{ 
-                      display: 'flex', 
-                      minHeight: '100vh',
-                      background: theme.palette.background.default
-                    }}>
-                      {/* Sidebar - À décommenter quand le composant sera créé */}
-                      {/* <SidebarLIMS collapsed={appSettings.sidebarCollapsed} /> */}
-                      
-                      <Box
-                        component="main"
-                        sx={{
-                          flexGrow: 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          minHeight: '100vh',
-                          transition: 'margin-left 0.3s ease',
-                          // marginLeft: appSettings.sidebarCollapsed ? '64px' : '240px',
-                          margin: '0 auto',
-                        }}
-                      >
-                        {/* Navbar - À décommenter quand le composant sera créé */}
-                        {/* <NavbarLIMS 
-                          onMenuClick={toggleSidebar} 
-                          onThemeToggle={toggleTheme}
-                        /> */}
-                        
-                        {/* Contenu principal */}
-                        <Box
-                          sx={{
-                            flexGrow: 1,
-                            p: { xs: 0, sm: 3, md: 4 },
-                            position: 'relative',
-                          }}
-                        >
-                          {children}
-                        </Box>
-                        
-                        {/* Footer - À décommenter quand le composant sera créé */}
-                        {/* <FooterLIMS /> */}
-                      </Box>
-                      
-                      {/* Bouton retour en haut - À décommenter quand le composant sera créé */}
-                      {/* <ScrollToTopButton /> */}
-                    </Box>
-                  ) : (
-                    // Pages sans layout (accueil, auth)
-                    <Box 
-                      sx={{ 
-                        minHeight: '100vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: getBackgroundGradient() || theme.palette.background.default
-                      }}
-                    >
-                      {children}
-                    </Box>
-                  )}
-                  
-                  {/* Notifications Toast */}
-                                    {/* Notifications Toast */}
-                  <ToastContainer 
-                    position="top-center" 
-                    autoClose={3000} 
-                    hideProgressBar 
-                    newestOnTop 
-                    closeOnClick 
-                    rtl={false} 
-                    pauseOnFocusLoss 
-                    draggable 
-                    pauseOnHover 
-                    theme={appSettings.theme === 'dark' ? 'dark' : 'light'}
-                    style={{ fontSize: 14 }}
-                  />
-                </SnackbarProvider>
-              </LocalizationProvider>
-            </ThemeProvider>
-          </AppSettingsContext.Provider>
+                  {children}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: '#363636',
+                      color: '#fff',
+                    },
+                    success: {
+                      duration: 3000,
+                      iconTheme: {
+                        primary: '#4ade80',
+                        secondary: '#fff',
+                      },
+                    },
+                    error: {
+                      duration: 5000,
+                      iconTheme: {
+                        primary: '#ef4444',
+                        secondary: '#fff',
+                      },
+                    },
+                  }}
+                />
+                </Box>
+              )}
+              
+              {/* Notifications Toast */}
+              <ToastContainer 
+                position="top-center" 
+                autoClose={3000} 
+                hideProgressBar 
+                newestOnTop 
+                closeOnClick 
+                rtl={false} 
+                pauseOnFocusLoss 
+                draggable 
+                pauseOnHover 
+                theme="light"
+                style={{ fontSize: 14 }}
+              />
+            </SnackbarProvider>
+          </LocalizationProvider>
         </SessionProvider>
+        </NotificationProvider>
       </body>
     </html>
   );
