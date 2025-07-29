@@ -29,7 +29,7 @@ export function FooterLIMS() {
           <Stack direction="row" alignItems="center" spacing={1}>
             <Science sx={{ color: 'primary.main' }} />
             <Typography variant="body2" color="text.secondary">
-              © {currentYear} LIMS Laboratory. Tous droits réservés.
+              © {currentYear} M. I. SEKRANE. Tous droits réservés.
             </Typography>
           </Stack>
 

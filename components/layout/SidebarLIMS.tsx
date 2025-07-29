@@ -29,7 +29,8 @@ import {
   ExpandLess,
   ExpandMore,
   Notifications,
-  History
+  History,
+  GroupAdd
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -53,17 +54,17 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     id: 'dashboard',
-    label: 'Tableau de bord',
+    label: 'Accueil',
     icon: <Dashboard />,
     path: '/',
-    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+    roles: ['ADMIN', 'ADMINLABO']
   },
   {
     id: 'users',
     label: 'Utilisateurs',
     icon: <People />,
-    path: '/users',
-    roles: ['ADMIN', 'TEACHER']
+    path: '/utilisateurs',
+    roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
   },
   {
     id: 'laboratory',
@@ -72,55 +73,55 @@ const menuItems: MenuItem[] = [
     children: [
       {
         id: 'chemicals',
-        label: 'Produits chimiques',
+        label: 'Réactifs',
         icon: <Biotech />,
         path: '/chemicals',
-        roles: ['ADMIN', 'TEACHER', 'STUDENT']
+        roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
       },
       {
         id: 'equipment',
-        label: 'Équipements',
+        label: 'Matériel',
         icon: <Inventory />,
-        path: '/equipment',
-        roles: ['ADMIN', 'TEACHER', 'STUDENT']
+        path: '/materiel',
+        roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
       },
       {
         id: 'rooms',
         label: 'Salles',
         icon: <Room />,
-        path: '/rooms',
-        roles: ['ADMIN', 'TEACHER']
+        path: '/admin/salles',
+        roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
+      },
+      {
+        id: 'classes',
+        label: 'Classes',
+        icon: <GroupAdd />,
+        path: '/admin/classes',
+        roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
       }
     ],
-    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
   },
   {
     id: 'calendar',
     label: 'Calendrier',
     icon: <CalendarMonth />,
-    path: '/calendar',
-    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+    path: '/calendrier',
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
   },
   {
     id: 'orders',
     label: 'Commandes',
     icon: <ShoppingCart />,
     path: '/orders',
-    roles: ['ADMIN', 'TEACHER']
-  },
-  {
-    id: 'reports',
-    label: 'Rapports',
-    icon: <Assessment />,
-    path: '/reports',
-    roles: ['ADMIN', 'TEACHER']
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN'],
   },
   {
     id: 'notifications',
     label: 'Notifications',
     icon: <Notifications />,
     path: '/notifications',
-    roles: ['ADMIN', 'TEACHER', 'STUDENT']
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
   },
   {
     id: 'logs',
@@ -145,14 +146,14 @@ const menuItems: MenuItem[] = [
         id: 'admin-security',
         label: 'Sécurité',
         icon: <Security />,
-        path: '/admin/security',
+        path: '/securite',
         roles: ['ADMIN']
       },
       {
         id: 'admin-settings',
         label: 'Paramètres système',
         icon: <Settings />,
-        path: '/admin/settings',
+        path: '/reglages',
         roles: ['ADMIN']
       }
     ],
@@ -282,10 +283,10 @@ export function SidebarLIMS({ onClose }: SidebarProps) {
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-          LIMS
+          Paul VALÉRY
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Laboratory Information Management
+          Gestion d'Information du Laboratoire
         </Typography>
       </Box>
 

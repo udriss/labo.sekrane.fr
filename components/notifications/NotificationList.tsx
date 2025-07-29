@@ -1,133 +1,350 @@
-'use client';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Divider,
+  Chip,
+  Paper,
+  Stack,
+  IconButton,
+  Tooltip,
+  Snackbar
+} from '@mui/material';
+import {
+  Refresh,
+  MarkEmailRead,
+  FilterList,
+  ExpandMore,
+  Warning
+} from '@mui/icons-material';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+import NotificationItem from './NotificationItem';
+import { NotificationFilter } from '@/types/notifications';
 
-import React from 'react';
-import { useNotificationContext } from './NotificationProvider';
-
-interface NotificationListProps {
-  className?: string;
-  maxNotifications?: number;
+interface NotificationsListProps {
+  filters?: NotificationFilter;
+  showStats?: boolean;
+  maxHeight?: string | number;
+  onNotificationClick?: (notificationId: string) => void;
 }
 
-export function NotificationList({ 
-  className = '', 
-  maxNotifications = 10 
-}: NotificationListProps) {
-  const { 
-    notifications, 
-    isConnected, 
-    connectionStatus, 
-    lastHeartbeat,
-    reconnect,
-    clearNotifications 
-  } = useNotificationContext();
+// Mémoriser le composant pour éviter les re-rendus inutiles
+const NotificationsList = React.memo(function NotificationsList({
+  filters = {},
+  showStats = true,
+  maxHeight = '600px',
+  onNotificationClick
+}: NotificationsListProps) {
+  const {
+    notifications,
+    stats,
+    loading,
+    error,
+    hasMore,
+    total,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    refresh,
+    loadMore
+  } = useNotifications(filters);
 
-  const displayedNotifications = notifications.slice(0, maxNotifications);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning'>('success');
 
-  const getStatusColor = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'text-green-500';
-      case 'connecting': return 'text-yellow-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
+  // Mémoriser les fonctions pour éviter les re-créations
+  const showMessage = useCallback((message: string, severity: 'success' | 'error' | 'warning' = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  }, []);
+
+  // Gérer les erreurs de notification
+  const handleNotificationError = useCallback((error: string) => {
+    console.error('Erreur de notification:', error);
+    showMessage(error, 'error');
+  }, [showMessage]);
+
+  // Gérer le marquage comme lu
+  const handleMarkAsRead = useCallback(async (notificationId: string) => {
+    try {
+      const success = await markAsRead(notificationId);
+      if (success) {
+        showMessage('Notification marquée comme lue');
+      } else {
+        showMessage('Erreur lors du marquage comme lu', 'error');
+      }
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error);
+      showMessage('Erreur lors du marquage comme lu', 'error');
     }
-  };
+  }, [markAsRead, showMessage]);
 
-  const getStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'Connecté';
-      case 'connecting': return 'Connexion...';
-      case 'error': return 'Erreur';
-      default: return 'Déconnecté';
+  // Gérer le marquage de toutes comme lues
+  const handleMarkAllAsRead = useCallback(async () => {
+    try {
+      const success = await markAllAsRead();
+      if (success) {
+        showMessage('Toutes les notifications marquées comme lues');
+      } else {
+        showMessage('Erreur lors du marquage de toutes comme lues', 'error');
+      }
+    } catch (error) {
+      console.error('Erreur lors du marquage de toutes comme lues:', error);
+      showMessage('Erreur lors du marquage de toutes comme lues', 'error');
     }
-  };
+  }, [markAllAsRead, showMessage]);
+
+  // Gérer le rafraîchissement
+  const handleRefresh = useCallback(async () => {
+    try {
+      await refresh();
+      showMessage('Notifications rafraîchies');
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement:', error);
+      showMessage('Erreur lors du rafraîchissement', 'error');
+    }
+  }, [refresh, showMessage]);
+
+  // Gérer le chargement de plus
+  const handleLoadMore = useCallback(async () => {
+    try {
+      await loadMore();
+    } catch (error) {
+      console.error('Erreur lors du chargement de plus:', error);
+      showMessage('Erreur lors du chargement de plus', 'error');
+    }
+  }, [loadMore, showMessage]);
+
+  // Mémoriser les notifications valides pour éviter les recalculs
+  const validNotifications = useMemo(() => {
+    return notifications.filter(notification => {
+      if (!notification || typeof notification !== 'object') {
+        console.warn('Notification invalide filtrée:', notification);
+        return false;
+      }
+      return notification.id && notification.userId && notification.module;
+    });
+  }, [notifications]);
+
+  // Mémoriser le compteur de notifications non lues
+  const unreadCount = useMemo(() => {
+    return validNotifications.filter(n => !n.isRead).length;
+  }, [validNotifications]);
+
+  // Mémoriser les chips de statistiques
+  const statsChips = useMemo(() => {
+    if (!showStats || !stats) return null;
+
+    return (
+      <Stack direction="row" spacing={1} flexWrap="wrap">
+        <Chip 
+          label={`Total: ${stats.total}`} 
+          size="small" 
+          variant="outlined" 
+        />
+        <Chip 
+          label={`Non lues: ${stats.unread}`} 
+          size="small" 
+          color={stats.unread > 0 ? 'primary' : 'default'}
+        />
+        {Object.entries(stats.byModule).map(([module, count]) => (
+          <Chip 
+            key={module}
+            label={`${module}: ${count}`} 
+            size="small" 
+            variant="outlined" 
+          />
+        ))}
+      </Stack>
+    );
+  }, [showStats, stats]);
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg p-4 ${className}`}>
-      {/* Header avec statut de connexion */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Notifications</h3>
-        <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className={`text-sm ${getStatusColor()}`}>
-            {getStatusText()}
-          </span>
-        </div>
-      </div>
+    <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* En-tête */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6" component="h2">
+          Notifications
+          {total > 0 && (
+            <Chip 
+              label={`${total} total`} 
+              size="small" 
+              sx={{ ml: 1 }} 
+            />
+          )}
+          {unreadCount > 0 && (
+            <Chip 
+              label={`${unreadCount} non lues`} 
+              size="small" 
+              color="primary" 
+              sx={{ ml: 1 }} 
+            />
+          )}
+        </Typography>
 
-      {/* Actions */}
-      <div className="flex space-x-2 mb-4">
-        <button
-          onClick={reconnect}
-          className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Reconnecter
-        </button>
-        <button
-          onClick={clearNotifications}
-          className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-          disabled={notifications.length === 0}
-        >
-          Effacer ({notifications.length})
-        </button>
-      </div>
-
-      {/* Informations de debug */}
-      {lastHeartbeat && (
-        <div className="text-xs text-gray-500 mb-2">
-          Dernier heartbeat: {new Date(lastHeartbeat).toLocaleTimeString()}
-        </div>
-      )}
-
-      {/* Liste des notifications */}
-      <div className="space-y-2 max-h-96 overflow-y-auto">
-        {displayedNotifications.length === 0 ? (
-          <div className="text-gray-500 text-center py-4">
-            Aucune notification
-          </div>
-        ) : (
-          displayedNotifications.map((notification, index) => (
-            <div
-              key={notification.id || index}
-              className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+        <Box display="flex" gap={1}>
+          {unreadCount > 0 && (
+            <Tooltip title="Marquer toutes comme lues">
+              <IconButton 
+                size="small" 
+                onClick={handleMarkAllAsRead}
+                disabled={loading}
+              >
+                <MarkEmailRead />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          <Tooltip title="Rafraîchir">
+            <IconButton 
+              size="small" 
+              onClick={handleRefresh}
+              disabled={loading}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">
-                    {notification.title || 'Notification'}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {notification.message}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      notification.type === 'success' ? 'bg-green-100 text-green-800' :
-                      notification.type === 'error' ? 'bg-red-100 text-red-800' :
-                      notification.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {notification.type || 'info'}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {notification.createdAt ? 
-                        new Date(notification.createdAt).toLocaleTimeString() :
-                        'Maintenant'
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
-      {notifications.length > maxNotifications && (
-        <div className="text-center mt-2">
-          <span className="text-sm text-gray-500">
-            +{notifications.length - maxNotifications} autres notifications
-          </span>
-        </div>
+      {/* Statistiques (optionnel) */}
+      {statsChips && (
+        <Box mb={2}>
+          {statsChips}
+        </Box>
       )}
-    </div>
+
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Contenu principal */}
+      <Box 
+        flex={1} 
+        sx={{ 
+          maxHeight, 
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f1f1',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#c1c1c1',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: '#a8a8a8',
+          },
+        }}
+      >
+        {/* Erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              {error}
+            </Typography>
+            <Button 
+              size="small" 
+              onClick={handleRefresh}
+              sx={{ mt: 1 }}
+            >
+              Réessayer
+            </Button>
+          </Alert>
+        )}
+
+        {/* Chargement initial */}
+        {loading && validNotifications.length === 0 && (
+          <Box display="flex" justifyContent="center" alignItems="center" py={4}>
+            <CircularProgress />
+            <Typography variant="body2" sx={{ ml: 2 }}>
+              Chargement des notifications...
+            </Typography>
+          </Box>
+        )}
+
+        {/* Aucune notification */}
+        {!loading && !error && validNotifications.length === 0 && (
+          <Box display="flex" flexDirection="column" alignItems="center" py={4}>
+            <Warning color="action" sx={{ fontSize: 48, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Aucune notification
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Vous n'avez aucune notification pour le moment.
+            </Typography>
+            <Button 
+              variant="outlined" 
+              onClick={handleRefresh}
+              sx={{ mt: 2 }}
+              startIcon={<Refresh />}
+            >
+              Vérifier à nouveau
+            </Button>
+          </Box>
+        )}
+
+        {/* Liste des notifications */}
+        {validNotifications.length > 0 && (
+          <Stack spacing={1}>
+            {validNotifications.map((notification, index) => (
+              <NotificationItem
+                key={notification?.id || `notification-${index}`}
+                notification={notification}
+                onMarkAsRead={handleMarkAsRead}
+                onError={handleNotificationError}
+              />
+            ))}
+
+            {/* Bouton "Charger plus" */}
+            {hasMore && (
+              <Box display="flex" justifyContent="center" py={2}>
+                <Button
+                  variant="outlined"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={16} /> : <ExpandMore />}
+                >
+                  {loading ? 'Chargement...' : 'Charger plus'}
+                </Button>
+              </Box>
+            )}
+
+            {/* Indicateur de fin */}
+            {!hasMore && validNotifications.length > 0 && (
+              <Box display="flex" justifyContent="center" py={2}>
+                <Typography variant="caption" color="text.secondary">
+                  Toutes les notifications ont été chargées
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        )}
+      </Box>
+
+      {/* Snackbar pour les messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setSnackbarOpen(false)} 
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Paper>
   );
-}
+});
+
+export default NotificationsList;

@@ -54,7 +54,7 @@ import { StatsData } from "@/types/prisma"
 import { useNotificationContext } from "@/components/notifications/NotificationProvider"
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-
+import { useSession } from "next-auth/react"
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -95,7 +95,8 @@ export default function DashboardPage() {
   // Fonction pour envoyer une notification de test
   const sendTestNotification = async () => {
     if (!testMessage.trim()) return
-
+    const { data: session } = useSession();
+    
     try {
       setTestLoading(true)
       const response = await fetch('/api/notifications/ws', {
@@ -105,7 +106,7 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           action: 'send',
-          userId: 'user-123', // Remplacez par l'ID utilisateur actuel
+          userId: session?.user.id || 'ID_INDISPONIBLE', // Remplacez par l'ID utilisateur actuel
           notification: {
             message: testMessage,
             severity: testType === 'error' ? 'high' : testType === 'warning' ? 'medium' : 'low',
@@ -591,7 +592,7 @@ export default function DashboardPage() {
                           <ListItemText
                             primary={notification.message || notification.title}
                             secondary={
-                              <Box>
+                              <Box component={'span'}>
                                 <Typography variant="caption" display="block">
                                   {notification.createdAt ? 
                                     format(new Date(notification.createdAt), 'HH:mm:ss', { locale: fr }) :
@@ -599,7 +600,8 @@ export default function DashboardPage() {
                                   }
                                 </Typography>
                                 {notification.module && (
-                                  <Chip 
+                                  <Chip
+                                  component="span"
                                     size="small" 
                                     label={notification.module} 
                                     variant="outlined"

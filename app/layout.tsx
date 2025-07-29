@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { SnackbarProvider } from 'notistack';
@@ -16,7 +16,7 @@ import { Inter } from 'next/font/google';
 import { CssBaseline, Box, Drawer, useMediaQuery } from '@mui/material';
 
 // Composants de layout
-import { NavbarLIMS } from '@/components/layout/NavbarLIMS';
+import NavbarLIMS from '@/components/layout/NavbarLIMS';
 import { SidebarLIMS } from '@/components/layout/SidebarLIMS';
 import { FooterLIMS } from '@/components/layout/FooterLIMS';
 import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
@@ -45,7 +45,6 @@ interface AppSettingsContextType {
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
 const DRAWER_WIDTH = 280;
-const userId = "user-123"; // Remplacez par votre logique d'auth
 
 export function useAppSettings() {
   const context = useContext(AppSettingsContext);
@@ -54,7 +53,6 @@ export function useAppSettings() {
   }
   return context;
 }
-
 
 // Configuration du thème Material-UI
 const createAppTheme = (mode: 'light' | 'dark') => {
@@ -113,7 +111,6 @@ const createAppTheme = (mode: 'light' | 'dark') => {
   });
 };
 
-
 function AppSettingsProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -170,7 +167,6 @@ function AppSettingsProvider({ children }: { children: React.ReactNode }) {
           {/* Navbar */}
           <NavbarLIMS 
             onMenuClick={handleMenuClick}
-            onThemeToggle={toggleTheme}
           />
 
           {/* Sidebar */}
@@ -220,6 +216,18 @@ function AppSettingsProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Composant pour gérer les notifications avec session
+function NotificationWrapper({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+  const userId = (session?.user as any)?.id ?? '';
+
+  return (
+    <NotificationProvider userId={userId} showToasts={true}>
+      {children}
+    </NotificationProvider>
+  );
+}
+
 // Déterminer la page actuelle
 const getCurrentPageInfo = (path: string) => {
   const normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
@@ -232,6 +240,7 @@ const getCurrentPageInfo = (path: string) => {
   if (normalizedPath === '/notebook') return { name: 'Cahier TP', showLayout: true };
   if (normalizedPath === '/calendrier') return { name: 'Calendrier', showLayout: true };
   if (normalizedPath === '/notifications') return { name: 'Notifications', showLayout: true };
+  if (normalizedPath === '/dashboard') return { name: 'Tableau de bord', showLayout: true };
   
   return { name: 'Page', showLayout: true };
 };
@@ -285,12 +294,11 @@ export default function RootLayout({
       </head>
       
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <NotificationProvider userId={userId} showToasts={true}>
-          <SessionProvider>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-              <SnackbarProvider
-                maxSnack={3}
-                anchorOrigin={{
+        <SessionProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+            <SnackbarProvider
+              maxSnack={3}
+              anchorOrigin={{
                 vertical: 'top',
                 horizontal: 'right',
               }}
@@ -299,9 +307,11 @@ export default function RootLayout({
             >
               {pageInfo.showLayout ? (
                 // Layout avec navigation pour les pages internes
-                <AppSettingsProvider>
-                  {children}
-                </AppSettingsProvider>
+                <NotificationWrapper>
+                  <AppSettingsProvider>
+                    {children}
+                  </AppSettingsProvider>
+                </NotificationWrapper>
               ) : (
                 // Pages sans layout (accueil, auth)
                 <Box 
@@ -314,30 +324,30 @@ export default function RootLayout({
                   }}
                 >
                   {children}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    duration: 4000,
-                    style: {
-                      background: '#363636',
-                      color: '#fff',
-                    },
-                    success: {
-                      duration: 3000,
-                      iconTheme: {
-                        primary: '#4ade80',
-                        secondary: '#fff',
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
+                      duration: 4000,
+                      style: {
+                        background: '#363636',
+                        color: '#fff',
                       },
-                    },
-                    error: {
-                      duration: 5000,
-                      iconTheme: {
-                        primary: '#ef4444',
-                        secondary: '#fff',
+                      success: {
+                        duration: 3000,
+                        iconTheme: {
+                          primary: '#4ade80',
+                          secondary: '#fff',
+                        },
                       },
-                    },
-                  }}
-                />
+                      error: {
+                        duration: 5000,
+                        iconTheme: {
+                          primary: '#ef4444',
+                          secondary: '#fff',
+                        },
+                      },
+                    }}
+                  />
                 </Box>
               )}
               
@@ -358,7 +368,6 @@ export default function RootLayout({
             </SnackbarProvider>
           </LocalizationProvider>
         </SessionProvider>
-        </NotificationProvider>
       </body>
     </html>
   );

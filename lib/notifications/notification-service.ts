@@ -1,7 +1,8 @@
+// lib/notifications/notification-service.ts
+
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ExtendedNotification, NotificationStats, NotificationFilter } from '@/types/notifications';
-import { notificationPreferencesService } from '../../scripts/init-notification-preferences';
 import { AuditUser } from '@/types/audit';
 
 const NOTIFICATIONS_FILE = path.join(process.cwd(), 'data', 'notifications.json');
@@ -35,9 +36,36 @@ class NotificationService {
     try {
       await this.ensureNotificationsFile();
       const data = await fs.readFile(NOTIFICATIONS_FILE, 'utf-8');
-      return JSON.parse(data);
+      
+      // Vérifier si le fichier est vide
+      if (!data.trim()) {
+        console.log('Notifications file is empty, initializing with empty array');
+        await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify([], null, 2));
+        return [];
+      }
+      
+      const parsed = JSON.parse(data);
+      
+      // Vérifier que le résultat est un tableau
+      if (!Array.isArray(parsed)) {
+        console.error('Notifications file does not contain an array, resetting to empty array');
+        await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify([], null, 2));
+        return [];
+      }
+      
+      return parsed;
     } catch (error) {
       console.error('Error reading notifications file:', error);
+      
+      // En cas d'erreur, réinitialiser le fichier avec un tableau vide
+      try {
+        await this.ensureNotificationsFile();
+        await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify([], null, 2));
+        console.log('Notifications file reset to empty array due to error');
+      } catch (resetError) {
+        console.error('Error resetting notifications file:', resetError);
+      }
+      
       return [];
     }
   }
@@ -45,6 +73,12 @@ class NotificationService {
   // Méthode pour écrire les notifications dans le fichier JSON
   private async writeNotifications(notifications: ExtendedNotification[]): Promise<void> {
     try {
+      // Vérifier que notifications est un tableau
+      if (!Array.isArray(notifications)) {
+        console.error('Attempted to write non-array to notifications file');
+        notifications = [];
+      }
+      
       await this.ensureNotificationsFile();
       await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(notifications, null, 2));
     } catch (error) {
@@ -186,12 +220,22 @@ class NotificationService {
     try {
       const allNotifications = await this.readNotifications();
       
+      // Vérification supplémentaire de sécurité
+      if (!Array.isArray(allNotifications)) {
+        console.error('readNotifications did not return an array');
+        return { notifications: [], total: 0 };
+      }
+      
       // Filtrer par utilisateur
-      let userNotifications = allNotifications.filter(n => n.userId === userId);
+      let userNotifications = allNotifications.filter(n => n && n.userId === userId);
       
       // Appliquer les filtres
       if (filters.module) {
         userNotifications = userNotifications.filter(n => n.module === filters.module);
+      }
+      
+      if (filters.actionType) {
+        userNotifications = userNotifications.filter(n => n.actionType === filters.actionType);
       }
       
       if (filters.severity) {
@@ -233,7 +277,12 @@ class NotificationService {
   async getNotificationById(notificationId: string): Promise<ExtendedNotification | null> {
     try {
       const notifications = await this.readNotifications();
-      return notifications.find(n => n.id === notificationId) || null;
+      
+      if (!Array.isArray(notifications)) {
+        return null;
+      }
+      
+      return notifications.find(n => n && n.id === notificationId) || null;
     } catch (error) {
       console.error('Error getting notification by ID:', error);
       return null;
@@ -244,7 +293,12 @@ class NotificationService {
   async markAsRead(notificationId: string): Promise<boolean> {
     try {
       const notifications = await this.readNotifications();
-      const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+      
+      if (!Array.isArray(notifications)) {
+        return false;
+      }
+      
+      const notificationIndex = notifications.findIndex(n => n && n.id === notificationId);
       
       if (notificationIndex === -1) {
         return false;
@@ -264,10 +318,15 @@ class NotificationService {
   async markAllAsRead(userId: string): Promise<boolean> {
     try {
       const notifications = await this.readNotifications();
+      
+      if (!Array.isArray(notifications)) {
+        return false;
+      }
+      
       let hasChanges = false;
       
       notifications.forEach(notification => {
-        if (notification.userId === userId && !notification.isRead) {
+        if (notification && notification.userId === userId && !notification.isRead) {
           notification.isRead = true;
           hasChanges = true;
         }
@@ -288,23 +347,39 @@ class NotificationService {
   async getStats(userId: string): Promise<NotificationStats> {
     try {
       const notifications = await this.readNotifications();
-      const userNotifications = notifications.filter(n => n.userId === userId);
+      
+      // Vérification supplémentaire de sécurité
+      if (!Array.isArray(notifications)) {
+        console.error('getStats: notifications is not an array');
+        return {
+          total: 0,
+          unread: 0,
+          byModule: {},
+          bySeverity: {}
+        };
+      }
+      
+      const userNotifications = notifications.filter(n => n && n.userId === userId);
       
       const stats: NotificationStats = {
         total: userNotifications.length,
-        unread: userNotifications.filter(n => !n.isRead).length,
+        unread: userNotifications.filter(n => n && !n.isRead).length,
         byModule: {},
         bySeverity: {}
       };
       
       // Compter par module
       userNotifications.forEach(notification => {
-        stats.byModule[notification.module] = (stats.byModule[notification.module] || 0) + 1;
+        if (notification && notification.module) {
+          stats.byModule[notification.module] = (stats.byModule[notification.module] || 0) + 1;
+        }
       });
       
       // Compter par sévérité
       userNotifications.forEach(notification => {
-        stats.bySeverity[notification.severity] = (stats.bySeverity[notification.severity] || 0) + 1;
+        if (notification && notification.severity) {
+          stats.bySeverity[notification.severity] = (stats.bySeverity[notification.severity] || 0) + 1;
+        }
       });
       
       return stats;
@@ -323,7 +398,12 @@ class NotificationService {
   async deleteNotification(notificationId: string): Promise<boolean> {
     try {
       const notifications = await this.readNotifications();
-      const filteredNotifications = notifications.filter(n => n.id !== notificationId);
+      
+      if (!Array.isArray(notifications)) {
+        return false;
+      }
+      
+      const filteredNotifications = notifications.filter(n => n && n.id !== notificationId);
       
       if (filteredNotifications.length === notifications.length) {
         return false; // Notification non trouvée
@@ -341,7 +421,12 @@ class NotificationService {
   async deleteAllUserNotifications(userId: string): Promise<boolean> {
     try {
       const notifications = await this.readNotifications();
-      const filteredNotifications = notifications.filter(n => n.userId !== userId);
+      
+      if (!Array.isArray(notifications)) {
+        return false;
+      }
+      
+      const filteredNotifications = notifications.filter(n => n && n.userId !== userId);
       
       await this.writeNotifications(filteredNotifications);
       return true;
@@ -355,11 +440,16 @@ class NotificationService {
   async cleanupOldNotifications(daysToKeep: number = 30): Promise<number> {
     try {
       const notifications = await this.readNotifications();
+      
+      if (!Array.isArray(notifications)) {
+        return 0;
+      }
+      
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
       
       const filteredNotifications = notifications.filter(n => 
-        new Date(n.createdAt) > cutoffDate
+        n && new Date(n.createdAt) > cutoffDate
       );
       
       const deletedCount = notifications.length - filteredNotifications.length;
@@ -476,6 +566,16 @@ class NotificationService {
       entityId,
       triggeredBy
     );
+  }
+
+  // Méthode utilitaire pour initialiser le fichier de notifications si nécessaire
+  async initializeNotificationsFile(): Promise<void> {
+    try {
+      const notifications = await this.readNotifications();
+      console.log(`Notifications file initialized with ${notifications.length} notifications`);
+    } catch (error) {
+      console.error('Error initializing notifications file:', error);
+    }
   }
 }
 

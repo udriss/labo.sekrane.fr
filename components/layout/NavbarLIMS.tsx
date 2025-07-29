@@ -1,3 +1,5 @@
+// components/layout/NavbarLIMS.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -5,7 +7,7 @@ import {
   AppBar, Toolbar, IconButton, Typography, Box, Badge, Avatar,
   Menu, MenuItem, Divider, ListItemIcon, Tooltip, InputBase,
   alpha, styled, Chip, Button, CircularProgress, List, ListItem, ListItemText,
-  ListItemAvatar
+  ListItemAvatar, ListItemButton
 } from '@mui/material';
 import {
   Menu as MenuIcon, Notifications, Brightness4, Brightness7,
@@ -17,22 +19,76 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useAppSettings } from '@/app/layout';
-import { ExtendedNotification, NotificationStats, WebSocketMessage } from '@/types/notifications';
+import { ExtendedNotification, NotificationStats } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+// Styled components avec correction des couleurs
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#ffffff',
+  color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+  boxShadow: theme.palette.mode === 'dark' 
+    ? '0 2px 4px rgba(0,0,0,0.3)' 
+    : '0 2px 4px rgba(0,0,0,0.1)',
+  borderBottom: theme.palette.mode === 'dark' 
+    ? 'none' 
+    : `1px solid ${theme.palette.divider}`,
+  // Variables CSS personnalisées
+  '--AppBar-color': theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+  '& *': {
+    color: 'var(--AppBar-color) !important',
+  },
+  // Exceptions pour certains éléments qui ont besoin de leurs couleurs spécifiques
+  '& .MuiChip-root': {
+    color: `${theme.palette.mode === 'dark' ? '#ffffff' : '#000000'} !important`,
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? alpha(theme.palette.primary.main, 0.2)
+      : alpha(theme.palette.primary.main, 0.1),
+  },
+  '& .MuiIconButton-root': {
+    color: `${theme.palette.mode === 'dark' ? '#ffffff' : '#000000'} !important`,
+    '&:hover': {
+      backgroundColor: theme.palette.mode === 'dark' 
+        ? alpha('#ffffff', 0.1)
+        : alpha('#000000', 0.1),
+    }
+  },
+  '& .MuiInputBase-root': {
+    color: `${theme.palette.mode === 'dark' ? '#ffffff' : '#000000'} !important`,
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? alpha('#ffffff', 0.1)
+      : alpha('#000000', 0.05),
+    '& .MuiInputBase-input': {
+      color: `${theme.palette.mode === 'dark' ? '#ffffff' : '#000000'} !important`,
+      '&::placeholder': {
+        color: `${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'} !important`,
+      }
+    }
+  },
+  '& .MuiTypography-root': {
+    color: `${theme.palette.mode === 'dark' ? '#ffffff' : '#000000'} !important`,
+  },
+  '& .MuiBadge-badge': {
+    backgroundColor: theme.palette.error.main,
+    color: '#ffffff',
+  }
+}));
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
+  backgroundColor: theme.palette.mode === 'dark' 
+    ? alpha(theme.palette.common.white, 0.15)
+    : alpha(theme.palette.common.black, 0.05),
   '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? alpha(theme.palette.common.white, 0.25)
+      : alpha(theme.palette.common.black, 0.1),
   },
-  marginRight: theme.spacing(2),
   marginLeft: 0,
   width: '100%',
   [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(3),
+    marginLeft: theme.spacing(1),
     width: 'auto',
   },
 }));
@@ -45,469 +101,556 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: 'inherit',
+  color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1, 1, 1, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '20ch',
+    [theme.breakpoints.up('sm')]: {
+      width: '12ch',
+      '&:focus': {
+        width: '20ch',
+      },
     },
+    color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+    '&::placeholder': {
+      color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+    }
   },
 }));
 
-interface NavbarLIMSProps {
-  onMenuClick: () => void;
-  onThemeToggle: () => void;
+// Interface pour les messages SSE
+interface SSEMessage {
+  type: 'notification' | 'connected' | 'heartbeat';
+  userId?: string;
+  data?: any;
+  timestamp?: number;
 }
 
-const SEVERITY_ICONS = {
-  low: <Info fontSize="small" color="info" />,
-  medium: <Warning fontSize="small" color="warning" />,
-  high: <Error fontSize="small" color="error" />,
-  critical: <Error fontSize="small" color="error" />
+// Icônes de sévérité avec couleurs adaptées au thème
+const getSeverityIcon = (severity: string, isDarkMode: boolean) => {
+  const iconColor = isDarkMode ? '#ffffff' : '#000000';
+  
+  const icons = {
+    low: <Info fontSize="small" sx={{ color: iconColor }} />,
+    medium: <Warning fontSize="small" sx={{ color: iconColor }} />,
+    high: <Error fontSize="small" sx={{ color: iconColor }} />,
+    critical: <Error fontSize="small" sx={{ color: iconColor }} />
+  };
+  
+  return icons[severity as keyof typeof icons] || icons.low;
 };
 
-const SEVERITY_COLORS = {
-  low: 'info',
-  medium: 'warning', 
-  high: 'error',
-  critical: 'error'
-} as const;
+// Fonction utilitaire pour extraire le message dans la langue appropriée
+const getNotificationMessage = (message: any, locale: string = 'fr'): string => {
+  if (typeof message === 'string') {
+    return message;
+  }
+  
+  if (typeof message === 'object' && message !== null) {
+    // Essayer d'abord la langue demandée, puis français, puis anglais, puis la première disponible
+    return message[locale] || message.fr || message.en || Object.values(message)[0] || 'Message non disponible';
+  }
+  
+  return 'Message non disponible';
+};
 
-export function NavbarLIMS({ onMenuClick, onThemeToggle }: NavbarLIMSProps) {
+// Fonction utilitaire pour extraire les détails
+const getNotificationDetails = (details: any): string => {
+  if (typeof details === 'string') {
+    return details;
+  }
+  
+  if (typeof details === 'object' && details !== null) {
+    return details.fr || details.en || Object.values(details)[0] || '';
+  }
+  
+  return '';
+};
+
+interface NavbarLIMSProps {
+  onMenuClick: () => void;
+}
+
+export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const { theme } = useAppSettings();
-  const wsRef = useRef<WebSocket | null>(null);
+  const { theme, toggleTheme } = useAppSettings();
   
-  // États
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  // Déterminer si on est en mode sombre
+  const isDarkMode = theme === 'dark';
+  
+  // États pour les menus
+  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+  const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
+  
+  // États pour les notifications avec byReason ajouté
   const [notifications, setNotifications] = useState<ExtendedNotification[]>([]);
-  const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0, byModule: {}, bySeverity: {} });
-  const [loading, setLoading] = useState(false);
-  const [wsConnected, setWsConnected] = useState(false);
+  const [notificationStats, setNotificationStats] = useState<NotificationStats>({
+    total: 0,
+    unread: 0,
+    byModule: {},
+    bySeverity: {},
+    byReason: {} // Propriété manquante ajoutée
+  });
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  
+  // SSE (Server-Sent Events) au lieu de WebSocket
+  const [sseConnected, setSseConnected] = useState(false);
+  const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Handlers pour les menus
-  const handleProfileMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  // Gestionnaires de menu
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElUser(event.currentTarget);
   };
 
-  const handleNotificationMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationAnchorEl(event.currentTarget);
-    if (notifications.length === 0) {
-      fetchNotifications();
-    }
+  const handleUserMenuClose = () => {
+    setAnchorElUser(null);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-    setNotificationAnchorEl(null);
+  const handleNotificationsOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElNotifications(event.currentTarget);
+    // Ne pas recharger si on a déjà des notifications récentes
+    fetchNotifications();
+  };
+
+  const handleNotificationsClose = () => {
+    setAnchorElNotifications(null);
+  };
+
+  const handleSignOut = async () => {
+    handleUserMenuClose();
+    await signOut({ callbackUrl: '/auth/signin' });
   };
 
   // Récupération des notifications
   const fetchNotifications = async () => {
     if (!session?.user) return;
-    
+
     try {
-      setLoading(true);
+      setLoadingNotifications(true);
       const userId = (session.user as any).id;
-      
       const [notificationsResponse, statsResponse] = await Promise.all([
-        fetch(`/api/notifications?userId=${userId}&limit=10&isRead=false`),
+        fetch(`/api/notifications?userId=${userId}&limit=50`), // Récupérer plus pour avoir l'historique
         fetch(`/api/notifications/stats?userId=${userId}`)
       ]);
-      
+
       if (notificationsResponse.ok && statsResponse.ok) {
         const notificationsData = await notificationsResponse.json();
         const statsData = await statsResponse.json();
+        console.log('Fetching notifications for userId:', userId);
+        console.log('Notifications response:', notificationsData);
         
         setNotifications(notificationsData.notifications || []);
-        setStats(statsData.stats || { total: 0, unread: 0, byModule: {}, bySeverity: {} });
+        
+        // S'assurer que toutes les propriétés requises sont présentes
+        const stats = statsData.stats || {};
+        setNotificationStats({
+          total: stats.total || 0,
+          unread: stats.unread || 0,
+          byModule: stats.byModule || {},
+          bySeverity: stats.bySeverity || {},
+          byReason: stats.byReason || {} // S'assurer que byReason est présent
+        });
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-      setLoading(false);
+      setLoadingNotifications(false);
     }
   };
 
-  // Marquer une notification comme lue
-  const handleNotificationClick = async (notification: ExtendedNotification) => {
-    try {
-      if (!notification.isRead) {
-        const response = await fetch(`/api/notifications/${notification.id}/read`, {
-          method: 'PUT'
-        });
-        
-        if (response.ok) {
-          // Mise à jour optimiste
-          setNotifications(prev => 
-            prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
-          );
-          setStats(prev => ({ ...prev, unread: Math.max(0, prev.unread - 1) }));
-        }
-      }
-      
-      setNotificationAnchorEl(null);
-      router.push(`/notifications/${notification.id}`);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Marquer toutes les notifications comme lues
-  const markAllAsRead = async () => {
-    if (!session?.user) return;
-    
-    try {
-      const userId = (session.user as any).id;
-      const response = await fetch(`/api/notifications/mark-all-read`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
-      
-      if (response.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        setStats(prev => ({ ...prev, unread: 0 }));
-      }
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-    setNotificationAnchorEl(null);
-  };
-
-  // Configuration WebSocket
+  // SSE pour les notifications en temps réel
   useEffect(() => {
     if (!session?.user) return;
 
-    const connectWebSocket = () => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/notifications/ws`;
-      
-      wsRef.current = new WebSocket(wsUrl);
-      
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
-        setWsConnected(true);
-        
-        // S'identifier auprès du serveur WebSocket
-        wsRef.current?.send(JSON.stringify({
-          type: 'identify',
-          userId: (session.user as any).id
-        }));
-      };
-      
-      wsRef.current.onmessage = (event) => {
-        try {
-          const message: WebSocketMessage = JSON.parse(event.data);
-          
-          switch (message.type) {
-            case 'notification':
-              const newNotification = message.data as ExtendedNotification;
-              if (newNotification.userId === (session.user as any).id) {
-                setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-                setStats(prev => ({ 
-                  ...prev, 
-                  total: prev.total + 1,
-                  unread: prev.unread + 1 
-                }));
-                
-                // Notification du navigateur si autorisée
-                if (Notification.permission === 'granted') {
-                  new Notification('Nouvelle notification LIMS', {
-                    body: newNotification.message,
-                    icon: '/favicon.ico',
-                    tag: newNotification.id
-                  });
-                }
-              }
-              break;
-              
-            case 'notification_read':
-              const readData = message.data as { notificationIds: string[] };
-              setNotifications(prev => 
-                prev.map(n => 
-                  readData.notificationIds.includes(n.id) 
-                    ? { ...n, isRead: true } 
-                    : n
-                )
-              );
-              setStats(prev => ({ 
-                ...prev, 
-                unread: Math.max(0, prev.unread - readData.notificationIds.length)
-              }));
-              break;
-              
-            case 'notification_bulk_read':
-              const bulkData = message.data as { userId: string };
-              if (bulkData.userId === (session.user as any).id) {
-                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-                setStats(prev => ({ ...prev, unread: 0 }));
-              }
-              break;
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+    const userId = (session.user as any).id;
+    
+    const connectSSE = () => {
+      try {
+        // Fermer la connexion existante si elle existe
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
         }
-      };
-      
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
-        setWsConnected(false);
-        
-        // Reconnexion automatique après 3 secondes
-        setTimeout(connectWebSocket, 3000);
-      };
-      
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setWsConnected(false);
-      };
+
+        // Créer une nouvelle connexion SSE
+        const eventSource = new EventSource(`/api/notifications/ws?userId=${encodeURIComponent(userId)}`);
+        eventSourceRef.current = eventSource;
+
+        eventSource.onopen = () => {
+          console.log('SSE connection opened');
+          setSseConnected(true);
+        };
+
+        eventSource.onmessage = (event) => {
+          try {
+            const message: SSEMessage = JSON.parse(event.data);
+            
+            switch (message.type) {
+              case 'connected':
+                console.log('Connected to notifications for user:', message.userId);
+                break;
+                
+              case 'notification':
+                if (message.data) {
+                  console.log('Received notification:', message.data);
+                  const notificationData = message.data as ExtendedNotification;
+                  setNotifications(prev => [notificationData, ...prev.slice(0, 9)]);
+                  setNotificationStats(prev => ({
+                    ...prev,
+                    total: prev.total + 1,
+                    unread: prev.unread + 1
+                  }));
+                }
+                break;
+                
+              case 'heartbeat':
+                setLastHeartbeat(message.timestamp || Date.now());
+                break;
+                
+              default:
+                console.log('Unknown SSE message type:', message.type);
+            }
+          } catch (error) {
+            console.error('Error parsing SSE message:', error);
+          }
+        };
+
+        eventSource.onerror = (error) => {
+          console.error('SSE error:', error);
+          setSseConnected(false);
+          
+          // Tentative de reconnexion après 5 secondes
+          setTimeout(() => {
+            if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
+              console.log('Attempting to reconnect SSE...');
+              connectSSE();
+            }
+          }, 5000);
+        };
+
+      } catch (error) {
+        console.error('Error creating EventSource:', error);
+        setSseConnected(false);
+      }
     };
 
-    connectWebSocket();
+    connectSSE();
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, [session]);
 
   // Chargement initial des notifications
   useEffect(() => {
-    if (session?.user) {
-      fetchNotifications();
-      
-      // Demander la permission pour les notifications du navigateur
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    }
+    fetchNotifications();
   }, [session]);
 
-  const formatNotificationTime = (createdAt: string) => {
-    return formatDistanceToNow(new Date(createdAt), { 
-      addSuffix: true, 
-      locale: fr 
-    });
+  const handleNotificationClick = async (notification: ExtendedNotification) => {
+    handleNotificationsClose();
+    
+    // Marquer comme lue si nécessaire
+    if (!notification.isRead) {
+      try {
+        await fetch(`/api/notifications/${notification.id}/read`, {
+          method: 'PUT'
+        });
+        
+        // Mise à jour optimiste
+        setNotifications(prev => 
+          prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+        );
+        setNotificationStats(prev => ({
+          ...prev,
+          unread: Math.max(0, prev.unread - 1)
+        }));
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    }
+    
+    router.push(`/notifications/${notification.id}`);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!session?.user) return;
+    
+    try {
+      const userId = (session.user as any).id;
+      await fetch('/api/notifications/mark-all-read', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+      
+      // Mettre à jour l'état local
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotificationStats(prev => ({ ...prev, unread: 0 }));
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
   };
 
   return (
-    <AppBar
-      position="fixed"
-      elevation={1}
-      sx={{
-        bgcolor: 'background.paper',
-        borderBottom: 1,
-        borderColor: 'divider',
-        zIndex: (theme) => theme.zIndex.appBar,
-        backgroundColor: theme === 'dark' ? '#121212' : '#ffffff',
-        top: 0,
-        left: 0,
-        right: 0,
-      }}
-    >
+    <StyledAppBar position="fixed">
       <Toolbar>
         <IconButton
           edge="start"
-          color="inherit"
-          aria-label="menu"
           onClick={onMenuClick}
+          aria-label="menu"
           sx={{ mr: 2 }}
         >
           <MenuIcon />
         </IconButton>
 
-        <Science sx={{ mr: 1, color: 'primary.main' }} />
-        <Typography variant="h6" component="div" sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>
-          LIMS
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Paul VALÉRY - Gestion du Laboratoire
         </Typography>
 
-        <Search sx={{ display: { xs: 'none', md: 'block' } }}>
+        {/* Barre de recherche */}
+        <Search>
           <SearchIconWrapper>
             <SearchIcon />
           </SearchIconWrapper>
           <StyledInputBase
-            placeholder="Rechercher…"
+            placeholder="Rechercher..."
             inputProps={{ 'aria-label': 'search' }}
           />
         </Search>
 
-        <Box sx={{ flexGrow: 1 }} />
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Changer de thème">
-            <IconButton onClick={onThemeToggle} color="inherit">
-              {theme === 'dark' ? <Brightness7 /> : <Brightness4 />}
+        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+          {/* Bouton de basculement du thème */}
+          <Tooltip title={isDarkMode ? "Mode clair" : "Mode sombre"}>
+            <IconButton onClick={toggleTheme}>
+              {isDarkMode ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={`Notifications ${wsConnected ? '(connecté)' : '(déconnecté)'}`}>
-            <IconButton color="inherit" onClick={handleNotificationMenu}>
-              <Badge badgeContent={stats.unread} color="error" max={99}>
-                {wsConnected ? <NotificationsActive /> : <Notifications />}
+          {/* Notifications */}
+          <Tooltip title="Notifications">
+            <IconButton onClick={handleNotificationsOpen}>
+              <Badge badgeContent={notificationStats.unread} color="error">
+                {sseConnected ? <NotificationsActive /> : <Notifications />}
               </Badge>
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Profil">
-            <IconButton onClick={handleProfileMenu} sx={{ p: 0, ml: 1 }}>
-              <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-                {session?.user?.name?.[0] || <AccountCircle />}
+          {/* Menu utilisateur */}
+          <Tooltip title="Profil utilisateur">
+            <IconButton onClick={handleUserMenuOpen} sx={{ ml: 1 }}>
+              <Avatar sx={{ width: 32, height: 32 }}>
+                {session?.user?.name?.charAt(0) || <AccountCircle />}
               </Avatar>
             </IconButton>
           </Tooltip>
         </Box>
 
-        {/* Menu Profil */}
+        {/* Menu des notifications */}
         <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          anchorEl={anchorElNotifications}
+          open={Boolean(anchorElNotifications)}
+          onClose={handleNotificationsClose}
+          slotProps={{
+            paper: {
+              sx: { 
+                width: 400, 
+                maxHeight: 500,
+                mt: 1.5
+              }
+            }
+          }}
         >
-          <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="h6">
+              Notifications
+              {sseConnected && (
+                <Chip 
+                  component="span"
+                  size="small" 
+                  label="En ligne" 
+                  color="success" 
+                  sx={{ ml: 1 }} 
+                />
+              )}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {notificationStats.unread} non lues sur {notificationStats.total} • {notifications.length} affichées
+            </Typography>
+            
+            {lastHeartbeat && (
+              <Typography variant="caption" color="text.secondary">
+                Dernière activité: {new Date(lastHeartbeat).toLocaleTimeString()}
+              </Typography>
+            )}
+          </Box>
+          {notificationStats.unread > 0 && (
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleMarkAllAsRead}
+              sx={{ mt: 1 }}
+            >
+              Marquer tout comme lu
+            </Button>
+          )}
+          {loadingNotifications ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : notifications.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Aucune notification
+              </Typography>
+            </Box>
+          ) : (
+            <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
+              {(() => {
+                // Séparer les notifications lues et non lues
+                const unreadNotifications = notifications.filter(n => !n.isRead);
+                const readNotifications = notifications.filter(n => n.isRead);
+                
+                let displayNotifications = [];
+                
+                if (unreadNotifications.length >= 10) {
+                  // Si 10+ non lues, afficher seulement les 10 premières non lues
+                  displayNotifications = unreadNotifications.slice(0, 10);
+                } else {
+                  // Sinon, afficher toutes les non lues + compléter avec les lues jusqu'à 10
+                  const remainingSlots = 10 - unreadNotifications.length;
+                  displayNotifications = [
+                    ...unreadNotifications,
+                    ...readNotifications.slice(0, remainingSlots)
+                  ];
+                }
+                
+                return displayNotifications.map((notification) => (
+                  <ListItem
+                    key={notification.id}
+                    disablePadding
+                    sx={{
+                      bgcolor: notification.isRead ? 'transparent' : 'action.hover',
+                      borderLeft: notification.isRead ? 'none' : '4px solid',
+                      borderLeftColor: 'primary.main'
+                    }}
+                  >
+                    <ListItemButton onClick={() => handleNotificationClick(notification)}>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          {getSeverityIcon(notification.severity, isDarkMode)}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: notification.isRead ? 400 : 600,
+                                flex: 1
+                              }}
+                            >
+                              {getNotificationMessage(notification.message, 'fr')}
+                            </Typography>
+                            {!notification.isRead && (
+                              <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <Box component={'span'} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                            <Chip 
+                              component={'span'}
+                              label={notification.module} 
+                              size="small" 
+                              variant="outlined"
+                              sx={{ fontSize: '0.7rem' }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              <AccessTime sx={{ fontSize: 12, mr: 0.5 }} />
+                              {formatDistanceToNow(new Date(notification.createdAt), { 
+                                addSuffix: true, 
+                                locale: fr 
+                              })}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ));
+              })()}
+            </List>
+          )}
+
+          {notifications.length > 0 && (
+            [<Divider key="divider" />,
+            <Box key="button-container" sx={{ p: 1 }}>
+                <Button 
+                  fullWidth 
+                  size="small" 
+                  component={Link} 
+                  href="/notifications"
+                  onClick={handleNotificationsClose}
+                >
+                  Voir toutes les notifications
+                </Button>
+            </Box>]
+          )}
+        </Menu>
+
+        {/* Menu utilisateur */}
+        <Menu
+          anchorEl={anchorElUser}
+          open={Boolean(anchorElUser)}
+          onClose={handleUserMenuClose}
+          PaperProps={{
+            sx: { mt: 1.5 }
+          }}
+        >
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="subtitle1">
               {session?.user?.name || 'Utilisateur'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {session?.user?.email}
             </Typography>
           </Box>
-          <Divider />
-          <MenuItem onClick={() => { handleClose(); router.push('/profile'); }}>
+
+          <MenuItem component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
             <ListItemIcon>
               <Person fontSize="small" />
             </ListItemIcon>
-            Mon Profil
+            Profil
           </MenuItem>
-          <MenuItem onClick={() => { handleClose(); router.push('/settings'); }}>
+
+          <MenuItem component={Link} href="/reglages" onClick={handleUserMenuClose}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
             Paramètres
           </MenuItem>
+
           <Divider />
-          <MenuItem onClick={() => { handleClose(); signOut(); }}>
+
+          <MenuItem onClick={handleSignOut}>
             <ListItemIcon>
               <Logout fontSize="small" />
             </ListItemIcon>
             Déconnexion
           </MenuItem>
         </Menu>
-
-        {/* Menu Notifications */}
-        <Menu
-          anchorEl={notificationAnchorEl}
-          open={Boolean(notificationAnchorEl)}
-          onClose={handleClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{ sx: { width: 400, maxHeight: 500 } }}
-        >
-          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">
-              Notifications {stats.unread > 0 && `(${stats.unread})`}
-            </Typography>
-            <Box>
-              {stats.unread > 0 && (
-                <Tooltip title="Marquer tout comme lu">
-                  <IconButton onClick={markAllAsRead} size="small">
-                    <CheckCircle />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {loading && <CircularProgress size={20} />}
-            </Box>
-          </Box>
-          <Divider />
-          
-          {notifications.length === 0 ? (
-            <MenuItem disabled>
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', width: '100%' }}>
-                {loading ? 'Chargement...' : 'Aucune notification récente'}
-              </Typography>
-            </MenuItem>
-          ) : (
-            <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
-              {notifications.map((notification) => (
-                <ListItem
-                  key={notification.id}
-                  component="button"
-                  onClick={() => handleNotificationClick(notification)}
-                  sx={{
-                    py: 1.5,
-                    bgcolor: notification.isRead ? undefined : alpha(theme === 'dark' ? '#fff' : '#000', 0.05),
-                    borderLeft: notification.isRead ? 'none' : `3px solid ${
-                      notification.severity === 'critical' ? '#f44336' :
-                      notification.severity === 'high' ? '#ff9800' :
-                      notification.severity === 'medium' ? '#2196f3' : '#4caf50'
-                    }`,
-                    '&:hover': {
-                      bgcolor: alpha(theme === 'dark' ? '#fff' : '#000', 0.1),
-                    }
-                  }}
-                >
-                  <ListItemAvatar>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {SEVERITY_ICONS[notification.severity]}
-                      {!notification.isRead && (
-                        <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
-                      )}
-                    </Box>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="body2" sx={{ fontWeight: notification.isRead ? 400 : 600 }}>
-                          {notification.message}
-                        </Typography>
-                        <Chip 
-                          label={notification.module} 
-                          size="small" 
-                          variant="outlined"
-                          sx={{ ml: 1, fontSize: '0.7rem' }}
-                        />
-                      </Box>
-                    }
-                    secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        <AccessTime sx={{ fontSize: 12 }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {formatNotificationTime(notification.createdAt)}
-                        </Typography>
-                        {notification.triggeredBy && (
-                          <Typography variant="caption" color="text.secondary">
-                            • par {notification.triggeredBy.userName}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-          
-          <Divider />
-          <MenuItem component={Link} href="/notifications" onClick={handleClose}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <Button variant="text" size="small">
-                Voir toutes les notifications
-              </Button>
-            </Box>
-          </MenuItem>
-        </Menu>
       </Toolbar>
-    </AppBar>
+    </StyledAppBar>
   );
 }

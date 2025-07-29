@@ -1,186 +1,450 @@
-// /lib/hooks/useNotifications.tsx
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { ExtendedNotification, NotificationStats, NotificationFilter } from '@/types/notifications';
 
-'use client';
-
-import { useEffect, useState, useCallback, useRef } from 'react';
-
-interface NotificationMessage {
-  type: 'notification' | 'connected' | 'heartbeat';
-  userId?: string;
-  data?: any;
-  timestamp?: number;
+interface UseNotificationsResult {
+  notifications: ExtendedNotification[];
+  stats: NotificationStats | null;
+  loading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  total: number;
+  // Actions
+  fetchNotifications: (filters?: NotificationFilter) => Promise<void>;
+  fetchStats: (filters?: Partial<NotificationFilter>) => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<boolean>;
+  markAllAsRead: () => Promise<boolean>;
+  refresh: () => Promise<void>;
+  loadMore: () => Promise<void>;
 }
 
-interface UseNotificationsOptions {
-  userId: string;
-  onNotification?: (notification: any) => void;
-  onConnect?: () => void;
-  onDisconnect?: () => void;
-  onError?: (error: Event) => void;
-  autoReconnect?: boolean;
-  reconnectInterval?: number;
+interface NotificationsResponse {
+  success: boolean;
+  notifications: ExtendedNotification[];
+  total: number;
+  hasMore: boolean;
+  userInfo?: {
+    userId: string;
+    userRole: string;
+    userEmail: string;
+  };
 }
 
-interface UseNotificationsReturn {
-  isConnected: boolean;
-  notifications: any[];
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
-  lastHeartbeat: number | null;
-  reconnect: () => void;
-  disconnect: () => void;
-  clearNotifications: () => void;
+interface StatsResponse {
+  success: boolean;
+  stats?: NotificationStats;
+  userInfo?: {
+    userId: string;
+    userRole: string;
+    userEmail: string;
+  };
+  error?: string;
+  details?: string;
 }
 
-export function useNotifications({
-  userId,
-  onNotification,
-  onConnect,
-  onDisconnect,
-  onError,
-  autoReconnect = true,
-  reconnectInterval = 5000
-}: UseNotificationsOptions): UseNotificationsReturn {
-  const [isConnected, setIsConnected] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
-  
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isManualDisconnectRef = useRef(false);
+export function useNotifications(initialFilters: NotificationFilter = {}): UseNotificationsResult {
+  const { data: session, status } = useSession();
+  const [notifications, setNotifications] = useState<ExtendedNotification[]>([]);
+  const [stats, setStats] = useState<NotificationStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [currentFilters, setCurrentFilters] = useState<NotificationFilter>(initialFilters);
 
-  const connect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+  // Refs pour éviter les appels multiples
+  const fetchingRef = useRef(false);
+  const fetchingStatsRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Fonction utilitaire pour valider une notification
+  const validateNotification = (notification: any): notification is ExtendedNotification => {
+    if (!notification || typeof notification !== 'object') {
+      console.warn('Notification invalide (null ou non-objet):', notification);
+      return false;
     }
 
-    setConnectionStatus('connecting');
-    isManualDisconnectRef.current = false;
+    const requiredFields = ['id', 'userId', 'role', 'module', 'actionType', 'createdAt', 'severity'];
+    const missingFields = requiredFields.filter(field => !notification[field]);
+    
+    if (missingFields.length > 0) {
+      console.warn('Notification avec champs manquants:', missingFields, notification);
+      return false;
+    }
+
+    // Vérifier que isRead existe et est un boolean
+    if (typeof notification.isRead !== 'boolean') {
+      console.warn('Notification avec isRead invalide:', notification.isRead, notification);
+      // Corriger automatiquement
+      notification.isRead = false;
+    }
+
+    return true;
+  };
+
+  // Fonction utilitaire pour nettoyer les notifications
+  const sanitizeNotifications = (rawNotifications: any[]): ExtendedNotification[] => {
+    if (!Array.isArray(rawNotifications)) {
+      console.error('Les notifications reçues ne sont pas un tableau:', rawNotifications);
+      return [];
+    }
+
+    return rawNotifications
+      .filter(validateNotification)
+      .map(notification => ({
+        ...notification,
+        // S'assurer que tous les champs requis existent avec des valeurs par défaut
+        isRead: notification.isRead === true,
+        message: notification.message || { fr: 'Message non disponible', en: 'Message not available' },
+        details: notification.details || '',
+        reason: notification.reason || 'role',
+        severity: notification.severity || 'medium'
+      }));
+  };
+
+  // Fonction utilitaire pour valider les stats
+  const validateStats = (stats: any): NotificationStats => {
+    if (!stats || typeof stats !== 'object') {
+      console.warn('Stats invalides reçues:', stats);
+      return {
+        total: 0,
+        unread: 0,
+        byModule: {},
+        bySeverity: {},
+        byReason: {}
+      };
+    }
+
+    return {
+      total: typeof stats.total === 'number' ? stats.total : 0,
+      unread: typeof stats.unread === 'number' ? stats.unread : 0,
+      byModule: stats.byModule && typeof stats.byModule === 'object' ? stats.byModule : {},
+      bySeverity: stats.bySeverity && typeof stats.bySeverity === 'object' ? stats.bySeverity : {},
+      byReason: stats.byReason && typeof stats.byReason === 'object' ? stats.byReason : {}
+    };
+  };
+
+  // Récupérer les notifications avec protection contre les appels multiples
+  const fetchNotifications = useCallback(async (filters: NotificationFilter = {}) => {
+    if (status === 'loading' || !session?.user || fetchingRef.current) {
+      return;
+    }
+
+    // Annuler la requête précédente si elle existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Créer un nouveau AbortController
+    abortControllerRef.current = new AbortController();
+    fetchingRef.current = true;
+    setLoading(true);
+    setError(null);
 
     try {
-      const eventSource = new EventSource(`/api/notifications/ws?userId=${encodeURIComponent(userId)}`);
-      eventSourceRef.current = eventSource;
+      const user = session.user as any;
+      
+      // Construire les paramètres de requête
+      const params = new URLSearchParams();
+      
+      // Ajouter les filtres
+      const mergedFilters = { ...currentFilters, ...filters };
+      
+      if (mergedFilters.limit) params.append('limit', mergedFilters.limit.toString());
+      if (mergedFilters.offset) params.append('offset', mergedFilters.offset.toString());
+      if (mergedFilters.module) params.append('module', mergedFilters.module);
+      if (mergedFilters.severity) params.append('severity', mergedFilters.severity);
+      if (mergedFilters.isRead !== undefined) params.append('isRead', mergedFilters.isRead.toString());
+      if (mergedFilters.dateFrom) params.append('dateFrom', mergedFilters.dateFrom);
+      if (mergedFilters.dateTo) params.append('dateTo', mergedFilters.dateTo);
+      if (mergedFilters.entityType) params.append('entityType', mergedFilters.entityType);
+      if (mergedFilters.entityId) params.append('entityId', mergedFilters.entityId);
 
-      eventSource.onopen = () => {
-        console.log('SSE connection opened');
-        setConnectionStatus('connected');
-        setIsConnected(true);
-        onConnect?.();
-        
-        // Clear any pending reconnection
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = null;
-        }
-      };
+      console.log('🔍 [Hook] Récupération notifications avec filtres:', mergedFilters);
 
-      eventSource.onmessage = (event) => {
-        try {
-          const message: NotificationMessage = JSON.parse(event.data);
-          
-          switch (message.type) {
-            case 'connected':
-              console.log('Connected to notifications for user:', message.userId);
-              break;
-              
-            case 'notification':
-              console.log('Received notification:', message.data);
-              setNotifications(prev => [message.data, ...prev]);
-              onNotification?.(message.data);
-              break;
-              
-            case 'heartbeat':
-              setLastHeartbeat(message.timestamp || Date.now());
-              break;
-              
-            default:
-              console.log('Unknown message type:', message.type);
-          }
-        } catch (error) {
-          console.error('Error parsing SSE message:', error);
-        }
-      };
-
-      eventSource.onerror = (error) => {
-        console.error('SSE error:', error);
-        setConnectionStatus('error');
-        setIsConnected(false);
-        onError?.(error);
-
-        // Auto-reconnect if not manually disconnected
-        if (autoReconnect && !isManualDisconnectRef.current) {
-          console.log(`Attempting to reconnect in ${reconnectInterval}ms...`);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, reconnectInterval);
-        }
-      };
-
-    } catch (error) {
-      console.error('Error creating EventSource:', error);
-      setConnectionStatus('error');
-      setIsConnected(false);
-    }
-  }, [userId, onNotification, onConnect, onDisconnect, onError, autoReconnect, reconnectInterval]);
-
-  const disconnect = useCallback(() => {
-    isManualDisconnectRef.current = true;
-    
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-
-    setIsConnected(false);
-    setConnectionStatus('disconnected');
-    setLastHeartbeat(null);
-    onDisconnect?.();
-  }, [onDisconnect]);
-
-  const reconnect = useCallback(() => {
-    disconnect();
-    setTimeout(() => connect(), 100);
-  }, [connect, disconnect]);
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
-
-  // Connect on mount and when userId changes
-  useEffect(() => {
-    if (userId) {
-      connect();
-    }
-
-    return () => {
-      disconnect();
-    };
-  }, [userId, connect, disconnect]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
+      const response = await fetch(`/api/notifications?${params.toString()}`, {
+        signal: abortControllerRef.current.signal
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
       }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+
+      const data: NotificationsResponse = await response.json();
+      
+      if (!data.success) {
+        throw new Error('Réponse API indique un échec');
+      }
+
+      console.log('✅ [Hook] Données reçues:', {
+        count: data.notifications?.length || 0,
+        total: data.total,
+        hasMore: data.hasMore
+      });
+
+      // Nettoyer et valider les notifications
+      const cleanNotifications = sanitizeNotifications(data.notifications || []);
+      
+      // Mettre à jour l'état selon le mode (nouveau fetch ou load more)
+      if (mergedFilters.offset && mergedFilters.offset > 0) {
+        // Load more - ajouter aux notifications existantes
+        setNotifications(prev => {
+          const existingIds = new Set(prev.map(n => n.id));
+          const newNotifications = cleanNotifications.filter(n => !existingIds.has(n.id));
+          return [...prev, ...newNotifications];
+        });
+      } else {
+        // Nouveau fetch - remplacer les notifications
+        setNotifications(cleanNotifications);
+      }
+
+      setTotal(data.total || 0);
+      setHasMore(data.hasMore || false);
+      setCurrentFilters(mergedFilters);
+
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log('🔍 [Hook] Requête notifications annulée');
+        return;
+      }
+      console.error('❌ [Hook] Erreur lors de la récupération des notifications:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      setNotifications([]);
+      setTotal(0);
+      setHasMore(false);
+    } finally {
+      fetchingRef.current = false;
+      setLoading(false);
+    }
+  }, [session, status]); // Dépendances minimales
+
+  // Récupérer les statistiques avec protection contre les appels multiples
+  const fetchStats = useCallback(async (filters: Partial<NotificationFilter> = {}) => {
+    if (status === 'loading' || !session?.user || fetchingStatsRef.current) {
+      return;
+    }
+
+    fetchingStatsRef.current = true;
+
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.module) params.append('module', filters.module);
+      if (filters.severity) params.append('severity', filters.severity);
+      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params.append('dateTo', filters.dateTo);
+
+      console.log('📊 [Hook] Récupération stats avec filtres:', filters);
+
+      const response = await fetch(`/api/notifications/stats?${params.toString()}`);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
+      }
+
+      const data: StatsResponse = await response.json();
+      
+      console.log('📊 [Hook] Réponse stats brute:', data);
+
+      if (!data.success) {
+        const errorMessage = data.error || data.details || 'Erreur lors de la récupération des statistiques';
+        console.warn('⚠️ [Hook] API stats a échoué:', errorMessage);
+        
+        // Utiliser des stats par défaut au lieu de lever une erreur
+        setStats({
+          total: 0,
+          unread: 0,
+          byModule: {},
+          bySeverity: {},
+          byReason: {}
+        });
+        return;
+      }
+
+      // Valider et nettoyer les stats
+      const validatedStats = validateStats(data.stats);
+      console.log('✅ [Hook] Stats validées:', validatedStats);
+      setStats(validatedStats);
+
+    } catch (err) {
+      console.error('❌ [Hook] Erreur lors de la récupération des stats:', err);
+      
+      // Utiliser des stats par défaut au lieu de lever une erreur
+      setStats({
+        total: 0,
+        unread: 0,
+        byModule: {},
+        bySeverity: {},
+        byReason: {}
+      });
+    } finally {
+      fetchingStatsRef.current = false;
+    }
+  }, [session, status]); // Dépendances minimales
+
+  // Marquer une notification comme lue
+  const markAsRead = useCallback(async (notificationId: string): Promise<boolean> => {
+    if (!session?.user) {
+      console.warn('❌ [Hook] Utilisateur non connecté pour markAsRead');
+      return false;
+    }
+
+    try {
+      console.log('👁️ [Hook] Marquage comme lu:', notificationId);
+
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationId,
+          action: 'markAsRead'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Mettre à jour localement
+        setNotifications(prev => 
+          prev.map(notification => 
+            notification.id === notificationId 
+              ? { ...notification, isRead: true }
+              : notification
+          )
+        );
+
+        // Mettre à jour les stats
+        setStats(prev => prev ? {
+          ...prev,
+          unread: Math.max(0, prev.unread - 1)
+        } : null);
+
+        console.log('✅ [Hook] Notification marquée comme lue:', notificationId);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('❌ [Hook] Erreur lors du marquage comme lu:', err);
+      return false;
+    }
+  }, [session]);
+
+  // Marquer toutes les notifications comme lues
+  const markAllAsRead = useCallback(async (): Promise<boolean> => {
+    if (!session?.user) {
+      console.warn('❌ [Hook] Utilisateur non connecté pour markAllAsRead');
+      return false;
+    }
+
+    try {
+      console.log('👁️ [Hook] Marquage de toutes comme lues');
+
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'markAllAsRead'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Mettre à jour localement
+        setNotifications(prev => 
+          prev.map(notification => ({ ...notification, isRead: true }))
+        );
+
+        // Mettre à jour les stats
+        setStats(prev => prev ? { ...prev, unread: 0 } : null);
+
+        console.log('✅ [Hook] Toutes les notifications marquées comme lues');
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('❌ [Hook] Erreur lors du marquage de toutes comme lues:', err);
+      return false;
+    }
+  }, [session]);
+
+  // Rafraîchir les données
+  const refresh = useCallback(async () => {
+    console.log('🔄 [Hook] Rafraîchissement des notifications');
+    await Promise.all([
+      fetchNotifications({ ...currentFilters, offset: 0 }),
+      fetchStats()
+    ]);
+  }, [fetchNotifications, fetchStats, currentFilters]);
+
+  // Charger plus de notifications
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loading || fetchingRef.current) {
+      return;
+    }
+
+    console.log('📄 [Hook] Chargement de plus de notifications');
+    await fetchNotifications({
+      ...currentFilters,
+      offset: notifications.length
+    });
+  }, [hasMore, loading, fetchNotifications, currentFilters, notifications.length]);
+
+  // Chargement initial - SEULEMENT une fois quand l'utilisateur est authentifié
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user && !initialLoadDoneRef.current) {
+      console.log('🚀 [Hook] Chargement initial des notifications');
+      initialLoadDoneRef.current = true;
+      
+      // Délai pour éviter les appels simultanés
+      const timeoutId = setTimeout(() => {
+        refresh();
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [status, session?.user]); // Dépendances minimales, pas de refresh
+
+  // Nettoyage lors du démontage
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
 
   return {
-    isConnected,
     notifications,
-    connectionStatus,
-    lastHeartbeat,
-    reconnect,
-    disconnect,
-    clearNotifications
+    stats,
+    loading,
+    error,
+    hasMore,
+    total,
+    fetchNotifications,
+    fetchStats,
+    markAsRead,
+    markAllAsRead,
+    refresh,
+    loadMore
   };
 }

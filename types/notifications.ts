@@ -1,3 +1,20 @@
+export interface NotificationFilter {
+  module?: string;
+  actionType?: string;
+  severity?: string;
+  isRead?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+  entityType?: string;
+  entityId?: string;
+  limit?: number;
+  offset?: number;
+  // Nouveaux champs pour le système basé sur les rôles
+  userRole?: string;
+  userEmail?: string;
+  reason?: 'role' | 'specific';
+}
+
 export interface NotificationPreference {
   id: string;
   role: string;
@@ -9,13 +26,23 @@ export interface NotificationPreference {
 }
 
 export interface NotificationConfig {
-  id: string;
-  name: string;
-  description: string;
-  module: string;
-  actionType: string;
-  defaultEnabled: boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  roles: Array<{
+    value: string;
+    label: string;
+    color: string;
+    icon: any;
+  }>;
+  modules: Array<{
+    value: string;
+    label: string;
+    icon: any;
+    color: string;
+  }>;
+  severities: Array<{
+    value: string;
+    label: string;
+    color: string;
+  }>;
 }
 
 export interface ExtendedNotification {
@@ -24,18 +51,16 @@ export interface ExtendedNotification {
   role: string;
   module: string;
   actionType: string;
-  message: string;
-  details: any;
+  message: any;
+  details: string;
   createdAt: string;
   isRead: boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  entityId?: string;
+  severity: string;
+  reason: 'role' | 'specific';
+  specificReason?: string;
   entityType?: string;
-  triggeredBy?: {
-    userId: string;
-    userName: string;
-    userEmail: string;
-  };
+  entityId?: string;
+  triggeredBy?: string;
 }
 
 export interface NotificationStats {
@@ -43,20 +68,5 @@ export interface NotificationStats {
   unread: number;
   byModule: Record<string, number>;
   bySeverity: Record<string, number>;
-}
-
-export interface WebSocketMessage {
-  type: 'notification' | 'notification_read' | 'notification_bulk_read';
-  data: ExtendedNotification | { notificationIds: string[] } | { userId: string };
-}
-
-export interface NotificationFilter {
-  module?: string;
-  actionType?: string;
-  severity?: string;
-  isRead?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
-  limit?: number;
-  offset?: number;
+  byReason: Record<string, number>;
 }
