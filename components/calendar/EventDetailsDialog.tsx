@@ -513,112 +513,6 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     })
   }
 
-  // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
-  const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
-    if (!actualSlots || actualSlots.length === 0) return null;
-    
-    // Recherche d'abord par ID (cas où le créneau n'a pas été modifié)
-    const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
-    if (byId) return byId;
-    
-    // Sinon, recherche par proximité temporelle (pour les créneaux modifiés)
-    const proposedStart = new Date(proposedSlot.startDate).getTime();
-    const proposedEnd = new Date(proposedSlot.endDate).getTime();
-    
-    return actualSlots.find(actualSlot => {
-      const actualStart = new Date(actualSlot.startDate).getTime();
-      const actualEnd = new Date(actualSlot.endDate).getTime();
-      
-      // Tolérance de 30 minutes (1800000 ms) pour considérer que c'est le même créneau
-      const tolerance = 30 * 60 * 1000;
-      return Math.abs(proposedStart - actualStart) <= tolerance && 
-             Math.abs(proposedEnd - actualEnd) <= tolerance;
-    });
-  };
-
-  // Fonction pour vérifier si un créneau proposé est différent du créneau actuel
-  const isSlotChanged = (proposedSlot: any, event: CalendarEvent) => {
-    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-    
-    if (!correspondingActual) {
-      // Nouveau créneau proposé
-      return true;
-    }
-    
-    // Comparer les dates
-    return correspondingActual.startDate !== proposedSlot.startDate || 
-           correspondingActual.endDate !== proposedSlot.endDate;
-  };
-
-  // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
-  const getSlotStatus = (proposedSlot: any, event: CalendarEvent) => {
-    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-    
-    if (!correspondingActual) {
-      return 'new'; // Nouveau créneau
-    }
-    
-    if (correspondingActual.startDate === proposedSlot.startDate && 
-        correspondingActual.endDate === proposedSlot.endDate) {
-      return 'approved'; // Créneau validé (identique)
-    }
-    
-    return 'pending'; // Créneau modifié en attente
-  };
-
-  // Fonction pour récupérer les informations des utilisateurs qui ont modifié les créneaux
-  const [usersInfoDialog, setUsersInfoDialog] = useState<Record<string, {id: string, name: string, email: string}>>({})
-
-  const fetchUsersInfoDialog = async (userIds: string[]) => {
-    if (userIds.length === 0) return {}
-    
-    try {
-      const response = await fetch('/api/utilisateurs/info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: [...new Set(userIds)] })
-      })
-      
-      if (response.ok) {
-        const users = await response.json()
-        setUsersInfoDialog(prev => ({ ...prev, ...users }))
-        return users
-      }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des utilisateurs:', error)
-    }
-    return {}
-  }
-
-  // Fonction pour obtenir le nom de l'utilisateur qui a modifié un créneau
-  const getModifierNameDialog = (event: CalendarEvent) => {
-    if (!event.timeSlots) return 'Des utilisateurs'
-    
-    const modifierIds = new Set<string>()
-    
-    // Collecter tous les IDs des utilisateurs qui ont modifié les créneaux
-    event.timeSlots.forEach(slot => {
-      if (slot.modifiedBy && Array.isArray(slot.modifiedBy)) {
-        slot.modifiedBy.forEach(modification => {
-          if (typeof modification === 'object' && modification.userId) {
-            modifierIds.add(modification.userId)
-          } else if (typeof modification === 'string') {
-            modifierIds.add(modification)
-          }
-        })
-      }
-    })
-    
-    const modifierNames = Array.from(modifierIds)
-      .map(id => usersInfoDialog[id]?.name || usersInfoDialog[id]?.email || `Utilisateur ${id}`)
-      .filter(Boolean)
-    
-    if (modifierNames.length === 0) return 'Des utilisateurs'
-    if (modifierNames.length === 1) return modifierNames[0]
-    if (modifierNames.length === 2) return `${modifierNames[0]} et ${modifierNames[1]}`
-    return `${modifierNames.slice(0, -1).join(', ')} et ${modifierNames[modifierNames.length - 1]}`
-  }
-
     // Vérifier si l'utilisateur peut valider
   const canValidate = userRole === 'LABORANTIN' || userRole === 'ADMINLABO'
 
@@ -772,35 +666,6 @@ useEffect(() => {
   }
 }, [event, open])
 
-  // useEffect pour charger les informations des utilisateurs qui ont modifié les créneaux
-  useEffect(() => {
-    const loadUsersInfoForTimeSlots = async () => {
-      if (!event || !open) return
-      
-      const allUserIds = new Set<string>()
-      
-      if (event.timeSlots) {
-        event.timeSlots.forEach(slot => {
-          if (slot.modifiedBy && Array.isArray(slot.modifiedBy)) {
-            slot.modifiedBy.forEach(modification => {
-              if (typeof modification === 'object' && modification.userId) {
-                allUserIds.add(modification.userId)
-              } else if (typeof modification === 'string') {
-                allUserIds.add(modification)
-              }
-            })
-          }
-        })
-      }
-      
-      if (allUserIds.size > 0) {
-        await fetchUsersInfoDialog(Array.from(allUserIds))
-      }
-    }
-    
-    loadUsersInfoForTimeSlots()
-  }, [event, open])
-
   // Fonction helper pour formater les dates en toute sécurité
   const formatDate = (dateString: string) => {
     try {
@@ -922,7 +787,7 @@ useEffect(() => {
                     Modifications en attente de votre validation
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {getModifierNameDialog(event)} {getModifierNameDialog(event) === 'Des utilisateurs' ? 'ont' : 'a'} proposé des modifications pour les créneaux de cet événement. 
+                    Des utilisateurs ont proposé des modifications pour les créneaux de cet événement. 
                     Veuillez les examiner et les approuver ou les rejeter.
                   </Typography>
                 </MuiAlert>
@@ -935,18 +800,20 @@ useEffect(() => {
                   {/* Tableau de comparaison des créneaux */}
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot, index) => {
-                      const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-                      const slotStatus = getSlotStatus(proposedSlot, event);
+                      const actualSlot = event.actuelTimeSlots?.[index]
+                      const isChanged = actualSlot && (
+                        actualSlot.startDate !== proposedSlot.startDate ||
+                        actualSlot.endDate !== proposedSlot.endDate ||
+                        actualSlot.id !== proposedSlot.id
+                      )
                       
                       return (
                         <Box key={proposedSlot.id} sx={{ 
                           p: 2, 
                           border: '1px solid', 
-                          borderColor: slotStatus === 'approved' ? 'success.main' : 
-                                      slotStatus === 'new' ? 'info.main' : 'warning.main',
+                          borderColor: isChanged ? 'warning.main' : 'success.main',
                           borderRadius: 1,
-                          bgcolor: slotStatus === 'approved' ? 'success.50' : 
-                                  slotStatus === 'new' ? 'info.50' : 'warning.50'
+                          bgcolor: isChanged ? 'warning.50' : 'success.50'
                         }}>
                           <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, md: 4 }}>
@@ -954,8 +821,8 @@ useEffect(() => {
                                 <strong>Actuel :</strong>
                               </Typography>
                               <Typography variant="body2">
-                                {correspondingActual ? 
-                                  `${format(new Date(correspondingActual.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - ${format(new Date(correspondingActual.endDate), 'HH:mm', { locale: fr })}` :
+                                {actualSlot ? 
+                                  `${format(new Date(actualSlot.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - ${format(new Date(actualSlot.endDate), 'HH:mm', { locale: fr })}` :
                                   'Nouveau créneau'
                                 }
                               </Typography>
@@ -967,20 +834,12 @@ useEffect(() => {
                               </Typography>
                               <Typography variant="body2" color="primary.main">
                                 {format(new Date(proposedSlot.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - 
-                                {format(new Date(proposedSlot.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - 
                                 {format(new Date(proposedSlot.endDate), 'HH:mm', { locale: fr })}
                               </Typography>
                             </Grid>
 
                             <Grid size={{ xs: 12, md: 4 }}>
-                              {slotStatus === 'approved' ? (
-                                <Chip 
-                                  label="✓ Validé" 
-                                  color="success" 
-                                  size="small" 
-                                  variant="outlined"
-                                />
-                              ) : (
+                              {isChanged ? (
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                   <Button
                                     size="small"
@@ -990,11 +849,10 @@ useEffect(() => {
                                       <CircularProgress size={16} color="inherit" /> : 
                                       <CheckCircle />
                                     }
-                                    disabled={!!loadingTimeslotActions[index]}
+                                    disabled={loadingTimeslotActions[index] !== null}
                                     onClick={() => handleApproveTimeslot(index, proposedSlot.id)}
                                   >
-                                    {loadingTimeslotActions[index] === 'approve' ? 'Validation...' : 
-                                     slotStatus === 'new' ? 'Valider nouveau' : 'Valider modif'}
+                                    {loadingTimeslotActions[index] === 'approve' ? 'Approbation...' : 'Approuver'}
                                   </Button>
                                   <Button
                                     size="small"
@@ -1004,35 +862,20 @@ useEffect(() => {
                                       <CircularProgress size={16} color="inherit" /> : 
                                       <Cancel />
                                     }
-                                    disabled={!!loadingTimeslotActions[index]}
+                                    disabled={loadingTimeslotActions[index] !== null}
                                     onClick={() => handleRejectTimeslot(index, proposedSlot.id)}
                                   >
                                     {loadingTimeslotActions[index] === 'reject' ? 'Rejet...' : 'Rejeter'}
                                   </Button>
                                 </Box>
-                              )}
-                            </Grid>
-                            
-                            {/* Indicateur de statut */}
-                            <Grid size={{ xs: 12 }}>
-                              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  Statut: 
-                                </Typography>
-                                <Chip
-                                  size="small"
-                                  label={
-                                    slotStatus === 'approved' ? 'Validé' :
-                                    slotStatus === 'new' ? 'Nouveau créneau' : 
-                                    'Modification en attente'
-                                  }
-                                  color={
-                                    slotStatus === 'approved' ? 'success' :
-                                    slotStatus === 'new' ? 'info' : 'warning'
-                                  }
+                              ) : (
+                                <Chip 
+                                  label="✓ Approuvé" 
+                                  color="success" 
+                                  size="small" 
                                   variant="outlined"
                                 />
-                              </Box>
+                              )}
                             </Grid>
                           </Grid>
                         </Box>

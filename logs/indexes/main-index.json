@@ -42,6 +42,7 @@
     ]
   },
   "dates": {
-    "2025-07-28": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json"
+    "2025-07-28": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
+    "2025-07-29": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json"
   }
 }

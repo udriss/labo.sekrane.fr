@@ -853,7 +853,15 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     <DatePicker
                       label="Date"
                       value={slot.date}
-                      onChange={(newValue) => updateTimeSlot(index, 'date', newValue)}
+                      onChange={(newValue) => {
+                        // Correction du problème de timezone - s'assurer que la date est correcte
+                        if (newValue) {
+                          const correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                          updateTimeSlot(index, 'date', correctedDate)
+                        } else {
+                          updateTimeSlot(index, 'date', newValue)
+                        }
+                      }}
                       slotProps={{
                         textField: { 
                           size: "small",
@@ -965,11 +973,16 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   label="Date de début"
                   value={formData.startDate}
                   onChange={(newValue) => {
+                    // Correction du problème de timezone
+                    let correctedDate = null
+                    if (newValue) {
+                      correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                    }
                     setFormData({ 
                       ...formData, 
-                      startDate: newValue,
+                      startDate: correctedDate,
                       // Si pas multi-jours, mettre à jour la date de fin aussi
-                      endDate: isMultiDay ? formData.endDate : newValue
+                      endDate: isMultiDay ? formData.endDate : correctedDate
                     })
                   }}
                   slotProps={{
@@ -984,7 +997,14 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   <DatePicker
                     label="Date de fin"
                     value={formData.endDate}
-                    onChange={(newValue) => setFormData({ ...formData, endDate: newValue })}
+                    onChange={(newValue) => {
+                      // Correction du problème de timezone
+                      let correctedDate = null
+                      if (newValue) {
+                        correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                      }
+                      setFormData({ ...formData, endDate: correctedDate })
+                    }}
                     minDate={formData.startDate || undefined}
                     slotProps={{
                       textField: { 

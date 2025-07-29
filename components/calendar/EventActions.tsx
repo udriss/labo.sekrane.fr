@@ -698,7 +698,9 @@ const EventActions: React.FC<EventActionsProps> = ({
                                     value={slot.date ? new Date(slot.date) : null}
                                     onChange={(newValue) => {
                                       if (newValue) {
-                                        updateTimeSlot(index, 'date', newValue.toISOString().split('T')[0])
+                                        // Correction du problème de timezone
+                                        const correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                                        updateTimeSlot(index, 'date', correctedDate.toISOString().split('T')[0])
                                       }
                                     }}
                                     slotProps={{

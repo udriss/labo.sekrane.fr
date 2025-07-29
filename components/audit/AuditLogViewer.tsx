@@ -275,18 +275,52 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({
                       <DatePicker
                         label="Date de début"
                         value={filters.startDate || null}
-                        onChange={(date) => handleFilterChange('startDate', date)}
-                        slotProps={{
-                          textField: { sx: { minWidth: 200 } }
+                        onChange={(date) => {
+                          // Correction du problème de timezone
+                          if (date) {
+                            const correctedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)
+                            handleFilterChange('startDate', correctedDate)
+                          } else {
+                            handleFilterChange('startDate', null)
+                          }
                         }}
+                          slotProps={{
+                            textField: { 
+                              size: "small",
+                              sx: { minWidth: { xs: '100%', sm: 200 } },
+                              onClick: (e: any) => {
+                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                  const button = e.currentTarget.querySelector('button')
+                                  if (button) button.click()
+                                }
+                              }
+                            }
+                          }}
                       />
                       <DatePicker
                         label="Date de fin"
                         value={filters.endDate || null}
-                        onChange={(date) => handleFilterChange('endDate', date)}
-                        slotProps={{
-                          textField: { sx: { minWidth: 200 } }
+                        onChange={(date) => {
+                          // Correction du problème de timezone
+                          if (date) {
+                            const correctedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59)
+                            handleFilterChange('endDate', correctedDate)
+                          } else {
+                            handleFilterChange('endDate', null)
+                          }
                         }}
+                          slotProps={{
+                            textField: { 
+                              size: "small",
+                              sx: { minWidth: { xs: '100%', sm: 200 } },
+                              onClick: (e: any) => {
+                                if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                                  const button = e.currentTarget.querySelector('button')
+                                  if (button) button.click()
+                                }
+                              }
+                            }
+                          }}
                       />
                       <TextField
                         sx={{ minWidth: 200 }}

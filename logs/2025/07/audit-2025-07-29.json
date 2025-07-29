@@ -1,0 +1,3268 @@
+[
+  {
+    "id": "e27ef0b6-cc7e-4c4b-aa62-cea6103e5ea2",
+    "timestamp": "2025-07-29T00:00:23.169Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-29T00:00:23.169Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747223164_xx8jac9r3",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9c62dcc2-c13c-4735-a57a-9b9ff7d4df14",
+    "timestamp": "2025-07-29T00:01:24.409Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-07-29T00:01:24.409Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747284400_tntanobqp",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "252d1af8-e347-4ad2-8548-ca63f374475a",
+    "timestamp": "2025-07-29T00:01:36.216Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "event_state",
+      "entityId": "EVENT_1753744131273_yk23zpxef"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/state-change/",
+        "query": {
+          "id": "EVENT_1753744131273_yk23zpxef"
+        },
+        "body": {
+          "state": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "EVENT_1753744131273_yk23zpxef",
+            "title": "Administrateur",
+            "name": "Administrateur",
+            "description": null,
+            "timeSlots": [
+              {
+                "id": "TS_1753744131273_s8k38va",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744131273_nuc0jqz",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T12:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_yh9lsmd",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_nvoswy7",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_b54o9xh",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_brk1dw4",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244100_snky1hk",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244101_mw571to",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_3jpkr3k",
+                "startDate": "2025-07-29T09:00:00.000Z",
+                "endDate": "2025-07-29T13:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_h59b8vp",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  }
+                ]
+              }
+            ],
+            "actuelTimeSlots": [
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              }
+            ],
+            "type": "TP",
+            "state": "MOVED",
+            "stateChanger": [
+              {
+                "userId": "USER_001",
+                "date": "2025-07-28T23:08:51.273Z",
+                "fromState": "NEW",
+                "toState": "VALIDATED",
+                "reason": "Création automatique"
+              },
+              [
+                "USER_001",
+                "2025-07-28T23:11:09.460Z",
+                "2025-07-28T23:11:35.978Z",
+                "2025-07-28T23:26:40.840Z",
+                "2025-07-28T23:31:14.496Z",
+                "2025-07-28T23:31:31.192Z",
+                "2025-07-28T23:43:00.922Z",
+                "2025-07-28T23:43:05.397Z",
+                "2025-07-28T23:43:17.718Z",
+                "2025-07-28T23:43:45.965Z",
+                "2025-07-28T23:44:04.100Z",
+                "2025-07-28T23:45:19.639Z",
+                "2025-07-28T23:46:50.170Z",
+                "2025-07-28T23:51:48.593Z",
+                "2025-07-28T23:52:00.739Z",
+                "2025-07-28T23:54:08.069Z",
+                "2025-07-28T23:54:23.121Z",
+                "2025-07-29T00:01:36.215Z"
+              ]
+            ],
+            "class": "1ère STI2D",
+            "room": null,
+            "location": null,
+            "materials": [],
+            "chemicals": [],
+            "equipment": [],
+            "files": [],
+            "remarks": null,
+            "notes": null,
+            "createdBy": "USER_001",
+            "modifiedBy": [],
+            "createdAt": "2025-07-28T23:08:51.273Z",
+            "updatedAt": "2025-07-29T00:01:36.215Z",
+            "stateReason": ""
+          },
+          "message": "État de l'événement mis à jour en \"MOVED\" avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:01:36.216Z"
+      },
+      "newState": "MOVED",
+      "reasonProvided": false,
+      "stateChangeCount": 2,
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747296212_uw07ypiok",
+      "path": "/api/calendrier/state-change/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "682fd9f5-8441-4bbe-bc81-4f31ecf0894c",
+    "timestamp": "2025-07-29T00:02:07.265Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-29T00:02:07.265Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747327262_oe413x880",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "978c8fe2-ab55-4c4b-bcd9-079ad163ab5c",
+    "timestamp": "2025-07-29T00:02:25.870Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "MOVE_EVENT",
+      "module": "CALENDAR",
+      "entity": "event_move",
+      "entityId": "EVENT_1753744131273_yk23zpxef"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/move-event/",
+        "query": {
+          "id": "EVENT_1753744131273_yk23zpxef"
+        },
+        "body": {
+          "state": "PENDING",
+          "eventId": "EVENT_1753744131273_yk23zpxef",
+          "timeSlots": [
+            {
+              "id": "TS_1753747330688_l0uu3rf",
+              "date": "2025-07-29",
+              "startTime": "17:00",
+              "endTime": "20:00",
+              "userIDAdding": "INDISPONIBLE",
+              "createdBy": "",
+              "modifiedBy": [
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-07-29T00:02:10.689Z",
+                  "action": "created"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-07-29T00:02:13.554Z",
+                  "action": "modified"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-07-29T00:02:18.504Z",
+                  "action": "modified"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-07-29T00:02:24.538Z",
+                  "action": "modified"
+                }
+              ]
+            },
+            {
+              "id": "TS_1753746720739_ifja85x",
+              "date": "2025-07-29",
+              "startTime": "08:00",
+              "endTime": "09:00",
+              "userIDAdding": "USER_001",
+              "createdBy": "USER_001",
+              "modifiedBy": [
+                {
+                  "userId": "USER_001",
+                  "date": "2025-07-28T23:52:00.739Z",
+                  "action": "created"
+                },
+                {
+                  "userId": "USER_001",
+                  "date": "2025-07-28T23:53:57.192Z",
+                  "action": "approved"
+                }
+              ]
+            }
+          ],
+          "reason": "",
+          "isOwnerModification": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "EVENT_1753744131273_yk23zpxef",
+            "title": "Administrateur",
+            "name": "Administrateur",
+            "description": null,
+            "timeSlots": [
+              {
+                "id": "TS_1753744131273_s8k38va",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744131273_nuc0jqz",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T12:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_yh9lsmd",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_nvoswy7",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_b54o9xh",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_brk1dw4",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244100_snky1hk",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244101_mw571to",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_3jpkr3k",
+                "startDate": "2025-07-29T09:00:00.000Z",
+                "endDate": "2025-07-29T13:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_h59b8vp",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753747345869_0hu209y",
+                "startDate": "2025-07-29T15:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "created"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753747345869_ttds5ud",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "created"
+                  }
+                ]
+              }
+            ],
+            "actuelTimeSlots": [
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              }
+            ],
+            "type": "TP",
+            "state": "PENDING",
+            "stateChanger": [
+              {
+                "userId": "USER_001",
+                "date": "2025-07-28T23:08:51.273Z",
+                "fromState": "NEW",
+                "toState": "VALIDATED",
+                "reason": "Création automatique"
+              },
+              [
+                "USER_001",
+                "2025-07-28T23:11:09.460Z",
+                "2025-07-28T23:11:35.978Z",
+                "2025-07-28T23:26:40.840Z",
+                "2025-07-28T23:31:14.496Z",
+                "2025-07-28T23:31:31.192Z",
+                "2025-07-28T23:43:00.922Z",
+                "2025-07-28T23:43:05.397Z",
+                "2025-07-28T23:43:17.718Z",
+                "2025-07-28T23:43:45.965Z",
+                "2025-07-28T23:44:04.100Z",
+                "2025-07-28T23:45:19.639Z",
+                "2025-07-28T23:46:50.170Z",
+                "2025-07-28T23:51:48.593Z",
+                "2025-07-28T23:52:00.739Z",
+                "2025-07-28T23:54:08.069Z",
+                "2025-07-28T23:54:23.121Z",
+                "2025-07-29T00:01:36.215Z",
+                "2025-07-29T00:02:25.869Z"
+              ]
+            ],
+            "class": "1ère STI2D",
+            "room": null,
+            "location": null,
+            "materials": [],
+            "chemicals": [],
+            "equipment": [],
+            "files": [],
+            "remarks": null,
+            "notes": null,
+            "createdBy": "USER_001",
+            "modifiedBy": [],
+            "createdAt": "2025-07-28T23:08:51.273Z",
+            "updatedAt": "2025-07-29T00:02:25.869Z",
+            "stateReason": ""
+          },
+          "message": "Événement modifié par le propriétaire - état changé vers PENDING",
+          "isOwnerModification": true
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-29T00:02:25.870Z"
+      },
+      "newState": "PENDING",
+      "newTimeSlotsCount": 2,
+      "isPending": false,
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747345867_03p7if9c2",
+      "path": "/api/calendrier/move-event/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "97befa05-933b-4925-94db-dc2ab7e56e5f",
+    "timestamp": "2025-07-29T00:03:23.436Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-29T00:03:23.436Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747403434_nen4gk4td",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7bad2296-9713-48d7-9b7c-af20d9c1dc5f",
+    "timestamp": "2025-07-29T00:04:58.624Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-29T00:04:58.624Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747498619_xidetoq6m",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d8596afb-ceaf-47ce-baaa-c025fa8e47b6",
+    "timestamp": "2025-07-29T00:11:05.267Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:11:05.267Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747865263_sohs8woj2",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ff8e4e4c-6193-4ec9-bf79-466d4fcda125",
+    "timestamp": "2025-07-29T00:11:19.910Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:11:19.910Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747879906_zvmnql3kc",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "2150a48a-cb15-4a78-acce-409bd64931b2",
+    "timestamp": "2025-07-29T00:11:54.452Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:11:54.452Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747914448_2o9cujb1k",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4c382382-e301-465f-98f1-5cdc1f445e8e",
+    "timestamp": "2025-07-29T00:12:01.633Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-29T00:12:01.633Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747921628_bf0zmwh1b",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "aca34423-bd61-4385-a0f1-dbd417ac5f6e",
+    "timestamp": "2025-07-29T00:12:12.721Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-29T00:12:12.721Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747932718_mzqfq5k3v",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ffbe45a1-2b81-4dc1-8251-df4af9090adf",
+    "timestamp": "2025-07-29T00:12:50.912Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 2,
+        "timestamp": "2025-07-29T00:12:50.912Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753747970910_pslbjpdli",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 2
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0c5f21e1-428f-48af-acce-847271b9a5d2",
+    "timestamp": "2025-07-29T00:14:16.342Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-29T00:14:16.342Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748056336_v9nmbu74l",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8ca4dbf3-36b0-48f4-920f-567fbe744f1e",
+    "timestamp": "2025-07-29T00:15:00.135Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-29T00:15:00.135Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748100132_acyjez1lq",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "61fe05ee-e8b4-4a12-b935-28f4a2010471",
+    "timestamp": "2025-07-29T00:15:56.458Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-29T00:15:56.458Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748156453_njddxcxa7",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1dbc786b-8d67-4446-b250-7fd2da6e151e",
+    "timestamp": "2025-07-29T00:17:09.592Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-29T00:17:09.592Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748229582_jdh3eycfy",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "29174fdb-b1d7-4e24-852a-e47b5814aea1",
+    "timestamp": "2025-07-29T00:19:12.198Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-29T00:19:12.198Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748352193_garegyv0q",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "23429a71-4ebe-4a72-93e8-10cdfee18e92",
+    "timestamp": "2025-07-29T00:19:15.240Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-29T00:19:15.240Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748355230_xu71s00f5",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "687cd26b-ab9d-4c47-bdea-46009c811f52",
+    "timestamp": "2025-07-29T00:19:26.359Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-29T00:19:26.359Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748366349_koosm6dmd",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "25213583-0260-4b93-9cdf-fa5429f052aa",
+    "timestamp": "2025-07-29T00:19:35.635Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:19:35.635Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748375631_emfw5jj28",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "64126654-21ed-4937-90e5-5d3a8473abc2",
+    "timestamp": "2025-07-29T00:19:48.044Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:19:48.044Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748388040_9bbk8qoim",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1d52713d-6e98-4e02-bc64-f79300aa4fad",
+    "timestamp": "2025-07-29T00:19:53.068Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "USER_001"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/USER_001/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "USER_001",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMINLABO",
+          "isActive": true,
+          "createdAt": "2025-01-01T00:00:00Z",
+          "updatedAt": "2025-07-28T03:19:13.717Z",
+          "siteConfig": {
+            "materialsViewMode": "list",
+            "chemicalsViewMode": "list",
+            "theme": "light",
+            "language": "fr",
+            "notifications": {
+              "email": true,
+              "push": false
+            },
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-29T00:19:53.068Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMINLABO",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748393058_gtnopqjva",
+      "path": "/api/user/USER_001/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "619e8b99-5a3c-43eb-8b8d-cb7b953021b4",
+    "timestamp": "2025-07-29T00:20:20.124Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMINLABO"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CALENDAR",
+      "entity": "event",
+      "entityId": "approve-single-timeslot"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/calendrier/approve-single-timeslot/",
+        "query": {},
+        "body": {
+          "eventId": "EVENT_1753744131273_yk23zpxef",
+          "slotId": "TS_1753747345869_0hu209y"
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Créneau approuvé. État: PENDING",
+          "event": {
+            "id": "EVENT_1753744131273_yk23zpxef",
+            "title": "Administrateur",
+            "name": "Administrateur",
+            "description": null,
+            "timeSlots": [
+              {
+                "id": "TS_1753744131273_s8k38va",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744131273_nuc0jqz",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T12:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:08:51.273Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_yh9lsmd",
+                "startDate": "2025-07-29T02:00:00.000Z",
+                "endDate": "2025-07-29T16:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753744295978_nvoswy7",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:11:35.978Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_b54o9xh",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746197718_brk1dw4",
+                "startDate": "2025-07-29T11:00:00.000Z",
+                "endDate": "2025-07-29T14:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:43:17.718Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244100_snky1hk",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746244101_mw571to",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:44:04.100Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "deleted"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_3jpkr3k",
+                "startDate": "2025-07-29T09:00:00.000Z",
+                "endDate": "2025-07-29T13:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746863121_h59b8vp",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "deleted",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:54:23.121Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "deleted"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753747345869_0hu209y",
+                "startDate": "2025-07-29T15:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "created"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753747345869_ttds5ud",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "created"
+                  }
+                ]
+              }
+            ],
+            "actuelTimeSlots": [
+              {
+                "id": "TS_1753746720739_rxpzuih",
+                "startDate": "2025-07-29T01:00:00.000Z",
+                "endDate": "2025-07-29T09:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              },
+              {
+                "id": "TS_1753746720739_ifja85x",
+                "startDate": "2025-07-29T06:00:00.000Z",
+                "endDate": "2025-07-29T07:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:52:00.739Z",
+                    "action": "created"
+                  },
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-28T23:53:57.192Z",
+                    "action": "approved"
+                  }
+                ]
+              },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              {
+                "id": "TS_1753747345869_0hu209y",
+                "startDate": "2025-07-29T15:00:00.000Z",
+                "endDate": "2025-07-29T18:00:00.000Z",
+                "status": "active",
+                "createdBy": "USER_001",
+                "modifiedBy": [
+                  {
+                    "userId": "USER_001",
+                    "date": "2025-07-29T00:02:25.869Z",
+                    "action": "created"
+                  }
+                ]
+              }
+            ],
+            "type": "TP",
+            "state": "PENDING",
+            "stateChanger": [
+              {
+                "userId": "USER_001",
+                "date": "2025-07-28T23:08:51.273Z",
+                "fromState": "NEW",
+                "toState": "VALIDATED",
+                "reason": "Création automatique"
+              },
+              [
+                "USER_001",
+                "2025-07-28T23:11:09.460Z",
+                "2025-07-28T23:11:35.978Z",
+                "2025-07-28T23:26:40.840Z",
+                "2025-07-28T23:31:14.496Z",
+                "2025-07-28T23:31:31.192Z",
+                "2025-07-28T23:43:00.922Z",
+                "2025-07-28T23:43:05.397Z",
+                "2025-07-28T23:43:17.718Z",
+                "2025-07-28T23:43:45.965Z",
+                "2025-07-28T23:44:04.100Z",
+                "2025-07-28T23:45:19.639Z",
+                "2025-07-28T23:46:50.170Z",
+                "2025-07-28T23:51:48.593Z",
+                "2025-07-28T23:52:00.739Z",
+                "2025-07-28T23:54:08.069Z",
+                "2025-07-28T23:54:23.121Z",
+                "2025-07-29T00:01:36.215Z",
+                "2025-07-29T00:02:25.869Z"
+              ]
+            ],
+            "class": "1ère STI2D",
+            "room": null,
+            "location": null,
+            "materials": [],
+            "chemicals": [],
+            "equipment": [],
+            "files": [],
+            "remarks": null,
+            "notes": null,
+            "createdBy": "USER_001",
+            "modifiedBy": [],
+            "createdAt": "2025-07-28T23:08:51.273Z",
+            "updatedAt": "2025-07-29T00:20:20.123Z",
+            "stateReason": ""
+          },
+          "allApproved": false
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-29T00:20:20.124Z"
+      },
+      "eventTitle": "Administrateur",
+      "allApproved": false,
+      "newState": "PENDING",
+      "actionType": "APPROVE_SINGLE_TIMESLOT",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753748420120_wo7y4hfub",
+      "path": "/api/calendrier/approve-single-timeslot/",
+      "method": "POST",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  }
+]

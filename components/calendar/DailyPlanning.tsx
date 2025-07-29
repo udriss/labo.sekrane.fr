@@ -228,25 +228,93 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
   // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
   const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
-    if (!actualSlots || actualSlots.length === 0) return null;
+    console.log('🔍 DEBUG findCorrespondingActualSlot:', {
+      proposedSlot: {
+        id: proposedSlot?.id,
+        startDate: proposedSlot?.startDate,
+        endDate: proposedSlot?.endDate
+      },
+      actualSlots: actualSlots?.map(slot => ({
+        id: slot?.id,
+        startDate: slot?.startDate,
+        endDate: slot?.endDate
+      }))
+    });
+    
+    if (!actualSlots || actualSlots.length === 0) {
+      console.log('❌ Pas de actualSlots disponibles');
+      return null;
+    }
     
     // Recherche d'abord par ID (cas où le créneau n'a pas été modifié)
     const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
-    if (byId) return byId;
+    if (byId) {
+      console.log('✅ Trouvé par ID:', byId);
+      return byId;
+    }
+    console.log('⚠️ Pas de correspondance par ID, recherche par proximité temporelle...');
     
     // Sinon, recherche par proximité temporelle (pour les créneaux modifiés)
     const proposedStart = new Date(proposedSlot.startDate).getTime();
     const proposedEnd = new Date(proposedSlot.endDate).getTime();
     
-    return actualSlots.find(actualSlot => {
+    const found = actualSlots.find(actualSlot => {
+      const actualStart = new Date(actualSlot.startDate).getTime();
+      const actualEnd = new Date(actualSlot.endDate).getTime();
+
+      // Tolérance de 10 minutes (600000 ms) pour considérer que c'est le même créneau
+      const tolerance = 10 * 60 * 1000;
+      const startDiff = Math.abs(proposedStart - actualStart);
+      const endDiff = Math.abs(proposedEnd - actualEnd);
+      
+      console.log('🔍 Comparaison temporelle:', {
+        actualSlot: { id: actualSlot.id, startDate: actualSlot.startDate, endDate: actualSlot.endDate },
+        startDiff: `${Math.round(startDiff / 60000)} minutes`,
+        endDiff: `${Math.round(endDiff / 60000)} minutes`,
+        tolerance: `${tolerance / 60000} minutes`,
+        matches: startDiff <= tolerance && endDiff <= tolerance
+      });
+      
+      return startDiff <= tolerance && endDiff <= tolerance;
+    });
+    
+    if (found) {
+      console.log('✅ Trouvé par proximité temporelle:', found);
+      return found;
+    }
+    
+    console.log('⚠️ Aucune correspondance exacte, recherche du créneau le plus proche...');
+    
+    // Si aucune correspondance exacte, trouver le créneau le plus proche temporellement
+    const closestSlot = actualSlots.reduce((closest, actualSlot) => {
       const actualStart = new Date(actualSlot.startDate).getTime();
       const actualEnd = new Date(actualSlot.endDate).getTime();
       
-      // Tolérance de 30 minutes (1800000 ms) pour considérer que c'est le même créneau
-      const tolerance = 30 * 60 * 1000;
-      return Math.abs(proposedStart - actualStart) <= tolerance && 
-             Math.abs(proposedEnd - actualEnd) <= tolerance;
-    });
+      const startDiff = Math.abs(proposedStart - actualStart);
+      const endDiff = Math.abs(proposedEnd - actualEnd);
+      const totalDiff = startDiff + endDiff;
+      
+      if (!closest) return { slot: actualSlot, diff: totalDiff };
+      
+      console.log('🔍 Comparaison proximité:', {
+        actualSlot: { id: actualSlot.id, startDate: actualSlot.startDate, endDate: actualSlot.endDate },
+        totalDiff: `${Math.round(totalDiff / 60000)} minutes`,
+        currentBest: `${Math.round(closest.diff / 60000)} minutes`
+      });
+      
+      return totalDiff < closest.diff ? { slot: actualSlot, diff: totalDiff } : closest;
+    }, null as { slot: any, diff: number } | null);
+    
+    if (closestSlot) {
+      console.log('✅ Créneau le plus proche trouvé:', {
+        slot: closestSlot.slot,
+        diffMinutes: `${Math.round(closestSlot.diff / 60000)} minutes`
+      });
+      return closestSlot.slot;
+    }
+    
+    console.log('❌ Aucune correspondance trouvée');
+    return null;
   };
 
   // Fonction pour vérifier si un créneau proposé est différent du créneau actuel
@@ -279,18 +347,49 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
 
   // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
   const getSlotStatus = (proposedSlot: any, event: CalendarEvent) => {
+    console.log('🎯 DEBUG getSlotStatus pour:', {
+      eventId: event.id,
+      eventTitle: event.title,
+      proposedSlot: {
+        id: proposedSlot?.id,
+        startDate: proposedSlot?.startDate,
+        endDate: proposedSlot?.endDate
+      },
+      eventActuelTimeSlots: event.actuelTimeSlots?.map(s => ({
+        id: s?.id,
+        startDate: s?.startDate,
+        endDate: s?.endDate
+      }))
+    });
+    
     const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
     
     if (!correspondingActual) {
+      console.log('❌ getSlotStatus: Aucun correspondingActual trouvé -> status = "new"');
       return 'new'; // Nouveau créneau
     }
     
-    if (correspondingActual.startDate === proposedSlot.startDate && 
-        correspondingActual.endDate === proposedSlot.endDate) {
+    // Vérifier d'abord si c'est une correspondance par ID (créneau inchangé)
+    const isExactMatch = correspondingActual.id === proposedSlot.id;
+    const isSameDate = correspondingActual.startDate === proposedSlot.startDate && 
+                      correspondingActual.endDate === proposedSlot.endDate;
+    
+    console.log('✅ getSlotStatus: correspondingActual trouvé:', {
+      correspondingActual: {
+        id: correspondingActual.id,
+        startDate: correspondingActual.startDate,
+        endDate: correspondingActual.endDate
+      },
+      isExactMatch,
+      isSameDate,
+      status: isSameDate ? 'approved' : 'pending'
+    });
+    
+    if (isSameDate) {
       return 'approved'; // Créneau validé (identique)
     }
     
-    return 'pending'; // Créneau modifié en attente
+    return 'pending'; // Créneau modifié en attente (remplace le créneau correspondingActual)
   };
 
   // useEffect pour charger les informations des utilisateurs
@@ -578,6 +677,25 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                       {/* Tableau de comparaison des créneaux */}
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot) => {
+                          console.log('🔧 DEBUG EVENT COMPLET:', {
+                            eventId: event.id,
+                            eventTitle: event.title,
+                            eventState: event.state,
+                            proposedSlotId: proposedSlot.id,
+                            proposedSlotTime: `${proposedSlot.startDate} - ${proposedSlot.endDate}`,
+                            allTimeSlots: event.timeSlots?.map(s => ({
+                              id: s.id,
+                              startDate: s.startDate,
+                              endDate: s.endDate,
+                              status: s.status
+                            })),
+                            allActuelTimeSlots: event.actuelTimeSlots?.map(s => ({
+                              id: s.id,
+                              startDate: s.startDate,
+                              endDate: s.endDate
+                            }))
+                          });
+                          
                           const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
                           const slotStatus = getSlotStatus(proposedSlot, event);
                           const slotKey = `${event.id}-${proposedSlot.id}`;
@@ -600,9 +718,14 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                                   <Typography variant="body2">
                                     {correspondingActual ? 
                                       `${format(new Date(correspondingActual.startDate), 'dd/MM/yyyy HH:mm')} - ${format(new Date(correspondingActual.endDate), 'HH:mm')}` :
-                                      'Nouveau créneau'
+                                      'Aucun créneau correspondant'
                                     }
                                   </Typography>
+                                  {correspondingActual && correspondingActual.id !== proposedSlot.id && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                      (sera remplacé)
+                                    </Typography>
+                                  )}
                                 </Grid>
                                 
                                 <Grid size={{ xs: 12, md: 4 }}>

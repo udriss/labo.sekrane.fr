@@ -22,6 +22,31 @@
               "userId": "USER_001",
               "date": "2025-07-28T23:11:35.978Z",
               "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
             }
           ]
         },
@@ -41,6 +66,31 @@
               "userId": "USER_001",
               "date": "2025-07-28T23:11:35.978Z",
               "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
             }
           ]
         },
@@ -48,13 +98,38 @@
           "id": "TS_1753744295978_yh9lsmd",
           "startDate": "2025-07-29T02:00:00.000Z",
           "endDate": "2025-07-29T16:00:00.000Z",
-          "status": "active",
+          "status": "deleted",
           "createdBy": "USER_001",
           "modifiedBy": [
             {
               "userId": "USER_001",
               "date": "2025-07-28T23:11:35.978Z",
               "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
             }
           ]
         },
@@ -62,12 +137,277 @@
           "id": "TS_1753744295978_nvoswy7",
           "startDate": "2025-07-29T11:00:00.000Z",
           "endDate": "2025-07-29T14:00:00.000Z",
-          "status": "active",
+          "status": "deleted",
           "createdBy": "USER_001",
           "modifiedBy": [
             {
               "userId": "USER_001",
               "date": "2025-07-28T23:11:35.978Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746197718_b54o9xh",
+          "startDate": "2025-07-29T01:00:00.000Z",
+          "endDate": "2025-07-29T09:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746197718_brk1dw4",
+          "startDate": "2025-07-29T11:00:00.000Z",
+          "endDate": "2025-07-29T14:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:43:17.718Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746244100_snky1hk",
+          "startDate": "2025-07-29T01:00:00.000Z",
+          "endDate": "2025-07-29T09:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746244101_mw571to",
+          "startDate": "2025-07-29T01:00:00.000Z",
+          "endDate": "2025-07-29T18:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:44:04.100Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746720739_rxpzuih",
+          "startDate": "2025-07-29T01:00:00.000Z",
+          "endDate": "2025-07-29T09:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746720739_ifja85x",
+          "startDate": "2025-07-29T06:00:00.000Z",
+          "endDate": "2025-07-29T07:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:52:00.739Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "deleted"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746863121_3jpkr3k",
+          "startDate": "2025-07-29T09:00:00.000Z",
+          "endDate": "2025-07-29T13:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753746863121_h59b8vp",
+          "startDate": "2025-07-29T06:00:00.000Z",
+          "endDate": "2025-07-29T07:00:00.000Z",
+          "status": "deleted",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-28T23:54:23.121Z",
+              "action": "created"
+            },
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "deleted"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753747345869_0hu209y",
+          "startDate": "2025-07-29T15:00:00.000Z",
+          "endDate": "2025-07-29T18:00:00.000Z",
+          "status": "active",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
+              "action": "created"
+            }
+          ]
+        },
+        {
+          "id": "TS_1753747345869_ttds5ud",
+          "startDate": "2025-07-29T06:00:00.000Z",
+          "endDate": "2025-07-29T07:00:00.000Z",
+          "status": "active",
+          "createdBy": "USER_001",
+          "modifiedBy": [
+            {
+              "userId": "USER_001",
+              "date": "2025-07-29T00:02:25.869Z",
               "action": "created"
             }
           ]
@@ -75,46 +415,46 @@
       ],
       "actuelTimeSlots": [
         {
-          "id": "TS_1753744295978_yh9lsmd",
-          "startDate": "2025-07-29T02:00:00.000Z",
-          "endDate": "2025-07-29T16:00:00.000Z",
+          "id": "TS_1753747345869_0hu209y",
+          "startDate": "2025-07-29T15:00:00.000Z",
+          "endDate": "2025-07-29T18:00:00.000Z",
           "status": "active",
           "createdBy": "USER_001",
           "modifiedBy": [
             {
               "userId": "USER_001",
-              "date": "2025-07-28T23:11:35.978Z",
+              "date": "2025-07-29T00:02:25.869Z",
               "action": "created"
             },
             {
               "userId": "USER_001",
-              "date": "2025-07-28T23:26:31.334Z",
+              "date": "2025-07-29T00:20:20.305Z",
               "action": "approved"
             }
           ]
         },
         {
-          "id": "TS_1753744295978_nvoswy7",
-          "startDate": "2025-07-29T11:00:00.000Z",
-          "endDate": "2025-07-29T14:00:00.000Z",
+          "id": "TS_1753747345869_ttds5ud",
+          "startDate": "2025-07-29T06:00:00.000Z",
+          "endDate": "2025-07-29T07:00:00.000Z",
           "status": "active",
           "createdBy": "USER_001",
           "modifiedBy": [
             {
               "userId": "USER_001",
-              "date": "2025-07-28T23:11:35.978Z",
+              "date": "2025-07-29T00:02:25.869Z",
               "action": "created"
             },
             {
               "userId": "USER_001",
-              "date": "2025-07-28T23:26:31.334Z",
+              "date": "2025-07-29T00:20:20.305Z",
               "action": "approved"
             }
           ]
         }
       ],
       "type": "TP",
-      "state": "MOVED",
+      "state": "VALIDATED",
       "stateChanger": [
         {
           "userId": "USER_001",
@@ -129,7 +469,20 @@
           "2025-07-28T23:11:35.978Z",
           "2025-07-28T23:26:40.840Z",
           "2025-07-28T23:31:14.496Z",
-          "2025-07-28T23:31:31.192Z"
+          "2025-07-28T23:31:31.192Z",
+          "2025-07-28T23:43:00.922Z",
+          "2025-07-28T23:43:05.397Z",
+          "2025-07-28T23:43:17.718Z",
+          "2025-07-28T23:43:45.965Z",
+          "2025-07-28T23:44:04.100Z",
+          "2025-07-28T23:45:19.639Z",
+          "2025-07-28T23:46:50.170Z",
+          "2025-07-28T23:51:48.593Z",
+          "2025-07-28T23:52:00.739Z",
+          "2025-07-28T23:54:08.069Z",
+          "2025-07-28T23:54:23.121Z",
+          "2025-07-29T00:01:36.215Z",
+          "2025-07-29T00:02:25.869Z"
         ]
       ],
       "class": "1ère STI2D",
@@ -144,7 +497,7 @@
       "createdBy": "USER_001",
       "modifiedBy": [],
       "createdAt": "2025-07-28T23:08:51.273Z",
-      "updatedAt": "2025-07-28T23:31:31.192Z",
+      "updatedAt": "2025-07-29T00:20:20.305Z",
       "stateReason": ""
     }
   ]

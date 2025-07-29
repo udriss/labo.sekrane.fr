@@ -342,7 +342,9 @@ const isOutsideBusinessHours = useMemo(() => {
                     value={formData.startDate ? new Date(formData.startDate) : null}
                     onChange={(newValue) => {
                       if (newValue) {
-                        const dateStr = newValue.toISOString().split('T')[0]
+                        // Correction du problème de timezone
+                        const correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                        const dateStr = correctedDate.toISOString().split('T')[0]
                         handleFormDataChange('startDate', dateStr)
                         // Si on n'est pas en mode multi-jours ou si endDate est vide, on met à jour endDate aussi
                         if (!isMultiDay || !formData.endDate) {
@@ -372,10 +374,12 @@ const isOutsideBusinessHours = useMemo(() => {
                       value={formData.endDate ? new Date(formData.endDate) : null}
                       onChange={(newValue) => {
                         if (newValue) {
-                          handleFormDataChange('endDate', newValue.toISOString().split('T')[0])
+                          // Correction du problème de timezone
+                          const correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
+                          handleFormDataChange('endDate', correctedDate.toISOString().split('T')[0])
                         }
                       }}
-                                            minDate={formData.startDate ? new Date(formData.startDate) : undefined}
+                      minDate={formData.startDate ? new Date(formData.startDate) : undefined}
                     slotProps={{
                       textField: { 
                         fullWidth: true,

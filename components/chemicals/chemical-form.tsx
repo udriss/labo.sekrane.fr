@@ -499,7 +499,15 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
             <DatePicker
               label="Date d'achat (optionnelle)"
               value={formData.purchaseDate}
-              onChange={(date) => handleChange("purchaseDate")(date)}
+              onChange={(date) => {
+                // Correction du problème de timezone
+                if (date) {
+                  const correctedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)
+                  handleChange("purchaseDate")(correctedDate)
+                } else {
+                  handleChange("purchaseDate")(null)
+                }
+              }}
               openTo="day"
               slotProps={{
                 textField: {
@@ -507,6 +515,12 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
                   placeholder: "Cliquez pour sélectionner une date",
                   InputProps: {
                     readOnly: true,
+                  },
+                  onClick: (e: any) => {
+                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                      const button = e.currentTarget.querySelector('button')
+                      if (button) button.click()
+                    }
                   }
                 },
                 actionBar: {
@@ -517,18 +531,29 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
                   onClear: () => handleChange("purchaseDate")(null)
                 }
               }}
+              
             />
             <DatePicker
               label="Date d'expiration"
               value={formData.expirationDate}
-              onChange={(date) => handleChange("expirationDate")(date)}
+              onChange={(date) => {
+                // Correction du problème de timezone
+                if (date) {
+                  const correctedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)
+                  handleChange("expirationDate")(correctedDate)
+                } else {
+                  handleChange("expirationDate")(null)
+                }
+              }}
               openTo="day"
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  onClick: (e) => {
-                    // Force l'ouverture du calendrier
-                    e.currentTarget.focus();
+                  onClick: (e: any) => {
+                    if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
+                      const button = e.currentTarget.querySelector('button')
+                      if (button) button.click()
+                    }
                   }
                 },
                 popper: {
