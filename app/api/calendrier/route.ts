@@ -221,7 +221,7 @@ export const POST = withAudit(
     // Enrichir le nouvel événement avec les données de stock
     const enrichedEvent = (await enrichEventsWithChemicalData([newEvent]))[0];
 
-    console.log(`Événement créé avec ${formattedTimeSlots.length} créneau(x) par ${session?.user?.email || 'utilisateur inconnu'}`);
+    
 
     return NextResponse.json(enrichedEvent, { status: 201 });
   },
@@ -291,7 +291,7 @@ export const PUT = withAudit(
       ...eventUpdates 
     } = body
     
-    console.log('TimeSlots reçus:', timeSlots);
+    
     
     // Gérer le tableau modifiedBy
     const currentModifiedBy: Array<[string, ...string[]]> = event.modifiedBy || []
@@ -391,7 +391,7 @@ export const PUT = withAudit(
         }));
       }
       
-      console.log('TimeSlots formatés:', finalTimeSlots);
+      
     }
 
     // Préparer et sauvegarder les nouveaux fichiers

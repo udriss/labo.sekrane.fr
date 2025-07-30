@@ -98,7 +98,7 @@ export const equipmentService = {
       notes: formData.notes || null
     };
 
-    console.log("Données à soumettre:", dataToSubmit);
+    
 
     const response = await fetch("/api/equipement", {
       method: "POST",

@@ -3,12 +3,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { promises as fs } from 'fs';
-import path from 'path';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import bcrypt from 'bcryptjs';
 import { withAudit } from '@/lib/api/with-audit';
 
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
 
 // Définir les types
 interface UserData {
@@ -46,13 +45,11 @@ export const GET = withAudit(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    const parsed: UsersFile = JSON.parse(data);
-    const users = parsed.users || [];
 
+    // Récupérer tous les utilisateurs actifs depuis la base SQL
+    const users = await UserServiceSQL.getAllActive();
     // Retourner les utilisateurs sans les mots de passe
     const usersWithoutPasswords = users.map(({ password, ...user }) => user);
-
     return NextResponse.json(usersWithoutPasswords);
 
   } catch (error) {
@@ -89,50 +86,29 @@ export const POST = withAudit(
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    const parsed: UsersFile = JSON.parse(data);
-    const users = parsed.users || [];
 
     // Vérifier si l'email existe déjà
-    if (users.some((u) => u.email === newUserData.email)) {
+    const existing = await UserServiceSQL.findByEmail(newUserData.email);
+    if (existing) {
       return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 409 });
     }
 
     // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(newUserData.password, 12);
 
-    // Créer le nouvel utilisateur avec le type approprié
-    const newUser: UserData = {
-      id: `USER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Créer le nouvel utilisateur en base SQL
+    const newUser = await UserServiceSQL.create({
       email: newUserData.email,
       password: hashedPassword,
       name: newUserData.name,
       role: newUserData.role,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      associatedClasses: [], // Initialiser avec un tableau vide
-      customClasses: [], // Initialiser avec un tableau vide
-      siteConfig: {
-        materialsViewMode: 'cards',
-        chemicalsViewMode: 'cards'
-      }
-    };
+      associatedClasses: newUserData.associatedClasses || [],
+      customClasses: newUserData.customClasses || []
+    });
 
-    // Ajouter les classes associées si fournies
-    if (newUserData.associatedClasses && Array.isArray(newUserData.associatedClasses)) {
-      newUser.associatedClasses = newUserData.associatedClasses;
+    if (!newUser) {
+      return NextResponse.json({ error: "Erreur lors de la création de l'utilisateur" }, { status: 500 });
     }
-
-    // Ajouter les classes personnalisées si fournies
-    if (newUserData.customClasses && Array.isArray(newUserData.customClasses)) {
-      newUser.customClasses = newUserData.customClasses;
-    }
-
-    users.push(newUser);
-    await fs.writeFile(USERS_FILE, JSON.stringify({ users }, null, 2));
-
-    // Retourner sans le mot de passe
     const { password, ...userWithoutPassword } = newUser;
     return NextResponse.json(userWithoutPassword, { status: 201 });
 

@@ -4,10 +4,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { promises as fs } from 'fs';
-import path from 'path';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,14 +21,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "userIds doit être un tableau" }, { status: 400 });
     }
 
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    const users = parsed.users || [];
 
-    // Créer un map pour un accès rapide
+    // Récupérer les utilisateurs SQL par IDs
+    const users = await Promise.all(userIds.map((id: string) => UserServiceSQL.findById(id)));
     const usersMap = new Map();
-    users.forEach((user: any) => {
-      if (userIds.includes(user.id)) {
+    users.forEach((user) => {
+      if (user) {
         usersMap.set(user.id, {
           id: user.id,
           name: user.name,
@@ -37,7 +34,6 @@ export async function POST(request: NextRequest) {
         });
       }
     });
-
     return NextResponse.json(Object.fromEntries(usersMap));
 
   } catch (error) {

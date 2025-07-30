@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { ExtendedNotification, NotificationStats, NotificationFilter } from '@/types/notifications';
+import { useNotificationSSE } from './useNotificationSSE';
 
 interface UseNotificationsResult {
   notifications: ExtendedNotification[];
@@ -16,6 +17,9 @@ interface UseNotificationsResult {
   markAllAsRead: () => Promise<boolean>;
   refresh: () => Promise<void>;
   loadMore: () => Promise<void>;
+  // SSE Properties
+  isSSEConnected: boolean;
+  reconnectSSE: () => void;
 }
 
 interface NotificationsResponse {
@@ -161,7 +165,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
       if (mergedFilters.entityType) params.append('entityType', mergedFilters.entityType);
       if (mergedFilters.entityId) params.append('entityId', mergedFilters.entityId);
 
-      console.log('🔍 [Hook] Récupération notifications avec filtres:', mergedFilters);
+      
 
       const response = await fetch(`/api/notifications?${params.toString()}`, {
         signal: abortControllerRef.current.signal
@@ -206,7 +210,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('🔍 [Hook] Requête notifications annulée');
+        
         return;
       }
       console.error('❌ [Hook] Erreur lors de la récupération des notifications:', err);
@@ -236,7 +240,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
 
-      console.log('📊 [Hook] Récupération stats avec filtres:', filters);
+      
 
       const response = await fetch(`/api/notifications/stats?${params.toString()}`);
       
@@ -247,7 +251,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
 
       const data: StatsResponse = await response.json();
       
-      console.log('📊 [Hook] Réponse stats brute:', data);
+      
 
       if (!data.success) {
         const errorMessage = data.error || data.details || 'Erreur lors de la récupération des statistiques';
@@ -266,7 +270,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
 
       // Valider et nettoyer les stats
       const validatedStats = validateStats(data.stats);
-      console.log('✅ [Hook] Stats validées:', validatedStats);
+      
       setStats(validatedStats);
 
     } catch (err) {
@@ -293,7 +297,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
     }
 
     try {
-      console.log('👁️ [Hook] Marquage comme lu:', notificationId);
+      
 
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
@@ -329,7 +333,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
           unread: Math.max(0, prev.unread - 1)
         } : null);
 
-        console.log('✅ [Hook] Notification marquée comme lue:', notificationId);
+        
         return true;
       }
 
@@ -348,7 +352,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
     }
 
     try {
-      console.log('👁️ [Hook] Marquage de toutes comme lues');
+      
 
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
@@ -376,7 +380,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
         // Mettre à jour les stats
         setStats(prev => prev ? { ...prev, unread: 0 } : null);
 
-        console.log('✅ [Hook] Toutes les notifications marquées comme lues');
+        
         return true;
       }
 
@@ -389,7 +393,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
 
   // Rafraîchir les données
   const refresh = useCallback(async () => {
-    console.log('🔄 [Hook] Rafraîchissement des notifications');
+    
     await Promise.all([
       fetchNotifications({ ...currentFilters, offset: 0 }),
       fetchStats()
@@ -402,7 +406,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
       return;
     }
 
-    console.log('📄 [Hook] Chargement de plus de notifications');
+    
     await fetchNotifications({
       ...currentFilters,
       offset: notifications.length
@@ -412,7 +416,7 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
   // Chargement initial - SEULEMENT une fois quand l'utilisateur est authentifié
   useEffect(() => {
     if (status === 'authenticated' && session?.user && !initialLoadDoneRef.current) {
-      console.log('🚀 [Hook] Chargement initial des notifications');
+      
       initialLoadDoneRef.current = true;
       
       // Délai pour éviter les appels simultanés
@@ -421,8 +425,61 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
       }, 100);
 
       return () => clearTimeout(timeoutId);
+      
     }
   }, [status, session?.user]); // Dépendances minimales, pas de refresh
+
+  // Intégration du système SSE pour les notifications en temps réel
+  const { isConnected, reconnect } = useNotificationSSE({
+    onNotification: useCallback((newNotification: ExtendedNotification) => {
+      console.log('🔔 [Hook] Nouvelle notification reçue via SSE:', newNotification);
+      
+      // Valider et nettoyer la notification
+      const cleanNotification = sanitizeNotifications([newNotification])[0];
+      if (!cleanNotification) {
+        console.warn('❌ [Hook] Notification SSE invalide ignorée');
+        return;
+      }
+
+      // Ajouter la nouvelle notification en tête de liste
+      setNotifications(prev => {
+        // Éviter les doublons
+        const exists = prev.some(n => n.id === cleanNotification.id);
+        if (exists) {
+          console.log('🔄 [Hook] Notification déjà présente, ignorée');
+          return prev;
+        }
+        
+        return [cleanNotification, ...prev];
+      });
+
+      // Mettre à jour les stats
+      setStats(prev => prev ? {
+        ...prev,
+        total: prev.total + 1,
+        unread: prev.unread + (cleanNotification.isRead ? 0 : 1)
+      } : null);
+
+      // Mettre à jour le total
+      setTotal(prev => prev + 1);
+      
+    }, []),
+    
+    onConnected: useCallback(() => {
+      console.log('✅ [Hook] Connexion SSE établie');
+    }, []),
+    
+    onError: useCallback((error: string) => {
+      console.error('❌ [Hook] Erreur SSE:', error);
+      setError(`Erreur notifications temps réel: ${error}`);
+    }, []),
+    
+    onReconnect: useCallback(() => {
+      console.log('🔄 [Hook] Reconnexion SSE en cours...');
+      // Optionnel : rafraîchir les données lors de la reconnexion
+      refresh();
+    }, [])
+  });
 
   // Nettoyage lors du démontage
   useEffect(() => {
@@ -445,6 +502,9 @@ export function useNotifications(initialFilters: NotificationFilter = {}): UseNo
     markAsRead,
     markAllAsRead,
     refresh,
-    loadMore
+    loadMore,
+    // Propriétés SSE
+    isSSEConnected: isConnected,
+    reconnectSSE: reconnect
   };
 }

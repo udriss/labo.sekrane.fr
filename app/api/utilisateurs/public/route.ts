@@ -3,10 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { promises as fs } from 'fs';
-import path from 'path';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,16 +14,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    const parsed = JSON.parse(data);
-    const users = parsed.users || [];
 
+    // Récupérer tous les utilisateurs actifs depuis la base SQL
+    const users = await UserServiceSQL.getAllActive();
     // Retourner seulement l'id et le nom des utilisateurs (info publique)
     const publicUsers = users.map((user: any) => ({
       id: user.id,
       name: user.name
     }));
-
     return NextResponse.json({ users: publicUsers });
 
   } catch (error) {

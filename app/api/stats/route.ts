@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
+
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import path from 'path'
 
 const EQUIPMENT_INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
 const NOTEBOOK_FILE = path.join(process.cwd(), 'data', 'notebook.json')
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json')
+// Chemins des fichiers JSON                                                                                                    
 const CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json')
 
@@ -26,7 +28,7 @@ async function getStatsData() {
     const [equipment, notebook, users, chemicals, orders] = await Promise.all([
       readJsonFile(EQUIPMENT_INVENTORY_FILE, { equipment: [], stats: { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 } }),
       readJsonFile(NOTEBOOK_FILE, { experiments: [] }),
-      readJsonFile(USERS_FILE, { users: [] }),
+      Promise.resolve({ users: await UserServiceSQL.getAllActive() }),
       readJsonFile(CHEMICALS_FILE, { chemicals: [] }),
       readJsonFile(ORDERS_FILE, { orders: [] })
     ])
@@ -51,7 +53,7 @@ async function getStatsData() {
       inProgress: notebook.experiments?.filter((exp: any) => exp.status === 'IN_PROGRESS').length || 0
     }
 
-    // Calculer les statistiques d'utilisateurs
+    // Calculer les statistiques d'utilisateurs (SQL)
     const userStats = {
       total: users.users?.length || 0,
       active: users.users?.filter((user: any) => user.isActive !== false).length || 0,

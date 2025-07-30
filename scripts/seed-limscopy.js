@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const chemicals = await prisma.chemical.findMany();
-  console.log(chemicals);
+  
 }
 
 main()

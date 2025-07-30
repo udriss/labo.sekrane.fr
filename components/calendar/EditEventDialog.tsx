@@ -92,7 +92,7 @@ export function EditEventDialog({
     modifiedBy?: Array<{
       userId: string;
       date: string;
-      action: 'created' | 'modified' | 'deleted';
+      action: 'created' | 'modified' | 'deleted' | 'invalidated';
     }>;
   }>>([])
   

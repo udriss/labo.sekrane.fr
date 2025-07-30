@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import path from 'path';
 import si from 'systeminformation';
 
@@ -30,56 +31,36 @@ export async function GET() {
     const storagePercentage = Math.round(mainDisk.use);
     const storage = `${(mainDisk.used / 1024 / 1024 / 1024).toFixed(1)} GB / ${(mainDisk.size / 1024 / 1024 / 1024).toFixed(1)} GB`;
 
-    // État de la base de données
+    // État de la base de données (SQL)
     let dbStatus = 'Connectée';
     let dbResponseTime = 0;
     try {
       const startTime = Date.now();
-      // Vérifier l'accès aux fichiers JSON
-      await fs.access(path.join(process.cwd(), 'data', 'users.json'));
+      await UserServiceSQL.getAllActive();
       dbResponseTime = Date.now() - startTime;
     } catch (error) {
       dbStatus = 'Erreur';
     }
 
-    // Compter les utilisateurs actifs depuis le fichier de sessions
+    // Compter les utilisateurs actifs (SQL)
     let activeUsers = 0;
     let totalUsers = 0;
     let activeUsersList: string[] = [];
-
     try {
-      // Lire le nombre total d'utilisateurs
-      const usersPath = path.join(process.cwd(), 'data', 'users.json');
-      const usersData = await fs.readFile(usersPath, 'utf-8');
-      const { users } = JSON.parse(usersData);
+      const users = await UserServiceSQL.getAllActive();
       totalUsers = users.length;
-
-      // Lire les sessions actives
-      const sessionsPath = path.join(process.cwd(), 'data', 'active-sessions.json');
-      try {
-        const sessionsData = await fs.readFile(sessionsPath, 'utf-8');
-        const sessions = JSON.parse(sessionsData);
-        
-        // Nettoyer les sessions expirées
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-        const activeSessions = Object.entries(sessions).filter(([_, data]: [string, any]) => {
-          return new Date(data.lastActivity) > thirtyMinutesAgo;
-        });
-        
-        activeUsers = activeSessions.length;
-        activeUsersList = activeSessions.map(([email]) => email);
-      } catch {
-        // Pas de fichier de sessions, utiliser la méthode de fallback
-        const now = new Date();
-        activeUsers = users.filter((user: any) => {
-          if (!user.isActive) return false;
-          const lastUpdate = new Date(user.updatedAt);
-          const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-          return diffMinutes < 30;
-        }).length;
-      }
+      // Utilisateurs actifs = ceux dont updatedAt < 30min
+      const now = new Date();
+      const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+      const active = users.filter((user: any) => {
+        if (!user.isActive) return false;
+        const lastUpdate = new Date(user.updatedAt);
+        return lastUpdate > thirtyMinutesAgo;
+      });
+      activeUsers = active.length;
+      activeUsersList = active.map((u: any) => u.email).slice(0, 5);
     } catch (error) {
-      console.error('Erreur comptage utilisateurs:', error);
+      console.error('Erreur comptage utilisateurs (SQL):', error);
     }
 
     // Version de l'application

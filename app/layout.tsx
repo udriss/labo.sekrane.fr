@@ -183,6 +183,8 @@ function AppSettingsProvider({ children }: { children: React.ReactNode }) {
                 top: '64px', // Hauteur de la navbar
                 height: 'calc(100vh - 64px)',
                 borderRight: `1px solid ${currentTheme.palette.divider}`,
+                position: 'fixed',
+                zIndex: currentTheme.zIndex.drawer,
               },
             }}
             ModalProps={{
@@ -197,11 +199,12 @@ function AppSettingsProvider({ children }: { children: React.ReactNode }) {
             component="main"
             sx={{
               flexGrow: 1,
-              transition: currentTheme.transitions.create(['margin'], {
+              width: '100%',
+              transition: currentTheme.transitions.create(['padding'], {
                 easing: currentTheme.transitions.easing.sharp,
                 duration: currentTheme.transitions.duration.leavingScreen,
               }),
-              marginLeft: isMobile ? 0 : (sidebarOpen ? 0 : `-${DRAWER_WIDTH}px`),
+              paddingLeft: isMobile ? 0 : (sidebarOpen ? `${DRAWER_WIDTH}px` : 0),
               marginTop: '64px', // Hauteur de la navbar
               minHeight: 'calc(100vh - 64px)',
               bgcolor: 'background.default',
@@ -222,7 +225,7 @@ function NotificationWrapper({ children }: { children: React.ReactNode }) {
   const userId = (session?.user as any)?.id ?? '';
 
   return (
-    <NotificationProvider userId={userId} showToasts={true}>
+    <NotificationProvider showToasts={true}>
       {children}
     </NotificationProvider>
   );
@@ -231,8 +234,8 @@ function NotificationWrapper({ children }: { children: React.ReactNode }) {
 // Déterminer la page actuelle
 const getCurrentPageInfo = (path: string) => {
   const normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
-  
-  if (normalizedPath === '' || normalizedPath === '/') return { name: 'Accueil', showLayout: false };
+
+  if (normalizedPath === '' || normalizedPath === '/') return { name: 'Accueil', showLayout: true }; // Modifier showLayout à true
   if (normalizedPath.startsWith('/auth')) return { name: 'Auth', showLayout: false };
   if (normalizedPath.startsWith('/admin')) return { name: 'Admin', showLayout: true, isAdmin: true };
   if (normalizedPath === '/chemicals') return { name: 'Réactifs chimiques', showLayout: true };
@@ -241,7 +244,7 @@ const getCurrentPageInfo = (path: string) => {
   if (normalizedPath === '/calendrier') return { name: 'Calendrier', showLayout: true };
   if (normalizedPath === '/notifications') return { name: 'Notifications', showLayout: true };
   if (normalizedPath === '/dashboard') return { name: 'Tableau de bord', showLayout: true };
-  
+
   return { name: 'Page', showLayout: true };
 };
 
@@ -273,7 +276,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         
-        <title>LIMS - {pageInfo.name}</title>
+        <title>{`LIMS - ${pageInfo.name}`}</title>
         
         {/* Données structurées */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{

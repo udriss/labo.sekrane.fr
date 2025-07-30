@@ -1,9 +1,129 @@
-// /app/api/notifications/debug/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { NotificationsFileDebugService } from '@/lib/debug/notifications-file-debug';
+import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
+import { query } from '@/lib/db';
+
+// /app/api/notifications/debug/route.ts
+
+
+// Service de debug pour la base de données
+class DatabaseNotificationDebugService {
+  static async debugDatabaseConnection() {
+    try {
+      const [testQuery] = await query<{ result: number }[]>('SELECT 1 as result');
+      const [notificationCount] = await query<{ count: number }[]>('SELECT COUNT(*) as count FROM notifications');
+      const [readStatusCount] = await query<{ count: number }[]>('SELECT COUNT(*) as count FROM notification_read_status');
+
+      return {
+        success: true,
+        connection: 'OK',
+        tables: {
+          notifications: notificationCount.count,
+          notification_read_status: readStatusCount.count,
+        },
+        testQuery: testQuery.result === 1,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  static async debugUserNotifications(userId: string, userRole: string, userEmail: string) {
+    try {
+      // 1. Tester la récupération directe
+      const result = await DatabaseNotificationService.getNotifications(userId, {
+        limit: 10,
+        offset: 0,
+        userRole,
+        userEmail,
+      });
+
+      // 2. Compter les notifications par rôle
+      const [roleCount] = await query<{ count: number }[]>(
+        `SELECT COUNT(*) as count FROM notifications WHERE JSON_SEARCH(target_roles, 'one', ?) IS NOT NULL`,
+        [userRole]
+      );
+
+      // 3. Statut de lecture
+      const [readStatus] = await query<{ count: number }[]>(
+        `SELECT COUNT(*) as count FROM notification_read_status WHERE user_id = ? AND is_read = 1`,
+        [userId]
+      );
+
+      return {
+        success: true,
+        userId,
+        userRole,
+        userEmail,
+        notifications: result.notifications.slice(0, 3), // Premiers résultats seulement
+        totalNotifications: result.total,
+        notificationsForRole: roleCount.count,
+        readNotifications: readStatus.count,
+        rawQuery: `JSON_SEARCH(target_roles, 'one', '${userRole}') IS NOT NULL`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  static async debugNotificationStructure() {
+    try {
+      // Récupérer quelques notifications pour analyser la structure
+      const samples = await query(`SELECT * FROM notifications LIMIT 3`);
+
+      // Vérifier les types de target_roles
+      const roleTypes = await query(
+        `SELECT target_roles, JSON_TYPE(target_roles) as role_type, JSON_VALID(target_roles) as is_valid_json
+         FROM notifications WHERE target_roles IS NOT NULL LIMIT 5`
+      );
+
+      return {
+        success: true,
+        sampleNotifications: samples,
+        roleAnalysis: roleTypes,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  static async testNotificationCreation(userId: string, userRole: string) {
+    try {
+      // Créer une notification de test
+      const notificationId = await DatabaseNotificationService.createNotification(
+        [userRole],
+        'debug-test',
+        'debug_action',
+        'Notification créée par le débogueur',
+        'Cette notification a été créée automatiquement pour tester le système',
+        'low',
+        'debug',
+        `debug-${Date.now()}`,
+        userId
+      );
+      return {
+        success: true,
+        notificationId,
+        message: 'Notification de test créée avec succès',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,113 +132,95 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
-
     const user = session.user as any;
     const { searchParams } = new URL(request.url);
-    
+
     // Paramètres de test
     const testUserId = searchParams.get('testUserId') || user.id;
+    const testUserRole = searchParams.get('testUserRole') || user.role;
     const testUserEmail = searchParams.get('testUserEmail') || user.email;
     const action = searchParams.get('action') || 'full';
 
-    console.log('🔍 [API DEBUG] Début du test de débogage notifications');
-    console.log('🔍 [API DEBUG] User session:', { id: user.id, email: user.email, role: user.role });
-    console.log('🔍 [API DEBUG] Test params:', { testUserId, testUserEmail, action });
+    
+    
+    
 
     switch (action) {
-      case 'file-access':
-        // Test basique d'accès au fichier
-        const fileResult = await NotificationsFileDebugService.debugFileAccess();
+      case 'database-connection': {
+        const dbResult = await DatabaseNotificationDebugService.debugDatabaseConnection();
         return NextResponse.json({
-          action: 'file-access',
-          result: fileResult,
-          timestamp: new Date().toISOString()
+          action: 'database-connection',
+          result: dbResult,
+          timestamp: new Date().toISOString(),
         });
-
-      case 'user-filter':
-        // Test de filtrage pour un utilisateur spécifique
-        const userResult = await NotificationsFileDebugService.debugFileAccess(testUserId, testUserEmail);
-        return NextResponse.json({
-          action: 'user-filter',
-          testParams: { testUserId, testUserEmail },
-          result: userResult,
-          timestamp: new Date().toISOString()
-        });
-
-      case 'user-formats':
-        // Test des différents formats d'userId
-        const formatsResult = await NotificationsFileDebugService.testUserIdFormats(testUserId, testUserEmail);
-        return NextResponse.json({
-          action: 'user-formats',
-          testParams: { testUserId, testUserEmail },
-          result: formatsResult,
-          timestamp: new Date().toISOString()
-        });
-
-      case 'get-notifications':
-        // Test de récupération des notifications
-        const notifications = await NotificationsFileDebugService.getNotificationsForUser(
-          testUserId, 
-          testUserEmail,
-          parseInt(searchParams.get('limit') || '20'),
-          parseInt(searchParams.get('offset') || '0')
+      }
+      case 'user-notifications': {
+        const userResult = await DatabaseNotificationDebugService.debugUserNotifications(
+          testUserId,
+          testUserRole,
+          testUserEmail
         );
         return NextResponse.json({
-          action: 'get-notifications',
-          testParams: { testUserId, testUserEmail },
-          result: {
-            count: notifications.length,
-            notifications
-          },
-          timestamp: new Date().toISOString()
+          action: 'user-notifications',
+          testParams: { testUserId, testUserEmail, testUserRole },
+          result: userResult,
+          timestamp: new Date().toISOString(),
         });
-
-      case 'get-stats':
-        // Test de récupération des statistiques
-        const stats = await NotificationsFileDebugService.getStatsForUser(testUserId, testUserEmail);
+      }
+      case 'notification-structure': {
+        const structureResult = await DatabaseNotificationDebugService.debugNotificationStructure();
         return NextResponse.json({
-          action: 'get-stats',
-          testParams: { testUserId, testUserEmail },
-          result: { stats },
-          timestamp: new Date().toISOString()
+          action: 'notification-structure',
+          result: structureResult,
+          timestamp: new Date().toISOString(),
         });
-
+      }
+      case 'create-test': {
+        const createResult = await DatabaseNotificationDebugService.testNotificationCreation(
+          testUserId,
+          testUserRole
+        );
+        return NextResponse.json({
+          action: 'create-test',
+          testParams: { testUserId, testUserRole },
+          result: createResult,
+          timestamp: new Date().toISOString(),
+        });
+      }
       case 'full':
-      default:
-        // Test complet
-        const fullResult = await NotificationsFileDebugService.debugFileAccess(testUserId, testUserEmail);
-        const formatsTest = await NotificationsFileDebugService.testUserIdFormats(testUserId, testUserEmail);
-        const notificationsTest = await NotificationsFileDebugService.getNotificationsForUser(testUserId, testUserEmail, 5);
-        const statsTest = await NotificationsFileDebugService.getStatsForUser(testUserId, testUserEmail);
+      default: {
+        const fullResults = {
+          database: await DatabaseNotificationDebugService.debugDatabaseConnection(),
+          userNotifications: await DatabaseNotificationDebugService.debugUserNotifications(
+            testUserId,
+            testUserRole,
+            testUserEmail
+          ),
+          structure: await DatabaseNotificationDebugService.debugNotificationStructure(),
+        };
 
         return NextResponse.json({
           action: 'full',
-          testParams: { testUserId, testUserEmail },
-          results: {
-            fileAccess: fullResult,
-            userFormats: formatsTest,
-            notifications: {
-              count: notificationsTest.length,
-              data: notificationsTest
-            },
-            stats: statsTest
-          },
+          testParams: { testUserId, testUserEmail, testUserRole },
+          results: fullResults,
           summary: {
-            fileAccessible: fullResult.success,
-            hasNotificationsForUser: (fullResult.stats?.notificationsForUser || 0) > 0,
-            totalNotifications: fullResult.stats?.totalNotifications || 0,
-            userNotifications: fullResult.stats?.notificationsForUser || 0
+            databaseOK: fullResults.database.success,
+            userNotificationsFound: fullResults.userNotifications.success,
+            structureValid: fullResults.structure.success,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
+      }
     }
-
   } catch (error) {
     console.error('🔍 [API DEBUG] Erreur:', error);
-    return NextResponse.json({
-      error: 'Erreur lors du débogage',
-      details: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Erreur lors du débogage',
+        details: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }

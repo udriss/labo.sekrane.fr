@@ -696,7 +696,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 useEffect(() => {
   const fetchUsersAndPrepareTimeline = async () => {
     if (!event) return
-    console.log('Récupération des utilisateurs pour la timeline de l\'événement:', event.id)
+    
 
     setLoadingUsers(true)
     try {

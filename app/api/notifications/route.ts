@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { RoleBasedNotificationService } from '@/lib/notifications/role-based-notification-service';
+import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
 import { NotificationFilter } from '@/types/notifications';
+import { sendNotificationToUser } from './stream/route';
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,22 +63,16 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('entityId')) {
       filters.entityId = searchParams.get('entityId')!;
     }
-
-    console.log('📧 [API] Récupération notifications basées sur les rôles pour:', {
+    
+    console.log('📧 [API] Récupération notifications depuis la base de données pour:', {
       userId: user.id,
       userEmail: user.email,
       userRole: user.role,
       filters
     });
 
-    // Récupérer les notifications avec le service basé sur les rôles
-    const result = await RoleBasedNotificationService.getNotifications(user.id, filters);
-
-    console.log('📧 [API] Résultat:', {
-      count: result.notifications.length,
-      total: result.total,
-      userRole: user.role
-    });
+    // Récupérer les notifications avec le service de base de données
+    const result = await DatabaseNotificationService.getNotifications(user.id, filters);
 
     return NextResponse.json({
       success: true,
@@ -127,7 +122,7 @@ export async function POST(request: NextRequest) {
       specificUsers
     } = body;
 
-    console.log('📧 [API] Création d\'une notification:', {
+    console.log('📧 [API] Création de notification:', {
       targetRoles,
       module,
       actionType,
@@ -151,8 +146,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que l'utilisateur a les permissions pour créer des notifications
-    // Pour l'instant, on autorise tous les utilisateurs connectés
-    // Vous pouvez ajouter des vérifications de rôle ici si nécessaire
     if (!user.role || !['ADMIN', 'ADMINLABO', 'TEACHER'].includes(user.role)) {
       return NextResponse.json(
         { error: 'Permissions insuffisantes pour créer une notification' },
@@ -160,8 +153,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Créer la notification avec le service basé sur les rôles
-    const notification = await RoleBasedNotificationService.createNotification(
+    // Créer la notification avec le service de base de données
+    const notificationId = await DatabaseNotificationService.createNotification(
       targetRoles,
       module,
       actionType,
@@ -174,18 +167,47 @@ export async function POST(request: NextRequest) {
       specificUsers
     );
 
-    if (!notification) {
+    if (!notificationId) {
       return NextResponse.json(
         { error: 'Erreur lors de la création de la notification' },
         { status: 500 }
       );
     }
 
-    console.log('📧 [API] Notification créée avec succès:', notification.id);
+    // Récupérer la notification créée pour l'envoyer via SSE
+    try {
+      const createdNotifications = await DatabaseNotificationService.getNotifications(
+        user.id,
+        {
+          limit: 1,
+          userRole: user.role,
+          userEmail: user.email
+        }
+      );
+
+      if (createdNotifications.notifications.length > 0) {
+        const newNotification = createdNotifications.notifications[0];
+        
+        // Envoyer la notification via SSE aux utilisateurs concernés
+        if (specificUsers && specificUsers.length > 0) {
+          // Envoyer aux utilisateurs spécifiques
+          specificUsers.forEach((userId: string) => {
+            sendNotificationToUser(userId, newNotification);
+          });
+        } else {
+          // Pour les notifications par rôle, on pourrait implémenter une logique plus complexe
+          // Pour l'instant, on ne diffuse que si on a des utilisateurs spécifiques
+          console.log('🔔 [API] Notification créée pour des rôles, pas d\'envoi SSE automatique');
+        }
+      }
+    } catch (sseError) {
+      console.error('❌ [API] Erreur lors de l\'envoi SSE:', sseError);
+      // Ne pas faire échouer la création de notification pour une erreur SSE
+    }
 
     return NextResponse.json({
       success: true,
-      notification,
+      notificationId,
       message: 'Notification créée avec succès'
     }, { status: 201 });
 
@@ -211,31 +233,14 @@ export async function PATCH(request: NextRequest) {
 
     const user = session.user as any;
     const body = await request.json();
-    const { notificationId, action } = body;
+    const { action, notificationId } = body;
 
-    console.log('📧 [API] Action PATCH:', { action, notificationId, userId: user.id });
+    
 
-    if (!notificationId) {
-      return NextResponse.json(
-        { error: 'ID de notification requis' },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier que la notification existe
-    const notification = await RoleBasedNotificationService.getNotificationById(notificationId);
-    if (!notification) {
-      return NextResponse.json(
-        { error: 'Notification non trouvée' },
-        { status: 404 }
-      );
-    }
-
-    if (action === 'markAsRead') {
-      const success = await RoleBasedNotificationService.markAsRead(notificationId, user.id);
+    if (action === 'markAsRead' && notificationId) {
+      const success = await DatabaseNotificationService.markAsRead(notificationId, user.id);
       
       if (success) {
-        console.log('📧 [API] Notification marquée comme lue:', notificationId);
         return NextResponse.json({
           success: true,
           message: 'Notification marquée comme lue'
@@ -249,14 +254,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'markAllAsRead') {
-      const success = await RoleBasedNotificationService.markAllAsRead(
-        user.id, 
-        user.role, 
-        user.email
-      );
+      const success = await DatabaseNotificationService.markAllAsRead(user.id, user.role);
       
       if (success) {
-        console.log('📧 [API] Toutes les notifications marquées comme lues pour:', user.id);
         return NextResponse.json({
           success: true,
           message: 'Toutes les notifications marquées comme lues'
@@ -270,84 +270,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Action non supportée. Actions disponibles: markAsRead, markAllAsRead' },
+      { error: 'Action non supportée' },
       { status: 400 }
     );
 
   } catch (error) {
-    console.error('📧 [API] Erreur PATCH:', error);
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    // Vérifier l'authentification
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 401 }
-      );
-    }
-
-    const user = session.user as any;
-    const { searchParams } = new URL(request.url);
-    const notificationId = searchParams.get('id');
-
-    if (!notificationId) {
-      return NextResponse.json(
-        { error: 'ID de notification requis' },
-        { status: 400 }
-      );
-    }
-
-    console.log('📧 [API] Suppression de la notification:', notificationId, 'par:', user.id);
-
-    // Vérifier que la notification existe
-    const notification = await RoleBasedNotificationService.getNotificationById(notificationId);
-    if (!notification) {
-      return NextResponse.json(
-        { error: 'Notification non trouvée' },
-        { status: 404 }
-      );
-    }
-
-    // Vérifier les permissions de suppression
-    // Seuls les ADMIN peuvent supprimer des notifications, ou le créateur de la notification
-    const canDelete = user.role === 'ADMIN' || 
-                     notification.metadata?.createdBy === user.id ||
-                     notification.metadata?.triggeredBy === user.id;
-
-    if (!canDelete) {
-      return NextResponse.json(
-        { error: 'Permissions insuffisantes pour supprimer cette notification' },
-        { status: 403 }
-      );
-    }
-
-    // Supprimer la notification
-    const success = await RoleBasedNotificationService.deleteNotification(notificationId);
-
-    if (!success) {
-      return NextResponse.json(
-        { error: 'Erreur lors de la suppression de la notification' },
-        { status: 500 }
-      );
-    }
-
-    console.log('📧 [API] Notification supprimée avec succès:', notificationId);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Notification supprimée avec succès'
-    });
-
-  } catch (error) {
-    console.error('📧 [API] Erreur lors de la suppression de la notification:', error);
+    console.error('📧 [API] Erreur lors de l action de notification:', error);
     return NextResponse.json(
       { error: 'Erreur interne du serveur' },
       { status: 500 }

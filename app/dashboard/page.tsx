@@ -56,6 +56,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useSession } from "next-auth/react"
 export default function DashboardPage() {
+  const { data: session } = useSession()
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -95,39 +96,41 @@ export default function DashboardPage() {
   // Fonction pour envoyer une notification de test
   const sendTestNotification = async () => {
     if (!testMessage.trim()) return
-    const { data: session } = useSession();
     
     try {
       setTestLoading(true)
-      const response = await fetch('/api/notifications/ws', {
+      const response = await fetch('/api/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'send',
-          userId: session?.user.id || 'ID_INDISPONIBLE', // Remplacez par l'ID utilisateur actuel
-          notification: {
-            message: testMessage,
-            severity: testType === 'error' ? 'high' : testType === 'warning' ? 'medium' : 'low',
-            module: 'DASHBOARD',
-            actionType: 'TEST_NOTIFICATION',
-            role: 'user',
-            details: {
-              testType,
-              timestamp: Date.now(),
-              source: 'dashboard'
-            }
-          }
+          targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER'], // Rôles par défaut pour les tests
+          module: 'DASHBOARD',
+          actionType: 'TEST_NOTIFICATION',
+          message: {
+            fr: testMessage,
+            en: testMessage
+          },
+          details: `Notification de test envoyée depuis le tableau de bord. Type: ${testType}`,
+          severity: testType === 'error' ? 'high' : testType === 'warning' ? 'medium' : 'low',
+          entityType: 'test',
+          entityId: `test-${Date.now()}`,
+          triggeredBy: (session?.user as any)?.id || 'dashboard-test'
         }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la création de la notification')
+      }
 
       const result = await response.json()
       if (result.success) {
         setTestMessage('')
-        console.log('Test notification sent:', result)
+        
       } else {
-        console.error('Failed to send test notification:', result)
+        console.error('❌ Failed to create test notification:', result)
       }
     } catch (error) {
       console.error('Error sending test notification:', error)
@@ -161,7 +164,7 @@ export default function DashboardPage() {
       })
 
       const result = await response.json()
-      console.log('Broadcast sent to', result.sent, 'connections')
+      
       setTestMessage('')
     } catch (error) {
       console.error('Error sending broadcast:', error)
@@ -174,28 +177,56 @@ export default function DashboardPage() {
   const sendPredefinedNotification = async (type: 'chemical' | 'equipment' | 'order' | 'system') => {
     const notifications = {
       chemical: {
-        message: '⚠️ Stock faible détecté pour le réactif Acide sulfurique (H2SO4)',
-        severity: 'medium',
+        targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
         module: 'CHEMICALS',
-        actionType: 'LOW_STOCK_ALERT'
+        actionType: 'LOW_STOCK_ALERT',
+        message: {
+          fr: '⚠️ Stock faible détecté pour le réactif Acide sulfurique (H2SO4)',
+          en: '⚠️ Low stock detected for Sulfuric acid (H2SO4) reagent'
+        },
+        details: 'Le stock du réactif Acide sulfurique (H2SO4) est tombé en dessous du seuil critique. Veuillez prévoir un réapprovisionnement.',
+        severity: 'medium' as const,
+        entityType: 'chemical',
+        entityId: 'H2SO4-001'
       },
       equipment: {
-        message: '🔧 Maintenance programmée pour le microscope électronique MEB-001',
-        severity: 'low',
+        targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
         module: 'EQUIPMENT',
-        actionType: 'MAINTENANCE_SCHEDULED'
+        actionType: 'MAINTENANCE_SCHEDULED',
+        message: {
+          fr: '🔧 Maintenance programmée pour le microscope électronique MEB-001',
+          en: '🔧 Scheduled maintenance for electron microscope MEB-001'
+        },
+        details: 'Une maintenance préventive a été programmée pour le microscope électronique MEB-001 le 05/08/2025.',
+        severity: 'low' as const,
+        entityType: 'equipment',
+        entityId: 'MEB-001'
       },
       order: {
-        message: '📦 Nouvelle commande reçue - Réactifs organiques (CMD-2024-001)',
-        severity: 'low',
+        targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER'],
         module: 'ORDERS',
-        actionType: 'ORDER_RECEIVED'
+        actionType: 'ORDER_RECEIVED',
+        message: {
+          fr: '📦 Nouvelle commande reçue - Réactifs organiques (CMD-2024-001)',
+          en: '📦 New order received - Organic reagents (CMD-2024-001)'
+        },
+        details: 'Une nouvelle commande de réactifs organiques a été reçue et est en cours de traitement.',
+        severity: 'low' as const,
+        entityType: 'order',
+        entityId: 'CMD-2024-001'
       },
       system: {
-        message: '🚨 Mise à jour système disponible - Version 2.1.0',
-        severity: 'high',
+        targetRoles: ['ADMIN', 'ADMINLABO'],
         module: 'SYSTEM',
-        actionType: 'SYSTEM_UPDATE'
+        actionType: 'SYSTEM_UPDATE',
+        message: {
+          fr: '🚨 Mise à jour système disponible - Version 2.1.0',
+          en: '🚨 System update available - Version 2.1.0'
+        },
+        details: 'Une nouvelle version du système est disponible avec des améliorations de sécurité et des corrections de bugs.',
+        severity: 'high' as const,
+        entityType: 'system',
+        entityId: 'v2.1.0'
       }
     }
 
@@ -203,27 +234,29 @@ export default function DashboardPage() {
     
     try {
       setTestLoading(true)
-      const response = await fetch('/api/notifications/ws', {
+      const response = await fetch('/api/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'send',
-          userId: 'user-123',
-          notification: {
-            ...notif,
-            role: 'user',
-            details: {
-              predefinedType: type,
-              timestamp: Date.now()
-            }
-          }
+          ...notif,
+          triggeredBy: (session?.user as any)?.id || 'dashboard-test'
         }),
       })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la création de la notification')
+      }
+
       const result = await response.json()
-      console.log(`${type} notification sent:`, result)
+      
+      
+      // Optionnel : afficher un message de succès
+      if (result.success) {
+        
+      }
     } catch (error) {
       console.error(`Error sending ${type} notification:`, error)
     } finally {
@@ -269,7 +302,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4, mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h3" component="h1" gutterBottom>
@@ -584,13 +617,12 @@ export default function DashboardPage() {
                       {notifications.slice(0, 10).map((notification, index) => (
                         <ListItem key={notification.id || index} divider>
                           <ListItemIcon>
-                            {notification.type === 'error' ? <ErrorIcon color="error" /> :
-                             notification.type === 'warning' ? <Warning color="warning" /> :
-                             notification.type === 'success' ? <CheckCircle color="success" /> :
+                            {notification.severity === 'high' || notification.severity === 'critical' ? <ErrorIcon color="error" /> :
+                             notification.severity === 'medium' ? <Warning color="warning" /> :
                              <Info color="info" />}
                           </ListItemIcon>
                           <ListItemText
-                            primary={notification.message || notification.title}
+                            primary={typeof notification.message === 'string' ? notification.message : notification.message?.fr || 'Notification'}
                             secondary={
                               <Box component={'span'}>
                                 <Typography variant="caption" display="block">

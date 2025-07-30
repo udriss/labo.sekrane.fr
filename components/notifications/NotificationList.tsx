@@ -18,7 +18,9 @@ import {
   MarkEmailRead,
   FilterList,
   ExpandMore,
-  Warning
+  Warning,
+  Wifi,
+  WifiOff
 } from '@mui/icons-material';
 import { useNotifications } from '@/lib/hooks/useNotifications';
 import NotificationItem from './NotificationItem';
@@ -49,7 +51,9 @@ const NotificationsList = React.memo(function NotificationsList({
     markAsRead,
     markAllAsRead,
     refresh,
-    loadMore
+    loadMore,
+    isSSEConnected,
+    reconnectSSE
   } = useNotifications(filters);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -164,6 +168,14 @@ const NotificationsList = React.memo(function NotificationsList({
     );
   }, [showStats, stats]);
 
+  // Charger les notifications au montage du composant
+  useEffect(() => {
+    fetchNotifications().catch((error) => {
+      console.error('Erreur lors du chargement initial des notifications:', error);
+      showMessage('Erreur lors du chargement initial des notifications', 'error');
+    });
+  }, [fetchNotifications, showMessage]);
+
   return (
     <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* En-tête */}
@@ -188,6 +200,17 @@ const NotificationsList = React.memo(function NotificationsList({
         </Typography>
 
         <Box display="flex" gap={1}>
+          {/* Indicateur de connexion SSE */}
+          <Tooltip title={isSSEConnected ? "Notifications temps réel actives" : "Notifications temps réel déconnectées"}>
+            <IconButton 
+              size="small" 
+              onClick={reconnectSSE}
+              color={isSSEConnected ? "success" : "error"}
+            >
+              {isSSEConnected ? <Wifi /> : <WifiOff />}
+            </IconButton>
+          </Tooltip>
+
           {unreadCount > 0 && (
             <Tooltip title="Marquer toutes comme lues">
               <IconButton 

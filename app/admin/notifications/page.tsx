@@ -160,8 +160,6 @@ export default function AdminNotificationsPage() {
     try {
       setLoading(true);
       
-      console.log('🔧 [ADMIN] Chargement des données de configuration...');
-      
       // Charger les préférences
       const preferencesResponse = await fetch('/api/admin/notification-preferences');
       if (!preferencesResponse.ok) {
@@ -176,10 +174,7 @@ export default function AdminNotificationsPage() {
       }
       const configsData = await configsResponse.json();
       
-      console.log('✅ [ADMIN] Données chargées:', {
-        preferences: preferencesData.preferences?.length || 0,
-        configs: configsData.configs?.length || 0
-      });
+
       
       // Organiser les préférences par rôle
       const preferencesByRole: PreferencesByRole = {};
@@ -259,8 +254,6 @@ export default function AdminNotificationsPage() {
     try {
       setSaving(true);
       
-      console.log('💾 [ADMIN] Sauvegarde des préférences...');
-      
       // Préparer les mises à jour par rôle
       const updates = Object.entries(preferences).map(([role, rolePrefs]) => ({
         role,
@@ -270,8 +263,6 @@ export default function AdminNotificationsPage() {
           enabled: pref.enabled
         }))
       }));
-      
-      console.log('💾 [ADMIN] Mises à jour à effectuer:', updates.length);
       
       // Sauvegarder chaque rôle
       let successCount = 0;
@@ -288,7 +279,6 @@ export default function AdminNotificationsPage() {
         }
         
         successCount++;
-        console.log(`✅ [ADMIN] Préférences sauvegardées pour le rôle: ${role}`);
       }
       
       setSnackbar({ 
@@ -313,8 +303,6 @@ export default function AdminNotificationsPage() {
     try {
       setResetting(true);
       
-      console.log('🔄 [ADMIN] Réinitialisation aux valeurs par défaut...');
-      
       const response = await fetch('/api/admin/notification-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -327,7 +315,6 @@ export default function AdminNotificationsPage() {
       }
       
       const data = await response.json();
-      console.log('✅ [ADMIN] Réinitialisation réussie:', data);
       
       setSnackbar({
         open: true,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { RoleBasedNotificationService } from '@/lib/notifications/role-based-notification-service';
+import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
+import { NotificationFilter } from '@/types/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,31 +27,36 @@ export async function GET(request: NextRequest) {
     }
 
     // Construire les filtres à partir des paramètres de requête
-    const filters = {
-      module: searchParams.get('module') || undefined,
-      severity: searchParams.get('severity') || undefined,
-      dateFrom: searchParams.get('dateFrom') || undefined,
-      dateTo: searchParams.get('dateTo') || undefined
+    const filters: Partial<NotificationFilter> = {
+      userRole: user.role,
+      userEmail: user.email
     };
 
-    console.log('📊 [API] Récupération stats basées sur les rôles pour:', {
-      userId: user.id,
-      userEmail: user.email,
-      userRole: user.role,
-      filters
-    });
+    // Ajouter les filtres optionnels
+    if (searchParams.get('module')) {
+      filters.module = searchParams.get('module')!;
+    }
 
-    // Récupérer les statistiques avec le service basé sur les rôles
-    const stats = await RoleBasedNotificationService.getStats(
+    if (searchParams.get('severity')) {
+      filters.severity = searchParams.get('severity') as 'low' | 'medium' | 'high' | 'critical';
+    }
+
+    if (searchParams.get('dateFrom')) {
+      filters.dateFrom = searchParams.get('dateFrom')!;
+    }
+
+    if (searchParams.get('dateTo')) {
+      filters.dateTo = searchParams.get('dateTo')!;
+    }
+
+    // Récupérer les statistiques avec le service de base de données
+    const stats = await DatabaseNotificationService.getStats(
       user.id,
       user.role,
-      user.email,
       filters
     );
 
-    console.log('📊 [API] Stats calculées:', stats);
-
-    // Retourner les stats dans le format attendu par le hook
+    // Retourner les stats dans le format attendu
     return NextResponse.json({
       success: true,
       stats: stats,

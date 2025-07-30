@@ -16,7 +16,7 @@ async function seed() {
       },
     });
   }
-  console.log('Données importées avec succès');
+  
 }
 
 seed().catch((e) => console.error(e));

@@ -573,7 +573,7 @@ class AuditLogger {
       };
       
       await fs.writeFile(indexPath, JSON.stringify(emptyIndex, null, 2));
-      console.log('Index principal créé:', indexPath);
+      
     }
   }
 

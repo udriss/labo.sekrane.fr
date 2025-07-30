@@ -92,7 +92,7 @@ export const PUT = withAudit(
       calendarData.events[eventIndex] = updatedEvent;
       await writeCalendarFile(calendarData);
 
-      console.log(`Changement d'état de l'événement ${eventId} par ${session?.user?.email || userId}: ${previousState} → ${state}`);
+      
 
       const response = {
         updatedEvent,

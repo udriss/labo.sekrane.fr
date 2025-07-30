@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 
 async function hashPassword(password: string) {
   const hash = await bcrypt.hash(password, 12);
-  console.log(`Mot de passe: ${password}`);
-  console.log(`Hash: ${hash}`);
+  
+  
 }
 
 // Exemple d'utilisation

@@ -90,10 +90,10 @@ export async function migrateCalendarData() {
     }));
 
     if (needsMigration) {
-      console.log('Migration des données du calendrier vers le nouveau format...');
+      
       calendarData.events = migratedEvents;
       await writeCalendarFile(calendarData);
-      console.log('Migration terminée avec succès');
+      
     }
 
     return calendarData;

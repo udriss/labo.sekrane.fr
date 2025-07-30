@@ -116,8 +116,46 @@ export default function SignInPage() {
       password,
       rememberMe: rememberMe.toString()
     })
+
+    console.log("Tentative d'authentification avec les identifiants fournis:", {
+      res,
+      email,
+      password,
+      rememberMe: rememberMe.toString()
+    })
     
-    if (res?.error) {
+    // Détection Safari
+    const userAgent = navigator.userAgent;
+    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    
+    // Pour Safari, si signIn réussit, on force la redirection sans vérifier la session
+    if (isSafari && !res?.error) {
+      
+      setSuccessMessage(true);
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+      return;
+    }
+    
+    // Vérification réelle de la session après signIn (autres navigateurs)
+    let sessionValid = false;
+    if (!res?.error) {
+      for (let i = 0; i < 3; i++) {
+        try {
+          const sessionRes = await fetch("/api/auth/session?" + Date.now());
+          const sessionData = await sessionRes.json();
+          if (sessionData?.user) {
+            sessionValid = true;
+            break;
+          }
+        } catch {}
+        await new Promise(r => setTimeout(r, 150));
+      }
+    }
+
+    // Gestion de l'erreur ou succès (sauf Safari qui est déjà traité)
+    if (!isSafari && (res?.error || !sessionValid)) {
       setLoading(false)
       setError("Email ou mot de passe incorrect")
       setPasswordError(true)
@@ -129,7 +167,8 @@ export default function SignInPage() {
           form.style.animation = ''
         }, 500)
       }
-    } else {
+    } else if (!isSafari) {
+      // Succès pour les autres navigateurs
       setSuccessMessage(true)
       setTimeout(() => {
         window.location.href = "/"
@@ -140,6 +179,14 @@ export default function SignInPage() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
   }
+
+  // const bcrypt = require('bcryptjs');
+  // bcrypt.hash('admin123', 12).then((hash: string) => {
+  //  console.log(hash);
+  // });
+
+  const bcrypt = require('bcryptjs');
+  bcrypt.compare('admin123', '$2b$12$OENV7sVwsCpxoBWcCp/Th.JuvdVsdo2XTrXHg9XeL8b9rugFhus32').then(console.log);
 
   // Composant de particule sans Math.random()
   const FloatingParticle = ({ delay, position }: { delay: number, position: { left: number, top: number } }) => {
@@ -542,7 +589,7 @@ export default function SignInPage() {
                     disabled={loading}
                     onClick={() => {
                       // Logique pour connexion SSO école
-                      console.log("Connexion ENT")
+                      
                     }}
                     sx={{
                       borderRadius: 2,

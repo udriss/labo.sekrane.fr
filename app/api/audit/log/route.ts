@@ -8,7 +8,7 @@ import { AuditAction, AuditUser, AuditContext } from '@/types/audit';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Audit log API received:', body);
+    
 
     // Récupérer la session pour l'utilisateur
     const session = await getServerSession(authOptions);
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         details
       );
       
-      console.log('Audit log saved from middleware');
+      
       return NextResponse.json({ success: true });
     }
     
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     await auditLogger.log(action, auditUser, auditContext, details);
     
-    console.log('Audit log saved from app');
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error creating audit log:', error);

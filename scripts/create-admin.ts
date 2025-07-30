@@ -5,8 +5,8 @@ const prisma = new PrismaClient()
 
 async function main() {
   const email = "admin@labo.fr"
-  const password = "admin123456"
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const password = "admin123"
+  const hashedPassword = await bcrypt.hash(password, 12)
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -18,7 +18,7 @@ async function main() {
       role: "ADMIN"
     }
   })
-  console.log("Admin user created or updated:", user)
+  
 }
 
 main().finally(() => prisma.$disconnect())

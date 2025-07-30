@@ -1,9 +1,8 @@
 // lib/auth.ts
 
-
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { UserService } from "@/lib/services/userService";
+import { UserServiceSQL } from "@/lib/services/userService.sql";
 import { UserRole } from "@/types/global";
 
 
@@ -23,8 +22,16 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Vérifier l'utilisateur avec le service JSON
-          const user = await UserService.verifyPassword(
+
+          console.log(
+            "Tentative d'authentification avec les identifiants fournis:",
+            {
+              email: credentials.email,
+              password: credentials.password
+            }
+          )
+          // Vérifier l'utilisateur avec le service SQL
+          const user = await UserServiceSQL.verifyPassword(
             credentials.email,
             credentials.password
           );
@@ -61,6 +68,37 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 jours par défaut
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.sekrane.fr' : undefined
+      }
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.sekrane.fr' : undefined
+      }
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.sekrane.fr' : undefined
+      }
+    }
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {

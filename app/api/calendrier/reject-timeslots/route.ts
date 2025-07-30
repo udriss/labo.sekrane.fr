@@ -140,9 +140,9 @@ export const POST = withAudit(
       calendarData.events[eventIndex] = updatedEvent;
       await writeCalendarFile(calendarData);
 
-      console.log(`Tous les créneaux proposés rejetés pour l'événement ${eventId} par ${session?.user?.email || userId}`);
-      console.log(`État final de l'événement: ${finalState}`);
-      console.log(`Créneaux actuelTimeSlots restants: ${finalActuelTimeSlots.length}`);
+      
+      
+      
 
       return NextResponse.json({
         event: updatedEvent,

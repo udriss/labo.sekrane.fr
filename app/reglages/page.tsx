@@ -54,7 +54,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       // Ici on sauvegarderait les paramètres
-      console.log("Sauvegarde des paramètres:", settings)
+      
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (error) {

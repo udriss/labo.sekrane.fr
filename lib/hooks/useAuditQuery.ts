@@ -34,7 +34,7 @@ export function useAuditQuery(filters: LogFilters): UseAuditQueryResult {
       if (filters.offset) params.append('offset', filters.offset.toString());
       if (filters.search) params.append('search', filters.search);
 
-      console.log('Fetching logs with params:', params.toString());
+      
 
       const response = await fetch(`/api/audit?${params.toString()}`);
       
@@ -44,7 +44,7 @@ export function useAuditQuery(filters: LogFilters): UseAuditQueryResult {
       }
 
       const data = await response.json();
-      console.log('Received log data:', data);
+      
       
       setEntries(data.data || []);
       setTotal(data.total || 0);

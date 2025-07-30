@@ -24,7 +24,7 @@ async function readChemicalsInventory() {
 // Fonction pour initialiser le fichier JSON depuis PRISMA (une seule fois)
 async function initializeFromPrisma() {
   try {
-    console.log('Initialisation du fichier JSON depuis la base de données PRISMA...');
+    
     
     const prismaChemicals = await prisma.chemical.findMany({
       include: {
@@ -40,7 +40,7 @@ async function initializeFromPrisma() {
     
     // Sauvegarder dans le fichier JSON
     await writeChemicalsInventory(jsonData);
-    console.log(`Fichier JSON initialisé avec ${jsonData.chemicals.length} réactifs chimiques`);
+    
     
     return jsonData;
   } catch (error) {

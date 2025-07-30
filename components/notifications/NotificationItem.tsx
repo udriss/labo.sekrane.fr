@@ -8,7 +8,10 @@ import {
   IconButton,
   Avatar,
   Tooltip,
-  Alert
+  Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   CheckCircle,
@@ -19,6 +22,7 @@ import {
   Warning,
   Error as ErrorIcon,
   Info,
+  ExpandMore,
   PriorityHigh
 } from '@mui/icons-material';
 import { ExtendedNotification } from '@/types/notifications';
@@ -211,15 +215,51 @@ export default function NotificationItem({
               {message}
             </Typography>
 
-            {/* Détails (si disponibles) */}
+            {/* Détails sous forme d'accordéon */}
             {details && (
-              <Typography 
-                variant="body2" 
-                color="text.secondary"
-                sx={{ mb: 1 }}
+              <Box sx={{ mb: 1 }}>
+              <Accordion
+                sx={{ boxShadow: 'none', bgcolor: 'transparent' }}
+                disableGutters
               >
-                {details}
-              </Typography>
+                <AccordionSummary
+                expandIcon={<ExpandMore />}
+                sx={{
+                  minHeight: 0,
+                  '& .MuiAccordionSummary-content': {
+                  m: 0,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  p: 0,
+                  }
+                }}
+                >
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  p: 0,
+                  }}
+                >
+                  {details}
+                </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {details}
+                </Typography>
+                </AccordionDetails>
+              </Accordion>
+              </Box>
             )}
 
             {/* Métadonnées */}

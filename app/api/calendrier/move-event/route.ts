@@ -150,10 +150,10 @@ export const PUT = withAudit(
       calendarData.events[eventIndex] = updatedEvent;
       await writeCalendarFile(calendarData);
 
-      console.log(`Nouveaux créneaux proposés pour l'événement ${eventId} par ${session?.user?.email || userId}`);
-      console.log(`- ${invalidatedTimeSlots.length} créneaux invalidés`);
-      console.log(`- ${newTimeSlots.length} nouveaux créneaux proposés`);
-      console.log(`- actuelTimeSlots conservés: ${event.actuelTimeSlots?.length || 0}`);
+      
+      
+      
+      
 
       const response = {
         updatedEvent,

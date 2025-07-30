@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined
     };
 
-    console.log('Fetching audit logs with filters:', filters);
+    
 
     // Récupérer les logs
     const entries = await auditLogger.query(filters);
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       offset: undefined
     });
 
-    console.log(`Found ${entries.length} entries, total: ${totalEntries.length}`);
+    
 
     return NextResponse.json({
       success: true,

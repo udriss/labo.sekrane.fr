@@ -226,7 +226,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 
   const handleSignOut = async () => {
     handleUserMenuClose();
-    await signOut({ callbackUrl: '/auth/signin' });
+    await signOut({ callbackUrl: `${window.location.origin}/auth/signin` });
   };
 
   // Récupération des notifications
@@ -244,8 +244,6 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
       if (notificationsResponse.ok && statsResponse.ok) {
         const notificationsData = await notificationsResponse.json();
         const statsData = await statsResponse.json();
-        console.log('Fetching notifications for userId:', userId);
-        console.log('Notifications response:', notificationsData);
         
         setNotifications(notificationsData.notifications || []);
         
@@ -284,7 +282,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
         eventSourceRef.current = eventSource;
 
         eventSource.onopen = () => {
-          console.log('SSE connection opened');
+          
           setSseConnected(true);
         };
 
@@ -294,12 +292,11 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
             
             switch (message.type) {
               case 'connected':
-                console.log('Connected to notifications for user:', message.userId);
+                
                 break;
                 
               case 'notification':
                 if (message.data) {
-                  console.log('Received notification:', message.data);
                   const notificationData = message.data as ExtendedNotification;
                   setNotifications(prev => [notificationData, ...prev.slice(0, 9)]);
                   setNotificationStats(prev => ({
@@ -315,7 +312,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                 break;
                 
               default:
-                console.log('Unknown SSE message type:', message.type);
+                
             }
           } catch (error) {
             console.error('Error parsing SSE message:', error);
@@ -329,7 +326,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           // Tentative de reconnexion après 5 secondes
           setTimeout(() => {
             if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
-              console.log('Attempting to reconnect SSE...');
+              
               connectSSE();
             }
           }, 5000);

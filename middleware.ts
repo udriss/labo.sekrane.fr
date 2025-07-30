@@ -4,10 +4,11 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { auditMiddleware } from '@/lib/middleware/audit-edge';
 
+export const runtime = 'nodejs';
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const path = request.nextUrl.pathname;
-  
   
   // Apply audit middleware for API routes
   if (path.startsWith('/api') && 
@@ -18,38 +19,50 @@ export async function middleware(request: NextRequest) {
     await auditMiddleware(request);
   }
   
-  // Gestion des cookies de session et d'activité
+  // Gestion des cookies de session et d'activité avec compatibilité Safari
   const sessionToken = request.cookies.get('next-auth.session-token') || 
                       request.cookies.get('__Secure-next-auth.session-token');
   
   if (sessionToken) {
-    response.cookies.set('last-activity', new Date().toISOString(), {
+    const cookieOptions = {
       maxAge: 60 * 30,
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
-    
-    const token = await getToken({ req: request });
-    if (token?.sub) {
-      response.cookies.set('active-user-id', token.sub as string, {
-        maxAge: 60 * 30,
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-      });
-    }
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/'
+    };
+
+    response.cookies.set('last-activity', new Date().toISOString(), cookieOptions);
   }
 
   // Obtenir le token pour vérifier les permissions
-  const token = await getToken({ req: request });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  
+
+  // Gestion des cookies utilisateur si token disponible
+  if (token?.sub) {
+    const cookieOptions = {
+      maxAge: 60 * 120,
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/'
+    };
+    response.cookies.set('active-user-id', token.sub as string, cookieOptions);
+  }
 
   // Protection des routes selon les rôles
   // Routes publiques - pas besoin d'authentification
   const publicRoutes = ['/auth/signin', '/auth/signup', '/auth/error', '/', '/api/auth'];
   const isPublicRoute = publicRoutes.some(route => path.startsWith(route));
   
-  if (!isPublicRoute && !token) {
+  // Pour Safari avec contournement, ou sessions normales
+  const hasValidSession = token || sessionToken;
+  
+  if (!isPublicRoute && !hasValidSession) {
     // Rediriger vers la page de connexion si non authentifié
     if (!path.startsWith('/api')) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
@@ -59,6 +72,11 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
+  }
+  
+  // Pour les routes API auth, laisser toujours passer
+  if (path.startsWith('/api/auth')) {
+    return response;
   }
 
   // Protection des routes admin
@@ -105,7 +123,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protection des routes d'audit (conservé de votre code original)
+  // Protection des routes d'audit
   if (path.startsWith('/api/audit')) {
     if (path === '/api/audit/log') {
       return response;
@@ -142,23 +160,24 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protection des routes dashboard
-/*   if (path.startsWith('/dashboard')) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
-    }
+  // Protection des routes API générales (sauf exceptions)
+  if (path.startsWith('/api/')) {
+    const publicAPIRoutes = [
+      '/api/auth',
+      '/api/health',
+      '/api/status',
+      '/api/audit/log'
+    ];
     
-    // Redirection selon le rôle
-    if (token.role === 'STUDENT' && !path.startsWith('/dashboard/student')) {
-      return NextResponse.redirect(new URL('/dashboard/student', request.url));
-    } else if (token.role === 'TEACHER' && !path.startsWith('/dashboard/teacher')) {
-      return NextResponse.redirect(new URL('/dashboard/teacher', request.url));
-    } else if (token.role === 'LABORANTIN' && !path.startsWith('/dashboard/lab')) {
-      return NextResponse.redirect(new URL('/dashboard/lab', request.url));
-    } else if ((token.role === 'ADMIN' || token.role === 'ADMINLABO') && !path.startsWith('/dashboard/admin')) {
-      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
+    const isPublicAPI = publicAPIRoutes.some(route => path.startsWith(route));
+    
+    if (!isPublicAPI && !hasValidSession) {
+      return NextResponse.json(
+        { error: 'Authentification requise' },
+        { status: 401 }
+      );
     }
-  } */
+  }
 
   return response;
 }

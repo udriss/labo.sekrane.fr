@@ -1,0 +1,1026 @@
+[
+  {
+    "id": "f9a3ab9c-c758-4fc3-9a4e-7798be02315d",
+    "timestamp": "2025-07-30T00:33:07.654Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+        "query": {},
+        "body": {
+          "quantity": 2784.2
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 2784.2,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Salle de TP B",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-30T00:33:07.652Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Paillasse 1"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-30T00:33:07.654Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753835587649_62imjxegf",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c82d1d89-0542-464e-8288-8cf367164351",
+    "timestamp": "2025-07-30T00:42:19.020Z",
+    "user": {
+      "id": "anonymous",
+      "email": "anonymous@labolims.com",
+      "name": "Anonymous",
+      "role": "GUEST"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_0RZP4BADZOGZ"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {},
+        "body": {
+          "quantity": 7.6
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_0RZP4BADZOGZ",
+            "name": "Acide nitrique",
+            "formula": "HNO₃",
+            "molfile": null,
+            "casNumber": "7697-37-2",
+            "barcode": "CHEM001234567890",
+            "quantity": 7.6,
+            "unit": "g",
+            "minQuantity": 0,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": "",
+            "room": "Laboratoire de recherche",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-22T07:05:47.245Z",
+            "updatedAt": "2025-07-30T00:42:19.019Z",
+            "supplier": "",
+            "location": "Hotte de synthèse",
+            "quantityPrevision": 1.4000000000000004
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-30T00:42:19.020Z"
+      },
+      "chemicalName": "Acide nitrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location",
+        "quantityPrevision"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753836139017_c6bc68w69",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f2189799-386f-4bfd-b340-760946476d05",
+    "timestamp": "2025-07-30T00:42:32.277Z",
+    "user": {
+      "id": "anonymous",
+      "email": "anonymous@labolims.com",
+      "name": "Anonymous",
+      "role": "GUEST"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_0RZP4BADZOGZ"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {},
+        "body": {
+          "quantity": 18
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_0RZP4BADZOGZ",
+            "name": "Acide nitrique",
+            "formula": "HNO₃",
+            "molfile": null,
+            "casNumber": "7697-37-2",
+            "barcode": "CHEM001234567890",
+            "quantity": 18,
+            "unit": "g",
+            "minQuantity": 0,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": "",
+            "room": "Laboratoire de recherche",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-22T07:05:47.245Z",
+            "updatedAt": "2025-07-30T00:42:32.276Z",
+            "supplier": "",
+            "location": "Hotte de synthèse",
+            "quantityPrevision": 1.4000000000000004
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-30T00:42:32.277Z"
+      },
+      "chemicalName": "Acide nitrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location",
+        "quantityPrevision"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753836152274_4ofr6ffnh",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "801101e9-6592-4f30-bce9-b196a1d9ab30",
+    "timestamp": "2025-07-30T08:30:44.243Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 37,
+        "timestamp": "2025-07-30T08:30:44.243Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753864244206_si2cakea1",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 37
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8bc3f301-98ba-482d-ada6-93f1d52e83c6",
+    "timestamp": "2025-07-30T08:30:44.275Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-07-30T08:30:44.275Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753864244264_kus9p5t0g",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b467711f-766f-424e-8f08-6ce2c1437866",
+    "timestamp": "2025-07-30T08:30:54.600Z",
+    "user": {
+      "id": "USER_001",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-07-30T08:30:54.600Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753864254591_um5waa0kn",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "79be2db3-4f58-4dce-868e-71e7fb0e92d0",
+    "timestamp": "2025-07-30T09:29:47.742Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-07-30T09:29:47.742Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753867787725_9ed7i8z7u",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "46955dd7-58ed-4dcb-b044-90a37f9f32da",
+    "timestamp": "2025-07-30T09:29:47.786Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-30T09:29:47.786Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753867787780_d15dkfxuq",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "835ae69f-4b71-41cb-8eab-4088c06de75a",
+    "timestamp": "2025-07-30T09:31:40.331Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 37,
+        "timestamp": "2025-07-30T09:31:40.331Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753867900294_d7x3uvp74",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 37
+    },
+    "status": "SUCCESS"
+  }
+]

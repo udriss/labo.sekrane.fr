@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { auditLogger } from '@/lib/services/audit-logger';
-import { notificationService } from '@/lib/notifications/notification-service';
-import { notificationPreferencesService } from '@/scripts/init-notification-preferences';
+import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
 import { AuditAction, AuditUser, AuditContext } from '@/types/audit';
 
 type RouteHandler = (req: NextRequest, context?: any) => Promise<NextResponse> | NextResponse;
@@ -34,58 +33,67 @@ async function triggerNotifications(
   entityType?: string
 ) {
   try {
-    // Déterminer les utilisateurs à notifier
-    let targetUsers: AuditUser[] = [];
+    // Déterminer les rôles cibles selon le type de notification
+    let targetRoles: string[] = [];
     
-    if (notifyUsers === 'custom' && customNotifyUsers) {
-      // TODO: Récupérer les utilisateurs spécifiques depuis la base de données
-      // Pour l'instant, on utilise un exemple
-      targetUsers = customNotifyUsers.map(id => ({
-        id,
-        email: `user${id}@labolims.com`,
-        name: `User ${id}`,
-        role: 'USER'
-      }));
-    } else {
-      // Récupérer tous les utilisateurs selon le type
-      // TODO: Remplacer par une vraie requête à la base de données
-      const allUsers: AuditUser[] = [
-        { id: 'admin1', email: 'admin@labolims.com', name: 'Admin', role: 'ADMIN' },
-        { id: 'teacher1', email: 'teacher@labolims.com', name: 'Teacher', role: 'TEACHER' },
-        { id: 'student1', email: 'student@labolims.com', name: 'Student', role: 'STUDENT' }
-      ];
-      
-      switch (notifyUsers) {
-        case 'admins':
-          targetUsers = allUsers.filter(u => u.role === 'ADMIN');
-          break;
-        case 'teachers':
-          targetUsers = allUsers.filter(u => u.role === 'TEACHER' || u.role === 'ADMIN');
-          break;
-        case 'all':
-        default:
-          targetUsers = allUsers;
-          break;
-      }
+    switch (notifyUsers) {
+      case 'admins':
+        targetRoles = ['ADMIN'];
+        break;
+      case 'teachers':
+        targetRoles = ['ADMIN', 'ADMINLABO', 'TEACHER'];
+        break;
+      case 'all':
+        targetRoles = ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'];
+        break;
+      case 'custom':
+        // Pour les utilisateurs personnalisés, nous utiliserons target_users
+        targetRoles = [];
+        break;
     }
-    
-    // Exclure l'utilisateur qui a déclenché l'action
-    targetUsers = targetUsers.filter(u => u.id !== triggeredBy.id);
-    
-    if (targetUsers.length > 0) {
-      await notificationService.createNotification(
-        targetUsers,
-        module,
-        actionType,
-        details,
-        triggeredBy,
-        entityId,
-        entityType
-      );
-    }
-    
+
+    // Créer le message de notification
+    const message = `Action ${actionType} effectuée sur ${entityType || 'élément'} dans le module ${module}`;
+
+    // Créer la notification avec le DatabaseNotificationService
+    await DatabaseNotificationService.createNotification(
+      targetRoles,
+      module,
+      actionType,
+      message,
+      JSON.stringify({
+        action: actionType,
+        entity: entityType,
+        entity_id: entityId,
+        triggered_by: triggeredBy.id,
+        triggered_by_name: triggeredBy.name,
+        triggered_by_role: triggeredBy.role,
+        details: details
+      }),
+      'medium', // severity par défaut
+      entityType,
+      entityId,
+      triggeredBy.id,
+      notifyUsers === 'custom' && customNotifyUsers ? 
+        customNotifyUsers.map(userId => ({
+          id: userId,
+          email: `${userId}@labolims.com`, // TODO: Récupérer l'email réel depuis la base
+          reason: 'custom'
+        })) : undefined
+    );
+
+    console.log('✅ Notification d\'audit créée avec succès:', {
+      targetRoles,
+      targetUsers: customNotifyUsers,
+      module,
+      actionType,
+      entityType,
+      entityId,
+      triggeredBy: triggeredBy.id
+    });
+
   } catch (error) {
-    console.error('Error triggering notifications:', error);
+    console.error('❌ Erreur lors de la création de la notification d\'audit:', error);
   }
 }
 
@@ -131,10 +139,6 @@ export function withAudit(handler: RouteHandler, options: AuditOptions): RouteHa
     let responseData: any = null;
     
     try {
-      // Initialiser les services de notifications
-      await notificationPreferencesService.initializeDefaultPreferences();
-      await notificationService.initializeNotificationsFile();
-      
       // Récupérer la session utilisateur
       const session = options.skipAuth ? null : await getServerSession(authOptions);
       

@@ -1,5 +1,6 @@
 // app/api/user/[id]/route.ts 
 import { NextRequest, NextResponse } from "next/server";
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { getServerSession } from "next-auth/next";
@@ -7,7 +8,7 @@ import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { withAudit } from '@/lib/api/with-audit';
 
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
 
 
 // Types
@@ -45,29 +46,7 @@ async function getPredefinedClasses(): Promise<string[]> {
   }
 }
 
-// Fonction pour lire le fichier users.json
-async function readUsersFile(): Promise<UserData[]> {
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf-8');
-    const parsed: UsersFile = JSON.parse(data);
-    return parsed.users || [];
-  } catch (error) {
-    console.error('Erreur lecture users.json:', error);
-    return [];
-  }
-}
 
-// Fonction pour écrire dans le fichier users.json
-async function writeUsersFile(users: UserData[]): Promise<boolean> {
-  try {
-    const data: UsersFile = { users };
-    await fs.writeFile(USERS_FILE, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Erreur écriture users.json:', error);
-    return false;
-  }
-}
 
 export const PUT = withAudit(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -86,19 +65,22 @@ export const PUT = withAudit(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const users = await readUsersFile();
-    const userIndex = users.findIndex((user) => user.id === userId);
 
-    if (userIndex === -1) {
+    // Récupérer l'utilisateur
+    const user = await UserServiceSQL.findById(userId);
+    if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
     // Préparer les données de mise à jour
-    const updateData: Partial<UserData> = {
+    const updateData: any = {
       name: data.name,
       email: data.email,
       updatedAt: new Date().toISOString()
     };
+    if (data.role) {
+      updateData.role = data.role;
+    }
 
     // Si un mot de passe est fourni, le hasher
     if (data.password && data.password.trim() !== '') {
@@ -108,20 +90,9 @@ export const PUT = withAudit(
     // Gérer les classes
     if (data.selectedClasses && Array.isArray(data.selectedClasses)) {
       // Séparer les classes prédéfinies des classes personnalisées
-      const associatedClasses: string[] = [];
-      const customClasses: string[] = [];
-
-      data.selectedClasses.forEach(async (className: string) => {
-        const predefinedClasses = await getPredefinedClasses();
-        if (predefinedClasses.includes(className)) {
-          associatedClasses.push(className);
-        } else {
-          customClasses.push(className);
-        }
-      });
-
-      updateData.associatedClasses = associatedClasses;
-      updateData.customClasses = customClasses;
+      const predefinedClasses = await getPredefinedClasses();
+      updateData.associatedClasses = data.selectedClasses.filter((c: string) => predefinedClasses.includes(c));
+      updateData.customClasses = data.selectedClasses.filter((c: string) => !predefinedClasses.includes(c));
     }
 
     // Pour la modification par un admin d'un autre utilisateur
@@ -132,20 +103,14 @@ export const PUT = withAudit(
       updateData.customClasses = data.customClasses;
     }
 
-    // Mettre à jour l'utilisateur
-    users[userIndex] = {
-      ...users[userIndex],
-      ...updateData
-    };
-
-    const success = await writeUsersFile(users);
-    if (!success) {
+    // Mettre à jour l'utilisateur en base SQL
+    const updatedUser = await UserServiceSQL.update(userId, updateData);
+    if (!updatedUser) {
       return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 });
     }
 
     // Retourner l'utilisateur sans le mot de passe
-    const { password, ...userWithoutPassword } = users[userIndex];
-
+    const { password, ...userWithoutPassword } = updatedUser;
     return NextResponse.json({
       message: "Profil mis à jour avec succès",
       user: userWithoutPassword
@@ -191,21 +156,15 @@ export const GET = withAudit(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const users = await readUsersFile();
-    const user = users.find((user) => user.id === userId);
 
+    // Récupérer l'utilisateur
+    const user = await UserServiceSQL.findById(userId);
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
-
     // S'assurer que les tableaux existent
-    if (!user.associatedClasses) {
-      user.associatedClasses = [];
-    }
-    if (!user.customClasses) {
-      user.customClasses = [];
-    }
-
+    if (!user.associatedClasses) user.associatedClasses = [];
+    if (!user.customClasses) user.customClasses = [];
     // Retourner l'utilisateur sans le mot de passe
     const { password, ...userWithoutPassword } = user;
     return NextResponse.json(userWithoutPassword);
@@ -245,20 +204,13 @@ export const DELETE = withAudit(
       return NextResponse.json({ error: "Vous ne pouvez pas supprimer votre propre compte" }, { status: 400 });
     }
 
-    const users = await readUsersFile();
-    const userToDelete = users.find((user) => user.id === userId);
-    
+
+    // Supprimer l'utilisateur en base SQL
+    const userToDelete = await UserServiceSQL.findById(userId);
     if (!userToDelete) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
-
-    const filteredUsers = users.filter((user) => user.id !== userId);
-    const success = await writeUsersFile(filteredUsers);
-    
-    if (!success) {
-      return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
-    }
-
+    await UserServiceSQL.deactivate(userId);
     return NextResponse.json({ 
       message: "Utilisateur supprimé avec succès",
       deletedUser: { id: userToDelete.id, email: userToDelete.email, name: userToDelete.name }

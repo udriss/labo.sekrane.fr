@@ -103,7 +103,7 @@ export default function NotificationsAnalyzePage() {
       const user = session.user as any;
       
       // Analyse complète
-      const analysisRes = await fetch(`/api/notifications/analyze?action=analyze&testUserId=${user.id}&testUserEmail=${user.email}`);
+      const analysisRes = await fetch(`/api/notifications/analyze?action=analyze&testUserId=${user.id}&testUserEmail=${user.email}&testUserRole=${user.role}`);
       const analysisData = await analysisRes.json();
       
       if (analysisData.analysis) {
@@ -111,7 +111,7 @@ export default function NotificationsAnalyzePage() {
       }
 
       // Suggestions
-      const suggestionsRes = await fetch(`/api/notifications/analyze?action=suggestions&testUserId=${user.id}&testUserEmail=${user.email}`);
+      const suggestionsRes = await fetch(`/api/notifications/analyze?action=suggestions&testUserId=${user.id}&testUserEmail=${user.email}&testUserRole=${user.role}`);
       const suggestionsData = await suggestionsRes.json();
       
       if (suggestionsData.suggestions) {
@@ -130,7 +130,7 @@ export default function NotificationsAnalyzePage() {
     
     try {
       const user = session.user as any;
-      const res = await fetch(`/api/notifications/analyze?action=generate-test&testUserId=${user.id}&testUserEmail=${user.email}`);
+      const res = await fetch(`/api/notifications/analyze?action=generate-test&testUserId=${user.id}&testUserEmail=${user.email}&testUserRole=${user.role}`);
       const data = await res.json();
       
       if (data.testNotification) {

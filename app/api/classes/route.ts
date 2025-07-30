@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { promises as fs } from 'fs';
-import path from 'path';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import { withAudit } from '@/lib/api/with-audit';
 
+import path from 'path';
 const CLASSES_FILE = path.join(process.cwd(), 'data', 'classes.json');
-const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
 interface ClassData {
   id: string;
@@ -64,14 +64,10 @@ export async function GET(request: NextRequest) {
     
     // Si c'est un admin, récupérer aussi les infos des utilisateurs pour les classes custom
     if (session.user.role === "ADMIN") {
-      // Lire les utilisateurs pour enrichir les données des classes custom
+      // Utiliser le service SQL pour enrichir les données des classes custom
       try {
-        const usersData = await fs.readFile(USERS_FILE, 'utf-8');
-        const users = JSON.parse(usersData).users || [];
-        
-        // Parcourir tous les utilisateurs pour extraire leurs classes personnalisées
+        const users = await UserServiceSQL.getAllActive();
         const allCustomClasses: ClassData[] = [];
-        
         users.forEach((user: any) => {
           if (user.customClasses && Array.isArray(user.customClasses)) {
             user.customClasses.forEach((className: string) => {
@@ -87,10 +83,9 @@ export async function GET(request: NextRequest) {
             });
           }
         });
-        
         classesData.customClasses = allCustomClasses;
       } catch (error) {
-        console.error('Erreur lecture users.json:', error);
+        console.error('Erreur lecture utilisateurs SQL:', error);
       }
     }
 

@@ -49,14 +49,14 @@ export class NotificationsFileDebugService {
    */
   static async debugFileAccess(userId?: string, userEmail?: string): Promise<FileDebugResult> {
     try {
-      console.log('🔍 [DEBUG] Début du test de lecture du fichier notifications.json');
-      console.log('🔍 [DEBUG] Chemin du fichier:', this.FILE_PATH);
-      console.log('🔍 [DEBUG] UserId recherché:', userId);
-      console.log('🔍 [DEBUG] UserEmail recherché:', userEmail);
+      
+      
+      
+      
 
       // 1. Vérifier l'existence du fichier
       const fileExists = fs.existsSync(this.FILE_PATH);
-      console.log('🔍 [DEBUG] Fichier existe:', fileExists);
+      
       
       if (!fileExists) {
         return {
@@ -69,7 +69,7 @@ export class NotificationsFileDebugService {
       // 2. Lire les stats du fichier
       const stats = fs.statSync(this.FILE_PATH);
       const fileSize = stats.size;
-      console.log('🔍 [DEBUG] Taille du fichier:', fileSize, 'bytes');
+      
 
       if (fileSize === 0) {
         return {
@@ -82,15 +82,15 @@ export class NotificationsFileDebugService {
 
       // 3. Lire le contenu brut
       const rawContent = fs.readFileSync(this.FILE_PATH, 'utf8');
-      console.log('🔍 [DEBUG] Contenu brut lu, longueur:', rawContent.length);
-      console.log('🔍 [DEBUG] Premiers 200 caractères:', rawContent.substring(0, 200));
+      
+      
 
       // 4. Parser le JSON
       let parsedContent: FileNotification[];
       try {
         parsedContent = JSON.parse(rawContent);
-        console.log('🔍 [DEBUG] JSON parsé avec succès');
-        console.log('🔍 [DEBUG] Nombre de notifications:', parsedContent.length);
+        
+        
       } catch (parseError) {
         console.error('🔍 [DEBUG] Erreur de parsing JSON:', parseError);
         return {
@@ -105,13 +105,13 @@ export class NotificationsFileDebugService {
       // 5. Analyser la structure
       if (parsedContent.length > 0) {
         const firstNotif = parsedContent[0];
-        console.log('🔍 [DEBUG] Structure de la première notification:');
-        console.log('🔍 [DEBUG] - ID:', firstNotif.id);
-        console.log('🔍 [DEBUG] - userId type:', typeof firstNotif.userId);
-        console.log('🔍 [DEBUG] - userId is array:', Array.isArray(firstNotif.userId));
-        console.log('🔍 [DEBUG] - userId content:', firstNotif.userId);
-        console.log('🔍 [DEBUG] - role:', firstNotif.role);
-        console.log('🔍 [DEBUG] - module:', firstNotif.module);
+        
+        
+        
+        
+        
+        
+        
       }
 
       // 6. Filtrer pour l'utilisateur spécifique (si fourni)
@@ -119,11 +119,11 @@ export class NotificationsFileDebugService {
       let userMatches: Array<{notificationId: string; matchedUsers: NotificationUser[]}> = [];
 
       if (userId || userEmail) {
-        console.log('🔍 [DEBUG] Filtrage pour utilisateur...');
+        
         
         filteredForUser = parsedContent.filter(notification => {
           if (!Array.isArray(notification.userId)) {
-            console.log('🔍 [DEBUG] Notification avec userId non-array:', notification.id);
+            
             return false;
           }
 
@@ -138,14 +138,14 @@ export class NotificationsFileDebugService {
               notificationId: notification.id,
               matchedUsers
             });
-            console.log('🔍 [DEBUG] Match trouvé pour notification:', notification.id, 'users:', matchedUsers);
+            
             return true;
           }
 
           return false;
         });
 
-        console.log('🔍 [DEBUG] Notifications filtrées pour utilisateur:', filteredForUser.length);
+        
       }
 
       return {

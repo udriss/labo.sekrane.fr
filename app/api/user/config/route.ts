@@ -2,28 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import fs from 'fs/promises';
-import path from 'path';
+import { UserServiceSQL } from '@/lib/services/userService.sql';
 import { withAudit } from '@/lib/api/with-audit';
 
-const USERS_FILE_PATH = path.join(process.cwd(), 'data', 'users.json');
 
-// Types pour la structure du fichier
-interface UserData {
-  id: string;
-  email: string;
-  password: string;
-  name: string;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  siteConfig?: any;
-}
-
-interface UsersFile {
-  users: UserData[];
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,20 +18,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Lire le fichier users.json
-    const fileContent = await fs.readFile(USERS_FILE_PATH, 'utf-8');
-    const data: UsersFile = JSON.parse(fileContent);
-    
-    // Trouver l'utilisateur par email de session
-    const user = data.users.find((u) => u.email === session.user.email);
-    
+    // Récupérer l'utilisateur SQL par email
+    const user = await UserServiceSQL.findByEmail(session.user.email);
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
         { status: 404 }
       );
     }
-
     return NextResponse.json({
       userId: user.id,
       siteConfig: user.siteConfig || {}
@@ -85,37 +61,30 @@ export const POST = withAudit(
       );
     }
 
-    // Lire le fichier actuel
-    const fileContent = await fs.readFile(USERS_FILE_PATH, 'utf-8');
-    const data: UsersFile = JSON.parse(fileContent);
-    
-    // Trouver l'utilisateur par email de session
-    const userIndex = data.users.findIndex((u) => u.email === session.user.email);
-    
-    if (userIndex === -1) {
+    // Récupérer l'utilisateur SQL par email
+    const user = await UserServiceSQL.findByEmail(session.user.email);
+    if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
         { status: 404 }
       );
     }
-
-    // Mettre à jour la configuration
-    data.users[userIndex].siteConfig = {
-      ...data.users[userIndex].siteConfig,
-      ...siteConfig,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Sauvegarder le fichier
-    await fs.writeFile(
-      USERS_FILE_PATH, 
-      JSON.stringify(data, null, 2),
-      'utf-8'
-    );
-
+    const updatedUser = await UserServiceSQL.update(user.id, {
+      siteConfig: {
+        ...user.siteConfig,
+        ...siteConfig,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: 'Erreur lors de la sauvegarde' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({
       success: true,
-      siteConfig: data.users[userIndex].siteConfig
+      siteConfig: updatedUser.siteConfig
     });
   } catch (error) {
     console.error('Erreur sauvegarde:', error);

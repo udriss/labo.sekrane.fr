@@ -60,8 +60,8 @@ export default function NotificationsDebugPage() {
     try {
       // 1. Vérifier la session
       const sessionCheckTime = new Date().toISOString();
-      console.log('🔍 Session status:', status);
-      console.log('🔍 Session data:', session);
+      
+      
       
       if (!session?.user) {
         errors.push('Session utilisateur non trouvée ou invalide');
@@ -80,26 +80,26 @@ export default function NotificationsDebugPage() {
       if (userId) {
         try {
           // Test API notifications
-          console.log('🔍 Appel API notifications...');
+          
           const notifRes = await fetch(`/api/notifications?userId=${userId}&limit=20&offset=0`);
-          console.log('🔍 Réponse notifications status:', notifRes.status);
+          
           
           if (notifRes.ok) {
             notificationsResponse = await notifRes.json();
-            console.log('🔍 Données notifications:', notificationsResponse);
+            
           } else {
             const errorText = await notifRes.text();
             errors.push(`API notifications erreur ${notifRes.status}: ${errorText}`);
           }
 
           // Test API stats
-          console.log('🔍 Appel API stats...');
+          
           const statsRes = await fetch(`/api/notifications/stats?userId=${userId}`);
-          console.log('🔍 Réponse stats status:', statsRes.status);
+          
           
           if (statsRes.ok) {
             statsResponse = await statsRes.json();
-            console.log('🔍 Données stats:', statsResponse);
+            
           } else {
             const errorText = await statsRes.text();
             errors.push(`API stats erreur ${statsRes.status}: ${errorText}`);

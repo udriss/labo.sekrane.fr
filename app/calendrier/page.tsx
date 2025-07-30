@@ -226,7 +226,7 @@ const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: s
     } else if (data.isPending) {
       alert('Votre demande de modification a été envoyée au créateur de l\'événement pour validation.');
     } else {
-      console.log('Événement déplacé avec succès')
+      
     }
 
     // Mettre à jour l'événement avec les données du serveur
@@ -386,7 +386,7 @@ const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
       setSelectedEvent(updatedEvent);
     }
 
-    console.log(data.message);
+    
 
   } catch (error) {
     console.error('Erreur lors de l\'approbation des créneaux:', error);
@@ -440,7 +440,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     // Utiliser les timeSlots mis à jour s'ils existent, sinon garder les anciens
     const finalTimeSlots = timeSlots || eventToEdit.timeSlots || [];
     
-    console.log('TimeSlots à sauvegarder:', finalTimeSlots);
+    
 
     const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
       method: 'PUT',
@@ -460,7 +460,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     }
 
     const result = await response.json();
-    console.log('Réponse du serveur:', result);
+    
 
 
     // Rafraîchir la liste des événements

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { notificationService } from '@/lib/notifications/notification-service';
+import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -10,14 +10,23 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const { userId } = await request.json();
+    const user = session.user as any;
+    const body = await request.json();
+    const { userId } = body;
     
     // Vérifier que l'utilisateur peut marquer ces notifications
-    if (userId !== (session.user as any).id && (session.user as any).role !== 'ADMIN') {
+    const targetUserId = userId || user.id;
+    if (targetUserId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    const success = await notificationService.markAllAsRead(userId);
+    console.log('📧 [MARK-ALL-READ] Marquage toutes notifications comme lues:', {
+      userId: targetUserId,
+      userRole: user.role,
+      requestedBy: user.id
+    });
+
+    const success = await DatabaseNotificationService.markAllAsRead(targetUserId, user.role);
 
     if (!success) {
       return NextResponse.json(
@@ -26,7 +35,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: 'Toutes les notifications ont été marquées comme lues'
+    });
 
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
