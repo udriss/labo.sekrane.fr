@@ -128,34 +128,8 @@ export default function SignInPage() {
     const userAgent = navigator.userAgent;
     const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
     
-    // Pour Safari, si signIn réussit, on force la redirection sans vérifier la session
-    if (isSafari && !res?.error) {
-      
-      setSuccessMessage(true);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1000);
-      return;
-    }
-    
-    // Vérification réelle de la session après signIn (autres navigateurs)
-    let sessionValid = false;
-    if (!res?.error) {
-      for (let i = 0; i < 3; i++) {
-        try {
-          const sessionRes = await fetch("/api/auth/session?" + Date.now());
-          const sessionData = await sessionRes.json();
-          if (sessionData?.user) {
-            sessionValid = true;
-            break;
-          }
-        } catch {}
-        await new Promise(r => setTimeout(r, 150));
-      }
-    }
-
-    // Gestion de l'erreur ou succès (sauf Safari qui est déjà traité)
-    if (!isSafari && (res?.error || !sessionValid)) {
+    // Gestion des erreurs d'authentification d'abord
+    if (res?.error) {
       setLoading(false)
       setError("Email ou mot de passe incorrect")
       setPasswordError(true)
@@ -167,26 +141,29 @@ export default function SignInPage() {
           form.style.animation = ''
         }, 500)
       }
-    } else if (!isSafari) {
-      // Succès pour les autres navigateurs
-      setSuccessMessage(true)
-      setTimeout(() => {
-        window.location.href = "/"
-      }, 1000)
+      return;
     }
+
+    // Si l'authentification réussit, NextAuth gère automatiquement la redirection
+    if (res?.ok) {
+      setSuccessMessage(true);
+      // Attendre un peu pour permettre à NextAuth de synchroniser la session
+      setTimeout(() => {
+        // Utiliser window.location.replace pour éviter les problèmes de cache
+        window.location.replace("/");
+      }, 1500);
+      return;
+    }
+
+    // Cas d'erreur non identifiée
+    setLoading(false)
+    setError("Une erreur inattendue s'est produite")
+    setPasswordError(true)
   }
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
   }
-
-  // const bcrypt = require('bcryptjs');
-  // bcrypt.hash('admin123', 12).then((hash: string) => {
-  //  console.log(hash);
-  // });
-
-  const bcrypt = require('bcryptjs');
-  bcrypt.compare('admin123', '$2b$12$OENV7sVwsCpxoBWcCp/Th.JuvdVsdo2XTrXHg9XeL8b9rugFhus32').then(console.log);
 
   // Composant de particule sans Math.random()
   const FloatingParticle = ({ delay, position }: { delay: number, position: { left: number, top: number } }) => {
@@ -228,7 +205,7 @@ export default function SignInPage() {
           ${theme.palette.primary.main} 50%, 
           ${theme.palette.secondary.main} 100%)`,
         position: "relative",
-        overflow: "hidden"
+        overflow: 'auto'
       }}
     >
       {/* Particules en arrière-plan - ne s'affiche qu'après le montage */}
@@ -609,6 +586,18 @@ export default function SignInPage() {
 
             {/* Footer du formulaire */}
             <Box mt={4} textAlign="center">
+              {/* Message temporaire pour les tests - à supprimer en production */}
+              {process.env.NODE_ENV === 'development' && (
+                <Alert 
+                  severity="info" 
+                  sx={{ mb: 2, borderRadius: 2 }}
+                >
+                  <Typography variant="caption">
+                    <strong>Test:</strong> admin@labo.fr / admin123
+                  </Typography>
+                </Alert>
+              )}
+              
               <Typography variant="caption" color="text.secondary">
                 Première connexion ?{' '}
                 <Link

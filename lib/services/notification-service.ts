@@ -1,3 +1,5 @@
+// lib/services/notification-service.ts
+
 /**
  * Service pour créer et envoyer des notifications via l'API
  */
@@ -22,12 +24,16 @@ export class NotificationService {
     try {
       console.log('🔔 [NotificationService] Création de notification:', params.module, params.actionType);
 
-      const response = await fetch('/api/notifications', {
+      // Utiliser l'endpoint /ws qui a le système de push intégré
+      const response = await fetch('/api/notifications/ws', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(params),
+        body: JSON.stringify({
+          action: 'create-and-notify',
+          ...params
+        }),
       });
 
       if (!response.ok) {
@@ -39,7 +45,7 @@ export class NotificationService {
       const data = await response.json();
       
       if (data.success) {
-        console.log('✅ [NotificationService] Notification créée avec succès:', data.notificationId);
+        console.log('✅ [NotificationService] Notification créée et diffusée:', data.notificationId, `vers ${data.sentToConnections} connexions`);
         return true;
       } else {
         console.error('❌ [NotificationService] Création échouée:', data.error);

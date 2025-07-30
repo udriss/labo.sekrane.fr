@@ -73,9 +73,11 @@ export class DatabaseNotificationService {
           id, user_id, user_role, target_roles, module, action_type, 
           message, details, severity, entity_type, entity_id, triggered_by,
           reason, created_at, updated_at
-        ) VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'role', NOW(), NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'role', NOW(), NOW())`,
         [
           notificationId,
+          triggeredBy || 'userID_TEMP_database_service', // Utiliser triggeredBy comme userId
+          targetRoles[0] || 'GUEST', // Utiliser le premier rôle cible comme user_role
           JSON.stringify(targetRoles),
           module,
           actionType,
@@ -250,6 +252,68 @@ export class DatabaseNotificationService {
     } catch (error) {
       console.error('❌ [DatabaseService] Erreur getReadStatus:', error);
       return false;
+    }
+  }
+
+  /**
+   * Récupérer une notification par son ID
+   */
+  static async getNotificationById(notificationId: string): Promise<ExtendedNotification | null> {
+    try {
+      const notifications = await query<DatabaseNotification[]>(
+        `SELECT 
+          id, user_id, user_role, target_roles, module, action_type,
+          message, details, severity, is_read, entity_type, entity_id,
+          triggered_by, reason, specific_reason, created_at, updated_at
+        FROM notifications 
+        WHERE id = ?`,
+        [notificationId]
+      );
+
+      if (notifications.length === 0) {
+        console.warn('❌ [DatabaseService] Notification non trouvée:', notificationId);
+        return null;
+      }
+
+      const dbNotif = notifications[0];
+
+      // Parser le message JSON
+      let parsedMessage;
+      try {
+        parsedMessage = typeof dbNotif.message === 'string' ? JSON.parse(dbNotif.message) : dbNotif.message;
+      } catch {
+        parsedMessage = { fr: dbNotif.message, en: dbNotif.message };
+      }
+
+      // Parser les target roles
+      let targetRoles = [];
+      try {
+        targetRoles = JSON.parse(dbNotif.target_roles || '[]');
+      } catch {
+        targetRoles = [];
+      }
+
+      return {
+        id: dbNotif.id,
+        userId: dbNotif.user_id || '',
+        role: Array.isArray(targetRoles) && targetRoles.length > 0 ? targetRoles[0] : 'GUEST',
+        module: dbNotif.module,
+        actionType: dbNotif.action_type,
+        message: parsedMessage,
+        details: dbNotif.details || '',
+        createdAt: dbNotif.created_at.toISOString(),
+        isRead: false, // Nouvelle notification, pas encore lue
+        severity: dbNotif.severity,
+        reason: dbNotif.reason,
+        specificReason: dbNotif.specific_reason || undefined,
+        entityType: dbNotif.entity_type || undefined,
+        entityId: dbNotif.entity_id || undefined,
+        triggeredBy: dbNotif.triggered_by || undefined
+      };
+
+    } catch (error) {
+      console.error('❌ [DatabaseService] Erreur getNotificationById:', error);
+      return null;
     }
   }
 

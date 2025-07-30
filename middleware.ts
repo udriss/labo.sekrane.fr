@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { auditMiddleware } from '@/lib/middleware/audit-edge';
 
-export const runtime = 'nodejs';
+
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
@@ -153,7 +153,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/auth/signin', request.url));
       } else {
         return NextResponse.json(
-          { error: 'Authentification requise' },
+          { error: '[MIDDLEWARE] Authentification requise' },
           { status: 401 }
         );
       }
@@ -173,7 +173,7 @@ export async function middleware(request: NextRequest) {
     
     if (!isPublicAPI && !hasValidSession) {
       return NextResponse.json(
-        { error: 'Authentification requise' },
+        { error: '[MIDDLEWARE] Authentification requise' },
         { status: 401 }
       );
     }

@@ -1,3 +1,7 @@
+// components/notifications/NotificationTester.tsx
+
+'use client';
+
 import React, { useState } from 'react';
 import {
   Box,
@@ -67,6 +71,26 @@ const NotificationTester: React.FC = () => {
             userId
           );
           break;
+
+        case 'direct-sse':
+          // Test direct du système SSE
+          const directResponse = await fetch('/api/notifications/ws', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'test'
+            })
+          });
+          
+          if (directResponse.ok) {
+            const directData = await directResponse.json();
+            success = directData.success;
+            if (success) {
+              showMessage(`Test SSE direct réussi ! Envoyé à ${directData.sentToConnections} connexions`, 'success');
+              return;
+            }
+          }
+          break;
         
         default:
           showMessage('Type de test inconnu', 'error');
@@ -119,6 +143,17 @@ const NotificationTester: React.FC = () => {
       )}
 
       <Stack spacing={2}>
+        <Button
+          variant="outlined"
+          startIcon={<NotificationImportant />}
+          onClick={() => handleTestNotification('direct-sse')}
+          disabled={loading === 'direct-sse'}
+          fullWidth
+          color="error"
+        >
+          {loading === 'direct-sse' ? 'Test...' : '🚀 Test SSE Direct (Push immédiat)'}
+        </Button>
+
         <Button
           variant="outlined"
           startIcon={<NotificationImportant />}

@@ -1,5 +1,7 @@
 // app/api/equipement/[id]/route.ts
 
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from 'fs';
 import path from 'path';

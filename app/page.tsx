@@ -375,7 +375,7 @@ interface SystemStats {
 }
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const theme = useTheme();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -452,7 +452,21 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [session]);
 
-  if (!session) {
+  // Affichage de chargement pendant que NextAuth vérifie la session
+  if (status === "loading") {
+    return (
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
+          <CircularProgress size={60} />
+          <Typography variant="h6" color="text.secondary">
+            Vérification de la session...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
+  if (status === "unauthenticated" || !session) {
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
         <div>
@@ -534,6 +548,7 @@ useEffect(() => {
     );
   }
 
+  console.log("User session:", session, "Status:", status);
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <div>
@@ -835,6 +850,14 @@ useEffect(() => {
                           <AdminPanelSettings />
                           <Typography variant="h6" sx={{ fontWeight: 600 }}>
                             Administration
+                          </Typography>
+                        </>
+                      ) :
+                      (session.user as any)?.role === 'LABORANTIN' ? (
+                        <>
+                          <Memory />
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            Espace laborantin
                           </Typography>
                         </>
                       ) : (

@@ -1,5 +1,7 @@
 // app/api/classes/route.ts
 
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";

@@ -71,7 +71,25 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
   '& .MuiBadge-badge': {
     backgroundColor: theme.palette.error.main,
     color: '#ffffff',
-  }
+  },
+  // Animation de pulsation pour les notifications
+  '@keyframes pulse': {
+    '0%': {
+      transform: 'scale(1)',
+      boxShadow: '0 0 0 0 rgba(255, 82, 82, 0.7)',
+    },
+    '70%': {
+      transform: 'scale(1.1)',
+      boxShadow: '0 0 10px 10px rgba(255, 82, 82, 0)',
+    },
+    '100%': {
+      transform: 'scale(1)',
+      boxShadow: '0 0 0 0 rgba(255, 82, 82, 0)',
+    },
+  },
+  '.pulse': {
+    animation: 'pulse 1s',
+  },
 }));
 
 const Search = styled('div')(({ theme }) => ({
@@ -216,8 +234,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 
   const handleNotificationsOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNotifications(event.currentTarget);
-    // Ne pas recharger si on a déjà des notifications récentes
-    fetchNotifications();
+    // Les notifications sont déjà à jour grâce au SSE, pas besoin de refetch
   };
 
   const handleNotificationsClose = () => {
@@ -292,18 +309,50 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
             
             switch (message.type) {
               case 'connected':
-                
+                console.log('[SSE] Connexion établie, récupération des données initiales...');
+                // Récupérer les notifications et stats à la connexion
+                fetchNotifications();
                 break;
                 
               case 'notification':
                 if (message.data) {
                   const notificationData = message.data as ExtendedNotification;
-                  setNotifications(prev => [notificationData, ...prev.slice(0, 9)]);
-                  setNotificationStats(prev => ({
-                    ...prev,
-                    total: prev.total + 1,
-                    unread: prev.unread + 1
-                  }));
+                  console.log('[SSE] Nouvelle notification reçue:', notificationData);
+                  
+                  // Animer l'icône de notification
+                  const icon = document.getElementById('notification-icon');
+                  if (icon) {
+                    icon.classList.add('pulse');
+                    setTimeout(() => icon.classList.remove('pulse'), 1000);
+                  }
+                  
+                  // Ajouter la nouvelle notification en tête de liste
+                  setNotifications(prev => {
+                    // Éviter les doublons
+                    const exists = prev.some(n => n.id === notificationData.id);
+                    if (exists) return prev;
+                    return [notificationData, ...prev.slice(0, 49)]; // Garder max 50 notifications
+                  });
+                  
+                  // Mettre à jour les statistiques de manière immuable
+                  setNotificationStats(prev => {
+                    const newUnread = prev.unread + (notificationData.isRead ? 0 : 1);
+                    const newTotal = prev.total + 1;
+                    
+                    const newByModule = { ...prev.byModule };
+                    newByModule[notificationData.module] = (newByModule[notificationData.module] || 0) + 1;
+
+                    const newBySeverity = { ...prev.bySeverity };
+                    newBySeverity[notificationData.severity] = (newBySeverity[notificationData.severity] || 0) + 1;
+
+                    return {
+                      ...prev,
+                      total: newTotal,
+                      unread: newUnread,
+                      byModule: newByModule,
+                      bySeverity: newBySeverity,
+                    };
+                  });
                 }
                 break;
                 
@@ -312,7 +361,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                 break;
                 
               default:
-                
+                console.log('[SSE] Message non géré:', message.type);
             }
           } catch (error) {
             console.error('Error parsing SSE message:', error);
@@ -323,13 +372,13 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           console.error('SSE error:', error);
           setSseConnected(false);
           
-          // Tentative de reconnexion après 5 secondes
+          // Tentative de reconnexion après 3 secondes
           setTimeout(() => {
             if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
-              
+              console.log('[SSE] Tentative de reconnexion...');
               connectSSE();
             }
-          }, 5000);
+          }, 3000);
         };
 
       } catch (error) {
@@ -359,40 +408,72 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
     // Marquer comme lue si nécessaire
     if (!notification.isRead) {
       try {
-        await fetch(`/api/notifications/${notification.id}/read`, {
-          method: 'PUT'
+        const response = await fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'markAsRead',
+            notificationId: notification.id
+          }),
         });
         
-        // Mise à jour optimiste
-        setNotifications(prev => 
-          prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
-        );
-        setNotificationStats(prev => ({
-          ...prev,
-          unread: Math.max(0, prev.unread - 1)
-        }));
+        if (response.ok) {
+          // Mise à jour optimiste
+          setNotifications(prev => 
+            prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+          );
+          setNotificationStats(prev => ({
+            ...prev,
+            unread: Math.max(0, prev.unread - 1)
+          }));
+        }
       } catch (error) {
         console.error('Error marking notification as read:', error);
       }
     }
     
-    router.push(`/notifications/${notification.id}`);
+    // Naviguer vers la page de détail ou une page appropriée selon le module
+    if (notification.module && notification.entityId) {
+      // Logique de navigation selon le module
+      switch (notification.module.toLowerCase()) {
+        case 'equipment':
+          router.push(`/materiel?highlight=${notification.entityId}`);
+          break;
+        case 'calendar':
+          router.push(`/calendrier?highlight=${notification.entityId}`);
+          break;
+        case 'chemicals':
+          router.push(`/chemicals?highlight=${notification.entityId}`);
+          break;
+        default:
+          router.push('/notifications');
+      }
+    } else {
+      router.push('/notifications');
+    }
   };
 
   const handleMarkAllAsRead = async () => {
     if (!session?.user) return;
     
     try {
-      const userId = (session.user as any).id;
-      await fetch('/api/notifications/mark-all-read', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          action: 'markAllAsRead'
+        })
       });
       
-      // Mettre à jour l'état local
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setNotificationStats(prev => ({ ...prev, unread: 0 }));
+      if (response.ok) {
+        // Mettre à jour l'état local
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setNotificationStats(prev => ({ ...prev, unread: 0 }));
+      }
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
@@ -434,10 +515,16 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           </Tooltip>
 
           {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton onClick={handleNotificationsOpen}>
+          <Tooltip title={`Notifications ${sseConnected ? '(temps réel)' : '(hors ligne)'}`}>
+            <IconButton id="notification-icon" onClick={handleNotificationsOpen}>
               <Badge badgeContent={notificationStats.unread} color="error">
-                {sseConnected ? <NotificationsActive /> : <Notifications />}
+                {sseConnected ? (
+                  <NotificationsActive sx={{ 
+                    color: isDarkMode ? '#ffffff' : '#000000',
+                  }} />
+                ) : (
+                  <Notifications sx={{ color: isDarkMode ? '#ffffff' : '#000000' }} />
+                )}
               </Badge>
             </IconButton>
           </Tooltip>

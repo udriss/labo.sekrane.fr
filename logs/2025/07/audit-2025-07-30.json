@@ -1022,5 +1022,295 @@
       "duration": 37
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "4b4f0b95-1ffe-4cae-bc2d-fe7c7eb8f5b7",
+    "timestamp": "2025-07-30T10:08:59.817Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 55,
+        "timestamp": "2025-07-30T10:08:59.817Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753870139762_dudhjph05",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 55
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a48c822a-f608-4e0e-aadb-d365a21b105a",
+    "timestamp": "2025-07-30T10:08:59.830Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 68,
+        "timestamp": "2025-07-30T10:08:59.830Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753870139762_rxczbuvf6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 68
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0fab102b-2928-4286-8aa4-cdba414ba59b",
+    "timestamp": "2025-07-30T10:09:21.493Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-07-30T10:09:21.493Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753870161477_2reo3zf95",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "99efdbf6-49cb-494f-8891-74b81437af37",
+    "timestamp": "2025-07-30T10:09:30.089Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-07-30T10:09:30.089Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753870170077_7s36f7x9n",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4d079cc4-a7bf-4b28-8d7f-a420f96110bf",
+    "timestamp": "2025-07-30T11:40:41.857Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+        "query": {},
+        "body": {
+          "quantity": 7154.5
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 7154.5,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Salle de TP B",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-30T11:40:41.856Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Paillasse 1"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-30T11:40:41.857Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753875641853_8zxjn3t39",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
   }
 ]

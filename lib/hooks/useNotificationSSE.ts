@@ -1,3 +1,5 @@
+// lib/hooks/useNotificationSSE.ts
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
@@ -46,7 +48,7 @@ export function useNotificationSSE({
     try {
       console.log('🔄 [SSE Hook] Tentative de connexion SSE...');
       
-      const eventSource = new EventSource('/api/notifications/stream');
+      const eventSource = new EventSource('/api/notifications/ws');
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {

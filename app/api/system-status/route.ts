@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import { UserServiceSQL } from '@/lib/services/userService.sql';

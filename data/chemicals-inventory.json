@@ -101,7 +101,7 @@
       "molfile": null,
       "casNumber": "7647-01-0",
       "barcode": null,
-      "quantity": 2784.2,
+      "quantity": 7154.5,
       "unit": "mL",
       "minQuantity": 0,
       "concentration": 37,
@@ -121,7 +121,7 @@
       "status": "IN_STOCK",
       "notes": "",
       "createdAt": "2025-07-21T13:40:04.635Z",
-      "updatedAt": "2025-07-30T00:33:07.652Z",
+      "updatedAt": "2025-07-30T11:40:41.856Z",
       "supplier": "cmdd5kp1000021f0vuhvtfk1y",
       "location": "Paillasse 1"
     },

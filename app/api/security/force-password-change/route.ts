@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { prisma } from '@/lib/db/prisma'; // Assuming prisma is set up for database interaction
 import bcrypt from 'bcrypt';
 import { NextResponse } from 'next/server';

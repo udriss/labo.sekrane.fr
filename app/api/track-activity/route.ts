@@ -1,3 +1,5 @@
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { promises as fs } from 'fs';

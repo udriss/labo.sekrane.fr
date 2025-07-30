@@ -1,5 +1,7 @@
 // app/api/chemicals/[id]/route.ts
 
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import fs from 'fs/promises';

@@ -1,9 +1,10 @@
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
 import { NotificationFilter } from '@/types/notifications';
-import { sendNotificationToUser } from './stream/route';
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,12 +65,7 @@ export async function GET(request: NextRequest) {
       filters.entityId = searchParams.get('entityId')!;
     }
     
-    console.log('📧 [API] Récupération notifications depuis la base de données pour:', {
-      userId: user.id,
-      userEmail: user.email,
-      userRole: user.role,
-      filters
-    });
+
 
     // Récupérer les notifications avec le service de base de données
     const result = await DatabaseNotificationService.getNotifications(user.id, filters);
@@ -121,14 +117,6 @@ export async function POST(request: NextRequest) {
       triggeredBy,
       specificUsers
     } = body;
-
-    console.log('📧 [API] Création de notification:', {
-      targetRoles,
-      module,
-      actionType,
-      severity,
-      triggeredBy: user.id
-    });
 
     // Validation des champs requis
     if (!targetRoles || !Array.isArray(targetRoles) || targetRoles.length === 0) {
@@ -188,16 +176,29 @@ export async function POST(request: NextRequest) {
       if (createdNotifications.notifications.length > 0) {
         const newNotification = createdNotifications.notifications[0];
         
-        // Envoyer la notification via SSE aux utilisateurs concernés
-        if (specificUsers && specificUsers.length > 0) {
-          // Envoyer aux utilisateurs spécifiques
-          specificUsers.forEach((userId: string) => {
-            sendNotificationToUser(userId, newNotification);
+        // Envoyer la notification via le système SSE centralisé
+        try {
+          const sseResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/ws`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'broadcast',
+              message: {
+                type: 'notification',
+                data: newNotification,
+                timestamp: Date.now()
+              }
+            })
           });
-        } else {
-          // Pour les notifications par rôle, on pourrait implémenter une logique plus complexe
-          // Pour l'instant, on ne diffuse que si on a des utilisateurs spécifiques
-          console.log('🔔 [API] Notification créée pour des rôles, pas d\'envoi SSE automatique');
+          
+          if (sseResponse.ok) {
+            const sseData = await sseResponse.json();
+            console.log('🔔 [API] Notification diffusée via SSE:', sseData.sentToConnections, 'connexions');
+          } else {
+            console.warn('⚠️ [API] Erreur diffusion SSE:', await sseResponse.text());
+          }
+        } catch (error) {
+          console.error('❌ [API] Erreur appel SSE:', error);
         }
       }
     } catch (sseError) {
