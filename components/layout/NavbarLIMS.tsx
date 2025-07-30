@@ -821,54 +821,50 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
         >
           {session?.user ? (
             // Menu pour utilisateur connecté
-            <>
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            [
+              <Box key="user-info" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="subtitle1">
                   {session.user.name || 'Utilisateur'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {session.user.email}
                 </Typography>
-              </Box>
-
-              <MenuItem component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
+              </Box>,
+              <MenuItem key="profile" component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
                 <ListItemIcon>
                   <Person fontSize="small" />
                 </ListItemIcon>
                 Profil
-              </MenuItem>
-
-              <MenuItem component={Link} href="/reglages" onClick={handleUserMenuClose}>
+              </MenuItem>,
+              <MenuItem key="settings" component={Link} href="/reglages" onClick={handleUserMenuClose}>
                 <ListItemIcon>
                   <Settings fontSize="small" />
                 </ListItemIcon>
                 Paramètres
-              </MenuItem>
-
-              <Divider />
-
-              <MenuItem onClick={handleSignOut}>
+              </MenuItem>,
+              <Divider key="divider" />,
+              <MenuItem key="logout" onClick={handleSignOut}>
                 <ListItemIcon>
                   <Logout fontSize="small" />
                 </ListItemIcon>
                 Déconnexion
               </MenuItem>
-            </>
+            ]
           ) : (
             // Menu pour utilisateur non connecté
-            <>
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            [
+              <Box key="guest-info" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="subtitle1">
                   Non connecté
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Cliquez pour vous connecter
                 </Typography>
-              </Box>
-
-              <MenuItem 
-                component={Link} 
-                href="/auth/signin" 
+              </Box>,
+              <MenuItem
+                key="login"
+                component={Link}
+                href="/auth/signin"
                 onClick={handleUserMenuClose}
               >
                 <ListItemIcon>
@@ -876,7 +872,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                 </ListItemIcon>
                 Connexion
               </MenuItem>
-            </>
+            ]
           )}
         </Menu>
       </Toolbar>
