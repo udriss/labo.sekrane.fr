@@ -35,17 +35,83 @@ export default function NotFoundPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [glitchActive, setGlitchActive] = useState(false)
+  const [glitchElements, setGlitchElements] = useState<{[key: string]: boolean}>({})
+  const [randomGlitchParticles, setRandomGlitchParticles] = useState<Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+    blur: number;
+  }>>([])
 
   useEffect(() => {
     setMounted(true)
-    // Activer le glitch périodiquement
-    const glitchInterval = setInterval(() => {
-      setGlitchActive(true)
-      setTimeout(() => setGlitchActive(false), 200)
-    }, 3000)
+    
+    // Fonction pour créer des particules de glitch aléatoires
+    const createRandomGlitchParticles = () => {
+      const particles = []
+      const colors = [
+        theme.palette.error.main,
+        theme.palette.primary.main,
+        theme.palette.secondary.main,
+        '#ff00ff',
+        '#00ffff',
+        '#ff6b35'
+      ]
+      
+      for (let i = 0; i < Math.random() * 8 + 3; i++) {
+        particles.push({
+          id: `particle-${i}-${Date.now()}`,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          width: Math.random() * 200 + 50,
+          height: Math.random() * 40 + 10,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          blur: Math.random() * 80 + 20
+        })
+      }
+      return particles
+    }
 
-    return () => clearInterval(glitchInterval)
-  }, [])
+    // Glitch global plus fréquent
+    const globalGlitchInterval = setInterval(() => {
+      setGlitchActive(true)
+      setRandomGlitchParticles(createRandomGlitchParticles())
+      
+      setTimeout(() => {
+        setGlitchActive(false)
+        setRandomGlitchParticles([])
+      }, Math.random() * 300 + 100) // Durée variable entre 100-400ms
+    }, Math.random() * 2000 + 800) // Intervalle variable entre 800-2800ms
+
+    // Glitch d'éléments individuels
+    const elementGlitchInterval = setInterval(() => {
+      const elements = ['title', 'subtitle', 'icon', 'background', 'buttons']
+      const randomElement = elements[Math.floor(Math.random() * elements.length)]
+      
+      setGlitchElements(prev => ({ ...prev, [randomElement]: true }))
+      
+      setTimeout(() => {
+        setGlitchElements(prev => ({ ...prev, [randomElement]: false }))
+      }, Math.random() * 200 + 50) // Durée entre 50-250ms
+    }, Math.random() * 1500 + 500) // Intervalle entre 500-2000ms
+
+    // Micro-glitches très rapides
+    const microGlitchInterval = setInterval(() => {
+      if (Math.random() > 0.7) { // 30% de chance
+        setGlitchActive(true)
+        setTimeout(() => setGlitchActive(false), 50) // Très court
+      }
+    }, Math.random() * 800 + 200) // Très fréquent
+
+    return () => {
+      clearInterval(globalGlitchInterval)
+      clearInterval(elementGlitchInterval) 
+      clearInterval(microGlitchInterval)
+    }
+  }, [theme])
 
   // Icônes flottantes
   const floatingIcons = [
@@ -98,8 +164,13 @@ export default function NotFoundPage() {
           sx={{ 
             fontSize: { xs: 40, md: 60 },
             color: alpha(theme.palette.primary.main, 0.2),
-            filter: glitchActive ? 'blur(2px)' : 'none',
-            transition: 'filter 0.1s'
+            filter: (glitchActive || glitchElements.background) 
+              ? `blur(1.5px) hue-rotate(180deg) saturate(1.5)` 
+              : 'none',
+            transition: 'filter 0.05s',
+            transform: glitchElements.background 
+              ? `translate(1px, -1px) scale(0.95)` 
+              : 'none'
           }} 
         />
       </motion.div>
@@ -143,8 +214,14 @@ export default function NotFoundPage() {
             )
           `,
           backgroundSize: '50px 50px',
-          opacity: glitchActive ? 0.5 : 1,
-          transition: 'opacity 0.1s'
+          opacity: (glitchActive || glitchElements.background) ? 0.5 : 1,
+          transition: 'opacity 0.05s',
+          transform: glitchElements.background 
+            ? `skew(0.5deg) scale(0.99)` 
+            : 'none',
+          filter: glitchActive 
+            ? `hue-rotate(180deg) invert(0.05)` 
+            : 'none'
         }}
       />
 
@@ -173,13 +250,15 @@ export default function NotFoundPage() {
             {/* Icône d'erreur principale */}
             <motion.div
               animate={{
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0]
+                scale: glitchElements.icon ? [1, 1.2, 0.9, 1.1, 1] : [1, 1.1, 1],
+                rotate: glitchElements.icon ? [0, 8, -5, 3, 0] : [0, 5, -5, 0],
+                x: glitchElements.icon ? [0, -2, 3, -1, 0] : 0,
+                y: glitchElements.icon ? [0, 1, -2, 1, 0] : 0
               }}
               transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
+                duration: glitchElements.icon ? 0.3 : 4,
+                repeat: glitchElements.icon ? 0 : Infinity,
+                ease: glitchElements.icon ? "easeInOut" : "easeInOut"
               }}
             >
               <Box
@@ -192,16 +271,26 @@ export default function NotFoundPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "50%",
-                  background: alpha(theme.palette.error.main, 0.1),
+                  background: (glitchActive || glitchElements.icon) 
+                    ? `linear-gradient(${Math.random() * 360}deg, ${alpha(theme.palette.error.main, Math.random() * 0.3 + 0.1)}, ${alpha(theme.palette.primary.main, Math.random() * 0.3 + 0.1)})`
+                    : alpha(theme.palette.error.main, 0.1),
                   border: `2px solid ${theme.palette.error.main}`,
                   position: "relative",
+                  filter: glitchElements.icon 
+                    ? `blur(${Math.random() * 1}px) saturate(${Math.random() * 2 + 1})` 
+                    : 'none',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
                     inset: -10,
                     borderRadius: '50%',
                     border: `2px dashed ${alpha(theme.palette.error.main, 0.3)}`,
-                    animation: 'spin 20s linear infinite'
+                    animation: glitchElements.icon 
+                      ? `spin ${Math.random() * 5 + 5}s linear infinite` 
+                      : 'spin 20s linear infinite',
+                    transform: glitchElements.icon 
+                      ? `scale(${Math.random() * 0.4 + 0.8})` 
+                      : 'none'
                   }
                 }}
               >
@@ -209,10 +298,13 @@ export default function NotFoundPage() {
                   sx={{ 
                     fontSize: 60, 
                     color: theme.palette.error.main,
-                    filter: glitchActive 
-                      ? `hue-rotate(${Math.random() * 360}deg) saturate(3)` 
+                    filter: (glitchActive || glitchElements.icon)
+                      ? `hue-rotate(${Math.random() * 360}deg) saturate(${Math.random() * 3 + 1}) brightness(${Math.random() * 0.8 + 0.6})` 
                       : 'none',
-                    transition: 'filter 0.1s'
+                    transition: 'filter 0.05s',
+                    transform: glitchElements.icon 
+                      ? `rotate(${Math.random() * 20 - 10}deg) scale(${Math.random() * 0.3 + 0.85})` 
+                      : 'none'
                   }} 
                 />
               </Box>
@@ -226,49 +318,94 @@ export default function NotFoundPage() {
                   fontSize: { xs: '4rem', md: '6rem' },
                   fontWeight: 900,
                   color: theme.palette.text.primary,
-                  textShadow: glitchActive
-                    ? `
-                      2px 2px 0 ${theme.palette.error.main},
-                      -2px -2px 0 ${theme.palette.primary.main},
-                      0 0 10px ${alpha(theme.palette.secondary.main, 0.5)}
-                    `
-                    : 'none',
-                  transform: glitchActive ? 'skew(-5deg)' : 'none',
-                  transition: 'all 0.1s',
+                  textShadow: (glitchActive || glitchElements.title)
+                  ? `
+                    2px -1px 0 ${theme.palette.error.main},
+                    -2px 1px 0 ${theme.palette.primary.main},
+                    0 0 15px ${alpha(theme.palette.secondary.main, 0.6)},
+                    3px 0 0 #ff00ff,
+                    -3px 0 0 #00ffff
+                  `
+                  : 'none',
+                  transform: (glitchActive || glitchElements.title) 
+                  ? `skew(-2deg) scale(0.98) translate(1px, -1px)` 
+                  : 'none',
+                  transition: 'all 0.05s',
+                  filter: glitchElements.title 
+                  ? `blur(1px) hue-rotate(30deg)` 
+                  : 'none',
                   '&::before': {
-                    content: '"404"',
-                    position: 'absolute',
-                    left: glitchActive ? '2px' : '0',
-                    top: glitchActive ? '-2px' : '0',
-                    color: theme.palette.error.main,
-                    opacity: glitchActive ? 0.8 : 0,
-                    clipPath: 'polygon(0 0, 100% 0, 100% 45%, 0 45%)',
-                    transition: 'all 0.1s'
+                  content: '"404"',
+                  position: 'absolute',
+                  right: (glitchActive || glitchElements.title) ? `15px` : '0',
+                  top: (glitchActive || glitchElements.title) ? `15px` : '0',
+                  color: theme.palette.error.main,
+                  opacity: (glitchActive || glitchElements.title) ? 0.5 : 0,
+                  clipPath: `polygon(0 0, 100% 0, 100% 40%, 0 40%)`,
+                  transition: 'all 0.05s',
+                  filter: `blur(0.5px)`,
+                  zIndex: -1
                   },
                   '&::after': {
-                    content: '"404"',
-                    position: 'absolute',
-                    left: glitchActive ? '-2px' : '0',
-                    top: glitchActive ? '2px' : '0',
-                    color: theme.palette.primary.main,
-                    opacity: glitchActive ? 0.8 : 0,
-                    clipPath: 'polygon(0 55%, 100% 55%, 100% 100%, 0 100%)',
-                    transition: 'all 0.1s'
+                  content: '"404"',
+                  position: 'absolute',
+                  left: (glitchActive || glitchElements.title) ? `-5px` : '0',
+                  top: (glitchActive || glitchElements.title) ? `-5px` : '0',
+                  color: theme.palette.primary.main,
+                  opacity: (glitchActive || glitchElements.title) ? 0.6 : 0,
+                  clipPath: `polygon(0 60%, 100% 60%, 100% 100%, 0 100%)`,
+                  transition: 'all 0.05s',
+                  filter: `blur(0.5px)`,
+                  zIndex: -1
                   }
                 }}
               >
                 404
               </Typography>
+              
+              {/* Lignes de glitch aléatoires sur le titre */}
+              {(glitchActive || glitchElements.title) && mounted && (
+                <>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: `${Math.random() * 80}%`,
+                      top: `${Math.random() * 80}%`,
+                      width: `${Math.random() * 100 + 50}px`,
+                      height: '2px',
+                      background: theme.palette.error.main,
+                      opacity: 0.6,
+                      transform: `rotate(45deg)`,
+                      zIndex: 1
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: `40%`,
+                      top: `60%`,
+                      width: `60px`,
+                      height: '1px',
+                      background: theme.palette.primary.main,
+                      opacity: 0.8,
+                      transform: `rotate(135deg)`,
+                      zIndex: 1
+                    }}
+                  />
+                </>
+              )}
             </Box>
 
             {/* Sous-titre avec animation */}
             <motion.div
               animate={{
-                opacity: [0.6, 1, 0.6]
+                opacity: glitchElements.subtitle ? [1, 0.3, 0.8, 0.1, 1] : [0.6, 1, 0.6],
+                x: glitchElements.subtitle ? [0, -3, 5, -1, 0] : 0,
+                y: glitchElements.subtitle ? [0, 1, -2, 1, 0] : 0
               }}
               transition={{
-                duration: 3,
-                repeat: Infinity,
+                duration: glitchElements.subtitle ? 0.4 : 3,
+                repeat: glitchElements.subtitle ? 0 : Infinity,
                 ease: "easeInOut"
               }}
             >
@@ -278,13 +415,20 @@ export default function NotFoundPage() {
                   mb: 2,
                   fontWeight: 600,
                   color: theme.palette.text.secondary,
-                  filter: glitchActive 
-                    ? `blur(${Math.random() * 2}px)` 
+                  filter: (glitchActive || glitchElements.subtitle)
+                    ? `blur(${Math.random() * 3}px) saturate(${Math.random() * 2 + 1}) hue-rotate(${Math.random() * 180}deg)` 
                     : 'none',
-                  transition: 'filter 0.1s'
+                  transition: 'filter 0.05s',
+                  textTransform: 'uppercase',
+                  transform: glitchElements.subtitle 
+                    ? `scale(${Math.random() * 0.2 + 0.9}) skew(${Math.random() * 4 - 2}deg)` 
+                    : 'none',
+                  textShadow: glitchElements.subtitle 
+                    ? `${Math.random() * 4 - 2}px 0 ${theme.palette.error.main}, ${Math.random() * 4 - 2}px 0 ${theme.palette.primary.main}` 
+                    : 'none'
                 }}
               >
-                Expérience non trouvée
+                Page introuvable
               </Typography>
             </motion.div>
 
@@ -298,7 +442,7 @@ export default function NotFoundPage() {
                 px: 2
               }}
             >
-              Il semble que cette expérience ait échappé à notre laboratoire. 
+              Il semble que cette page ait échappé à notre laboratoire. 
               La page que vous recherchez n'existe pas ou a été déplacée dans une autre éprouvette.
             </Typography>
 
@@ -307,7 +451,15 @@ export default function NotFoundPage() {
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
               justifyContent="center"
-              sx={{ mt: 4 }}
+              sx={{ 
+                mt: 4,
+                transform: glitchElements.buttons 
+                  ? `translate(${Math.random() * 6 - 3}px, ${Math.random() * 6 - 3}px)` 
+                  : 'none',
+                filter: glitchElements.buttons 
+                  ? `hue-rotate(${Math.random() * 60}deg) saturate(${Math.random() * 1.5 + 0.5})` 
+                  : 'none'
+              }}
             >
               <Button
                 variant="contained"
@@ -320,9 +472,13 @@ export default function NotFoundPage() {
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                  transition: 'all 0.3s',
+                  background: (glitchActive || glitchElements.buttons)
+                    ? `linear-gradient(${Math.random() * 360}deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.error.main})`
+                    : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  boxShadow: (glitchActive || glitchElements.buttons)
+                    ? `0 ${Math.random() * 8 + 4}px ${Math.random() * 30 + 20}px rgba(0,0,0,${Math.random() * 0.3 + 0.25}), inset 0 0 ${Math.random() * 20 + 10}px rgba(255,255,255,0.1)`
+                    : '0 4px 20px rgba(0,0,0,0.25)',
+                  transition: 'all 0.1s',
                   '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: '0 6px 30px rgba(0,0,0,0.3)'
@@ -343,8 +499,15 @@ export default function NotFoundPage() {
                   borderRadius: 2,
                   textTransform: 'none',
                   fontWeight: 600,
-                  borderColor: theme.palette.divider,
-                  color: theme.palette.text.primary,
+                  borderColor: (glitchActive || glitchElements.buttons) 
+                    ? theme.palette.error.main 
+                    : theme.palette.divider,
+                  color: (glitchActive || glitchElements.buttons)
+                    ? theme.palette.error.main
+                    : theme.palette.text.primary,
+                  backgroundColor: glitchElements.buttons 
+                    ? alpha(theme.palette.error.main, 0.1) 
+                    : 'transparent',
                   '&:hover': {
                     borderColor: theme.palette.primary.main,
                     background: alpha(theme.palette.primary.main, 0.05)
@@ -477,46 +640,140 @@ export default function NotFoundPage() {
         sx={{
           position: 'absolute',
           inset: 0,
-          opacity: glitchActive ? 0.1 : 0.02,
-          transition: 'opacity 0.1s',
-          mixBlendMode: 'overlay'
+          opacity: (glitchActive || Object.values(glitchElements).some(Boolean)) 
+            ? Math.random() * 0.15 + 0.05 
+            : 0.02,
+          transition: 'opacity 0.05s',
+          mixBlendMode: 'overlay',
+          backgroundSize: `${Math.random() * 2 + 2}px ${Math.random() * 2 + 2}px`,
+          filter: glitchActive ? `hue-rotate(${Math.random() * 360}deg)` : 'none'
         }}
       />
 
-      {/* Particules de glitch */}
+      {/* Particules de glitch aléatoires */}
       <AnimatePresence>
-        {glitchActive && mounted && (
+        {randomGlitchParticles.map((particle) => (
+          <motion.div
+            key={particle.id}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ 
+              opacity: [0, Math.random() * 0.8 + 0.2, 0],
+              scale: [0, Math.random() * 1.5 + 0.5, 0],
+              rotate: [0, Math.random() * 360],
+              x: [0, Math.random() * 20 - 10],
+              y: [0, Math.random() * 20 - 10]
+            }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: Math.random() * 0.3 + 0.1 }}
+            style={{
+              position: 'absolute',
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              width: particle.width,
+              height: particle.height,
+              background: alpha(particle.color, Math.random() * 0.6 + 0.2),
+              filter: `blur(${particle.blur}px)`,
+              zIndex: 1,
+              mixBlendMode: Math.random() > 0.5 ? 'multiply' : 'screen'
+            }}
+          />
+        ))}
+      </AnimatePresence>
+
+      {/* Particules de glitch permanentes mais variables */}
+      <AnimatePresence>
+        {(glitchActive || Object.values(glitchElements).some(Boolean)) && mounted && (
           <>
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              style={{
-                position: 'absolute',
-                top: '20%',
-                left: '10%',
-                width: 100,
-                height: 20,
-                background: alpha(theme.palette.error.main, 0.3),
-                filter: 'blur(40px)',
-                zIndex: 1
-              }}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              style={{
-                position: 'absolute',
-                bottom: '30%',
-                right: '15%',
-                width: 150,
-                height: 30,
-                background: alpha(theme.palette.primary.main, 0.3),
-                filter: 'blur(60px)',
-                zIndex: 1
-              }}
-            />
+            {/* Glitch rectangles multiples */}
+            {[...Array(Math.floor(Math.random() * 8 + 3))].map((_, index) => (
+              <motion.div
+                key={`glitch-rect-${index}`}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ 
+                  opacity: [0, Math.random() * 0.8 + 0.2, 0],
+                  scale: [0, Math.random() * 2 + 0.5, 0],
+                  rotate: Math.random() * 360,
+                  x: [0, Math.random() * 50 - 25],
+                  y: [0, Math.random() * 50 - 25]
+                }}
+                exit={{ opacity: 0, scale: 0 }}
+                transition={{ 
+                  duration: Math.random() * 0.4 + 0.1,
+                  delay: Math.random() * 0.2
+                }}
+                style={{
+                  position: 'absolute',
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  width: Math.random() * 200 + 50,
+                  height: Math.random() * 50 + 10,
+                  background: [
+                    alpha(theme.palette.error.main, Math.random() * 0.6 + 0.2),
+                    alpha(theme.palette.primary.main, Math.random() * 0.6 + 0.2),
+                    alpha(theme.palette.secondary.main, Math.random() * 0.6 + 0.2),
+                    alpha('#ff00ff', Math.random() * 0.6 + 0.2),
+                    alpha('#00ffff', Math.random() * 0.6 + 0.2)
+                  ][Math.floor(Math.random() * 5)],
+                  filter: `blur(${Math.random() * 60 + 20}px)`,
+                  zIndex: 1,
+                  mixBlendMode: ['multiply', 'screen', 'overlay', 'difference'][Math.floor(Math.random() * 4)] as any
+                }}
+              />
+            ))}
+            
+            {/* Lignes de glitch horizontales */}
+            {[...Array(Math.floor(Math.random() * 5 + 2))].map((_, index) => (
+              <motion.div
+                key={`glitch-line-h-${index}`}
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ 
+                  scaleX: [0, Math.random() * 2 + 0.5, 0],
+                  opacity: [0, Math.random() * 0.9 + 0.1, 0],
+                  x: Math.random() * 100 - 50
+                }}
+                exit={{ scaleX: 0, opacity: 0 }}
+                transition={{ 
+                  duration: Math.random() * 0.3 + 0.1,
+                  delay: Math.random() * 0.15
+                }}
+                style={{
+                  position: 'absolute',
+                  top: `${Math.random() * 100}%`,
+                  left: 0,
+                  right: 0,
+                  height: Math.random() * 4 + 1,
+                  background: `linear-gradient(90deg, transparent, ${theme.palette.error.main}, transparent)`,
+                  zIndex: 2
+                }}
+              />
+            ))}
+            
+            {/* Lignes de glitch verticales */}
+            {[...Array(Math.floor(Math.random() * 3 + 1))].map((_, index) => (
+              <motion.div
+                key={`glitch-line-v-${index}`}
+                initial={{ scaleY: 0, opacity: 0 }}
+                animate={{ 
+                  scaleY: [0, Math.random() * 2 + 0.5, 0],
+                  opacity: [0, Math.random() * 0.7 + 0.3, 0],
+                  y: Math.random() * 100 - 50
+                }}
+                exit={{ scaleY: 0, opacity: 0 }}
+                transition={{ 
+                  duration: Math.random() * 0.4 + 0.1,
+                  delay: Math.random() * 0.1
+                }}
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: Math.random() * 3 + 1,
+                  background: `linear-gradient(180deg, transparent, ${theme.palette.primary.main}, transparent)`,
+                  zIndex: 2
+                }}
+              />
+            ))}
           </>
         )}
       </AnimatePresence>
