@@ -25,24 +25,36 @@ const sseConnections = new Map<string, {
 }>();
 
 // Fonction pour envoyer un message à toutes les connexions
-function broadcastToConnections(message: NotificationMessage, targetUserId?: string) {
+function broadcastToConnections(message: NotificationMessage, targetUserId?: string, targetRoles?: string[]) {
   let sentCount = 0;
   const encoder = new TextEncoder();
   
+  console.log(`📢 [SSE] Diffusion message type: ${message.type}, targetUserId: ${targetUserId}, targetRoles: ${targetRoles?.join(',')}`);
+  
   for (const [userId, connection] of sseConnections) {
-    if (targetUserId && userId !== targetUserId) continue;
+    // Si un utilisateur spécifique est ciblé
+    if (targetUserId && userId !== targetUserId) {
+      continue;
+    }
+    
+    // Si des rôles spécifiques sont ciblés
+    if (targetRoles && targetRoles.length > 0 && !targetRoles.includes(connection.userRole)) {
+      continue;
+    }
     
     try {
       const data = `data: ${JSON.stringify(message)}\n\n`;
       connection.controller.enqueue(encoder.encode(data));
       sentCount++;
+      console.log(`✅ [SSE] Message envoyé à ${userId} (${connection.userRole})`);
     } catch (error) {
-      console.error('🔗 [SSE] Erreur envoi message:', error);
+      console.error(`❌ [SSE] Erreur envoi message à ${userId}:`, error);
       // Nettoyer les connexions fermées
       sseConnections.delete(userId);
     }
   }
   
+  console.log(`📊 [SSE] Messages envoyés: ${sentCount}/${sseConnections.size} connexions`);
   return sentCount;
 }
 
@@ -73,6 +85,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user) {
     return new Response('Non authentifié', { status: 401 });
   }
+  
   const user = session.user as any;
   const userId = user.id;
   const userRole = user.role;
@@ -82,16 +95,26 @@ export async function GET(request: NextRequest) {
     return new Response('Missing userId or userRole in session', { status: 400 });
   }
 
+  console.log(`🔗 [SSE] Nouvelle connexion pour utilisateur: ${userId} (${userRole})`);
 
   const encoder = new TextEncoder();
   let isConnected = true;
-  let controller: ReadableStreamDefaultController;
+  let heartbeatInterval: NodeJS.Timeout;
 
   const stream = new ReadableStream({
-    start(ctrl) {
-      controller = ctrl;
+    start(controller) {
+      // Fermer toute connexion existante pour cet utilisateur
+      const existingConnection = sseConnections.get(userId);
+      if (existingConnection) {
+        try {
+          existingConnection.controller.close();
+        } catch (error) {
+          // Ignorer les erreurs de fermeture
+        }
+        sseConnections.delete(userId);
+      }
 
-      // Enregistrer cette connexion SSE
+      // Enregistrer cette nouvelle connexion SSE
       sseConnections.set(userId, {
         controller,
         userRole,
@@ -99,24 +122,30 @@ export async function GET(request: NextRequest) {
         lastHeartbeat: Date.now()
       });
 
+      console.log(`✅ [SSE] Connexion établie pour ${userId}. Total connexions: ${sseConnections.size}`);
+
       // Message de connexion réussie
       const connectMessage: NotificationMessage = {
         type: 'connected',
         userId,
         userRole,
         timestamp: Date.now(),
-        data: { message: 'Connexion SSE établie', activeConnections: sseConnections.size }
+        data: { 
+          message: 'Connexion SSE établie',
+          activeConnections: sseConnections.size,
+          userId,
+          userRole
+        }
       };
 
       try {
-        const data = `data: ${JSON.stringify(connectMessage)}\n\n`;
-        controller.enqueue(encoder.encode(data));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(connectMessage)}\n\n`));
       } catch (error) {
         console.error('🔗 [SSE] Erreur message de connexion:', error);
       }
 
-      // Heartbeat périodique
-      const heartbeatInterval = setInterval(() => {
+      // Heartbeat périodique (réduit à 15 secondes pour plus de réactivité)
+      heartbeatInterval = setInterval(() => {
         if (!isConnected) {
           clearInterval(heartbeatInterval);
           return;
@@ -129,8 +158,8 @@ export async function GET(request: NextRequest) {
         };
 
         try {
-          const data = `data: ${JSON.stringify(heartbeatMessage)}\n\n`;
-          controller.enqueue(encoder.encode(data));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(heartbeatMessage)}\n\n`));
+          
           // Mettre à jour le timestamp de la connexion
           const connection = sseConnections.get(userId);
           if (connection) {
@@ -142,12 +171,17 @@ export async function GET(request: NextRequest) {
           sseConnections.delete(userId);
           clearInterval(heartbeatInterval);
         }
-      }, 30000); // Heartbeat toutes les 30 secondes
+      }, 15000); // Heartbeat toutes les 15 secondes
     },
 
     cancel() {
-      
+      console.log(`🔗 [SSE] Connexion fermée pour utilisateur: ${userId}`);
       isConnected = false;
+      
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+      
       sseConnections.delete(userId);
     }
   });
@@ -158,7 +192,8 @@ export async function GET(request: NextRequest) {
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      'Access-Control-Allow-Headers': 'Cache-Control, Authorization',
+      'Access-Control-Allow-Credentials': 'true'
     }
   });
 }
@@ -256,7 +291,7 @@ export async function POST(request: NextRequest) {
           timestamp: Date.now()
         };
 
-        const testSentCount = broadcastToConnections(testMessage);
+        const testSentCount = broadcastToConnections(testMessage, undefined, [testUserRole]);
 
         return NextResponse.json({
           success: true,
@@ -279,17 +314,19 @@ export async function POST(request: NextRequest) {
           entityId
         } = body;
 
+        console.log('🔔 [SSE] Création notification:', { targetRoles, module, actionType, severity });
+
         // Gérer les deux formats de message (string ou objet { fr, en })
         const notifMessage = typeof rawMessage === 'string' 
           ? rawMessage 
           : rawMessage?.fr || rawMessage?.en || 'Notification';
 
         // Créer la notification en base
-        const notificationId = await DatabaseNotificationService.createNotification(
+        const createNotificationId = await DatabaseNotificationService.createNotification(
           targetRoles || [user.role],
-          module || 'sse-test',
-          actionType || 'sse_broadcast',
-          rawMessage || 'Notification créée via SSE', // Utiliser le message original pour la DB
+          module || 'system',
+          actionType || 'notification',
+          rawMessage || 'Notification créée via SSE',
           details || 'Notification créée et diffusée en temps réel',
           severity || 'medium',
           entityType || null,
@@ -297,34 +334,37 @@ export async function POST(request: NextRequest) {
           user.id
         );
 
+        if (!createNotificationId) {
+          throw new Error('Impossible de créer la notification');
+        }
+
+        // Récupérer la notification complète
+        const fullNotification = await DatabaseNotificationService.getNotificationById(createNotificationId);
+        
+        if (!fullNotification) {
+          throw new Error('Impossible de récupérer la notification créée');
+        }
+
         // Diffuser la notification via SSE aux utilisateurs concernés
-        const notificationMessage: NotificationMessage = {
+        const createNotificationMessage: NotificationMessage = {
           type: 'notification',
-          data: {
-            id: notificationId,
-            message: notifMessage,
-            module,
-            severity,
-            created_at: new Date().toISOString()
-          },
+          data: fullNotification,
           timestamp: Date.now()
         };
 
-        let notifSentCount = 0;
-        for (const targetRole of targetRoles || [user.role]) {
-          for (const [userId, connection] of sseConnections) {
-            if (connection.userRole === targetRole) {
-              broadcastToConnections(notificationMessage, userId);
-              notifSentCount++;
-            }
-          }
-        }
+        const createNotifSentCount = broadcastToConnections(
+          createNotificationMessage, 
+          undefined, 
+          targetRoles || [user.role]
+        );
+
+        console.log(`✅ [SSE] Notification ${createNotificationId} diffusée à ${createNotifSentCount} connexions`);
 
         return NextResponse.json({
           success: true,
-          notificationId,
+          notificationId: createNotificationId,
           message: 'Notification créée et diffusée',
-          sentToConnections: notifSentCount,
+          sentToConnections: createNotifSentCount,
           timestamp: new Date().toISOString()
         });
 

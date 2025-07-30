@@ -1,3 +1,5 @@
+// lib/hooks/useNotifications.tsx
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { ExtendedNotification, NotificationStats, NotificationFilter } from '@/types/notifications';

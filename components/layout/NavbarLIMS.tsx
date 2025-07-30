@@ -217,6 +217,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
     byReason: {} // Propriété manquante ajoutée
   });
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   
   // SSE (Server-Sent Events) au lieu de WebSocket
   const [sseConnected, setSseConnected] = useState(false);
@@ -243,7 +244,29 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 
   const handleSignOut = async () => {
     handleUserMenuClose();
-    await signOut({ callbackUrl: `${window.location.origin}/auth/signin` });
+    
+    try {
+      // Fermer la connexion SSE avant la déconnexion
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      
+      // Effectuer la déconnexion avec une URL de redirection absolue
+      const result = await signOut({ 
+        callbackUrl: `${window.location.origin}/auth/signin`,
+        redirect: true // Forcer la redirection
+      });
+      
+      // Si la redirection automatique ne fonctionne pas, forcer manuellement
+      if (!result) {
+        window.location.href = '/auth/signin';
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      // En cas d'erreur, rediriger quand même
+      window.location.href = '/auth/signin';
+    }
   };
 
   // Récupération des notifications
@@ -281,9 +304,79 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
     }
   };
 
+  // Fonction pour demander la permission des notifications push
+  const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      console.log('Ce navigateur ne supporte pas les notifications');
+      return false;
+    }
+
+    if (Notification.permission === 'granted') {
+      setPushNotificationsEnabled(true);
+      return true;
+    }
+
+    if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setPushNotificationsEnabled(true);
+        return true;
+      }
+    }
+
+    setPushNotificationsEnabled(false);
+    return false;
+  };
+
+  // Fonction pour afficher une notification push
+  const showPushNotification = (notification: ExtendedNotification) => {
+    if (!pushNotificationsEnabled || Notification.permission !== 'granted') {
+      return;
+    }
+
+    const title = `LIMS - ${notification.module}`;
+    const message = getNotificationMessage(notification.message, 'fr');
+    
+    const options = {
+      body: message,
+      icon: '/logo.png', // Assurez-vous d'avoir ce fichier
+      badge: '/logo.png',
+      tag: notification.id,
+      requireInteraction: notification.severity === 'critical',
+      actions: [
+        {
+          action: 'view',
+          title: 'Voir'
+        },
+        {
+          action: 'dismiss',
+          title: 'Ignorer'
+        }
+      ]
+    };
+
+    const pushNotification = new Notification(title, options);
+
+    pushNotification.onclick = () => {
+      window.focus();
+      handleNotificationClick(notification);
+      pushNotification.close();
+    };
+
+    // Auto-fermeture après 10 secondes sauf pour les notifications critiques
+    if (notification.severity !== 'critical') {
+      setTimeout(() => {
+        pushNotification.close();
+      }, 10000);
+    }
+  };
+
   // SSE pour les notifications en temps réel
   useEffect(() => {
     if (!session?.user) return;
+
+    // Demander la permission pour les notifications push
+    requestNotificationPermission();
 
     const userId = (session.user as any).id;
     
@@ -324,6 +417,11 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                   if (icon) {
                     icon.classList.add('pulse');
                     setTimeout(() => icon.classList.remove('pulse'), 1000);
+                  }
+                  
+                  // Afficher une notification push si elle n'est pas lue et que les permissions sont accordées
+                  if (!notificationData.isRead && pushNotificationsEnabled) {
+                    showPushNotification(notificationData);
                   }
                   
                   // Ajouter la nouvelle notification en tête de liste
@@ -566,9 +664,28 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                   sx={{ ml: 1 }} 
                 />
               )}
+              {pushNotificationsEnabled && (
+                <Chip 
+                  component="span"
+                  size="small" 
+                  label="Push" 
+                  color="primary" 
+                  sx={{ ml: 1 }} 
+                />
+              )}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {notificationStats.unread} non lues sur {notificationStats.total} • {notifications.length} affichées
+              {!pushNotificationsEnabled && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={requestNotificationPermission}
+                  sx={{ ml: 1, minWidth: 'auto', p: 0.5 }}
+                >
+                  Activer les notifications push
+                </Button>
+              )}
             </Typography>
             
             {lastHeartbeat && (
@@ -702,37 +819,65 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
             sx: { mt: 1.5 }
           }}
         >
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="subtitle1">
-              {session?.user?.name || 'Utilisateur'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {session?.user?.email}
-            </Typography>
-          </Box>
+          {session?.user ? (
+            // Menu pour utilisateur connecté
+            <>
+              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="subtitle1">
+                  {session.user.name || 'Utilisateur'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {session.user.email}
+                </Typography>
+              </Box>
 
-          <MenuItem component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
-            <ListItemIcon>
-              <Person fontSize="small" />
-            </ListItemIcon>
-            Profil
-          </MenuItem>
+              <MenuItem component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
+                <ListItemIcon>
+                  <Person fontSize="small" />
+                </ListItemIcon>
+                Profil
+              </MenuItem>
 
-          <MenuItem component={Link} href="/reglages" onClick={handleUserMenuClose}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            Paramètres
-          </MenuItem>
+              <MenuItem component={Link} href="/reglages" onClick={handleUserMenuClose}>
+                <ListItemIcon>
+                  <Settings fontSize="small" />
+                </ListItemIcon>
+                Paramètres
+              </MenuItem>
 
-          <Divider />
+              <Divider />
 
-          <MenuItem onClick={handleSignOut}>
-            <ListItemIcon>
-              <Logout fontSize="small" />
-            </ListItemIcon>
-            Déconnexion
-          </MenuItem>
+              <MenuItem onClick={handleSignOut}>
+                <ListItemIcon>
+                  <Logout fontSize="small" />
+                </ListItemIcon>
+                Déconnexion
+              </MenuItem>
+            </>
+          ) : (
+            // Menu pour utilisateur non connecté
+            <>
+              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="subtitle1">
+                  Non connecté
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Cliquez pour vous connecter
+                </Typography>
+              </Box>
+
+              <MenuItem 
+                component={Link} 
+                href="/auth/signin" 
+                onClick={handleUserMenuClose}
+              >
+                <ListItemIcon>
+                  <AccountCircle fontSize="small" />
+                </ListItemIcon>
+                Connexion
+              </MenuItem>
+            </>
+          )}
         </Menu>
       </Toolbar>
     </StyledAppBar>

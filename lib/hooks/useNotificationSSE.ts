@@ -41,14 +41,17 @@ export function useNotificationSSE({
     }
 
     if (eventSourceRef.current) {
-      console.log('🔄 [SSE Hook] Connexion SSE déjà active');
-      return;
+      console.log('🔄 [SSE Hook] Connexion SSE déjà active, fermeture...');
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
 
     try {
       console.log('🔄 [SSE Hook] Tentative de connexion SSE...');
       
-      const eventSource = new EventSource('/api/notifications/ws');
+      const eventSource = new EventSource('/api/notifications/ws', {
+        withCredentials: true // Important pour les cookies de session
+      });
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
@@ -61,7 +64,7 @@ export function useNotificationSSE({
       eventSource.onmessage = (event) => {
         try {
           const message: SSEMessage = JSON.parse(event.data);
-          console.log('📨 [SSE Hook] Message reçu:', message.type);
+          console.log('📨 [SSE Hook] Message reçu:', message.type, message);
 
           switch (message.type) {
             case 'connected':
@@ -69,7 +72,7 @@ export function useNotificationSSE({
               break;
             
             case 'heartbeat':
-              // Heartbeat silencieux
+              // Heartbeat silencieux, pas de console.log
               break;
             
             case 'notification':

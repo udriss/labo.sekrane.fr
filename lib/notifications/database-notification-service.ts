@@ -1,4 +1,5 @@
 // lib/notifications/database-notification-service.ts
+
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '@/lib/db';
 import { NotificationFilter, ExtendedNotification, NotificationStats } from '@/types/notifications';

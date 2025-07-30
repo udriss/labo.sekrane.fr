@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SSE Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .disconnected { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .message {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test SSE - Server-Sent Events</h1>
+    
+    <div id="status" class="status disconnected">
+        ❌ Déconnecté
+    </div>
+    
+    <div>
+        <button class="btn-primary" onclick="connect()">Se connecter au SSE</button>
+        <button class="btn-warning" onclick="disconnect()">Se déconnecter</button>
+        <button class="btn-success" onclick="sendTestNotification()">Envoyer notification test</button>
+        <button class="btn-success" onclick="clearMessages()">Effacer messages</button>
+    </div>
+    
+    <h3>Messages reçus :</h3>
+    <div id="messages"></div>
+    
+    <script>
+        let eventSource = null;
+        let messageCount = 0;
+        
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+        
+        function updateStatus(connected, message) {
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ ' + message;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ ' + message;
+            }
+        }
+        
+        function addMessage(type, data) {
+            messageCount++;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `
+                <strong>#${messageCount} [${new Date().toLocaleTimeString()}] ${type}:</strong><br>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+        }
+        
+        function connect() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            updateStatus(false, 'Connexion en cours...');
+            
+            try {
+                eventSource = new EventSource('/api/notifications/ws');
+                
+                eventSource.onopen = function(event) {
+                    updateStatus(true, 'Connecté au SSE');
+                    addMessage('ONOPEN', { readyState: eventSource.readyState });
+                };
+                
+                eventSource.onmessage = function(event) {
+                    console.log('SSE Message:', event.data);
+                    try {
+                        const data = JSON.parse(event.data);
+                        addMessage('MESSAGE', data);
+                        
+                        // Mettre à jour le statut pour les messages de connexion
+                        if (data.type === 'connected') {
+                            updateStatus(true, `Connecté - ${data.data?.message || 'SSE actif'}`);
+                        }
+                    } catch (e) {
+                        addMessage('MESSAGE (Raw)', event.data);
+                    }
+                };
+                
+                eventSource.onerror = function(event) {
+                    console.error('SSE Error:', event);
+                    updateStatus(false, 'Erreur de connexion');
+                    addMessage('ERROR', {
+                        readyState: eventSource ? eventSource.readyState : 'null',
+                        timestamp: new Date().toISOString()
+                    });
+                };
+                
+            } catch (error) {
+                console.error('Erreur création EventSource:', error);
+                updateStatus(false, 'Erreur: ' + error.message);
+                addMessage('ERROR', { error: error.message });
+            }
+        }
+        
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            updateStatus(false, 'Déconnecté manuellement');
+            addMessage('INFO', 'Connexion fermée manuellement');
+        }
+        
+        async function sendTestNotification() {
+            try {
+                const response = await fetch('/api/notifications/ws', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'test'
+                    }),
+                });
+                
+                const result = await response.json();
+                addMessage('TEST_SENT', result);
+                
+            } catch (error) {
+                console.error('Erreur envoi test:', error);
+                addMessage('TEST_ERROR', { error: error.message });
+            }
+        }
+        
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+            messageCount = 0;
+        }
+        
+        // Auto-connexion au chargement
+        window.onload = function() {
+            console.log('Page chargée, connexion automatique...');
+            connect();
+        };
+        
+        // Nettoyage à la fermeture
+        window.onbeforeunload = function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        };
+    </script>
+</body>
+</html>
