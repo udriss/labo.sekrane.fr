@@ -4638,5 +4638,1901 @@
       "duration": 3
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ec8d699-e83e-4b31-beca-5132d9a594b3",
+    "timestamp": "2025-07-31T11:31:37.338Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T11:31:37.337Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961497332_lnuulxl71",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bc7aafe5-083b-493d-b9c8-16f0b726fbcb",
+    "timestamp": "2025-07-31T11:32:36.435Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "EACCES: permission denied, open '/var/www/labo.sekrane.fr/data/chemicals-inventory.json'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:32:36.434Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961556431_r7bhaqaih",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8090eff7-86b9-4e57-87d5-3f45335b0743",
+    "timestamp": "2025-07-31T11:33:44.392Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_0RZP4BADZOGZ"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {},
+        "body": {
+          "quantity": 12.9
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_0RZP4BADZOGZ",
+            "name": "Acide nitrique",
+            "formula": "HNO₃",
+            "molfile": null,
+            "casNumber": "7697-37-2",
+            "barcode": "CHEM001234567890",
+            "quantity": 12.9,
+            "unit": "g",
+            "minQuantity": 0,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": "",
+            "room": "Laboratoire de recherche",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-22T07:05:47.245Z",
+            "updatedAt": "2025-07-31T11:33:44.389Z",
+            "supplier": "",
+            "location": "Hotte de synthèse",
+            "quantityPrevision": 1.4000000000000004
+          }
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-31T11:33:44.392Z"
+      },
+      "chemicalName": "Acide nitrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location",
+        "quantityPrevision"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753961624384_130mwlu9q",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "438052ec-eb58-4a3e-b129-925c3221a20f",
+    "timestamp": "2025-07-31T12:00:52.628Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_0RZP4BADZOGZ"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {},
+        "body": {
+          "quantity": 21.9
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_0RZP4BADZOGZ",
+            "name": "Acide nitrique",
+            "formula": "HNO₃",
+            "molfile": null,
+            "casNumber": "7697-37-2",
+            "barcode": "CHEM001234567890",
+            "quantity": 21.9,
+            "unit": "g",
+            "minQuantity": 0,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": "",
+            "room": "Laboratoire de recherche",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-22T07:05:47.245Z",
+            "updatedAt": "2025-07-31T12:00:52.625Z",
+            "supplier": "",
+            "location": "Hotte de synthèse",
+            "quantityPrevision": 1.4000000000000004
+          }
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-31T12:00:52.628Z"
+      },
+      "chemicalName": "Acide nitrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location",
+        "quantityPrevision"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753963252620_xiqbc4e9p",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "db296cff-8c0b-46aa-83a1-4be05427f5fd",
+    "timestamp": "2025-07-31T12:01:20.223Z",
+    "user": {
+      "id": "2",
+      "email": "laborantin@labo.fr",
+      "name": "Professeur Martin",
+      "role": "LABORANTIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_0RZP4BADZOGZ"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+        "query": {},
+        "body": {
+          "quantity": 47.3
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_0RZP4BADZOGZ",
+            "name": "Acide nitrique",
+            "formula": "HNO₃",
+            "molfile": null,
+            "casNumber": "7697-37-2",
+            "barcode": "CHEM001234567890",
+            "quantity": 47.3,
+            "unit": "g",
+            "minQuantity": 0,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": "",
+            "room": "Laboratoire de recherche",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-22T07:05:47.245Z",
+            "updatedAt": "2025-07-31T12:01:20.223Z",
+            "supplier": "",
+            "location": "Hotte de synthèse",
+            "quantityPrevision": 1.4000000000000004
+          }
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-31T12:01:20.223Z"
+      },
+      "chemicalName": "Acide nitrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location",
+        "quantityPrevision"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1753963280219_4ms5otpru",
+      "path": "/api/chemicals/CHEM_INV_0RZP4BADZOGZ/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
   }
 ]

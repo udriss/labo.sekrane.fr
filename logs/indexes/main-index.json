@@ -5,7 +5,8 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json"
     ],
     "2": [
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json"
     ],
     "USER_001": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",

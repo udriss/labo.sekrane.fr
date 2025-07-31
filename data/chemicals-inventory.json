@@ -7,7 +7,7 @@
       "molfile": null,
       "casNumber": "7697-37-2",
       "barcode": "CHEM001234567890",
-      "quantity": 34.5,
+      "quantity": 47.3,
       "unit": "g",
       "minQuantity": 0,
       "concentration": null,
@@ -27,7 +27,7 @@
       "status": "IN_STOCK",
       "notes": "",
       "createdAt": "2025-07-22T07:05:47.245Z",
-      "updatedAt": "2025-07-31T11:08:03.816Z",
+      "updatedAt": "2025-07-31T12:01:20.223Z",
       "supplier": "",
       "location": "Hotte de synthèse",
       "quantityPrevision": 1.4000000000000004
