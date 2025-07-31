@@ -4308,5 +4308,335 @@
       "duration": 3
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "b41f6c33-0cb0-4f9a-92ba-aea68b8ad5a5",
+    "timestamp": "2025-07-31T11:19:39.833Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+        "query": {},
+        "body": {
+          "quantity": 5747.8
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 5747.8,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Salle de TP B",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-31T11:19:39.832Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Paillasse 1"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-07-31T11:19:39.833Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753960779826_mjfbc0tnu",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+      "method": "PUT",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "be81ebd7-b683-4188-ab75-e95dd0ca8156",
+    "timestamp": "2025-07-31T11:19:53.159Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+        "query": {},
+        "body": {
+          "quantity": 3007.4
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 3007.4,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Salle de TP B",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-31T11:19:53.158Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Paillasse 1"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-07-31T11:19:53.159Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753960793155_a3zgv4c2z",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+      "method": "PUT",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "34a11fff-bb4b-44a1-9eff-7d0c803e50c7",
+    "timestamp": "2025-07-31T11:19:54.665Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_V2ZP1BCQZDY8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+        "query": {},
+        "body": {
+          "quantity": 1654.6
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_V2ZP1BCQZDY8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": 1654.6,
+            "unit": "mL",
+            "minQuantity": 0,
+            "concentration": 37,
+            "purity": null,
+            "purchaseDate": "2024-01-15T00:00:00.000Z",
+            "expirationDate": "2026-01-15T00:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire acides",
+            "room": "Salle de TP B",
+            "cabinet": "",
+            "shelf": "",
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": "cmdd5kp1000021f0vuhvtfk1y",
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": "",
+            "createdAt": "2025-07-21T13:40:04.635Z",
+            "updatedAt": "2025-07-31T11:19:54.665Z",
+            "supplier": "cmdd5kp1000021f0vuhvtfk1y",
+            "location": "Paillasse 1"
+          }
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-07-31T11:19:54.665Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "fieldsUpdated": [
+        "id",
+        "name",
+        "formula",
+        "molfile",
+        "casNumber",
+        "barcode",
+        "quantity",
+        "unit",
+        "minQuantity",
+        "concentration",
+        "purity",
+        "purchaseDate",
+        "expirationDate",
+        "openedDate",
+        "storage",
+        "room",
+        "cabinet",
+        "shelf",
+        "hazardClass",
+        "sdsFileUrl",
+        "supplierId",
+        "batchNumber",
+        "orderReference",
+        "status",
+        "notes",
+        "createdAt",
+        "updatedAt",
+        "supplier",
+        "location"
+      ],
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753960794662_9fbhfxa7s",
+      "path": "/api/chemicals/CHEM_INV_V2ZP1BCQZDY8/",
+      "method": "PUT",
+      "duration": 3
+    },
+    "status": "SUCCESS"
   }
 ]

@@ -112,8 +112,16 @@ export default function NotificationsPage() {
 
   // Charger les notifications au montage du composant
   useEffect(() => {
-    loadDatabaseNotifications();
+    console.log('📣 [NotificationsPage] Loading database notifications');
+    loadDatabaseNotifications().then(() => {
+      console.log('📣 [NotificationsPage] Current notifications:', notifications);
+    });
   }, [loadDatabaseNotifications]);
+
+  // Debug notifications when they change
+  useEffect(() => {
+    console.log('📣 [NotificationsPage] Notifications updated:', notifications);
+  }, [notifications]);
 
   // Filtrer les notifications
   const filteredNotifications = useMemo(() => {

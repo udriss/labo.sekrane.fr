@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
       })
     });
 
+
   } catch (error) {
     console.error('Erreur lors de la récupération des notifications:', error);
     return NextResponse.json({ 
@@ -133,16 +134,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Préparer le message en format JSON correct
-    let messageToStore;
-    if (typeof message === 'string') {
-      // Convertir en objet avec propriété text
-      messageToStore = JSON.stringify({ text: message });
-    } else {
-      // Déjà un objet, le stocker tel quel
-      messageToStore = JSON.stringify(message);
-    }
-
     const notificationId = uuidv4();
     const currentUserId = (session.user as any).id;
     const currentUserRole = (session.user as any).role;
@@ -160,7 +151,7 @@ export async function POST(request: NextRequest) {
       JSON.stringify(targetRoles || []),
       module,
       actionType,
-      messageToStore,
+      JSON.stringify(message),
       details || null,
       severity,
       entityType || null,
@@ -244,40 +235,48 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
       }
 
-      // Insérer ou mettre à jour le statut de lecture
-      await query(`
-        INSERT INTO notification_read_status (id, notification_id, user_id, is_read, read_at)
-        VALUES (UUID(), ?, ?, 1, NOW())
-        ON DUPLICATE KEY UPDATE is_read = 1, read_at = NOW()
-      `, [notificationId, userId]);
-
-      return NextResponse.json({ 
-        success: true,
-        message: 'Notification marquée comme lue' 
-      });
-
-    } else if (action === 'markAllAsRead') {
-      // Marquer toutes les notifications comme lues
-      const userRole = (session.user as any).role;
-      
-      // Obtenir toutes les notifications accessibles à cet utilisateur
-      const notifications = await query(`
-        SELECT id FROM notifications 
-        WHERE user_id = ? OR JSON_SEARCH(target_roles, 'one', ?) IS NOT NULL
-      `, [userId, userRole]);
-
-      // Créer les entrées de statut de lecture pour chaque notification
-      for (const notif of notifications) {
+      if (notification.user_id === userId) {
+        // Notification spécifique à l'utilisateur
         await query(`
-          INSERT INTO notification_read_status (id, notification_id, user_id, is_read, read_at)
-          VALUES (UUID(), ?, ?, 1, NOW())
-          ON DUPLICATE KEY UPDATE is_read = 1, read_at = NOW()
-        `, [notif.id, userId]);
+          UPDATE notifications SET is_read = TRUE WHERE id = ?
+        `, [notificationId]);
+      } else {
+        // Notification basée sur les rôles - utiliser la table de statut de lecture
+        await query(`
+          INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+          VALUES (?, ?, TRUE, NOW())
+          ON DUPLICATE KEY UPDATE is_read = TRUE, read_at = NOW()
+        `, [notificationId, userId]);
       }
 
+      return NextResponse.json({ success: true });
+
+    } else if (action === 'markAllAsRead') {
+      // Marquer toutes les notifications comme lues pour cet utilisateur
+      
+      // Notifications spécifiques à l'utilisateur
+      await query(`
+        UPDATE notifications 
+        SET is_read = TRUE 
+        WHERE user_id = ? AND is_read = FALSE
+      `, [userId]);
+
+      // Notifications basées sur les rôles
+      await query(`
+        INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+        SELECT n.id, ?, TRUE, NOW()
+        FROM notifications n
+        WHERE JSON_CONTAINS(n.target_roles, ?)
+        AND NOT EXISTS (
+          SELECT 1 FROM notification_read_status nrs 
+          WHERE nrs.notification_id = n.id AND nrs.user_id = ?
+        )
+        ON DUPLICATE KEY UPDATE is_read = TRUE, read_at = NOW()
+      `, [userId, JSON.stringify((session.user as any).role), userId]);
+
       return NextResponse.json({ 
-        success: true,
-        message: 'Toutes les notifications ont été marquées comme lues' 
+        success: true, 
+        message: 'Toutes les notifications marquées comme lues'
       });
     }
 
@@ -286,7 +285,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Erreur lors de la mise à jour des notifications:', error);
     return NextResponse.json({ 
-      error: 'Erreur serveur lors de la mise à jour des notifications' 
+      error: 'Erreur serveur lors de la mise à jour' 
     }, { status: 500 });
   }
 }

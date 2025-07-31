@@ -21,10 +21,14 @@ export interface WebSocketNotification {
   message: string | object;
   severity: 'low' | 'medium' | 'high' | 'critical';
   isRead: boolean;
-  module?: string;
+  module: string;
+  actionType?: string;
+  entityType?: string;
   entityId?: string;
   createdAt?: string;
   timestamp?: string;
+  triggeredBy?: string;
+  details?: string;
 }
 
 export interface NotificationPreference {

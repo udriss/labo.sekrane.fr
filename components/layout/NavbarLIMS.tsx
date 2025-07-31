@@ -1,14 +1,8 @@
 // components/layout/NavbarLIMS.tsx
 
-
-import NotificationItem from '../notifications/NotificationItem';
-
-// Styled components avec correction des couleurs
-// components/layout/NavbarLIMS.tsx
-
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar, Toolbar, IconButton, Typography, Box, Badge, Avatar,
   Menu, MenuItem, Divider, ListItemIcon, Tooltip, InputBase,
@@ -148,11 +142,25 @@ const getSeverityIcon = (severity: string, isDarkMode: boolean) => {
 };
 
 const getNotificationMessage = (message: any, locale: string = 'fr'): string => {
+  // Si c'est une chaîne, la retourner directement
   if (typeof message === 'string') return message;
+  
+  // Si c'est un objet avec une propriété text, l'utiliser
   if (typeof message === 'object' && message !== null) {
-    return message[locale] || message.fr || message.en || Object.values(message)[0] || 'Message non disponible';
+    if (message.text) return message.text;
+    
+    // Sinon chercher une propriété correspondant à la locale
+    if (message[locale]) return message[locale];
+    if (message.fr) return message.fr;
+    if (message.en) return message.en;
+    
+    // Dernier recours: prendre la première valeur
+    const firstValue = Object.values(message)[0];
+    if (firstValue && typeof firstValue === 'string') return firstValue;
   }
-  return 'Message non disponible';
+  
+  // Valeur par défaut
+  return 'Message de notification';
 };
 
 interface NavbarLIMSProps {
@@ -177,7 +185,22 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
     markAsRead,
     markAllAsRead,
     disconnect,
+    loadDatabaseNotifications
   } = useWebSocketNotifications();
+
+  // Debug pour voir les notifications au chargement
+  useEffect(() => {
+    console.log('🔔 [NavbarLIMS] Current notifications:', notifications);
+    console.log('🔔 [NavbarLIMS] Stats:', stats);
+  }, [notifications, stats]);
+  
+  // Charger les notifications depuis la base de données au démarrage
+  useEffect(() => {
+    if (session?.user?.id) {
+      console.log('🔔 [NavbarLIMS] Loading database notifications');
+      loadDatabaseNotifications();
+    }
+  }, [session?.user?.id, loadDatabaseNotifications]);
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorElUser(event.currentTarget);
   const handleUserMenuClose = () => setAnchorElUser(null);
@@ -306,10 +329,12 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                       }
                       secondary={
                         <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                          <Chip component="span" label={notification.module} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
-                          <Typography variant="caption" color="text.secondary">
+                          {notification.module && (
+                            <Chip component="span" label={notification.module} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                          )}
+                          <Typography component="span" variant="caption" color="text.secondary">
                             <AccessTime sx={{ fontSize: 12, mr: 0.5 }} />
-                            {formatDistanceToNow(new Date(notification.createdAt || notification.timestamp), { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(new Date(notification.createdAt || notification.timestamp || new Date()), { addSuffix: true, locale: fr })}
                           </Typography>
                         </Box>
                       }
@@ -321,14 +346,14 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           )}
 
           {notifications.length > 0 && (
-            <>
+            <Box>
               <Divider />
               <Box sx={{ p: 1 }}>
                 <Button fullWidth size="small" component={Link} href="/notifications" onClick={handleNotificationsClose}>
                   Voir toutes les notifications
                 </Button>
               </Box>
-            </>
+            </Box>
           )}
         </Menu>
 
@@ -336,7 +361,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           anchorEl={anchorElUser}
           open={Boolean(anchorElUser)}
           onClose={handleUserMenuClose}
-          PaperProps={{ sx: { mt: 1.5 } }}
+          slotProps={{ paper: { sx: { mt: 1.5 } } }}
         >
           {session?.user ? [
             <Box key="user-info" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>

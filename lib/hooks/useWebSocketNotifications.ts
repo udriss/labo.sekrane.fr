@@ -77,9 +77,15 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     
     try {
       setIsLoading(true);
+      console.log('🔄 [WebSocket] Loading database notifications for user:', userId);
+      
       const response = await fetch(`/api/notifications?userId=${userId}`);
+      console.log('📡 [WebSocket] API Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 [WebSocket] Loaded notifications:', data);
+        
         if (data.success && Array.isArray(data.notifications)) {
           // Convertir les notifications de la base de données au format WebSocketNotification
           const dbNotifications: WebSocketNotification[] = data.notifications.map((dbNotif: any) => ({
@@ -87,14 +93,16 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
             message: dbNotif.message,
             severity: dbNotif.severity,
             module: dbNotif.module,
-            actionType: dbNotif.actionType,
-            timestamp: dbNotif.createdAt,
-            createdAt: dbNotif.createdAt,
-            entityType: dbNotif.entityType,
-            entityId: dbNotif.entityId,
-            triggeredBy: dbNotif.triggeredBy,
-            isRead: dbNotif.isRead
+            actionType: dbNotif.actionType || dbNotif.action_type,
+            timestamp: dbNotif.createdAt || dbNotif.created_at,
+            createdAt: dbNotif.createdAt || dbNotif.created_at,
+            entityType: dbNotif.entityType || dbNotif.entity_type,
+            entityId: dbNotif.entityId || dbNotif.entity_id,
+            triggeredBy: dbNotif.triggeredBy || dbNotif.triggered_by,
+            isRead: !!dbNotif.isRead
           }));
+          
+          console.log('📋 [WebSocket] Converted notifications:', dbNotifications);
           
           // Fusionner avec les notifications WebSocket existantes
           setNotifications(prev => {
@@ -107,9 +115,13 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
             });
             // Convertir le Map en tableau et trier par date (plus récent d'abord)
             return Array.from(notifMap.values())
-              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+              .sort((a, b) => new Date(b.timestamp || b.createdAt || '').getTime() - new Date(a.timestamp || a.createdAt || '').getTime());
           });
+        } else {
+          console.warn('⚠️ [WebSocket] API returned success=false or no notifications array');
         }
+      } else {
+        console.error('❌ [WebSocket] Failed to fetch notifications:', await response.text());
       }
     } catch (err) {
       console.error('❌ [WebSocket] Error loading database notifications:', err);
@@ -247,12 +259,14 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     if (!userId) return;
     
     // Charger les notifications au montage
+    console.log('🔄 [WebSocket] Initial database load triggered for user:', userId);
     loadDatabaseNotifications();
     
-    // Charger les notifications toutes les 60 secondes
+    // Charger les notifications toutes les 30 secondes
     const intervalId = setInterval(() => {
+      console.log('🔄 [WebSocket] Periodic database refresh triggered');
       loadDatabaseNotifications();
-    }, 60000);
+    }, 30000);
     
     return () => clearInterval(intervalId);
   }, [userId, loadDatabaseNotifications]);

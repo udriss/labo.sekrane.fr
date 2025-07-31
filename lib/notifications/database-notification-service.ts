@@ -347,8 +347,8 @@ export class DatabaseNotificationService {
       // Récupérer toutes les notifications non lues pour cet utilisateur
       const notifications = await query<{id: string}[]>(
         `SELECT id FROM notifications 
-         WHERE JSON_CONTAINS(target_roles, ?) OR target_roles IS NULL OR target_roles = ''`,
-        [`"${userRole}"`]
+         WHERE JSON_SEARCH(target_roles, 'one', ?) IS NOT NULL OR target_roles IS NULL OR target_roles = ''`,
+        [userRole]
       );
 
       // Marquer chacune comme lue
@@ -370,8 +370,8 @@ export class DatabaseNotificationService {
   static async getStats(userId: string, userRole: string, filters: Partial<NotificationFilter> = {}): Promise<NotificationStats> {
     try {
       // Construire les clauses WHERE pour les filtres
-      let whereClauses = [`(JSON_CONTAINS(target_roles, ?) OR target_roles IS NULL OR target_roles = '')`];
-      let params: any[] = [`"${userRole}"`];
+      let whereClauses = [`(JSON_SEARCH(target_roles, 'one', ?) IS NOT NULL OR target_roles IS NULL OR target_roles = '')`];
+      let params: any[] = [userRole];
 
       if (filters.module) {
         whereClauses.push('module = ?');

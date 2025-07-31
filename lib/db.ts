@@ -11,8 +11,8 @@ import { updateFragmentsTable } from './migrations/updateFragmentsTable';
 // Database configuration
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  user: process.env.DB_USER || 'int',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'labo',
   waitForConnections: true,
   connectionLimit: 30,
@@ -23,9 +23,9 @@ const dbConfig = {
 const poolOptions: PoolOptions = {
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  user: process.env.DB_USER || 'int',
+  password: process.env.DB_PASSWORD || '4Na9Gm8mdTVgnUp',
+  database: process.env.DB_NAME || 'labo',
   // Paramètres de pool pour limiter les connexions
   connectionLimit: 30, // Limiter le nombre maximum de connexions
   queueLimit: 0, // 0 = illimité, défini un nombre max pour limiter la file d'attente
