@@ -2,14 +2,13 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
-
+import { query } from '@/lib/db'
 import { UserServiceSQL } from '@/lib/services/userService.sql';
 import path from 'path'
 
 const EQUIPMENT_INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
 const NOTEBOOK_FILE = path.join(process.cwd(), 'data', 'notebook.json')
 // Chemins des fichiers JSON                                                                                                    
-const CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json')
 
 // Fonction pour lire un fichier JSON
@@ -26,12 +25,12 @@ async function readJsonFile(filePath: string, defaultValue: any = {}) {
 // Fonction pour obtenir les statistiques
 async function getStatsData() {
   try {
-    // Lire tous les fichiers JSON
+    // Lire tous les fichiers JSON et récupérer les chemicals depuis MySQL
     const [equipment, notebook, users, chemicals, orders] = await Promise.all([
       readJsonFile(EQUIPMENT_INVENTORY_FILE, { equipment: [], stats: { total: 0, inStock: 0, lowStock: 0, outOfStock: 0 } }),
       readJsonFile(NOTEBOOK_FILE, { experiments: [] }),
       Promise.resolve({ users: await UserServiceSQL.getAllActive() }),
-      readJsonFile(CHEMICALS_FILE, { chemicals: [] }),
+      query('SELECT * FROM chemicals'),
       readJsonFile(ORDERS_FILE, { orders: [] })
     ])
 
@@ -62,11 +61,11 @@ async function getStatsData() {
       admins: users.users?.filter((user: any) => user.role === 'ADMIN').length || 0
     }
 
-    // Calculer les statistiques de réactifs chimiques
+    // Calculer les statistiques de réactifs chimiques (depuis MySQL)
     const chemicalStats = {
-      total: chemicals.chemicals?.length || 0,
-      lowStock: chemicals.chemicals?.filter((chem: any) => chem.quantity <= (chem.minQuantity || 10)).length || 0,
-      expired: chemicals.chemicals?.filter((chem: any) => {
+      total: chemicals?.length || 0,
+      lowStock: chemicals?.filter((chem: any) => chem.quantity <= (chem.minQuantity || 10)).length || 0,
+      expired: chemicals?.filter((chem: any) => {
         if (!chem.expirationDate) return false
         return new Date(chem.expirationDate) < new Date()
       }).length || 0

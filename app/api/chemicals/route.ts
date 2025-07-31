@@ -3,44 +3,52 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { query } from '@/lib/db'
 import { withAudit } from '@/lib/api/with-audit'
 
-const CHEMICALS_INVENTORY_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
-
-// Fonction pour lire l'inventaire des réactifs chimiques
-async function readChemicalsInventory() {
-  try {
-    const data = await fs.readFile(CHEMICALS_INVENTORY_FILE, 'utf-8')
-    return JSON.parse(data)
-  } catch (error) {
-    console.error('Erreur lecture inventaire chemicals:', error)
-    return { chemicals: [], stats: { total: 0, inStock: 0, lowStock: 0, expired: 0, expiringSoon: 0 } }
-  }
-}
-
-// Fonction pour écrire l'inventaire des réactifs chimiques
-async function writeChemicalsInventory(data: any) {
-  try {
-    await fs.writeFile(CHEMICALS_INVENTORY_FILE, JSON.stringify(data, null, 2))
-  } catch (error) {
-    console.error('Erreur écriture inventaire chemicals:', error)
-    throw error
-  }
+// Interface pour les chemicals
+interface Chemical {
+  id: string
+  name: string
+  formula?: string | null
+  molfile?: string | null
+  casNumber?: string | null
+  barcode?: string | null
+  quantity: number
+  unit: string
+  minQuantity?: number | null
+  concentration?: number | null
+  purity?: number | null
+  purchaseDate?: string | null
+  expirationDate?: string | null
+  openedDate?: string | null
+  storage?: string | null
+  room?: string | null
+  cabinet?: string | null
+  shelf?: string | null
+  hazardClass?: string | null
+  sdsFileUrl?: string | null
+  supplierId?: string | null
+  batchNumber?: string | null
+  orderReference?: string | null
+  status: string
+  notes?: string | null
+  quantityPrevision?: number | null
+  createdAt: string
+  updatedAt: string
 }
 
 // Fonction pour calculer les statistiques
-function calculateChemicalStats(chemicals: any[]) {
+function calculateChemicalStats(chemicals: Chemical[]) {
   const now = new Date()
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
   
   return {
     total: chemicals.length,
-    inStock: chemicals.filter((c: any) => c.status === 'IN_STOCK').length,
-    lowStock: chemicals.filter((c: any) => c.status === 'LOW_STOCK').length,
-    expired: chemicals.filter((c: any) => c.status === 'EXPIRED').length,
-    expiringSoon: chemicals.filter((c: any) => {
+    inStock: chemicals.filter((c: Chemical) => c.status === 'IN_STOCK').length,
+    lowStock: chemicals.filter((c: Chemical) => c.status === 'LOW_STOCK').length,
+    expired: chemicals.filter((c: Chemical) => c.status === 'EXPIRED').length,
+    expiringSoon: chemicals.filter((c: Chemical) => {
       if (!c.expirationDate) return false
       return new Date(c.expirationDate) <= thirtyDaysFromNow && c.status === 'IN_STOCK'
     }).length
@@ -54,42 +62,53 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const hazardClass = searchParams.get('hazardClass')
 
-    // Lire l'inventaire depuis le fichier JSON
-    const inventory = await readChemicalsInventory()
-    let chemicals = inventory.chemicals
-
-    // S'assurer que chaque chemical a une quantityPrevision
-    chemicals = chemicals.map((chemical: any) => ({
-      ...chemical,
-      // Si quantityPrevision n'existe pas, l'initialiser avec la quantité actuelle
-      quantityPrevision: chemical.quantityPrevision !== undefined 
-        ? chemical.quantityPrevision 
-        : chemical.quantity
-    }))
+    // Construire la requête SQL de base
+    let sql = `
+      SELECT c.*, s.name as supplierName 
+      FROM chemicals c 
+      LEFT JOIN suppliers s ON c.supplierId = s.id 
+      WHERE 1=1
+    `
+    const params: any[] = []
 
     // Appliquer les filtres
     if (search) {
-      const searchLower = search.toLowerCase()
-      chemicals = chemicals.filter((c: any) => 
-        c.name?.toLowerCase().includes(searchLower) ||
-        c.formula?.toLowerCase().includes(searchLower) ||
-        c.casNumber?.toLowerCase().includes(searchLower)
-      )
+      sql += ` AND (c.name LIKE ? OR c.formula LIKE ? OR c.casNumber LIKE ?)`
+      const searchPattern = `%${search}%`
+      params.push(searchPattern, searchPattern, searchPattern)
     }
 
     if (status && status !== 'ALL') {
-      chemicals = chemicals.filter((c: any) => c.status === status)
+      sql += ` AND c.status = ?`
+      params.push(status)
     }
 
     if (hazardClass && hazardClass !== 'ALL') {
-      chemicals = chemicals.filter((c: any) => c.hazardClass === hazardClass)
+      sql += ` AND c.hazardClass = ?`
+      params.push(hazardClass)
     }
 
-    // Recalculer les statistiques
-    const stats = calculateChemicalStats(inventory.chemicals)
+    sql += ` ORDER BY c.name ASC`
+
+    // Exécuter la requête
+    const chemicals = await query<Chemical[]>(sql, params)
+
+    // S'assurer que chaque chemical a une quantityPrevision
+    const chemicalsWithPrevision = chemicals.map((chemical: Chemical) => ({
+      ...chemical,
+      // Si quantityPrevision n'existe pas, l'initialiser avec la quantité actuelle
+      quantityPrevision: chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== null
+        ? chemical.quantityPrevision 
+        : chemical.quantity,
+      // Ajouter le nom du fournisseur pour compatibilité
+      supplier: chemical.supplierId ? { name: (chemical as any).supplierName } : null
+    }))
+
+    // Calculer les statistiques
+    const stats = calculateChemicalStats(chemicalsWithPrevision)
 
     return NextResponse.json({ 
-      chemicals,
+      chemicals: chemicalsWithPrevision,
       stats
     })
   } catch (error) {
@@ -105,51 +124,49 @@ export const POST = withAudit(
   async (request: NextRequest) => {
     const body = await request.json()
     
-    // Lire l'inventaire actuel
-    const inventory = await readChemicalsInventory()
+    // Générer un ID unique
+    const newChemicalId = `CHEM_INV_${Array.from({ length: 12 }, () => Math.floor(Math.random() * 36).toString(36).toUpperCase()).join('')}`
     
-    // Créer le nouveau réactif chimique
-    const newChemical = {
-      id: `CHEM_INV_${Array.from({ length: 12 }, () => Math.floor(Math.random() * 36).toString(36).toUpperCase()).join('')}`,
-      name: body.name,
-      formula: body.formula || null,
-      molfile: null,
-      casNumber: body.casNumber || null,
-      barcode: null,
-      quantity: parseFloat(body.quantity) || 0,
-      unit: body.unit || 'g',
-      minQuantity: body.minQuantity ? parseFloat(body.minQuantity) : null,
-      concentration: body.concentration ? parseFloat(body.concentration) : null,
-      purity: null,
-      purchaseDate: body.purchaseDate || null,
-      expirationDate: body.expirationDate || null,
-      openedDate: null,
-      storage: body.storage || '',
-      room: body.room || null,
-      cabinet: null,
-      shelf: null,
-      hazardClass: body.hazardClass || null,
-      sdsFileUrl: null,
-      supplierId: body.supplierId || null,
-      batchNumber: null,
-      orderReference: null,
-      status: body.status || 'IN_STOCK',
-      notes: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      supplier: null
-    }
+    // Préparer les données pour l'insertion
+    const insertSql = `
+      INSERT INTO chemicals (
+        id, name, formula, casNumber, quantity, unit, minQuantity, 
+        concentration, purchaseDate, expirationDate, storage, room, 
+        hazardClass, supplierId, status, quantityPrevision
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
     
-    // Ajouter à l'inventaire
-    inventory.chemicals.push(newChemical)
+    const params = [
+      newChemicalId,
+      body.name,
+      body.formula || null,
+      body.casNumber || null,
+      parseFloat(body.quantity) || 0,
+      body.unit || 'g',
+      body.minQuantity ? parseFloat(body.minQuantity) : null,
+      body.concentration ? parseFloat(body.concentration) : null,
+      body.purchaseDate || null,
+      body.expirationDate || null,
+      body.storage || null,
+      body.room || null,
+      body.hazardClass || null,
+      body.supplierId || null,
+      body.status || 'IN_STOCK',
+      parseFloat(body.quantity) || 0 // quantityPrevision initialisée avec la quantité
+    ]
     
-    // Recalculer les stats
-    inventory.stats = calculateChemicalStats(inventory.chemicals)
+    await query(insertSql, params)
     
-    // Sauvegarder
-    await writeChemicalsInventory(inventory)
+    // Récupérer le chemical créé avec les relations
+    const createdChemical = await query<Chemical[]>(
+      `SELECT c.*, s.name as supplierName 
+       FROM chemicals c 
+       LEFT JOIN suppliers s ON c.supplierId = s.id 
+       WHERE c.id = ?`,
+      [newChemicalId]
+    )
     
-    return NextResponse.json(newChemical)
+    return NextResponse.json(createdChemical[0])
   },
   {
     module: 'CHEMICALS',
@@ -175,54 +192,88 @@ export const PUT = withAudit(
       return NextResponse.json({ error: 'ID requis pour la mise à jour' }, { status: 400 })
     }
 
-    // Lire l'inventaire actuel
-    const inventory = await readChemicalsInventory()
-
-    // Trouver le réactif chimique à mettre à jour
-    const chemicalIndex = inventory.chemicals.findIndex((c: any) => c.id === id)
+    // Vérifier que le chemical existe et récupérer l'état avant modification
+    const existingChemical = await query<Chemical[]>(
+      'SELECT * FROM chemicals WHERE id = ?',
+      [id]
+    )
     
-    if (chemicalIndex === -1) {
+    if (existingChemical.length === 0) {
       return NextResponse.json({ error: 'Réactif chimique non trouvé' }, { status: 404 })
     }
 
-    // Stocker l'ancien état pour l'audit
-    const oldChemical = { ...inventory.chemicals[chemicalIndex] };
+    const beforeState = existingChemical[0];
 
     // Traitement spécial pour la mise à jour de quantité uniquement
     if (updateData.quantity !== undefined && Object.keys(updateData).length === 1) {
       const newQuantity = parseFloat(updateData.quantity)
-      inventory.chemicals[chemicalIndex].quantity = newQuantity
-      inventory.chemicals[chemicalIndex].status = newQuantity === 0 ? 'EMPTY' : 
-                                                   newQuantity < 10 ? 'LOW_STOCK' : 'IN_STOCK'
-      inventory.chemicals[chemicalIndex].updatedAt = new Date().toISOString()
+      const newStatus = newQuantity === 0 ? 'EMPTY' : 
+                       newQuantity < 10 ? 'LOW_STOCK' : 'IN_STOCK'
+      
+      await query(
+        'UPDATE chemicals SET quantity = ?, status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+        [newQuantity, newStatus, id]
+      )
     } else {
-      // Mise à jour complète
-      inventory.chemicals[chemicalIndex] = {
-        ...inventory.chemicals[chemicalIndex],
-        ...updateData,
-        quantity: updateData.quantity ? parseFloat(updateData.quantity) : inventory.chemicals[chemicalIndex].quantity,
-        concentration: updateData.concentration ? parseFloat(updateData.concentration) : inventory.chemicals[chemicalIndex].concentration,
-        updatedAt: new Date().toISOString()
+      // Mise à jour complète - construire dynamiquement la requête
+      const updateFields: string[] = []
+      const updateParams: any[] = []
+      
+      Object.entries(updateData).forEach(([key, value]) => {
+        if (key !== 'id') {
+          updateFields.push(`${key} = ?`)
+          if (key === 'quantity' || key === 'concentration' || key === 'minQuantity') {
+            updateParams.push(value ? parseFloat(value as string) : null)
+          } else {
+            updateParams.push(value)
+          }
+        }
+      })
+      
+      if (updateFields.length > 0) {
+        updateFields.push('updatedAt = CURRENT_TIMESTAMP')
+        updateParams.push(id)
+        
+        const updateSql = `UPDATE chemicals SET ${updateFields.join(', ')} WHERE id = ?`
+        await query(updateSql, updateParams)
       }
     }
 
-    // Recalculer les stats
-    inventory.stats = calculateChemicalStats(inventory.chemicals)
-
-    // Sauvegarder
-    await writeChemicalsInventory(inventory)
+    // Récupérer le chemical mis à jour avec les relations
+    const updatedChemical = await query<Chemical[]>(
+      `SELECT c.*, s.name as supplierName 
+       FROM chemicals c 
+       LEFT JOIN suppliers s ON c.supplierId = s.id 
+       WHERE c.id = ?`,
+      [id]
+    )
     
-    return NextResponse.json(inventory.chemicals[chemicalIndex])
+    return NextResponse.json({
+      ...updatedChemical[0],
+      _audit: {
+        before: beforeState,
+        updateData
+      }
+    })
   },
   {
     module: 'CHEMICALS',
     entity: 'chemical',
     action: 'UPDATE',
     extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      chemicalName: response?.name,
-      quantityUpdate: response?.quantity !== undefined,
-      fields: Object.keys(response || {})
-    })
+    customDetails: (req, response) => {
+      const beforeState = response?._audit?.before;
+      const updateData = response?._audit?.updateData;
+      
+      return {
+        chemicalName: response?.name,
+        quantityUpdate: updateData?.quantity !== undefined && Object.keys(updateData).length === 1,
+        before: beforeState,
+        after: response,
+        fields: Object.keys(updateData || {}),
+        quantity: response?.quantity,
+        unit: response?.unit
+      }
+    }
   }
 )

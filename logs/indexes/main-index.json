@@ -32,7 +32,8 @@
     ],
     "CALENDAR": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json"
     ],
     "CHEMICALS": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
@@ -66,7 +67,8 @@
     ],
     "CREATE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json"
     ],
     "PROPOSE_TIMESLOTS": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json"

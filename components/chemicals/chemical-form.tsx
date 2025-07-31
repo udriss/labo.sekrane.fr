@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Chemical, ChemicalStatus } from "@/types/prisma"
+import { Chemical, ChemicalStatus } from "@/types/chemicals"
 import {
   Box,
   Button,

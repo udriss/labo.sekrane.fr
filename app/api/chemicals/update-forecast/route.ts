@@ -2,41 +2,51 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
+import { query } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
     const { chemicals } = await request.json()
     
-    // Lire le fichier actuel
-    const fileContent = await fs.readFile(CHEMICALS_FILE, 'utf-8')
-    const inventoryData = JSON.parse(fileContent)
-    
-    // Mettre à jour les quantités prévisionnelles
-    chemicals.forEach((requestedChemical: any) => {
-      const inventoryChemical = inventoryData.chemicals.find(
-        (c: any) => c.id === requestedChemical.id
-      )
+    // Traiter chaque chemical pour mettre à jour sa quantité prévisionnelle
+    for (const requestedChemical of chemicals) {
+      const { id, requestedQuantity } = requestedChemical;
       
-      if (inventoryChemical) {
-        // Si quantityPrevision n'existe pas, l'initialiser
-        if (inventoryChemical.quantityPrevision === undefined || inventoryChemical.quantityPrevision === null) {
-          inventoryChemical.quantityPrevision = inventoryChemical.quantity - (requestedChemical.requestedQuantity || 0)
-        } else {
-          // Sinon, soustraire la nouvelle quantité demandée
-          inventoryChemical.quantityPrevision -= (requestedChemical.requestedQuantity || 0)
-        }
-        
-        // S'assurer que la quantité prévisionnelle ne soit pas négative
-        inventoryChemical.quantityPrevision = Math.max(0, inventoryChemical.quantityPrevision)
+      if (!id || requestedQuantity === undefined) {
+        continue; // Ignorer les entrées invalides
       }
-    })
-    
-    // Sauvegarder le fichier mis à jour
-    await fs.writeFile(CHEMICALS_FILE, JSON.stringify(inventoryData, null, 2))
+
+      // Récupérer le chemical actuel
+      const currentChemicals = await query(
+        'SELECT quantity, quantityPrevision FROM chemicals WHERE id = ?',
+        [id]
+      );
+
+      if (currentChemicals.length === 0) {
+        continue; // Chemical non trouvé, passer au suivant
+      }
+
+      const currentChemical = currentChemicals[0];
+      
+      // Calculer la nouvelle quantité prévisionnelle
+      let newQuantityPrevision;
+      if (currentChemical.quantityPrevision === null || currentChemical.quantityPrevision === undefined) {
+        // Si quantityPrevision n'existe pas, l'initialiser avec la quantité actuelle moins la quantité demandée
+        newQuantityPrevision = currentChemical.quantity - requestedQuantity;
+      } else {
+        // Sinon, soustraire la nouvelle quantité demandée
+        newQuantityPrevision = currentChemical.quantityPrevision - requestedQuantity;
+      }
+      
+      // S'assurer que la quantité prévisionnelle ne soit pas négative
+      newQuantityPrevision = Math.max(0, newQuantityPrevision);
+
+      // Mettre à jour la quantité prévisionnelle dans la base de données
+      await query(
+        'UPDATE chemicals SET quantityPrevision = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+        [newQuantityPrevision, id]
+      );
+    }
     
     return NextResponse.json({ 
       success: true, 

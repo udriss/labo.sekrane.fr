@@ -5,8 +5,8 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { query } from '@/lib/db'
 
-const CHEMICALS_FILE = path.join(process.cwd(), 'data', 'chemicals-inventory.json')
 const EQUIPMENT_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
 
 // Fonction pour lire un fichier JSON
@@ -23,20 +23,27 @@ async function readJsonFile(filePath: string, defaultValue: any = {}) {
 // Fonction pour rechercher un réactif par code
 async function searchProductByCode(code: string) {
   try {
-    // Recherche dans les réactifs chimiques
-    const chemicalsData = await readJsonFile(CHEMICALS_FILE, { chemicals: [] })
-    const chemical = chemicalsData.chemicals?.find((c: any) => 
-      c.barcode === code || c.casNumber === code || c.id === code
+    // Recherche dans les réactifs chimiques (MySQL)
+    const chemicals = await query(
+      `SELECT c.*, s.name as supplierName 
+       FROM chemicals c 
+       LEFT JOIN suppliers s ON c.supplierId = s.id 
+       WHERE c.barcode = ? OR c.casNumber = ? OR c.id = ?`,
+      [code, code, code]
     )
     
-    if (chemical) {
+    if (chemicals.length > 0) {
+      const chemical = {
+        ...chemicals[0],
+        supplier: chemicals[0].supplierId ? { name: chemicals[0].supplierName } : null
+      }
       return {
         type: 'chemical',
         data: chemical
       }
     }
 
-    // Recherche dans l'équipement
+    // Recherche dans l'équipement (toujours en JSON pour l'instant)
     const equipmentData = await readJsonFile(EQUIPMENT_FILE, { equipment: [] })
     const equipment = equipmentData.equipment?.find((e: any) => 
       e.barcode === code || e.serialNumber === code || e.id === code

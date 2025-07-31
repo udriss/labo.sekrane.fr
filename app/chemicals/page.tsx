@@ -13,7 +13,7 @@ import {
 } from "@mui/icons-material"
 import { ChemicalsList } from "@/components/chemicals/chemicals-list"
 import { ChemicalForm } from "@/components/chemicals/chemical-form"
-import { Chemical } from "@/types/prisma"
+import { Chemical } from "@/types/chemicals"
 
 // Fonction helper pour gérer localStorage
 const getStoredTabValue = (): number => {

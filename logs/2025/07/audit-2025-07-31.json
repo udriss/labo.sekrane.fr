@@ -6534,5 +6534,534 @@
       "duration": 4
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "45ce5705-a90b-466d-8f4f-d6eb3c331b85",
+    "timestamp": "2025-07-31T12:53:33.902Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 20,
+        "timestamp": "2025-07-31T12:53:33.902Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753966413882_5g01r36uq",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 20
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "eaa78dd0-0460-452e-a75c-8e5ec6491d9c",
+    "timestamp": "2025-07-31T12:53:40.251Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-07-31T12:53:40.251Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753966420240_do3r5wx2a",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5f52b97e-fa07-4aa6-b219-12e4cecc4731",
+    "timestamp": "2025-07-31T12:54:16.986Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "module": "CALENDAR",
+      "entity": "event",
+      "entityId": "calendrier"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/calendrier/",
+        "query": {},
+        "body": {
+          "title": "Administrateur",
+          "description": "",
+          "type": "TP",
+          "classes": [],
+          "materials": [
+            {
+              "id": "EQUIP_1753254176990_5y8n3pivf",
+              "name": "Bécher",
+              "quantity": 1,
+              "isCustom": false,
+              "volume": "25 mL"
+            }
+          ],
+          "chemicals": [
+            {
+              "id": "CHEM_1753966454124_CUSTOM",
+              "name": "MONE",
+              "requestedQuantity": 1,
+              "unit": "g",
+              "quantity": 0,
+              "isCustom": true
+            }
+          ],
+          "files": [],
+          "remarks": "",
+          "date": "2025-07-31",
+          "timeSlots": [
+            {
+              "startTime": "04:00",
+              "endTime": "10:00"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "statusText": "",
+        "data": {
+          "id": "EVENT_1753966456983_aoi00986w",
+          "title": "Administrateur",
+          "name": "Administrateur",
+          "description": null,
+          "timeSlots": [
+            {
+              "id": "TS_1753966456983_wtirut3",
+              "startDate": "2025-07-31T02:00:00.000Z",
+              "endDate": "2025-07-31T08:00:00.000Z",
+              "status": "active",
+              "createdBy": "1",
+              "modifiedBy": [
+                {
+                  "userId": "1",
+                  "date": "2025-07-31T12:54:16.983Z",
+                  "action": "created"
+                }
+              ]
+            }
+          ],
+          "actuelTimeSlots": [
+            {
+              "id": "TS_1753966456983_wtirut3",
+              "startDate": "2025-07-31T02:00:00.000Z",
+              "endDate": "2025-07-31T08:00:00.000Z",
+              "status": "active",
+              "createdBy": "1",
+              "modifiedBy": [
+                {
+                  "userId": "1",
+                  "date": "2025-07-31T12:54:16.983Z",
+                  "action": "created"
+                }
+              ]
+            }
+          ],
+          "type": "TP",
+          "state": "PENDING",
+          "stateChanger": [],
+          "room": null,
+          "location": null,
+          "materials": [
+            {
+              "id": "EQUIP_1753254176990_5y8n3pivf",
+              "name": "Bécher",
+              "quantity": 1,
+              "isCustom": false,
+              "volume": "25 mL"
+            }
+          ],
+          "chemicals": [
+            {
+              "id": "CHEM_1753966454124_CUSTOM",
+              "name": "MONE",
+              "requestedQuantity": 1,
+              "unit": "g",
+              "quantity": 0,
+              "isCustom": true
+            }
+          ],
+          "equipment": [],
+          "files": [],
+          "remarks": null,
+          "notes": null,
+          "createdBy": "1",
+          "modifiedBy": [],
+          "createdAt": "2025-07-31T12:54:16.983Z",
+          "updatedAt": "2025-07-31T12:54:16.983Z"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-07-31T12:54:16.986Z"
+      },
+      "eventTitle": "Administrateur",
+      "timeSlotsCount": 1,
+      "filesCount": 0,
+      "createdByUser": "1",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753966456980_hrczi0eoq",
+      "path": "/api/calendrier/",
+      "method": "POST",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "521a6974-cb76-449b-8c39-7aff344d06ea",
+    "timestamp": "2025-07-31T15:16:02.414Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-07-31T15:16:02.414Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753974962404_4albe14uz",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3886cefa-3876-4784-b852-bfb717ef54af",
+    "timestamp": "2025-07-31T15:16:02.418Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-07-31T15:16:02.418Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753974962407_qi4i6ym7m",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e72982c2-5f9c-477f-a267-2dcc263cf689",
+    "timestamp": "2025-07-31T15:16:29.341Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "3"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/user/3/",
+        "query": {},
+        "body": {
+          "name": "Étudiant Dupont",
+          "email": "student@labo.fr",
+          "role": "LABORANTIN",
+          "selectedClasses": [
+            "Terminale STI2D",
+            "201"
+          ],
+          "associatedClasses": [
+            "Terminale STI2D",
+            "201"
+          ],
+          "customClasses": []
+        }
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-07-31T15:16:29.341Z"
+      },
+      "fieldsUpdated": [],
+      "classesUpdated": false,
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753974989333_pjjohy3w2",
+      "path": "/api/user/3/",
+      "method": "PUT",
+      "duration": 8
+    },
+    "status": "SUCCESS"
   }
 ]

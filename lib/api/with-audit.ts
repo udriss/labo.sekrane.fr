@@ -22,6 +22,117 @@ interface AuditOptions {
   skipNotifications?: boolean;
 }
 
+// Helper pour créer un message de notification amélioré
+function createEnhancedNotificationMessage(
+  triggeredBy: AuditUser,
+  actionType: string,
+  module: string,
+  entityType?: string,
+  details?: any
+): { messageToDisplay: string; log_message: string } {
+  const logMessage = `Action ${actionType} effectuée sur ${entityType || 'élément'} dans le module ${module}`;
+  
+  // Messages personnalisés selon le module et l'action
+  let displayMessage = logMessage; // Fallback par défaut
+  
+  if (module === 'CHEMICALS') {
+    displayMessage = createChemicalNotificationMessage(triggeredBy, actionType, details);
+  } else if (module === 'EQUIPMENT') {
+    displayMessage = createEquipmentNotificationMessage(triggeredBy, actionType, details);
+  }
+  
+  return {
+    messageToDisplay: displayMessage,
+    log_message: logMessage
+  };
+}
+
+// Messages spécifiques pour les chemicals
+function createChemicalNotificationMessage(
+  triggeredBy: AuditUser,
+  actionType: string,
+  details?: any
+): string {
+  const userName = triggeredBy.name;
+  
+  if (actionType === 'CREATE') {
+    const chemicalName = details?.chemicalName || 'un nouveau réactif';
+    const quantity = details?.quantity || 'une quantité';
+    const unit = details?.unit || '';
+    return `${userName} a ajouté ${chemicalName} (${quantity}${unit}) à l'inventaire`;
+  }
+  
+  if (actionType === 'UPDATE') {
+    const chemicalName = details?.chemicalName || 'un réactif';
+    
+    // Si c'est une mise à jour de quantité uniquement
+    if (details?.quantityUpdate && details?.before?.quantity !== undefined && details?.after?.quantity !== undefined) {
+      const oldQuantity = details.before.quantity;
+      const newQuantity = details.after.quantity;
+      const unit = details?.after?.unit || details?.before?.unit || '';
+      return `${userName} a modifié la quantité de ${chemicalName} : ${oldQuantity}${unit} → ${newQuantity}${unit}`;
+    }
+    
+    // Mise à jour générale
+    const fieldsUpdated = details?.fields || [];
+    if (fieldsUpdated.length > 0) {
+      const fieldNames = fieldsUpdated.join(', ');
+      return `${userName} a modifié ${chemicalName} (${fieldNames})`;
+    }
+    
+    return `${userName} a modifié les informations de ${chemicalName}`;
+  }
+  
+  if (actionType === 'DELETE') {
+    const chemicalName = details?.chemicalName || 'un réactif';
+    return `${userName} a supprimé ${chemicalName} de l'inventaire`;
+  }
+  
+  return `${userName} a effectué une action sur un réactif chimique`;
+}
+
+// Messages spécifiques pour l'équipement
+function createEquipmentNotificationMessage(
+  triggeredBy: AuditUser,
+  actionType: string,
+  details?: any
+): string {
+  const userName = triggeredBy.name;
+  
+  if (actionType === 'CREATE') {
+    const equipmentName = details?.equipmentName || 'un nouvel équipement';
+    const quantity = details?.quantity || 'une quantité';
+    return `${userName} a ajouté ${equipmentName} (${quantity} unité${quantity > 1 ? 's' : ''}) à l'inventaire`;
+  }
+  
+  if (actionType === 'UPDATE') {
+    const equipmentName = details?.equipmentName || 'un équipement';
+    
+    // Si c'est une mise à jour de quantité uniquement
+    if (details?.quantityUpdate && details?.before?.quantity !== undefined && details?.after?.quantity !== undefined) {
+      const oldQuantity = details.before.quantity;
+      const newQuantity = details.after.quantity;
+      return `${userName} a modifié la quantité de ${equipmentName} : ${oldQuantity} → ${newQuantity}`;
+    }
+    
+    // Mise à jour générale
+    const fieldsUpdated = details?.fields || [];
+    if (fieldsUpdated.length > 0) {
+      const fieldNames = fieldsUpdated.join(', ');
+      return `${userName} a modifié ${equipmentName} (${fieldNames})`;
+    }
+    
+    return `${userName} a modifié les informations de ${equipmentName}`;
+  }
+  
+  if (actionType === 'DELETE') {
+    const equipmentName = details?.equipmentName || 'un équipement';
+    return `${userName} a supprimé ${equipmentName} de l'inventaire`;
+  }
+  
+  return `${userName} a effectué une action sur un équipement`;
+}
+
 async function triggerNotifications(
   triggeredBy: AuditUser,
   module: string,
@@ -52,8 +163,14 @@ async function triggerNotifications(
         break;
     }
 
-    // Créer le message de notification
-    const message = `Action ${actionType} effectuée sur ${entityType || 'élément'} dans le module ${module}`;
+    // Créer le message de notification avec structure améliorée
+    const message = createEnhancedNotificationMessage(
+      triggeredBy, 
+      actionType, 
+      module, 
+      entityType, 
+      details
+    );
 
     // Déterminer la sévérité selon le type d'action
     let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';

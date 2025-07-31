@@ -1,413 +1,330 @@
-// app/api/equipment-types/route.ts
+// app/api/equipment-types/route-mysql.ts
 
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { withConnection } from '@/lib/db';
 import { withAudit } from '@/lib/api/with-audit'
+import type { EquipmentType, EquipmentItem } from '@/types/equipment-mysql';
 
-const EQUIPMENT_TYPES_FILE = path.join(process.cwd(), 'data', 'equipment-types.json')
+// GET - Récupérer tous les types d'équipements avec leurs items
+export const GET = withAudit(
+  async () => {
+    try {
+      return withConnection(async (connection) => {
+        // Récupérer les types d'équipements
+        const [typeRows] = await connection.execute(`
+          SELECT * FROM equipment_types 
+          ORDER BY is_custom ASC, name ASC
+        `);
 
-// Fonction pour s'assurer que la catégorie "Sans catégorie" existe
-async function ensureUncategorizedExists(equipmentTypes: any) {
-  const uncategorizedId = 'UNCATEGORIZED'
-  const uncategorized = equipmentTypes.types.find((t: any) => t.id === uncategorizedId)
-  
-  if (!uncategorized) {
-    equipmentTypes.types.push({
-      id: uncategorizedId,
-      name: 'Sans catégorie',
-      svg: '/svg/default.svg',
-      isCustom: true,
-      items: []
-    })
-  }
-  
-  return uncategorizedId
-}
+        const types = typeRows as EquipmentType[];
 
+        // Récupérer les items pour chaque type
+        const typesWithItems = await Promise.all(
+          types.map(async (type) => {
+            const [itemRows] = await connection.execute(`
+              SELECT * FROM equipment_items 
+              WHERE equipment_type_id = ? 
+              ORDER BY name ASC
+            `, [type.id]);
 
-// Fonction pour supprimer les équipements de l'inventaire par type
-async function deleteInventoryItemsByTypeIds(typeIds: string[]) {
-  try {
-    const INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json')
-    const inventoryData = await fs.readFile(INVENTORY_FILE, 'utf-8')
-    const inventory = JSON.parse(inventoryData)
-    
-    // Filtrer les équipements qui ne correspondent pas aux typeIds
-    const remainingEquipment = inventory.equipment.filter((item: any) => 
-      !typeIds.includes(item.equipmentTypeId)
-    )
-    
-    const deletedCount = inventory.equipment.length - remainingEquipment.length
-    
-    // Mettre à jour l'inventaire
-    inventory.equipment = remainingEquipment
-    
-    // Recalculer les stats
-    inventory.stats = {
-      total: remainingEquipment.length,
-      available: remainingEquipment.filter((e: any) => e.status === 'AVAILABLE').length,
-      inUse: remainingEquipment.filter((e: any) => e.status === 'IN_USE').length,
-      maintenance: remainingEquipment.filter((e: any) => e.status === 'MAINTENANCE').length,
-      outOfOrder: remainingEquipment.filter((e: any) => e.status === 'OUT_OF_ORDER').length
-    }
-    
-    await fs.writeFile(INVENTORY_FILE, JSON.stringify(inventory, null, 2))
-    
-    return deletedCount
+            const items = (itemRows as EquipmentItem[]).map(item => ({
+              ...item,
+              // Convertir les JSON strings en objets pour la compatibilité
+              volumes: item.volumes ? JSON.parse(item.volumes) : [],
+              resolutions: item.resolutions ? JSON.parse(item.resolutions) : [],
+              tailles: item.tailles ? JSON.parse(item.tailles) : [],
+              materiaux: item.materiaux ? JSON.parse(item.materiaux) : [],
+              customFields: item.custom_fields ? JSON.parse(item.custom_fields) : {},
+              // Compatibilité avec l'ancien format
+              isCustom: item.is_custom
+            }));
+
+            return {
+              ...type,
+              // Compatibilité avec l'ancien format
+              isCustom: type.is_custom,
+              items
+            };
+          })
+        );
+
+      return NextResponse.json({ 
+        types: typesWithItems 
+      });
+    });
   } catch (error) {
-    console.error('Erreur lors de la suppression des équipements de l\'inventaire:', error)
-    return 0
+    console.error("Erreur lors de la récupération des types d'équipements:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la récupération des types d'équipements" },
+      { status: 500 }
+    );
   }
+},
+{
+  module: 'EQUIPMENT',
+  entity: 'equipment_type',
+  action: 'READ',
+  extractEntityIdFromResponse: (response) => undefined
 }
+);
 
-
-
-export async function GET() {
-  try {
-    const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-    const equipmentTypes = JSON.parse(data)
-    
-    // S'assurer que la catégorie "Sans catégorie" existe
-    await ensureUncategorizedExists(equipmentTypes)
-    await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-    
-    return NextResponse.json(equipmentTypes)
-  } catch (error) {
-    console.error('Erreur lors du chargement des types d\'équipement:', error)
-    return NextResponse.json({ error: 'Erreur lors du chargement' }, { status: 500 })
-  }
-}
-
-
+// POST - Créer un nouveau type d'équipement
 export const POST = withAudit(
   async (request: NextRequest) => {
-    const body = await request.json()
-    
-    // Action de déplacement d'équipement entre catégories
-    if (body.action === 'move') {
-      const { sourceCategoryId, targetCategoryId, itemName, updatedItem } = body
+    try {
+      const data = await request.json();
       
-      const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-      const equipmentTypes = JSON.parse(data)
-
-      const sourceCategory = equipmentTypes.types.find((t: any) => t.id === sourceCategoryId)
-      const targetCategory = equipmentTypes.types.find((t: any) => t.id === targetCategoryId)
-      
-      if (!sourceCategory) {
-        return NextResponse.json({ error: 'Catégorie source non trouvée' }, { status: 404 })
-      }
-      
-      if (!targetCategory) {
-        return NextResponse.json({ error: 'Catégorie cible non trouvée' }, { status: 404 })
+      if (!data.name) {
+        return NextResponse.json(
+          { error: "Le nom du type d'équipement est requis" },
+          { status: 400 }
+        );
       }
 
-      const itemIndex = sourceCategory.items.findIndex((i: any) => i.name === itemName)
-      
-      if (itemIndex === -1) {
-        return NextResponse.json({ error: 'Équipement non trouvé dans la catégorie source' }, { status: 404 })
-      }
+      return withConnection(async (connection) => {
+        // Générer un ID unique
+        const typeId = data.id || `CUSTOM_${Date.now()}`;
 
-      const itemExistsInTarget = targetCategory.items.some((i: any) => i.name === updatedItem.name)
-      if (itemExistsInTarget && sourceCategoryId !== targetCategoryId) {
-        return NextResponse.json({ error: 'Un équipement avec ce nom existe déjà dans la catégorie cible' }, { status: 400 })
-      }
+        // Insérer le nouveau type
+        await connection.execute(`
+          INSERT INTO equipment_types (id, name, svg, is_custom, owner_id)
+          VALUES (?, ?, ?, ?, ?)
+        `, [
+          typeId,
+          data.name,
+          data.svg || '/svg/default.svg',
+          data.isCustom || true,
+          data.ownerId || null
+        ]);
 
-      sourceCategory.items.splice(itemIndex, 1)
-      targetCategory.items.push(updatedItem)
-      
-      await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Équipement déplacé avec succès',
-        action: 'move',
-        itemName: updatedItem.name,
-        sourceCategory: sourceCategory.name,
-        targetCategory: targetCategory.name
-      })
-    }
-    
-    // Nouveau format pour ajouter un équipement à une catégorie existante
-    if (body.categoryId && body.newItem) {
-      const { categoryId, newItem } = body
-      
-      const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-      const equipmentTypes = JSON.parse(data)
-
-      const existingCategory = equipmentTypes.types.find((t: any) => t.id === categoryId)
-      
-      if (existingCategory) {
-        // S'assurer que l'item a un ID
-        if (!newItem.id) {
-          newItem.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
-        }
-        
-        // Vérifier que l'item n'existe pas déjà
-        const itemExists = existingCategory.items.some((i: any) => i.name === newItem.name)
-        if (!itemExists) {
-          let finalItem = { ...newItem, isCustom: true }
-          
-          // Gestion spéciale pour la verrerie
-          if (categoryId === 'GLASSWARE' && (!newItem.volumes || newItem.volumes.length === 0 || newItem.volumes[0] === 'VIDE')) {
-            finalItem.volumes = ["1 mL", "5 mL", "10 mL", "25 mL", "50 mL", "100 mL", "250 mL", "500 mL", "1 L", "2 L"]
+        // Si des items sont fournis, les insérer aussi
+        if (data.items && Array.isArray(data.items)) {
+          for (const item of data.items) {
+            const itemId = item.id || `${typeId}_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            await connection.execute(`
+              INSERT INTO equipment_items (
+                id, name, svg, equipment_type_id, volumes, resolutions, 
+                tailles, materiaux, custom_fields, is_custom
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              itemId,
+              item.name,
+              item.svg || '/svg/default.svg',
+              typeId,
+              item.volumes ? JSON.stringify(item.volumes) : null,
+              item.resolutions ? JSON.stringify(item.resolutions) : null,
+              item.tailles ? JSON.stringify(item.tailles) : null,
+              item.materiaux ? JSON.stringify(item.materiaux) : null,
+              item.customFields ? JSON.stringify(item.customFields) : null,
+              item.isCustom || true
+            ]);
           }
-          
-          existingCategory.items.push(finalItem)
-          
-          await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-          
-          return NextResponse.json({ 
-            success: true, 
-            message: 'Équipement ajouté à la catégorie',
-            action: 'add-to-category',
-            itemName: finalItem.name,
-            categoryName: existingCategory.name,
-            itemId: finalItem.id // Retourner l'ID généré
-          })
-        } else {
-          return NextResponse.json({ error: 'Cet équipement existe déjà dans cette catégorie' }, { status: 400 })
         }
-      } else {
-        return NextResponse.json({ error: 'Catégorie non trouvée' }, { status: 404 })
-      }
+
+        // Récupérer le type créé avec ses items
+        const [typeRows] = await connection.execute(
+          'SELECT * FROM equipment_types WHERE id = ?',
+          [typeId]
+        );
+
+        const [itemRows] = await connection.execute(
+          'SELECT * FROM equipment_items WHERE equipment_type_id = ?',
+          [typeId]
+        );
+
+        const type = (typeRows as any[])[0];
+        const items = (itemRows as any[]).map(item => ({
+          ...item,
+          volumes: item.volumes ? JSON.parse(item.volumes) : [],
+          resolutions: item.resolutions ? JSON.parse(item.resolutions) : [],
+          tailles: item.tailles ? JSON.parse(item.tailles) : [],
+          materiaux: item.materiaux ? JSON.parse(item.materiaux) : [],
+          customFields: item.custom_fields ? JSON.parse(item.custom_fields) : {},
+          isCustom: item.is_custom
+        }));
+
+        return NextResponse.json({
+          type: {
+            ...type,
+            isCustom: type.is_custom,
+            items
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la création du type d'équipement:", error);
+      return NextResponse.json(
+        { error: "Erreur lors de la création du type d'équipement" },
+        { status: 500 }
+      );
     }
-
-    // Ajouter un équipement sans catégorie spécifique
-    if (body.newItemWithoutCategory) {
-      const { newItemWithoutCategory } = body
-      
-      const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-      const equipmentTypes = JSON.parse(data)
-      
-      const uncategorizedId = await ensureUncategorizedExists(equipmentTypes)
-      const uncategorizedCategory = equipmentTypes.types.find((t: any) => t.id === uncategorizedId)
-      
-      // S'assurer que l'item a un ID
-      if (!newItemWithoutCategory.id) {
-        newItemWithoutCategory.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
-      }
-      
-      const itemExists = uncategorizedCategory.items.some((i: any) => i.name === newItemWithoutCategory.name)
-      if (!itemExists) {
-        const finalItem = { ...newItemWithoutCategory, isCustom: true }
-        uncategorizedCategory.items.push(finalItem)
-        
-        await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-        
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Équipement ajouté à "Sans catégorie"', 
-          categoryId: uncategorizedId,
-          action: 'add-uncategorized',
-          itemName: finalItem.name,
-          itemId: finalItem.id // Retourner l'ID généré
-        })
-      } else {
-        return NextResponse.json({ error: 'Cet équipement existe déjà dans "Sans catégorie"' }, { status: 400 })
-      }
-    }
-      
-    // Format original pour créer une nouvelle catégorie
-    const { type, item, createEmpty } = body
-
-    const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-    const equipmentTypes = JSON.parse(data)
-
-    let existingType = equipmentTypes.types.find((t: any) => t.id === type.id)
-    
-    if (existingType) {
-      if (item && !createEmpty) {
-        // S'assurer que l'item a un ID
-        if (!item.id) {
-          item.id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
-        }
-        
-        const itemExists = existingType.items.some((i: any) => i.name === item.name)
-        if (!itemExists) {
-          existingType.items.push({ ...item, isCustom: true })
-        }
-      }
-    } else {
-      const newType = {
-        ...type,
-        isCustom: true,
-        items: createEmpty ? [] : [{ ...item, isCustom: true }]
-      }
-      
-      // S'assurer que les items ont des IDs
-      if (newType.items.length > 0 && !newType.items[0].id) {
-        newType.items[0].id = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`
-      }
-      
-      equipmentTypes.types.push(newType)
-    }
-
-    await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-
-    return NextResponse.json({ 
-      success: true,
-      action: existingType ? 'add-to-existing' : 'create-category',
-      categoryName: type.name,
-      itemName: item?.name,
-      itemId: item?.id // Retourner l'ID généré
-    })
   },
   {
     module: 'EQUIPMENT',
-    entity: 'equipment-type',
+    entity: 'equipment_type',
     action: 'CREATE',
+    extractEntityIdFromResponse: (response) => response?.type?.id,
     customDetails: (req, response) => ({
-      operationType: response?.action || 'unknown',
-      itemName: response?.itemName,
-      categoryName: response?.categoryName || response?.sourceCategory,
-      targetCategory: response?.targetCategory,
-      itemId: response?.itemId
+      typeName: response?.type?.name,
+      itemsCount: response?.type?.items?.length || 0
     })
   }
-)
+);
 
-
+// PUT - Mettre à jour un type d'équipement
 export const PUT = withAudit(
   async (request: NextRequest) => {
-    const body = await request.json()
-    const { categoryId, itemName, updatedItem } = body
-    console.log('PUT request body:', body)
-    
-    const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-    const equipmentTypes = JSON.parse(data)
-
-    const category = equipmentTypes.types.find((t: any) => t.id === categoryId)
-    
-    if (category) {
-      const itemIndex = category.items.findIndex((i: any) => i.name === itemName)
+    try {
+      const data = await request.json();
       
-      if (itemIndex !== -1) {
-        category.items[itemIndex] = updatedItem
-        
-        await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Équipement mis à jour',
-          categoryName: category.name,
-          itemName: updatedItem.name,
-          oldItemName: itemName
-        })
-      } else {
-        return NextResponse.json({ error: 'Équipement non trouvé' }, { status: 404 })
+      if (!data.id) {
+        return NextResponse.json(
+          { error: "L'ID du type d'équipement est requis" },
+          { status: 400 }
+        );
       }
-    } else {
-      return NextResponse.json({ error: 'Catégorie non trouvée' }, { status: 404 })
+
+      return withConnection(async (connection) => {
+        // Vérifier que le type existe
+        const [existingRows] = await connection.execute(
+          'SELECT id FROM equipment_types WHERE id = ?',
+          [data.id]
+        );
+
+        if ((existingRows as any[]).length === 0) {
+          return NextResponse.json(
+            { error: "Type d'équipement non trouvé" },
+            { status: 404 }
+          );
+        }
+
+        // Mettre à jour le type
+        await connection.execute(`
+          UPDATE equipment_types 
+          SET name = ?, svg = ?, updated_at = NOW()
+          WHERE id = ?
+        `, [
+          data.name,
+          data.svg || '/svg/default.svg',
+          data.id
+        ]);
+
+        // Si des items sont fournis, les mettre à jour
+        if (data.items && Array.isArray(data.items)) {
+          // Supprimer les anciens items
+          await connection.execute(
+            'DELETE FROM equipment_items WHERE equipment_type_id = ?',
+            [data.id]
+          );
+
+          // Insérer les nouveaux items
+          for (const item of data.items) {
+            const itemId = item.id || `${data.id}_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            await connection.execute(`
+              INSERT INTO equipment_items (
+                id, name, svg, equipment_type_id, volumes, resolutions, 
+                tailles, materiaux, custom_fields, is_custom
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              itemId,
+              item.name,
+              item.svg || '/svg/default.svg',
+              data.id,
+              item.volumes ? JSON.stringify(item.volumes) : null,
+              item.resolutions ? JSON.stringify(item.resolutions) : null,
+              item.tailles ? JSON.stringify(item.tailles) : null,
+              item.materiaux ? JSON.stringify(item.materiaux) : null,
+              item.customFields ? JSON.stringify(item.customFields) : null,
+              item.isCustom || false
+            ]);
+          }
+        }
+
+        return NextResponse.json({ success: true });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du type d'équipement:", error);
+      return NextResponse.json(
+        { error: "Erreur lors de la mise à jour du type d'équipement" },
+        { status: 500 }
+      );
     }
   },
   {
     module: 'EQUIPMENT',
-    entity: 'equipment-type',
-    action: 'UPDATE',
-    customDetails: (req, response) => ({
-      categoryName: response?.categoryName,
-      itemName: response?.itemName,
-      oldItemName: response?.oldItemName
-    })
+    entity: 'equipment_type',
+    action: 'UPDATE'
   }
-)
+);
 
-
-
+// DELETE - Supprimer un type d'équipement
 export const DELETE = withAudit(
   async (request: NextRequest) => {
-    const body = await request.json()
-    const { action, categoryId, itemName, deleteItems = false } = body
-    
-    const data = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8')
-    const equipmentTypes = JSON.parse(data)
+    try {
+      const { searchParams } = new URL(request.url);
+      const typeId = searchParams.get('id');
+      
+      if (!typeId) {
+        return NextResponse.json(
+          { error: "L'ID du type d'équipement est requis" },
+          { status: 400 }
+        );
+      }
 
-    if (action === 'deleteCategory') {
-      const categoryIndex = equipmentTypes.types.findIndex((t: any) => t.id === categoryId && t.isCustom)
-      
-      if (categoryIndex !== -1) {
-        const deletedCategory = equipmentTypes.types[categoryIndex]
-        const itemsToMove = deletedCategory.items || []
-        let inventoryDeletedCount = 0
-        
-        // Si on supprime aussi les items
-        if (deleteItems && itemsToMove.length > 0) {
-          // Obtenir les IDs des équipements à supprimer
-          const typeIdsToDelete = itemsToMove
-            .filter((item: any) => item.id)
-            .map((item: any) => item.id)
-          
-          // Supprimer les équipements de l'inventaire
-          if (typeIdsToDelete.length > 0) {
-            inventoryDeletedCount = await deleteInventoryItemsByTypeIds(typeIdsToDelete)
-          }
-        } else if (!deleteItems && itemsToMove.length > 0) {
-          // Déplacer vers "Sans catégorie"
-          await ensureUncategorizedExists(equipmentTypes)
-          const uncategorizedCategory = equipmentTypes.types.find((t: any) => t.id === 'UNCATEGORIZED')
-          
-          if (uncategorizedCategory) {
-            uncategorizedCategory.items = [...(uncategorizedCategory.items || []), ...itemsToMove]
-          }
+      return withConnection(async (connection) => {
+        // Vérifier que le type existe
+        const [existingRows] = await connection.execute(
+          'SELECT id, name FROM equipment_types WHERE id = ?',
+          [typeId]
+        );
+
+        if ((existingRows as any[]).length === 0) {
+          return NextResponse.json(
+            { error: "Type d'équipement non trouvé" },
+            { status: 404 }
+          );
         }
-        
-        // Supprimer la catégorie
-        equipmentTypes.types.splice(categoryIndex, 1)
-        
-        await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-        
+
+        const type = (existingRows as any[])[0];
+
+        // Vérifier s'il y a des équipements qui utilisent ce type
+        const [equipmentRows] = await connection.execute(
+          'SELECT COUNT(*) as count FROM equipment WHERE equipment_type_id = ?',
+          [typeId]
+        );
+
+        const equipmentCount = (equipmentRows as any[])[0].count;
+
+        if (equipmentCount > 0) {
+          return NextResponse.json(
+            { error: `Impossible de supprimer le type d'équipement car ${equipmentCount} équipement(s) l'utilisent encore` },
+            { status: 400 }
+          );
+        }
+
+        // Supprimer le type (les items seront supprimés automatiquement grâce à ON DELETE CASCADE)
+        await connection.execute('DELETE FROM equipment_types WHERE id = ?', [typeId]);
+
         return NextResponse.json({ 
-          success: true, 
-          message: deleteItems 
-            ? `Catégorie et équipements supprimés (${inventoryDeletedCount} équipements retirés de l'inventaire)` 
-            : 'Catégorie supprimée, équipements déplacés dans "Sans catégorie"',
-          action: 'deleteCategory',
-          categoryName: deletedCategory.name,
-          categoryId: deletedCategory.id,
-          itemsDeleted: deleteItems ? itemsToMove.length : 0,
-          itemsMoved: deleteItems ? 0 : itemsToMove.length,
-          inventoryDeleted: inventoryDeletedCount
-        })
-      }
-    } else if (action === 'deleteItem') {
-      const category = equipmentTypes.types.find((t: any) => t.id === categoryId)
-      
-      if (category) {
-        const itemIndex = category.items.findIndex((i: any) => i.name === itemName && i.isCustom)
-        
-        if (itemIndex !== -1) {
-          const deletedItem = category.items[itemIndex]
-          category.items.splice(itemIndex, 1)
-          await fs.writeFile(EQUIPMENT_TYPES_FILE, JSON.stringify(equipmentTypes, null, 2))
-          return NextResponse.json({ 
-            success: true, 
-            message: 'Équipement supprimé',
-            action: 'deleteItem',
-            itemName: deletedItem.name,
-            categoryName: category.name
-          })
-        } else {
-          return NextResponse.json({ error: 'Équipement personnalisé non trouvé' }, { status: 404 })
-        }
-      } else {
-        return NextResponse.json({ error: 'Catégorie non trouvée' }, { status: 404 })
-      }
+          success: true,
+          message: `Type d'équipement "${type.name}" supprimé avec succès`
+        });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la suppression du type d'équipement:", error);
+      return NextResponse.json(
+        { error: "Erreur lors de la suppression du type d'équipement" },
+        { status: 500 }
+      );
     }
-    
-    return NextResponse.json({ error: 'Action non reconnue' }, { status: 400 })
   },
   {
     module: 'EQUIPMENT',
-    entity: 'equipment-type',
-    action: 'DELETE',
-    customDetails: (req, response) => ({
-      operationType: response?.action,
-      itemName: response?.itemName,
-      categoryName: response?.categoryName,
-      categoryId: response?.categoryId,
-      itemsDeleted: response?.itemsDeleted,
-      itemsMoved: response?.itemsMoved
-    })
+    entity: 'equipment_type',
+    action: 'DELETE'
   }
-)
+);

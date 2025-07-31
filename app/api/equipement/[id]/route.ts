@@ -3,200 +3,224 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from 'fs';
-import path from 'path';
+import { withConnection } from '@/lib/db';
 import { withAudit } from '@/lib/api/with-audit';
-import { 
-  EquipmentType, 
-  EquipmentItem, 
-  EquipmentFormData 
-} from '@/types/equipment';
+import type { EquipmentWithRelations, EquipmentFormData, EquipmentStatus } from '@/types/equipment-mysql';
 
-// Interface pour l'équipement dans l'inventaire
-interface InventoryEquipment {
-  id: string;
-  name: string;
-  equipmentTypeId: string;
-  model?: string;
-  serialNumber?: string;
-  barcode?: string;
-  quantity: number;
-  minQuantity?: number;
-  volume?: string;
-  resolution?: string;
-  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_ORDER';
-  location?: string;
-  room?: string;
-  supplier?: string;
-  purchaseDate?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  // Champs enrichis (ajoutés dynamiquement)
-  typeName?: string;
-  itemName?: string;
-  svg?: string;
-  availableVolumes?: string[];
-}
+// GET - Récupérer un équipement par ID
+export const GET = withAudit(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    try {
+      const { id } = await params;
 
-interface EquipmentInventory {
-  equipment: InventoryEquipment[];
-  stats: {
-    total: number;
-    available: number;
-    inUse: number;
-    maintenance: number;
-    outOfOrder: number;
-  };
-}
+      return withConnection(async (connection) => {
+        const [rows] = await connection.execute(`
+          SELECT 
+            e.*,
+            et.name as type_name,
+            et.svg as type_svg,
+            ei.name as item_name,
+            ei.svg as item_svg,
+            ei.volumes as item_volumes
+          FROM equipment e
+          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+          WHERE e.id = ?
+        `, [id]);
 
-interface EquipmentTypesData {
-  types: EquipmentType[];
-}
+        const equipment = (rows as any[])[0];
 
-const EQUIPMENT_INVENTORY_FILE = path.join(process.cwd(), 'data', 'equipment-inventory.json');
-const EQUIPMENT_TYPES_FILE = path.join(process.cwd(), 'data', 'equipment-types.json');
+        if (!equipment) {
+          return NextResponse.json(
+            { error: "Équipement non trouvé" },
+            { status: 404 }
+          );
+        }
 
-// Fonction pour lire l'inventaire des équipements
-async function readEquipmentInventory(): Promise<EquipmentInventory> {
-  try {
-    const fileContent = await fs.readFile(EQUIPMENT_INVENTORY_FILE, 'utf-8');
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error('Erreur lecture inventaire équipements:', error);
-    return {
-      equipment: [],
-      stats: {
-        total: 0,
-        available: 0,
-        inUse: 0,
-        maintenance: 0,
-        outOfOrder: 0
-      }
-    };
-  }
-}
-
-// Fonction pour écrire l'inventaire des équipements
-async function writeEquipmentInventory(data: EquipmentInventory): Promise<void> {
-  await fs.writeFile(EQUIPMENT_INVENTORY_FILE, JSON.stringify(data, null, 2));
-}
-
-// Fonction pour lire les types d'équipements
-async function readEquipmentTypes(): Promise<EquipmentTypesData> {
-  try {
-    const fileContent = await fs.readFile(EQUIPMENT_TYPES_FILE, 'utf-8');
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error('Erreur lecture types équipements:', error);
-    return { types: [] };
-  }
-}
-
-// Fonction pour calculer les statistiques
-function calculateStats(equipment: InventoryEquipment[]): EquipmentInventory['stats'] {
-  return {
-    total: equipment.length,
-    available: equipment.filter(e => e.status === 'AVAILABLE').length,
-    inUse: equipment.filter(e => e.status === 'IN_USE').length,
-    maintenance: equipment.filter(e => e.status === 'MAINTENANCE').length,
-    outOfOrder: equipment.filter(e => e.status === 'OUT_OF_ORDER').length
-  };
-}
-
-// Fonction pour enrichir un équipement avec les données du type
-async function enrichEquipmentWithTypeData(equipment: InventoryEquipment): Promise<InventoryEquipment> {
-  const types = await readEquipmentTypes();
-  
-  for (const type of types.types) {
-    const item = type.items.find((item: EquipmentItem) => item.id === equipment.equipmentTypeId);
-    if (item) {
-      return {
-        ...equipment,
-        typeName: type.name,
-        itemName: item.name,
-        svg: item.svg,
-        availableVolumes: item.volumes
-      };
-    }
-  }
-  
-  return equipment;
-}
-
-// GET - Récupérer un équipement spécifique
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-
-    const inventory = await readEquipmentInventory();
-    const equipment = inventory.equipment.find(e => e.id === id);
-
-    if (!equipment) {
+        return NextResponse.json({
+          materiel: {
+            ...equipment,
+            // Compatibilité avec l'ancien format
+            typeName: equipment.type_name,
+            itemName: equipment.item_name,
+            svg: equipment.item_svg || equipment.type_svg,
+            availableVolumes: equipment.item_volumes ? JSON.parse(equipment.item_volumes) : null,
+            equipmentTypeId: equipment.equipment_type_id
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'équipement:", error);
       return NextResponse.json(
-        { error: "Équipement non trouvé" },
-        { status: 404 }
+        { error: "Erreur lors de la récupération de l'équipement" },
+        { status: 500 }
       );
     }
-
-    // Enrichir avec les données du type
-    const enrichedEquipment = await enrichEquipmentWithTypeData(equipment);
-
-    return NextResponse.json(enrichedEquipment);
-  } catch (error) {
-    console.error("Erreur lors de la récupération de l'équipement:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération de l'équipement" },
-      { status: 500 }
-    );
+  },
+  {
+    module: 'EQUIPMENT',
+    entity: 'equipment',
+    action: 'READ',
+    extractEntityIdFromResponse: (response) => response?.materiel?.id
   }
-}
+);
 
 // PUT - Mettre à jour un équipement
 export const PUT = withAudit(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const data = await request.json();
       const { id } = await params;
+      const data: Partial<EquipmentFormData> = await request.json();
 
-      const inventory = await readEquipmentInventory();
-      const equipmentIndex = inventory.equipment.findIndex(e => e.id === id);
+      return withConnection(async (connection) => {
+        // Vérifier que l'équipement existe et récupérer l'état avant modification
+        const [existingRows] = await connection.execute(`
+          SELECT 
+            e.*,
+            et.name as type_name,
+            ei.name as item_name
+          FROM equipment e
+          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+          WHERE e.id = ?
+        `, [id]);
 
-      if (equipmentIndex === -1) {
-        return NextResponse.json(
-          { error: "Équipement non trouvé" },
-          { status: 404 }
+        if ((existingRows as any[]).length === 0) {
+          return NextResponse.json(
+            { error: "Équipement non trouvé" },
+            { status: 404 }
+          );
+        }
+
+        const beforeState = (existingRows as any[])[0];
+
+        // Si equipment_type_id est fourni, vérifier qu'il existe
+        if (data.equipment_type_id) {
+          const [typeRows] = await connection.execute(
+            'SELECT id FROM equipment_types WHERE id = ?',
+            [data.equipment_type_id]
+          );
+
+          if ((typeRows as any[]).length === 0) {
+            return NextResponse.json(
+              { error: "Type d'équipement non trouvé" },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Si equipment_item_id est fourni, vérifier qu'il existe et est compatible
+        if (data.equipment_item_id && data.equipment_type_id) {
+          const [itemRows] = await connection.execute(
+            'SELECT id FROM equipment_items WHERE id = ? AND equipment_type_id = ?',
+            [data.equipment_item_id, data.equipment_type_id]
+          );
+
+          if ((itemRows as any[]).length === 0) {
+            return NextResponse.json(
+              { error: "Item d'équipement non trouvé ou incompatible avec le type" },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Convertir la date d'achat si fournie
+        let purchaseDate = undefined;
+        if (data.purchase_date !== undefined) {
+          if (data.purchase_date) {
+            try {
+              purchaseDate = new Date(data.purchase_date).toISOString().split('T')[0];
+            } catch (e) {
+              console.warn('Date d\'achat invalide:', data.purchase_date);
+              purchaseDate = null;
+            }
+          } else {
+            purchaseDate = null;
+          }
+        }
+
+        // Construire la requête de mise à jour dynamiquement
+        const updateFields: string[] = [];
+        const updateValues: any[] = [];
+
+        const fieldsMapping = {
+          name: 'name',
+          equipment_type_id: 'equipment_type_id',
+          equipment_item_id: 'equipment_item_id',
+          model: 'model',
+          serial_number: 'serial_number',
+          barcode: 'barcode',
+          quantity: 'quantity',
+          min_quantity: 'min_quantity',
+          volume: 'volume',
+          location: 'location',
+          room: 'room',
+          status: 'status',
+          notes: 'notes'
+        };
+
+        Object.entries(fieldsMapping).forEach(([dataKey, dbField]) => {
+          if (data[dataKey as keyof EquipmentFormData] !== undefined) {
+            updateFields.push(`${dbField} = ?`);
+            updateValues.push(data[dataKey as keyof EquipmentFormData]);
+          }
+        });
+
+        if (purchaseDate !== undefined) {
+          updateFields.push('purchase_date = ?');
+          updateValues.push(purchaseDate);
+        }
+
+        if (updateFields.length === 0) {
+          return NextResponse.json(
+            { error: "Aucune donnée à mettre à jour" },
+            { status: 400 }
+          );
+        }
+
+        // Ajouter la date de mise à jour
+        updateFields.push('updated_at = NOW()');
+        updateValues.push(id); // Pour la clause WHERE
+
+        // Exécuter la mise à jour
+        await connection.execute(
+          `UPDATE equipment SET ${updateFields.join(', ')} WHERE id = ?`,
+          updateValues
         );
-      }
 
-      // Conserver les champs existants et mettre à jour seulement ceux fournis
-      const updatedEquipment: InventoryEquipment = {
-        ...inventory.equipment[equipmentIndex],
-        ...data,
-        quantity: data.quantity !== undefined ? parseInt(data.quantity) : inventory.equipment[equipmentIndex].quantity,
-        updatedAt: new Date().toISOString(),
-      };
+        // Récupérer l'équipement mis à jour avec ses relations
+        const [updatedRows] = await connection.execute(`
+          SELECT 
+            e.*,
+            et.name as type_name,
+            et.svg as type_svg,
+            ei.name as item_name,
+            ei.svg as item_svg,
+            ei.volumes as item_volumes
+          FROM equipment e
+          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+          WHERE e.id = ?
+        `, [id]);
 
-      // Retirer les champs enrichis qui ne doivent pas être sauvegardés
-      delete updatedEquipment.typeName;
-      delete updatedEquipment.itemName;
-      delete updatedEquipment.svg;
-      delete updatedEquipment.availableVolumes;
+        const updatedEquipment = (updatedRows as any[])[0];
 
-      inventory.equipment[equipmentIndex] = updatedEquipment;
-
-      // Recalculer les statistiques
-      inventory.stats = calculateStats(inventory.equipment);
-
-      await writeEquipmentInventory(inventory);
-
-      // Enrichir la réponse avec les données du type
-      const enrichedEquipment = await enrichEquipmentWithTypeData(updatedEquipment);
-
-      return NextResponse.json(enrichedEquipment);
+        return NextResponse.json({
+          materiel: {
+            ...updatedEquipment,
+            // Compatibilité avec l'ancien format
+            typeName: updatedEquipment.type_name,
+            itemName: updatedEquipment.item_name,
+            svg: updatedEquipment.item_svg || updatedEquipment.type_svg,
+            availableVolumes: updatedEquipment.item_volumes ? JSON.parse(updatedEquipment.item_volumes) : null,
+            equipmentTypeId: updatedEquipment.equipment_type_id
+          },
+          _audit: {
+            before: beforeState,
+            updateData: data
+          }
+        });
+      });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'équipement:", error);
       return NextResponse.json(
@@ -209,14 +233,20 @@ export const PUT = withAudit(
     module: 'EQUIPMENT',
     entity: 'equipment',
     action: 'UPDATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      equipmentName: response?.name,
-      status: response?.status,
-      quantity: response?.quantity,
-      location: response?.location,
-      room: response?.room
-    })
+    extractEntityIdFromResponse: (response) => response?.materiel?.id,
+    customDetails: (req, response) => {
+      const beforeState = response?._audit?.before;
+      const updateData = response?._audit?.updateData;
+      
+      return {
+        equipmentName: response?.materiel?.name,
+        quantityUpdate: updateData?.quantity !== undefined && Object.keys(updateData).length === 1,
+        before: beforeState,
+        after: response?.materiel,
+        fields: Object.keys(updateData || {}),
+        quantity: response?.materiel?.quantity
+      }
+    }
   }
 );
 
@@ -226,35 +256,30 @@ export const DELETE = withAudit(
     try {
       const { id } = await params;
 
-      const inventory = await readEquipmentInventory();
-      const equipmentIndex = inventory.equipment.findIndex(e => e.id === id);
-
-      if (equipmentIndex === -1) {
-        return NextResponse.json(
-          { error: "Équipement non trouvé" },
-          { status: 404 }
+      return withConnection(async (connection) => {
+        // Vérifier que l'équipement existe
+        const [existingRows] = await connection.execute(
+          'SELECT id, name FROM equipment WHERE id = ?',
+          [id]
         );
-      }
 
-      // Stocker les infos avant suppression pour l'audit
-      const deletedEquipment = inventory.equipment[equipmentIndex];
-      
-      // Supprimer l'équipement
-      inventory.equipment.splice(equipmentIndex, 1);
-      
-      // Recalculer les statistiques
-      inventory.stats = calculateStats(inventory.equipment);
-      
-      await writeEquipmentInventory(inventory);
-
-      return NextResponse.json({ 
-        message: "Équipement supprimé avec succès",
-        deletedEquipment: { 
-          id: deletedEquipment.id, 
-          name: deletedEquipment.name,
-          equipmentTypeId: deletedEquipment.equipmentTypeId,
-          quantity: deletedEquipment.quantity
+        if ((existingRows as any[]).length === 0) {
+          return NextResponse.json(
+            { error: "Équipement non trouvé" },
+            { status: 404 }
+          );
         }
+
+        const equipment = (existingRows as any[])[0];
+
+        // Supprimer l'équipement
+        await connection.execute('DELETE FROM equipment WHERE id = ?', [id]);
+
+        return NextResponse.json({ 
+          success: true,
+          message: `Équipement "${equipment.name}" supprimé avec succès`,
+          deletedEquipment: { id: equipment.id, name: equipment.name }
+        });
       });
     } catch (error) {
       console.error("Erreur lors de la suppression de l'équipement:", error);
@@ -270,9 +295,7 @@ export const DELETE = withAudit(
     action: 'DELETE',
     extractEntityIdFromResponse: (response) => response?.deletedEquipment?.id,
     customDetails: (req, response) => ({
-      equipmentName: response?.deletedEquipment?.name,
-      equipmentTypeId: response?.deletedEquipment?.equipmentTypeId,
-      quantity: response?.deletedEquipment?.quantity
+      equipmentName: response?.deletedEquipment?.name
     })
   }
 );

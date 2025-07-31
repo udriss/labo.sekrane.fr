@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChemicalStatus, Unit } from "@prisma/client"
-import { Chemical } from "@/types/prisma"
+import { ChemicalStatus, Unit, Chemical } from "@/types/chemicals"
 import {
   Box,
   Button,
@@ -198,11 +197,12 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
     }
   }
 
-  const isExpiringSoon = (expirationDate: Date | null) => {
+  const isExpiringSoon = (expirationDate: Date | string | null) => {
     if (!expirationDate) return false
     const today = new Date()
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
-    return new Date(expirationDate) <= thirtyDaysFromNow
+    const expDate = typeof expirationDate === 'string' ? new Date(expirationDate) : expirationDate
+    return expDate <= thirtyDaysFromNow
   }
 
   const handleQuantityChange = async (chemicalId: string, newValue: number) => {

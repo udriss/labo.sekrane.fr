@@ -3,10 +3,10 @@
 import mysql from 'mysql2/promise';
 import { Pool, PoolConnection, PoolOptions } from 'mysql2/promise';
 import { updateFragmentsTable } from './migrations/updateFragmentsTable';
-
+import { config } from 'dotenv';
 
 // Charger les variables d'environnement
-// config();
+config();
 
 // Database configuration
 const dbConfig = {
@@ -177,25 +177,160 @@ export async function initializeDatabase() {
 
     // ==================== FIN TABLES NOTIFICATIONS ====================
 
-
+    // ==================== TABLES POUR LES CHEMICALS ====================
+    
+    // Créer la table des fournisseurs (suppliers)
     await query(`
-      CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role ENUM('ADMIN', 'TEACHER', 'STUDENT', 'ADMINLABO', 'LABORANTIN') NOT NULL,
-    isActive TINYINT(1) NOT NULL DEFAULT 1,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL,
-    siteConfig JSON,
-    associatedClasses JSON,
-    customClasses JSON
-  );
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) DEFAULT NULL,
+        phone VARCHAR(50) DEFAULT NULL,
+        address TEXT DEFAULT NULL,
+        website VARCHAR(255) DEFAULT NULL,
+        contactPerson VARCHAR(255) DEFAULT NULL,
+        isActive BOOLEAN DEFAULT TRUE,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_isActive (isActive)
       )
     `);
 
+    // Créer la table des chemicals (réactifs chimiques)
+    await query(`
+      CREATE TABLE IF NOT EXISTS chemicals (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        formula VARCHAR(255) DEFAULT NULL,
+        molfile TEXT DEFAULT NULL,
+        casNumber VARCHAR(50) DEFAULT NULL,
+        barcode VARCHAR(100) DEFAULT NULL,
+        quantity DECIMAL(10,3) NOT NULL DEFAULT 0,
+        unit ENUM('g', 'kg', 'mg', 'L', 'mL', 'mol', 'mmol', 'pieces') DEFAULT 'g',
+        minQuantity DECIMAL(10,3) DEFAULT NULL,
+        concentration DECIMAL(10,3) DEFAULT NULL,
+        purity DECIMAL(5,2) DEFAULT NULL,
+        purchaseDate DATE DEFAULT NULL,
+        expirationDate DATE DEFAULT NULL,
+        openedDate DATE DEFAULT NULL,
+        storage VARCHAR(255) DEFAULT NULL,
+        room VARCHAR(100) DEFAULT NULL,
+        cabinet VARCHAR(100) DEFAULT NULL,
+        shelf VARCHAR(100) DEFAULT NULL,
+        hazardClass ENUM('FLAMMABLE', 'CORROSIVE', 'TOXIC', 'OXIDIZING', 'EXPLOSIVE', 'RADIOACTIVE', 'BIOLOGICAL', 'NONE') DEFAULT NULL,
+        sdsFileUrl VARCHAR(500) DEFAULT NULL,
+        supplierId VARCHAR(36) DEFAULT NULL,
+        batchNumber VARCHAR(100) DEFAULT NULL,
+        orderReference VARCHAR(100) DEFAULT NULL,
+        status ENUM('IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK', 'EXPIRED', 'EMPTY') DEFAULT 'IN_STOCK',
+        notes TEXT DEFAULT NULL,
+        quantityPrevision DECIMAL(10,3) DEFAULT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_casNumber (casNumber),
+        INDEX idx_barcode (barcode),
+        INDEX idx_status (status),
+        INDEX idx_hazardClass (hazardClass),
+        INDEX idx_expirationDate (expirationDate),
+        INDEX idx_storage (storage),
+        INDEX idx_room (room),
+        INDEX idx_supplierId (supplierId),
+        FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE SET NULL
+      )
+    `);
 
+    // ==================== FIN TABLES CHEMICALS ====================
+
+    // ==================== TABLES EQUIPMENT ====================
+
+    // Table des types d'équipements
+    await query(`
+      CREATE TABLE IF NOT EXISTS equipment_types (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        svg VARCHAR(500) DEFAULT NULL,
+        is_custom BOOLEAN DEFAULT FALSE,
+        owner_id VARCHAR(36) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_is_custom (is_custom)
+      )
+    `);
+
+    // Table des items d'équipements (sous-catégories)
+    await query(`
+      CREATE TABLE IF NOT EXISTS equipment_items (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        svg VARCHAR(500) DEFAULT NULL,
+        equipment_type_id VARCHAR(100) NOT NULL,
+        volumes JSON DEFAULT NULL,
+        resolutions JSON DEFAULT NULL,
+        tailles JSON DEFAULT NULL,
+        materiaux JSON DEFAULT NULL,
+        custom_fields JSON DEFAULT NULL,
+        is_custom BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_equipment_type_id (equipment_type_id),
+        INDEX idx_is_custom (is_custom),
+        FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Table des équipements (inventaire)
+    await query(`
+      CREATE TABLE IF NOT EXISTS equipment (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        equipment_type_id VARCHAR(100) NOT NULL,
+        equipment_item_id VARCHAR(100) DEFAULT NULL,
+        model VARCHAR(255) DEFAULT NULL,
+        serial_number VARCHAR(255) DEFAULT NULL,
+        barcode VARCHAR(100) DEFAULT NULL,
+        quantity INT NOT NULL DEFAULT 1,
+        min_quantity INT DEFAULT NULL,
+        volume VARCHAR(100) DEFAULT NULL,
+        location VARCHAR(255) DEFAULT NULL,
+        room VARCHAR(100) DEFAULT NULL,
+        status ENUM('AVAILABLE', 'IN_USE', 'MAINTENANCE', 'BROKEN', 'RETIRED') DEFAULT 'AVAILABLE',
+        purchase_date DATE DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_barcode (barcode),
+        INDEX idx_status (status),
+        INDEX idx_equipment_type_id (equipment_type_id),
+        INDEX idx_equipment_item_id (equipment_item_id),
+        INDEX idx_room (room),
+        INDEX idx_serial_number (serial_number),
+        FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT,
+        FOREIGN KEY (equipment_item_id) REFERENCES equipment_items(id) ON DELETE SET NULL
+      )
+    `);
+
+    // ==================== FIN TABLES EQUIPMENT ====================
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        role ENUM('ADMIN', 'TEACHER', 'STUDENT', 'ADMINLABO', 'LABORANTIN') NOT NULL,
+        isActive TINYINT(1) NOT NULL DEFAULT 1,
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL,
+        siteConfig JSON,
+        associatedClasses JSON,
+        customClasses JSON
+      )
+    `);
 
     // Run migrations to update existing tables
     await updateFragmentsTable();
