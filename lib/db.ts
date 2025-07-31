@@ -115,7 +115,7 @@ export async function initializeDatabase() {
     await query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id VARCHAR(36) PRIMARY KEY,
-        user_id VARCHAR(100) NOT NULL,
+        user_id VARCHAR(100) DEFAULT NULL,
         user_role VARCHAR(50) NOT NULL,
         target_roles JSON DEFAULT NULL,
         module VARCHAR(50) NOT NULL,

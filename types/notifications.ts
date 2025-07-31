@@ -15,6 +15,18 @@ export interface NotificationFilter {
   reason?: 'role' | 'specific';
 }
 
+
+export interface WebSocketNotification {
+  id: string;
+  message: string | object;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  isRead: boolean;
+  module?: string;
+  entityId?: string;
+  createdAt?: string;
+  timestamp?: string;
+}
+
 export interface NotificationPreference {
   id: string;
   role: string;

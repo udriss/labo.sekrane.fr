@@ -33,16 +33,28 @@ interface NotificationItemProps {
   notification: ExtendedNotification | null | undefined;
   onMarkAsRead?: (notificationId: string) => void;
   onError?: (error: string) => void;
+  onClick?: (notificationId: string) => void;
 }
 
 // Fonction utilitaire pour valider une notification
 const validateNotification = (notification: any): notification is ExtendedNotification => {
   if (!notification || typeof notification !== 'object') {
+    console.warn('Notification invalide: pas un objet', notification);
     return false;
   }
 
-  const requiredFields = ['id', 'userId', 'role', 'module', 'actionType', 'createdAt', 'severity'];
-  return requiredFields.every(field => notification[field] !== undefined && notification[field] !== null);
+  // Champs essentiels - si ils manquent, la notification ne peut pas être affichée
+  const essentialFields = ['id'];
+  const missingEssential = essentialFields.filter(field => 
+    notification[field] === undefined || notification[field] === null || notification[field] === ''
+  );
+  
+  if (missingEssential.length > 0) {
+    console.warn('Notification invalide: champs essentiels manquants:', missingEssential, notification);
+    return false;
+  }
+
+  return true;
 };
 
 // Fonction pour obtenir l'icône de sévérité
@@ -94,14 +106,21 @@ const formatMessage = (message: any): string => {
 };
 
 // Fonction pour formater la date
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string | undefined | null): string => {
   try {
+    if (!dateString) {
+      return 'Date non disponible';
+    }
+    
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
+      console.warn('Date invalide reçue:', dateString);
       return 'Date invalide';
     }
+    
     return formatDistanceToNow(date, { addSuffix: true, locale: fr });
   } catch (error) {
+    console.warn('Erreur lors du formatage de la date:', error, 'Date reçue:', dateString);
     return 'Date invalide';
   }
 };
@@ -109,7 +128,8 @@ const formatDate = (dateString: string): string => {
 export default function NotificationItem({ 
   notification, 
   onMarkAsRead, 
-  onError 
+  onError,
+  onClick
 }: NotificationItemProps) {
   // Vérifier si la notification est valide
   if (!validateNotification(notification)) {
@@ -127,18 +147,27 @@ export default function NotificationItem({
       </Alert>
     );
   }
-
+  // Gestion du clic sur la notification
+  const handleNotificationClick = () => {
+    if (onClick && safeNotification.id) {
+      onClick(safeNotification.id);
+    }
+  };
   // À ce point, notification est garantie d'être valide
-  const safeNotification = notification as ExtendedNotification;
+  const safeNotification = notification as any; // Utiliser any pour permettre l'accès aux champs DB
 
-  // Valeurs par défaut pour les propriétés optionnelles
+  // Valeurs par défaut pour les propriétés optionnelles avec protection robuste
   const isRead = safeNotification.isRead === true;
   const message = formatMessage(safeNotification.message);
   const details = safeNotification.details || '';
   const severity = safeNotification.severity || 'medium';
   const reason = safeNotification.reason || 'role';
   const specificReason = safeNotification.specificReason || '';
-  const createdAt = formatDate(safeNotification.createdAt);
+  const createdAt = formatDate(safeNotification.createdAt || safeNotification.created_at || null);
+  const userId = safeNotification.userId || safeNotification.user_id || '';
+  const role = safeNotification.role || safeNotification.user_role || 'UNKNOWN';
+  const module = safeNotification.module || 'UNKNOWN';
+  const actionType = safeNotification.actionType || safeNotification.action_type || 'UNKNOWN';
 
   const handleMarkAsRead = () => {
     if (!isRead && onMarkAsRead && safeNotification.id) {
@@ -165,6 +194,8 @@ export default function NotificationItem({
           boxShadow: 2
         }
       }}
+      onClick={handleNotificationClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start">

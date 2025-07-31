@@ -1,33 +1,47 @@
-// /components/notifications/NotificationProvider.tsx
-
+// components/notifications/NotificationProvider.tsx
 'use client';
 
-import React, { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react';
-import { useNotifications } from '@/lib/hooks/useNotifications';
-import { useSession } from 'next-auth/react';
-import { toast } from 'react-hot-toast'; // ou votre système de toast préféré
-import { ExtendedNotification } from '@/types/notifications';
+import React, { createContext, useContext } from 'react';
+import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
+import { toast } from 'react-hot-toast';
+
+interface WebSocketNotification {
+  id: string;
+  message: string | object;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  module: string;
+  actionType: string;
+  timestamp: string;
+  entityType?: string;
+  entityId?: string;
+  triggeredBy?: string;
+  isRead: boolean;
+}
 
 interface NotificationContextType {
+  // État de connexion
   isConnected: boolean;
-  notifications: ExtendedNotification[];
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
-  lastHeartbeat: number | null;
-  reconnect: () => void;
+  lastHeartbeat: Date | null;
+  
+  // Notifications
+  notifications: WebSocketNotification[];
+  stats: {
+    totalNotifications: number;
+    unreadNotifications: number;
+    notificationsByModule: Record<string, number>;
+    notificationsBySeverity: Record<string, number>;
+  };
+  
+  // Actions
+  connect: () => void;
   disconnect: () => void;
+  reconnect: () => void;
+  markAsRead: (notificationId: string) => void;
+  markAllAsRead: () => void;
   clearNotifications: () => void;
-  // Propriétés du hook useNotifications
-  stats: any;
-  loading: boolean;
-  error: string | null;
-  hasMore: boolean;
-  total: number;
-  fetchNotifications: (filters?: any) => Promise<void>;
-  fetchStats: (filters?: any) => Promise<void>;
-  markAsRead: (notificationId: string) => Promise<boolean>;
-  markAllAsRead: () => Promise<boolean>;
-  refresh: () => Promise<void>;
-  loadMore: () => Promise<void>;
+  clearNotification: (notificationId: string) => void;
+  sendMessage: (message: any) => boolean;
+  loadDatabaseNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -35,184 +49,93 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 interface NotificationProviderProps {
   children: React.ReactNode;
   showToasts?: boolean;
+  toastPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
 export function NotificationProvider({ 
   children, 
-  showToasts = true 
+  showToasts = true,
+  toastPosition = 'top-right'
 }: NotificationProviderProps) {
-  const { data: session } = useSession();
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
-
-  // Utiliser le hook useNotifications standard
-  const notificationHook = useNotifications();
-  const handleNotification = useCallback((notification: ExtendedNotification) => {
-    
+  
+  const handleNotification = React.useCallback((notification: WebSocketNotification) => {
+    console.log('📨 [NotificationProvider] Nouvelle notification WebSocket:', notification);
     
     if (showToasts) {
+      // Extraire le message pour l'affichage
+      const message = typeof notification.message === 'string' 
+        ? notification.message 
+        : (notification.message as any)?.fr || 'Notification';
+        
       // Afficher un toast selon la sévérité
+      const toastOptions = {
+        position: toastPosition as any,
+        duration: notification.severity === 'critical' ? 8000 : 
+                notification.severity === 'high' ? 6000 :
+                notification.severity === 'medium' ? 4000 : 3000
+      };
+
       switch (notification.severity) {
         case 'critical':
+          toast.error(`🚨 ${message}`, toastOptions);
+          break;
         case 'high':
-          toast.error(typeof notification.message === 'string' ? notification.message : notification.message.fr || 'Notification');
+          toast.error(`⚠️ ${message}`, toastOptions);
           break;
         case 'medium':
-          toast(typeof notification.message === 'string' ? notification.message : notification.message.fr || 'Notification', {
-            icon: '⚠️',
-          });
+          toast(`⚠️ ${message}`, { ...toastOptions, icon: '⚠️' });
           break;
         default:
-          toast(typeof notification.message === 'string' ? notification.message : notification.message.fr || 'Notification');
+          toast.success(`📢 ${message}`, toastOptions);
       }
     }
-  }, [showToasts]);
+  }, [showToasts, toastPosition]);
 
-  const handleConnect = useCallback(() => {
-    
-    setIsConnected(true);
-    setConnectionStatus('connected');
-    if (showToasts) {
-      toast.success('Connecté aux notifications en temps réel');
-    }
-  }, [showToasts]);
-
-  const handleDisconnect = useCallback(() => {
-    
-    setIsConnected(false);
-    setConnectionStatus('disconnected');
-    if (showToasts) {
-      toast.error('Déconnecté des notifications en temps réel');
-    }
-  }, [showToasts]);
-
-  const handleError = useCallback((error: Event) => {
-    console.error('Notification service error:', error);
-    setConnectionStatus('error');
-    if (showToasts) {
-      toast.error('Erreur de connexion aux notifications');
-    }
-  }, [showToasts]);
-
-  // Gérer la connexion SSE comme dans NavbarLIMS
-  useEffect(() => {
-    if (!session?.user) return;
-
-    const userId = (session.user as any).id;
-    
-    const connectSSE = () => {
-      try {
-        setConnectionStatus('connecting');
-        
-        // Fermer la connexion existante si elle existe
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close();
-        }
-
-        // Créer une nouvelle connexion SSE
-        const eventSource = new EventSource(`/api/notifications/ws?userId=${encodeURIComponent(userId)}`);
-        eventSourceRef.current = eventSource;
-
-        eventSource.onopen = () => {
-          handleConnect();
-        };
-
-        eventSource.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            
-            switch (message.type) {
-              case 'connected':
-                
-                break;
-                
-              case 'notification':
-                if (message.data) {
-                  handleNotification(message.data);
-                }
-                break;
-                
-              case 'heartbeat':
-                setLastHeartbeat(message.timestamp || Date.now());
-                break;
-            }
-          } catch (error) {
-            console.error('Error parsing SSE message:', error);
-          }
-        };
-
-        eventSource.onerror = (error) => {
-          handleError(error);
-          
-          // Tentative de reconnexion après 5 secondes
-          setTimeout(() => {
-            if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
-              
-              connectSSE();
-            }
-          }, 5000);
-        };
-
-      } catch (error) {
-        console.error('Error creating EventSource:', error);
-        setConnectionStatus('error');
+  const webSocketHook = useWebSocketNotifications({
+    onNotification: handleNotification,
+    onConnected: () => {
+      console.log('✅ [NotificationProvider] WebSocket connecté');
+      if (showToasts) {
+        toast.success('🔔 Connecté aux notifications en temps réel', {
+          position: toastPosition as any,
+          duration: 2000
+        });
       }
-    };
-
-    connectSSE();
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
+    },
+    onError: (error: string) => {
+      console.error('❌ [NotificationProvider] Erreur WebSocket:', error);
+      if (showToasts) {
+        toast.error(`❌ ${error}`, {
+          position: toastPosition as any,
+          duration: 4000
+        });
       }
-    };
-  }, [session, handleConnect, handleDisconnect, handleError, handleNotification]);
-
-  const reconnect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+    },
+    onReconnect: () => {
+      console.log('🔄 [NotificationProvider] Tentative de reconnexion...');
+      if (showToasts) {
+        toast('🔄 Reconnexion aux notifications...', {
+          position: toastPosition as any,
+          duration: 2000
+        });
+      }
     }
-    // La reconnexion se fera automatiquement via l'useEffect
-  }, []);
-
-  const disconnect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    setIsConnected(false);
-    setConnectionStatus('disconnected');
-  }, []);
-
-  const clearNotifications = useCallback(() => {
-    // Cette fonction pourrait vider le cache local si nécessaire
-    
-  }, []);
+  });
 
   const contextValue: NotificationContextType = {
-    // États de connexion
-    isConnected,
-    connectionStatus,
-    lastHeartbeat,
-    reconnect,
-    disconnect,
-    clearNotifications,
-    // Propriétés du hook useNotifications
-    notifications: notificationHook.notifications,
-    stats: notificationHook.stats,
-    loading: notificationHook.loading,
-    error: notificationHook.error,
-    hasMore: notificationHook.hasMore,
-    total: notificationHook.total,
-    fetchNotifications: notificationHook.fetchNotifications,
-    fetchStats: notificationHook.fetchStats,
-    markAsRead: notificationHook.markAsRead,
-    markAllAsRead: notificationHook.markAllAsRead,
-    refresh: notificationHook.refresh,
-    loadMore: notificationHook.loadMore,
+    isConnected: webSocketHook.isConnected,
+    lastHeartbeat: webSocketHook.lastHeartbeat,
+    notifications: webSocketHook.notifications,
+    stats: webSocketHook.stats,
+    connect: webSocketHook.connect,
+    disconnect: webSocketHook.disconnect,
+    reconnect: webSocketHook.reconnect,
+    markAsRead: webSocketHook.markAsRead,
+    markAllAsRead: webSocketHook.markAllAsRead,
+    clearNotifications: webSocketHook.clearNotifications,
+    clearNotification: webSocketHook.clearNotification,
+    sendMessage: webSocketHook.sendMessage,
+    loadDatabaseNotifications: webSocketHook.loadDatabaseNotifications
   };
 
   return (
@@ -222,7 +145,7 @@ export function NotificationProvider({
   );
 }
 
-export function useNotificationContext(): NotificationContextType {
+export function useNotificationContext() {
   const context = useContext(NotificationContext);
   if (!context) {
     throw new Error('useNotificationContext must be used within a NotificationProvider');

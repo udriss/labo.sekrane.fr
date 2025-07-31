@@ -493,3 +493,29 @@ enum PhysicalState {
   GAS
   PLASMA
 }
+
+model Notification {
+  id           Int      @id @default(autoincrement())
+  targetRoles  String[] // Rôles ciblés (JSON array)
+  userId       Int?     // Utilisateur spécifique (optionnel)
+  module       String   // Module d'origine (CHEMICALS, EQUIPMENT, etc.)
+  actionType   String   // Type d'action (LOW_STOCK_ALERT, MAINTENANCE_SCHEDULED, etc.)
+  message      String   // Message de la notification
+  details      String?  // Détails supplémentaires
+  severity     NotificationSeverity @default(LOW)
+  entityType   String?  // Type d'entité liée
+  entityId     String?  // ID de l'entité liée
+  triggeredBy  String?  // ID de l'utilisateur qui a déclenché
+  readBy       Int[]    // IDs des utilisateurs qui ont lu (JSON array)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+enum NotificationSeverity {
+  LOW      @map("low")
+  MEDIUM   @map("medium")
+  HIGH     @map("high")
+  CRITICAL @map("critical")
+}

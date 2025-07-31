@@ -20,8 +20,9 @@ import NavbarLIMS from '@/components/layout/NavbarLIMS';
 import { SidebarLIMS } from '@/components/layout/SidebarLIMS';
 import { FooterLIMS } from '@/components/layout/FooterLIMS';
 import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
-import { NotificationProvider } from '@/components/notifications/NotificationProvider';
+
 import { Toaster } from 'react-hot-toast';
+import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -219,17 +220,7 @@ function AppSettingsProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Composant pour gérer les notifications avec session
-function NotificationWrapper({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-  const userId = (session?.user as any)?.id ?? '';
 
-  return (
-    <NotificationProvider showToasts={true}>
-      {children}
-    </NotificationProvider>
-  );
-}
 
 // Déterminer la page actuelle
 const getCurrentPageInfo = (path: string) => {
@@ -298,7 +289,8 @@ export default function RootLayout({
       
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SessionProvider>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+          <NotificationProvider>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
             <SnackbarProvider
               maxSnack={3}
               anchorOrigin={{
@@ -310,11 +302,9 @@ export default function RootLayout({
             >
               {pageInfo.showLayout ? (
                 // Layout avec navigation pour les pages internes
-                <NotificationWrapper>
                   <AppSettingsProvider>
                     {children}
                   </AppSettingsProvider>
-                </NotificationWrapper>
               ) : (
                 // Pages sans layout (accueil, auth)
                 <Box 
@@ -370,6 +360,7 @@ export default function RootLayout({
               />
             </SnackbarProvider>
           </LocalizationProvider>
+          </NotificationProvider>
         </SessionProvider>
       </body>
     </html>

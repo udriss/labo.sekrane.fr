@@ -1,285 +1,257 @@
-export const runtime = 'nodejs';
-
+// app/api/notifications/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
-import { NotificationFilter } from '@/types/notifications';
+import { query } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
+// GET - Récupérer les notifications d'un utilisateur
 export async function GET(request: NextRequest) {
   try {
-    // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const user = session.user as any;
     const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId') || (session.user as any).id;
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Vérifier que l'utilisateur a un rôle
-    if (!user.role) {
-      return NextResponse.json(
-        { error: 'Rôle utilisateur non défini' },
-        { status: 400 }
-      );
+    // Vérifier que l'utilisateur peut accéder à ces notifications
+    if (userId !== (session.user as any).id && (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    // Construire les filtres à partir des paramètres de requête
-    const filters: NotificationFilter = {
-      limit: parseInt(searchParams.get('limit') || '20'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      userRole: user.role,
-      userEmail: user.email
-    };
-
-    // Ajouter les filtres optionnels
-    if (searchParams.get('module')) {
-      filters.module = searchParams.get('module')!;
-    }
-
-    if (searchParams.get('severity')) {
-      filters.severity = searchParams.get('severity') as 'low' | 'medium' | 'high' | 'critical';
-    }
-
-    if (searchParams.get('isRead')) {
-      filters.isRead = searchParams.get('isRead') === 'true';
-    }
-
-    if (searchParams.get('dateFrom')) {
-      filters.dateFrom = searchParams.get('dateFrom')!;
-    }
-
-    if (searchParams.get('dateTo')) {
-      filters.dateTo = searchParams.get('dateTo')!;
-    }
-
-    if (searchParams.get('entityType')) {
-      filters.entityType = searchParams.get('entityType')!;
-    }
-
-    if (searchParams.get('entityId')) {
-      filters.entityId = searchParams.get('entityId')!;
-    }
+    // Récupérer les notifications pour cet utilisateur ou son rôle
+    const userRole = (session.user as any).role;
     
-
-
-    // Récupérer les notifications avec le service de base de données
-    const result = await DatabaseNotificationService.getNotifications(user.id, filters);
+    const notifications = await query(`
+      SELECT n.*, 
+             CASE WHEN nrs.is_read IS NOT NULL THEN nrs.is_read 
+                  WHEN n.user_id = ? THEN n.is_read 
+                  ELSE FALSE END as isRead, notification-service
+             nrs.read_at
+      FROM notifications n
+      LEFT JOIN notification_read_status nrs ON (n.id = nrs.notification_id AND nrs.user_id = ?)
+      WHERE (n.user_id = ? OR JSON_CONTAINS(n.target_roles, ?))
+      ORDER BY n.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `, [userId, userId, userId, JSON.stringify(userRole)]);
 
     return NextResponse.json({
       success: true,
-      notifications: result.notifications,
-      total: result.total,
-      filters: filters,
-      userInfo: {
-        userId: user.id,
-        userRole: user.role,
-        userEmail: user.email
-      },
-      hasMore: (filters.offset! + filters.limit!) < result.total
+      notifications: notifications.map((notif: any) => ({
+        ...notif,
+        message: typeof notif.message === 'string' ? JSON.parse(notif.message) : notif.message,
+        target_roles: typeof notif.target_roles === 'string' ? JSON.parse(notif.target_roles) : notif.target_roles,
+        isRead: Boolean(notif.isRead),
+        // Assurer que createdAt est présent et valide
+        createdAt: notif.created_at || notif.createdAt || new Date().toISOString(),
+        // Ajouter les champs manquants pour compatibilité avec ExtendedNotification
+        userId: notif.user_id || '',
+        role: notif.user_role || 'UNKNOWN',
+        actionType: notif.action_type || notif.actionType || 'UNKNOWN',
+        severity: notif.severity || 'medium',
+        reason: notif.reason || 'role',
+        specificReason: notif.specific_reason || notif.specificReason || '',
+        entityType: notif.entity_type || notif.entityType || null,
+        entityId: notif.entity_id || notif.entityId || null,
+        triggeredBy: notif.triggered_by || notif.triggeredBy || null,
+        details: notif.details || '',
+        module: notif.module || 'UNKNOWN'
+      }))
     });
 
   } catch (error) {
-    console.error('📧 [API] Erreur lors de la récupération des notifications:', error);
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    );
+    console.error('Erreur lors de la récupération des notifications:', error);
+    return NextResponse.json({ 
+      error: 'Erreur serveur lors de la récupération des notifications' 
+    }, { status: 500 });
   }
 }
 
+// POST - Créer une nouvelle notification
 export async function POST(request: NextRequest) {
   try {
-    // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const user = session.user as any;
     const body = await request.json();
     const {
       targetRoles,
-      module,
-      actionType,
-      message,
-      details = '',
-      severity = 'medium',
-      entityType,
-      entityId,
-      triggeredBy,
-      specificUsers
-    } = body;
-
-    // Validation des champs requis
-    if (!targetRoles || !Array.isArray(targetRoles) || targetRoles.length === 0) {
-      return NextResponse.json(
-        { error: 'Au moins un rôle cible doit être spécifié (targetRoles)' },
-        { status: 400 }
-      );
-    }
-
-    if (!module || !actionType || !message) {
-      return NextResponse.json(
-        { error: 'Champs requis manquants: module, actionType, message' },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier que l'utilisateur a les permissions pour créer des notifications
-    if (!user.role || !['ADMIN', 'ADMINLABO', 'TEACHER'].includes(user.role)) {
-      return NextResponse.json(
-        { error: 'Permissions insuffisantes pour créer une notification' },
-        { status: 403 }
-      );
-    }
-
-    // Créer la notification avec le service de base de données
-    const notificationId = await DatabaseNotificationService.createNotification(
-      targetRoles,
+      userId,
       module,
       actionType,
       message,
       details,
-      severity,
+      severity = 'medium',
       entityType,
       entityId,
-      triggeredBy || user.id,
-      specificUsers
-    );
+      triggeredBy
+    } = body;
 
-    if (!notificationId) {
-      return NextResponse.json(
-        { error: 'Erreur lors de la création de la notification' },
-        { status: 500 }
-      );
+    // Validation des données
+    if (!module || !actionType || !message) {
+      return NextResponse.json({ 
+        error: 'Champs requis manquants: module, actionType, message' 
+      }, { status: 400 });
     }
 
-    // Récupérer la notification créée pour l'envoyer via SSE
+    const notificationId = uuidv4();
+    const currentUserId = (session.user as any).id;
+    const currentUserRole = (session.user as any).role;
+
+    // Créer la notification en base de données
+    await query(`
+      INSERT INTO notifications (
+        id, user_id, user_role, target_roles, module, action_type, 
+        message, details, severity, entity_type, entity_id, triggered_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      notificationId,
+      userId || null,
+      currentUserRole,
+      JSON.stringify(targetRoles || []),
+      module,
+      actionType,
+      JSON.stringify(message),
+      details || null,
+      severity,
+      entityType || null,
+      entityId || null,
+      triggeredBy || currentUserId
+    ]);
+
+    // Récupérer la notification créée
+    const [notification] = await query(`
+      SELECT * FROM notifications WHERE id = ?
+    `, [notificationId]);
+
+    console.log('✅ [API] Notification créée:', notificationId);
+
+    // Envoyer la notification via WebSocket si le service est disponible
     try {
-      const createdNotifications = await DatabaseNotificationService.getNotifications(
-        user.id,
-        {
-          limit: 1,
-          userRole: user.role,
-          userEmail: user.email
-        }
+      const wsService = (await import('@/lib/services/websocket-notification-service')).default;
+      
+      await wsService.sendNotification(
+        targetRoles || [],
+        module,
+        actionType,
+        message,
+        severity,
+        entityType,
+        entityId,
+        triggeredBy || currentUserId,
+        userId ? [userId.toString()] : undefined
       );
 
-      if (createdNotifications.notifications.length > 0) {
-        const newNotification = createdNotifications.notifications[0];
-        
-        // Envoyer la notification via le système SSE centralisé
-        try {
-          const sseResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/ws`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'broadcast',
-              message: {
-                type: 'notification',
-                data: newNotification,
-                timestamp: Date.now()
-              }
-            })
-          });
-          
-          if (sseResponse.ok) {
-            const sseData = await sseResponse.json();
-            console.log('🔔 [API] Notification diffusée via SSE:', sseData.sentToConnections, 'connexions');
-          } else {
-            console.warn('⚠️ [API] Erreur diffusion SSE:', await sseResponse.text());
-          }
-        } catch (error) {
-          console.error('❌ [API] Erreur appel SSE:', error);
-        }
-      }
-    } catch (sseError) {
-      console.error('❌ [API] Erreur lors de l\'envoi SSE:', sseError);
-      // Ne pas faire échouer la création de notification pour une erreur SSE
+      console.log('✅ [API] Notification envoyée via WebSocket');
+    } catch (wsError) {
+      console.warn('⚠️ [API] Erreur envoi WebSocket (non bloquant):', wsError);
     }
 
     return NextResponse.json({
       success: true,
-      notificationId,
+      notification,
       message: 'Notification créée avec succès'
-    }, { status: 201 });
+    });
 
   } catch (error) {
-    console.error('📧 [API] Erreur lors de la création de la notification:', error);
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    );
+    console.error('Erreur lors de la création de la notification:', error);
+    return NextResponse.json({ 
+      error: 'Erreur serveur lors de la création de la notification' 
+    }, { status: 500 });
   }
 }
 
+// PATCH - Marquer des notifications comme lues
 export async function PATCH(request: NextRequest) {
   try {
-    // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const user = session.user as any;
     const body = await request.json();
     const { action, notificationId } = body;
-
-    
+    const userId = (session.user as any).id;
 
     if (action === 'markAsRead' && notificationId) {
-      const success = await DatabaseNotificationService.markAsRead(notificationId, user.id);
-      
-      if (success) {
-        return NextResponse.json({
-          success: true,
-          message: 'Notification marquée comme lue'
-        });
-      } else {
-        return NextResponse.json(
-          { error: 'Erreur lors du marquage comme lu' },
-          { status: 500 }
-        );
+      // Marquer une notification comme lue
+      const [notification] = await query(`
+        SELECT * FROM notifications WHERE id = ?
+      `, [notificationId]);
+
+      if (!notification) {
+        return NextResponse.json({ error: 'Notification non trouvée' }, { status: 404 });
       }
+
+      // Vérifier les permissions
+      const targetRoles = typeof notification.target_roles === 'string' 
+        ? JSON.parse(notification.target_roles) 
+        : notification.target_roles;
+      
+      const canRead = notification.user_id === userId || 
+                     (targetRoles && targetRoles.includes((session.user as any).role));
+
+      if (!canRead) {
+        return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+      }
+
+      if (notification.user_id === userId) {
+        // Notification spécifique à l'utilisateur
+        await query(`
+          UPDATE notifications SET is_read = TRUE WHERE id = ?
+        `, [notificationId]);
+      } else {
+        // Notification basée sur les rôles - utiliser la table de statut de lecture
+        await query(`
+          INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+          VALUES (?, ?, TRUE, NOW())
+          ON DUPLICATE KEY UPDATE is_read = TRUE, read_at = NOW()
+        `, [notificationId, userId]);
+      }
+
+      return NextResponse.json({ success: true });
+
+    } else if (action === 'markAllAsRead') {
+      // Marquer toutes les notifications comme lues pour cet utilisateur
+      
+      // Notifications spécifiques à l'utilisateur
+      await query(`
+        UPDATE notifications 
+        SET is_read = TRUE 
+        WHERE user_id = ? AND is_read = FALSE
+      `, [userId]);
+
+      // Notifications basées sur les rôles
+      await query(`
+        INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+        SELECT n.id, ?, TRUE, NOW()
+        FROM notifications n
+        WHERE JSON_CONTAINS(n.target_roles, ?)
+        AND NOT EXISTS (
+          SELECT 1 FROM notification_read_status nrs 
+          WHERE nrs.notification_id = n.id AND nrs.user_id = ?
+        )
+        ON DUPLICATE KEY UPDATE is_read = TRUE, read_at = NOW()
+      `, [userId, JSON.stringify((session.user as any).role), userId]);
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Toutes les notifications marquées comme lues'
+      });
     }
 
-    if (action === 'markAllAsRead') {
-      const success = await DatabaseNotificationService.markAllAsRead(user.id, user.role);
-      
-      if (success) {
-        return NextResponse.json({
-          success: true,
-          message: 'Toutes les notifications marquées comme lues'
-        });
-      } else {
-        return NextResponse.json(
-          { error: 'Erreur lors du marquage de toutes comme lues' },
-          { status: 500 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      { error: 'Action non supportée' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Action non reconnue' }, { status: 400 });
 
   } catch (error) {
-    console.error('📧 [API] Erreur lors de l action de notification:', error);
-    return NextResponse.json(
-      { error: 'Erreur interne du serveur' },
-      { status: 500 }
-    );
+    console.error('Erreur lors de la mise à jour des notifications:', error);
+    return NextResponse.json({ 
+      error: 'Erreur serveur lors de la mise à jour' 
+    }, { status: 500 });
   }
 }

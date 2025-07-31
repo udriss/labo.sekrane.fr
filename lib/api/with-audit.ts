@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { auditLogger } from '@/lib/services/audit-logger';
-import { DatabaseNotificationService } from '@/lib/notifications/database-notification-service';
+import { wsNotificationService } from '@/lib/services/websocket-notification-service';
 import { AuditAction, AuditUser, AuditContext } from '@/types/audit';
 
 type RouteHandler = (req: NextRequest, context?: any) => Promise<NextResponse> | NextResponse;
@@ -47,7 +47,7 @@ async function triggerNotifications(
         targetRoles = ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'];
         break;
       case 'custom':
-        // Pour les utilisateurs personnalisés, nous utiliserons target_users
+        // Pour les utilisateurs personnalisés, nous utiliserons customUserIds
         targetRoles = [];
         break;
     }
@@ -55,45 +55,42 @@ async function triggerNotifications(
     // Créer le message de notification
     const message = `Action ${actionType} effectuée sur ${entityType || 'élément'} dans le module ${module}`;
 
-    // Créer la notification avec le DatabaseNotificationService
-    await DatabaseNotificationService.createNotification(
+    // Déterminer la sévérité selon le type d'action
+    let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+    if (actionType === 'DELETE') {
+      severity = 'high';
+    } else if (actionType === 'CREATE') {
+      severity = 'medium';
+    } else if (actionType === 'UPDATE') {
+      severity = 'low';
+    }
+
+    // Envoyer la notification via WebSocket
+    await wsNotificationService.sendNotification(
       targetRoles,
       module,
       actionType,
       message,
-      JSON.stringify({
-        action: actionType,
-        entity: entityType,
-        entity_id: entityId,
-        triggered_by: triggeredBy.id,
-        triggered_by_name: triggeredBy.name,
-        triggered_by_role: triggeredBy.role,
-        details: details
-      }),
-      'medium', // severity par défaut
+      severity,
       entityType,
       entityId,
       triggeredBy.id,
-      notifyUsers === 'custom' && customNotifyUsers ? 
-        customNotifyUsers.map(userId => ({
-          id: userId,
-          email: `${userId}@labolims.com`, // TODO: Récupérer l'email réel depuis la base
-          reason: 'custom'
-        })) : undefined
+      customNotifyUsers
     );
 
-    console.log('✅ Notification d\'audit créée avec succès:', {
+    console.log('✅ Notification WebSocket envoyée avec succès:', {
       targetRoles,
-      targetUsers: customNotifyUsers,
+      customUserIds: customNotifyUsers,
       module,
       actionType,
       entityType,
       entityId,
-      triggeredBy: triggeredBy.id
+      triggeredBy: triggeredBy.id,
+      severity
     });
 
   } catch (error) {
-    console.error('❌ Erreur lors de la création de la notification d\'audit:', error);
+    console.error('❌ Erreur lors de l\'envoi de la notification WebSocket:', error);
   }
 }
 

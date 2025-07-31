@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run init:data && next dev -p 3000",
+    "dev": "npm run init:data && tsx server-ws.js",
+    "dev:next": "npm run init:data && next dev -p 3000",
     "build": "npm run init:data && next build",
     "start": "next start -p 8006",
+    "start:ws": "tsx server-ws.js",
     "lint": "next lint",
     "init:data": "tsx scripts/init-data-folders.ts",
     "init:notifications": "tsx scripts/init-notification-preferences.ts"
@@ -37,6 +39,7 @@
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
     "@types/react-toastify": "^4.0.2",
+    "@types/ws": "^8.18.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
@@ -69,6 +72,7 @@
     "socket.io-client": "^4.8.1",
     "systeminformation": "^5.27.7",
     "uuid": "^11.1.0",
+    "ws": "^8.18.3",
     "zod": "^4.0.5"
   },
   "devDependencies": {

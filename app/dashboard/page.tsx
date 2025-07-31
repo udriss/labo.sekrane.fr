@@ -70,7 +70,6 @@ export default function DashboardPage() {
   const {
     isConnected,
     notifications,
-    connectionStatus,
     lastHeartbeat,
     reconnect,
     clearNotifications
@@ -105,6 +104,7 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId: (session?.user as any)?.id || 'dashboard-test',
           targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER'], // Rôles par défaut pour les tests
           module: 'DASHBOARD',
           actionType: 'TEST_NOTIFICATION',
@@ -145,27 +145,38 @@ export default function DashboardPage() {
 
     try {
       setTestLoading(true)
-      const response = await fetch('/api/notifications/ws', {
+      // Utiliser l'API notifications normale au lieu de ws
+      const response = await fetch('/api/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'broadcast',
-          notification: {
-            id: crypto.randomUUID(),
-            type: testType,
-            title: 'Diffusion générale',
-            message: testMessage,
-            createdAt: new Date().toISOString(),
-            source: 'dashboard'
-          }
+          userId: (session?.user as any)?.id || 'dashboard-test',
+          targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'], // Diffusion à tous
+          module: 'DASHBOARD',
+          actionType: 'BROADCAST',
+          message: {
+            fr: `📢 Diffusion générale: ${testMessage}`,
+            en: `📢 General broadcast: ${testMessage}`
+          },
+          details: `Diffusion générale envoyée depuis le tableau de bord. Type: ${testType}`,
+          severity: testType === 'error' ? 'high' : testType === 'warning' ? 'medium' : 'low',
+          entityType: 'broadcast',
+          entityId: `broadcast-${Date.now()}`,
+          triggeredBy: (session?.user as any)?.id || 'dashboard-broadcast'
         }),
       })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la diffusion')
+      }
+
       const result = await response.json()
-      
-      setTestMessage('')
+      if (result.success) {
+        setTestMessage('')
+      }
     } catch (error) {
       console.error('Error sending broadcast:', error)
     } finally {
@@ -177,6 +188,7 @@ export default function DashboardPage() {
   const sendPredefinedNotification = async (type: 'chemical' | 'equipment' | 'order' | 'system') => {
     const notifications = {
       chemical: {
+        userId: (session?.user as any)?.id || 'dashboard-test',
         targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
         module: 'CHEMICALS',
         actionType: 'LOW_STOCK_ALERT',
@@ -190,6 +202,7 @@ export default function DashboardPage() {
         entityId: 'H2SO4-001'
       },
       equipment: {
+        userId: (session?.user as any)?.id || 'dashboard-test',
         targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
         module: 'EQUIPMENT',
         actionType: 'MAINTENANCE_SCHEDULED',
@@ -203,6 +216,7 @@ export default function DashboardPage() {
         entityId: 'MEB-001'
       },
       order: {
+        userId: (session?.user as any)?.id || 'dashboard-test',
         targetRoles: ['ADMIN', 'ADMINLABO', 'TEACHER'],
         module: 'ORDERS',
         actionType: 'ORDER_RECEIVED',
@@ -216,6 +230,7 @@ export default function DashboardPage() {
         entityId: 'CMD-2024-001'
       },
       system: {
+        userId: (session?.user as any)?.id || 'dashboard-test',
         targetRoles: ['ADMIN', 'ADMINLABO'],
         module: 'SYSTEM',
         actionType: 'SYSTEM_UPDATE',
@@ -269,22 +284,20 @@ export default function DashboardPage() {
   }, [])
 
   const getConnectionStatusColor = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'success'
-      case 'connecting': return 'warning'
-      case 'error': return 'error'
-      default: return 'default'
+    if (isConnected) {
+      return 'success.main'
+    } else {
+      return 'warning.main'
     }
-  }
+  };
 
-  const getConnectionStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'connected': return <Wifi />
-      case 'connecting': return <CircularProgress size={20} />
-      case 'error': return <WifiOff />
-      default: return <WifiOff />
+  const getConnectionIcon = () => {
+    if (isConnected) {
+      return <CheckCircle sx={{ color: 'success.main' }} />
+    } else {
+      return <Warning sx={{ color: 'warning.main' }} />
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -317,9 +330,8 @@ export default function DashboardPage() {
         {/* Indicateur de statut des notifications */}
         <Box display="flex" alignItems="center" gap={2}>
           <Chip
-            icon={getConnectionStatusIcon()}
-            label={`Notifications ${connectionStatus === 'connected' ? 'connectées' : 
-                   connectionStatus === 'connecting' ? 'connexion...' : 'déconnectées'}`}
+            icon={getConnectionIcon()}
+            label={`Notifications ${isConnected ? 'connectées' : 'déconnectées'}`}
             color={getConnectionStatusColor() as any}
             variant={isConnected ? 'filled' : 'outlined'}
           />
@@ -462,9 +474,9 @@ export default function DashboardPage() {
                 </Box>
 
                 {/* Statut de connexion détaillé */}
-                <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1, backgroundColor: 'paper.main' }}>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>Statut:</strong> {connectionStatus}
+                    <strong>Statut:</strong> {isConnected ? 'Connecté' : 'Déconnecté'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     <strong>Notifications reçues:</strong> {notifications.length}
@@ -622,12 +634,12 @@ export default function DashboardPage() {
                              <Info color="info" />}
                           </ListItemIcon>
                           <ListItemText
-                            primary={typeof notification.message === 'string' ? notification.message : notification.message?.fr || 'Notification'}
+                            primary={typeof notification.message === 'string' ? notification.message : JSON.stringify(notification.message)}
                             secondary={
                               <Box component={'span'}>
                                 <Typography variant="caption" display="block">
-                                  {notification.createdAt ? 
-                                    format(new Date(notification.createdAt), 'HH:mm:ss', { locale: fr }) :
+                                  {notification.timestamp ? 
+                                    format(new Date(notification.timestamp), 'HH:mm:ss', { locale: fr }) :
                                     'Maintenant'
                                   }
                                 </Typography>

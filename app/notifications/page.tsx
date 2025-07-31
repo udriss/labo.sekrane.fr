@@ -1,6 +1,7 @@
+// app/notifications/page.tsx
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Container,
   Grid,
@@ -17,17 +18,37 @@ import {
   Button,
   Alert,
   Chip,
-  Stack
+  Stack,
+  Card,
+  CardContent,
+  CardActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Badge,
+  Divider,
+  Switch,
+  FormControlLabel,
+  CircularProgress
 } from '@mui/material';
 import {
   Notifications,
   FilterList,
   Refresh,
-  Settings
+  Settings,
+  Delete,
+  DoneAll,
+  Clear,
+  WifiTethering,
+  WifiTetheringOff,
+  Send,
+  Circle
 } from '@mui/icons-material';
 import { useSession } from 'next-auth/react';
-import NotificationsList from '@/components/notifications/NotificationList';
-import { NotificationFilter } from '@/types/notifications';
+import { useNotificationContext } from '@/components/notifications/NotificationProvider';
+import { toast } from 'react-hot-toast';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -55,257 +76,535 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const MODULES = [
-  { value: '', label: 'Tous les modules' },
-  { value: 'USERS', label: 'Utilisateurs' },
-  { value: 'CHEMICALS', label: 'Produits chimiques' },
-  { value: 'EQUIPMENT', label: 'Équipements' },
-  { value: 'ROOMS', label: 'Salles' },
-  { value: 'CALENDAR', label: 'Calendrier' },
-  { value: 'ORDERS', label: 'Commandes' },
-  { value: 'SECURITY', label: 'Sécurité' },
-  { value: 'SYSTEM', label: 'Système' }
-];
+export default function NotificationsPage() {
+  const { data: session } = useSession();
+  const {
+    isConnected,
+    lastHeartbeat,
+    notifications,
+    stats,
+    connect,
+    disconnect,
+    reconnect,
+    markAsRead,
+    markAllAsRead,
+    clearNotifications,
+    clearNotification,
+    sendMessage,
+    loadDatabaseNotifications
+  } = useNotificationContext();
 
-const SEVERITIES = [
-  { value: '', label: 'Toutes les sévérités' },
-  { value: 'low', label: 'Faible' },
-  { value: 'medium', label: 'Moyenne' },
-  { value: 'high', label: 'Élevée' },
-  { value: 'critical', label: 'Critique' }
-];
-
-// Mémoriser le composant principal
-const NotificationsPage = React.memo(function NotificationsPage() {
-  const { data: session, status } = useSession();
   const [tabValue, setTabValue] = useState(0);
-  const [filters, setFilters] = useState<NotificationFilter>({
-    limit: 20,
-    offset: 0
-  });
+  const [filterModule, setFilterModule] = useState<string>('all');
+  const [filterSeverity, setFilterSeverity] = useState<string>('all');
+  const [filterRead, setFilterRead] = useState<string>('all');
+  const [testMessage, setTestMessage] = useState('');
+  const [testSeverity, setTestSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mémoriser les handlers pour éviter les re-créations
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-    
-    // Ajuster les filtres selon l'onglet
-    setFilters(prev => ({
-      ...prev,
-      isRead: newValue === 1 ? false : newValue === 2 ? true : undefined,
-      offset: 0 // Reset pagination
-    }));
-  }, []);
+  // Fonction pour rafraîchir manuellement les notifications depuis la base de données
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadDatabaseNotifications();
+    setIsRefreshing(false);
+    toast.success('Notifications rafraîchies');
+  };
 
-  const handleFilterChange = useCallback((field: keyof NotificationFilter, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value === '' ? undefined : value,
-      offset: 0 // Reset pagination
-    }));
-  }, []);
+  // Charger les notifications au montage du composant
+  useEffect(() => {
+    loadDatabaseNotifications();
+  }, [loadDatabaseNotifications]);
 
-  const resetFilters = useCallback(() => {
-    setFilters({
-      limit: 20,
-      offset: 0
+  // Filtrer les notifications
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter(notification => {
+      if (filterModule !== 'all' && notification.module !== filterModule) return false;
+      if (filterSeverity !== 'all' && notification.severity !== filterSeverity) return false;
+      if (filterRead === 'read' && !notification.isRead) return false;
+      if (filterRead === 'unread' && notification.isRead) return false;
+      return true;
     });
-    setTabValue(0);
-  }, []);
+  }, [notifications, filterModule, filterSeverity, filterRead]);
 
-  // Mémoriser les filtres actuels pour éviter les recalculs
-  const currentFilters = useMemo(() => ({
-    ...filters,
-    isRead: tabValue === 1 ? false : tabValue === 2 ? true : undefined
-  }), [filters, tabValue]);
+  // Obtenir les modules uniques
+  const availableModules = useMemo(() => {
+    const modules = new Set(notifications.map(n => n.module));
+    return Array.from(modules).sort();
+  }, [notifications]);
 
-  // Mémoriser les informations utilisateur
-  const userInfo = useMemo(() => {
-    if (!session?.user) return null;
-    const user = session.user as any;
-    return {
-      role: user.role,
-      email: user.email,
-      hasRole: !!user.role
-    };
-  }, [session?.user]);
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
-  // Vérification de l'authentification
-  if (status === 'loading') {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <Typography>Chargement...</Typography>
-        </Box>
-      </Container>
-    );
-  }
+  const handleSendTestNotification = async () => {
+    if (!testMessage.trim()) {
+      toast.error('Veuillez saisir un message de test');
+      return;
+    }
 
-  if (status === 'unauthenticated' || !session?.user) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="warning">
-          Vous devez être connecté pour accéder aux notifications.
-        </Alert>
-      </Container>
-    );
-  }
+    try {
+      const response = await fetch('/api/notifications/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: testMessage,
+          severity: testSeverity
+        })
+      });
 
-  if (!userInfo?.hasRole) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">
-          Votre compte n'a pas de rôle assigné. Contactez un administrateur.
-        </Alert>
-      </Container>
-    );
-  }
+      if (response.ok) {
+        toast.success('Notification de test envoyée');
+        setTestMessage('');
+      } else {
+        toast.error('Erreur lors de l\'envoi de la notification de test');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de l\'envoi de la notification de test');
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'error';
+      case 'high': return 'warning';
+      case 'medium': return 'info';
+      case 'low': return 'success';
+      default: return 'default';
+    }
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'critical': return '🚨';
+      case 'high': return '⚠️';
+      case 'medium': return 'ℹ️';
+      case 'low': return '📢';
+      default: return '📨';
+    }
+  };
+
+  const formatMessage = (message: string | object) => {
+    if (typeof message === 'string') return message;
+    if (typeof message === 'object' && message !== null) {
+      return (message as any).fr || JSON.stringify(message);
+    }
+    return 'Message de notification';
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours} h`;
+    if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+    return date.toLocaleDateString('fr-FR');
+  };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* En-tête */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={2}>
-            <Notifications sx={{ fontSize: 32, color: 'primary.main' }} />
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Notifications
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Gérez vos notifications système
-              </Typography>
-            </Box>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography variant="h3" component="h1" gutterBottom>
+            <Badge badgeContent={stats.unreadNotifications} color="error">
+              <Notifications sx={{ mr: 2, verticalAlign: "middle", fontSize: "inherit" }} />
+            </Badge>
+            Notifications
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Système de notifications en temps réel
+          </Typography>
+        </Box>
+        
+        <Stack direction="row" spacing={2}>
+          <Box display="flex" alignItems="center" gap={1}>
+            {isConnected ? (
+              <WifiTethering color="success" />
+            ) : (
+              <WifiTetheringOff color="error" />
+            )}
+            <Typography variant="body2" color={isConnected ? 'success.main' : 'error.main'}>
+              {isConnected ? 'Connecté' : 'Déconnecté'}
+            </Typography>
           </Box>
           
-          <Box display="flex" alignItems="center" gap={1}>
-            <Chip 
-              label={`Rôle: ${userInfo.role}`} 
-              color="primary" 
-              variant="outlined" 
-            />
-            <Chip 
-              label={userInfo.email} 
-              variant="outlined" 
-            />
-          </Box>
-        </Box>
-      </Paper>
+          <Button
+            variant="outlined"
+            startIcon={isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            Rafraîchir
+          </Button>
+          
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={reconnect}
+            disabled={isConnected}
+          >
+            Reconnecter
+          </Button>
+        </Stack>
+      </Box>
 
-      <Grid container spacing={3}>
-        {/* Filtres */}
-        <Grid size = {{ xs: 12, md: 3 }}>
-          <Paper elevation={2} sx={{ p: 2 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <FilterList />
-              <Typography variant="h6">Filtres</Typography>
-            </Box>
+      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+        <Tab label={`Notifications (${stats.totalNotifications})`} />
+        <Tab label="Statistiques" />
+        {session?.user && (session.user as any).role === 'ADMIN' && (
+          <Tab label="Administration" />
+        )}
+      </Tabs>
 
-            <Stack spacing={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Module</InputLabel>
-                <Select
-                  value={filters.module || ''}
-                  label="Module"
-                  onChange={(e) => handleFilterChange('module', e.target.value)}
+      {/* Onglet Notifications */}
+      <TabPanel value={tabValue} index={0}>
+        <Grid container spacing={3}>
+          {/* Filtres */}
+          <Grid size = {{ xs:12 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <FilterList />
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Module</InputLabel>
+                  <Select
+                    value={filterModule}
+                    label="Module"
+                    onChange={(e) => setFilterModule(e.target.value)}
+                  >
+                    <MenuItem value="all">Tous</MenuItem>
+                    {availableModules.map(module => (
+                      <MenuItem key={module} value={module}>{module}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Sévérité</InputLabel>
+                  <Select
+                    value={filterSeverity}
+                    label="Sévérité"
+                    onChange={(e) => setFilterSeverity(e.target.value)}
+                  >
+                    <MenuItem value="all">Toutes</MenuItem>
+                    <MenuItem value="critical">Critique</MenuItem>
+                    <MenuItem value="high">Élevée</MenuItem>
+                    <MenuItem value="medium">Moyenne</MenuItem>
+                    <MenuItem value="low">Faible</MenuItem>
+                  </Select>
+                </FormControl>
+                
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>État</InputLabel>
+                  <Select
+                    value={filterRead}
+                    label="État"
+                    onChange={(e) => setFilterRead(e.target.value)}
+                  >
+                    <MenuItem value="all">Toutes</MenuItem>
+                    <MenuItem value="unread">Non lues</MenuItem>
+                    <MenuItem value="read">Lues</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Box sx={{ flexGrow: 1 }} />
+                
+                <Button
+                  startIcon={<DoneAll />}
+                  onClick={markAllAsRead}
+                  disabled={stats.unreadNotifications === 0}
                 >
-                  {MODULES.map((module) => (
-                    <MenuItem key={module.value} value={module.value}>
-                      {module.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth size="small">
-                <InputLabel>Sévérité</InputLabel>
-                <Select
-                  value={filters.severity || ''}
-                  label="Sévérité"
-                  onChange={(e) => handleFilterChange('severity', e.target.value)}
+                  Marquer toutes comme lues
+                </Button>
+                
+                <Button
+                  startIcon={<Clear />}
+                  onClick={clearNotifications}
+                  color="error"
+                  disabled={notifications.length === 0}
                 >
-                  {SEVERITIES.map((severity) => (
-                    <MenuItem key={severity.value} value={severity.value}>
-                      {severity.label}
-                    </MenuItem>
+                  Effacer toutes
+                </Button>
+              </Stack>
+            </Paper>
+          </Grid>
+
+          {/* Liste des notifications */}
+          <Grid size = {{ xs:12 }}>
+            {filteredNotifications.length === 0 ? (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Notifications sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                  Aucune notification
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {notifications.length === 0 
+                    ? 'Vous n\'avez aucune notification pour le moment.'
+                    : 'Aucune notification ne correspond aux filtres sélectionnés.'
+                  }
+                </Typography>
+              </Paper>
+            ) : (
+              <List>
+                {filteredNotifications.map((notification, index) => (
+                  <React.Fragment key={notification.id}>
+                    <ListItem
+                      sx={{
+                        bgcolor: notification.isRead ? 'transparent' : 'action.hover',
+                        borderRadius: 1,
+                        mb: 1
+                      }}
+                    >
+                      <ListItemText
+                        primary={
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <span>{getSeverityIcon(notification.severity)}</span>
+                            <Typography variant="subtitle1" component="span">
+                              {formatMessage(notification.message)}
+                            </Typography>
+                            {!notification.isRead && (
+                              <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                            <Chip
+                              label={notification.module}
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Chip
+                              label={notification.severity}
+                              size="small"
+                              color={getSeverityColor(notification.severity) as any}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {formatTimestamp(notification.timestamp)}
+                            </Typography>
+                          </Stack>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <Stack direction="row" spacing={1}>
+                          {!notification.isRead && (
+                            <IconButton
+                              size="small"
+                              onClick={() => markAsRead(notification.id)}
+                              title="Marquer comme lue"
+                            >
+                              <DoneAll />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            onClick={() => clearNotification(notification.id)}
+                            color="error"
+                            title="Supprimer"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Stack>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                    {index < filteredNotifications.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            )}
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Onglet Statistiques */}
+      <TabPanel value={tabValue} index={1}>
+        <Grid container spacing={3}>
+          <Grid size = {{ xs:12, md:6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  État de la connexion
+                </Typography>
+                <Stack spacing={2}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography>État:</Typography>
+                    <Chip
+                      label={isConnected ? 'Connecté' : 'Déconnecté'}
+                      color={isConnected ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </Box>
+                  {lastHeartbeat && (
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography>Dernier heartbeat:</Typography>
+                      <Typography variant="body2">
+                        {lastHeartbeat.toLocaleTimeString('fr-FR')}
+                      </Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size = {{ xs:12, md:6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Résumé des notifications
+                </Typography>
+                <Stack spacing={2}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography>Total:</Typography>
+                    <Typography fontWeight="bold">{stats.totalNotifications}</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography>Non lues:</Typography>
+                    <Typography fontWeight="bold" color="primary">
+                      {stats.unreadNotifications}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size = {{ xs:12, md:6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Par module
+                </Typography>
+                <Stack spacing={1}>
+                  {Object.entries(stats.notificationsByModule).map(([module, count]) => (
+                    <Box key={module} display="flex" justifyContent="space-between">
+                      <Typography>{module}:</Typography>
+                      <Typography fontWeight="bold">{count}</Typography>
+                    </Box>
                   ))}
-                </Select>
-              </FormControl>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
 
-              <TextField
-                label="Date de début"
-                type="date"
-                size="small"
-                value={filters.dateFrom || ''}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-
-              <TextField
-                label="Date de fin"
-                type="date"
-                size="small"
-                value={filters.dateTo || ''}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-
-              <Button
-                variant="outlined"
-                onClick={resetFilters}
-                startIcon={<Refresh />}
-                fullWidth
-              >
-                Réinitialiser
-              </Button>
-            </Stack>
-          </Paper>
+          <Grid size = {{ xs:12, md:6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Par sévérité
+                </Typography>
+                <Stack spacing={1}>
+                  {Object.entries(stats.notificationsBySeverity).map(([severity, count]) => (
+                    <Box key={severity} display="flex" justifyContent="space-between">
+                      <Typography>
+                        {getSeverityIcon(severity)} {severity}:
+                      </Typography>
+                      <Typography fontWeight="bold">{count}</Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
+      </TabPanel>
 
-        {/* Liste des notifications */}
-        <Grid size = {{ xs: 12, md: 9 }}>
-          <Paper elevation={2}>
-            {/* Onglets */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={tabValue} onChange={handleTabChange}>
-                <Tab label="Toutes" />
-                <Tab label="Non lues" />
-                <Tab label="Lues" />
-              </Tabs>
-            </Box>
+      {/* Onglet Administration (Admin seulement) */}
+      {session?.user && (session.user as any).role === 'ADMIN' && (
+        <TabPanel value={tabValue} index={2}>
+          <Grid container spacing={3}>
+            <Grid size = {{ xs:12, md:6 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Test de notification
+                  </Typography>
+                  <Stack spacing={2}>
+                    <TextField
+                      fullWidth
+                      label="Message de test"
+                      value={testMessage}
+                      onChange={(e) => setTestMessage(e.target.value)}
+                      multiline
+                      rows={3}
+                    />
+                    <FormControl fullWidth>
+                      <InputLabel>Sévérité</InputLabel>
+                      <Select
+                        value={testSeverity}
+                        label="Sévérité"
+                        onChange={(e) => setTestSeverity(e.target.value as any)}
+                      >
+                        <MenuItem value="low">Faible</MenuItem>
+                        <MenuItem value="medium">Moyenne</MenuItem>
+                        <MenuItem value="high">Élevée</MenuItem>
+                        <MenuItem value="critical">Critique</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Button
+                      variant="contained"
+                      startIcon={<Send />}
+                      onClick={handleSendTestNotification}
+                      disabled={!testMessage.trim()}
+                    >
+                      Envoyer notification de test
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
 
-            {/* Contenu des onglets */}
-            <TabPanel value={tabValue} index={0}>
-              <NotificationsList 
-                filters={currentFilters}
-                showStats={true}
-                maxHeight="70vh"
-              />
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={1}>
-              <NotificationsList 
-                filters={currentFilters}
-                showStats={true}
-                maxHeight="70vh"
-              />
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={2}>
-              <NotificationsList 
-                filters={currentFilters}
-                showStats={true}
-                maxHeight="70vh"
-              />
-            </TabPanel>
-          </Paper>
-        </Grid>
-      </Grid>
+            <Grid size = {{ xs:12, md:6 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Contrôles de connexion
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Button
+                      variant="outlined"
+                      onClick={connect}
+                      disabled={isConnected}
+                      fullWidth
+                    >
+                      Se connecter
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={disconnect}
+                      disabled={!isConnected}
+                      fullWidth
+                    >
+                      Se déconnecter
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={reconnect}
+                      fullWidth
+                    >
+                      Reconnecter
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => sendMessage({ type: 'ping' })}
+                      disabled={!isConnected}
+                      fullWidth
+                    >
+                      Envoyer ping
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </TabPanel>
+      )}
     </Container>
   );
-});
-
-export default NotificationsPage;
+}
