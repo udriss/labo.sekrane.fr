@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
     const userRole = (session.user as any).role;
     
     const notifications = await query(`
-      SELECT n.*, 
+      SELECT n.id, n.user_id, n.user_role, n.target_roles, n.module, n.action_type,
+             CAST(n.message AS CHAR) as message,
+             n.details, n.severity, n.entity_type, n.entity_id, n.triggered_by,
+             n.reason, n.specific_reason, n.created_at, n.updated_at,
              CASE WHEN nrs.is_read IS NOT NULL THEN nrs.is_read 
                   WHEN n.user_id = ? THEN n.is_read 
                   ELSE FALSE END as isRead,

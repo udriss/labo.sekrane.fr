@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useSession } from 'next-auth/react';
 import { useNotificationContext } from '@/components/notifications/NotificationProvider';
+import NotificationItem from '@/components/notifications/NotificationItem';
 import { toast } from 'react-hot-toast';
 
 interface TabPanelProps {
@@ -362,64 +363,15 @@ export default function NotificationsPage() {
               <List>
                 {filteredNotifications.map((notification, index) => (
                   <React.Fragment key={notification.id}>
-                    <ListItem
-                      sx={{
-                        bgcolor: notification.isRead ? 'transparent' : 'action.hover',
-                        borderRadius: 1,
-                        mb: 1
-                      }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <span>{getSeverityIcon(notification.severity)}</span>
-                            <Typography variant="subtitle1" component="span">
-                              {formatMessage(notification.message)}
-                            </Typography>
-                            {!notification.isRead && (
-                              <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
-                            )}
-                          </Box>
-                        }
-                        secondary={
-                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                            <Chip
-                              label={notification.module}
-                              size="small"
-                              variant="outlined"
-                            />
-                            <Chip
-                              label={notification.severity}
-                              size="small"
-                              color={getSeverityColor(notification.severity) as any}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {formatTimestamp(notification.timestamp)}
-                            </Typography>
-                          </Stack>
-                        }
+                    <ListItem sx={{ p: 0 }}>
+                      <NotificationItem 
+                        notification={notification}
+                        onClick={() => {/* Optionnel: action au clic */}}
+                        compact={false}
+                        showActions={true}
+                        onMarkRead={() => markAsRead(notification.id)}
+                        onDelete={() => clearNotification(notification.id)}
                       />
-                      <ListItemSecondaryAction>
-                        <Stack direction="row" spacing={1}>
-                          {!notification.isRead && (
-                            <IconButton
-                              size="small"
-                              onClick={() => markAsRead(notification.id)}
-                              title="Marquer comme lue"
-                            >
-                              <DoneAll />
-                            </IconButton>
-                          )}
-                          <IconButton
-                            size="small"
-                            onClick={() => clearNotification(notification.id)}
-                            color="error"
-                            title="Supprimer"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Stack>
-                      </ListItemSecondaryAction>
                     </ListItem>
                     {index < filteredNotifications.length - 1 && <Divider />}
                   </React.Fragment>

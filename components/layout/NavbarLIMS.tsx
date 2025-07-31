@@ -12,17 +12,15 @@ import {
 import {
   Menu as MenuIcon, Notifications, Brightness4, Brightness7,
   AccountCircle, Logout, Settings, Search as SearchIcon, 
-  Person, Info, Error as ErrorIcon, Warning, 
-  NotificationsActive, Circle, AccessTime
+  Person, NotificationsActive
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useAppSettings } from '@/app/layout';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
 import type { WebSocketNotification } from '@/types/notifications';
+import NotificationItem from '@/components/notifications/NotificationItem';
 
 
 
@@ -127,41 +125,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     }
   },
 }));
-
-const getSeverityIcon = (severity: string, isDarkMode: boolean) => {
-  const iconColor = isDarkMode ? '#ffffff' : '#000000';
-  
-  const icons = {
-    low: <Info fontSize="small" sx={{ color: iconColor }} />,
-    medium: <Warning fontSize="small" sx={{ color: iconColor }} />,
-    high: <ErrorIcon fontSize="small" sx={{ color: iconColor }} />,
-    critical: <ErrorIcon fontSize="small" sx={{ color: iconColor }} />
-  };
-  
-  return icons[severity as keyof typeof icons] || icons.low;
-};
-
-const getNotificationMessage = (message: any, locale: string = 'fr'): string => {
-  // Si c'est une chaîne, la retourner directement
-  if (typeof message === 'string') return message;
-  
-  // Si c'est un objet avec une propriété text, l'utiliser
-  if (typeof message === 'object' && message !== null) {
-    if (message.text) return message.text;
-    
-    // Sinon chercher une propriété correspondant à la locale
-    if (message[locale]) return message[locale];
-    if (message.fr) return message.fr;
-    if (message.en) return message.en;
-    
-    // Dernier recours: prendre la première valeur
-    const firstValue = Object.values(message)[0];
-    if (firstValue && typeof firstValue === 'string') return firstValue;
-  }
-  
-  // Valeur par défaut
-  return 'Message de notification';
-};
 
 interface NavbarLIMSProps {
   onMenuClick: () => void;
@@ -303,43 +266,12 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           ) : (
             <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
               {notifications.slice(0, 10).map((notification) => (
-                <ListItem
-                  key={notification.id}
-                  disablePadding
-                  sx={{
-                    bgcolor: notification.isRead ? 'transparent' : 'action.hover',
-                    borderLeft: notification.isRead ? 'none' : '4px solid',
-                    borderLeftColor: 'primary.main'
-                  }}
-                >
-                  <ListItemButton onClick={() => handleNotificationClick(notification)}>
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: 'primary.main' }}>
-                        {getSeverityIcon(notification.severity, isDarkMode)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: notification.isRead ? 400 : 600, flex: 1 }}>
-                            {getNotificationMessage(notification.message, 'fr')}
-                          </Typography>
-                          {!notification.isRead && <Circle sx={{ fontSize: 8, color: 'primary.main' }} />}
-                        </Box>
-                      }
-                      secondary={
-                        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                          {notification.module && (
-                            <Chip component="span" label={notification.module} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
-                          )}
-                          <Typography component="span" variant="caption" color="text.secondary">
-                            <AccessTime sx={{ fontSize: 12, mr: 0.5 }} />
-                            {formatDistanceToNow(new Date(notification.createdAt || notification.timestamp || new Date()), { addSuffix: true, locale: fr })}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </ListItemButton>
+                <ListItem key={notification.id} disablePadding>
+                  <NotificationItem 
+                    notification={notification}
+                    onClick={() => handleNotificationClick(notification)}
+                    compact={true}
+                  />
                 </ListItem>
               ))}
             </List>

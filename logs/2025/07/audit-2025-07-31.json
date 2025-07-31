@@ -7063,5 +7063,188 @@
       "duration": 8
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "db16cb34-4892-4505-9b60-ce9355752a62",
+    "timestamp": "2025-07-31T19:01:27.220Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_A2ZF1BSLZBW8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+        "query": {},
+        "body": {
+          "quantity": 84.5
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_A2ZF1BSLZBW8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": "84.500",
+            "unit": "g",
+            "minQuantity": null,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2631.600",
+            "createdAt": "2025-07-23T12:36:55.000Z",
+            "updatedAt": "2025-07-31T19:01:27.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_A2ZF1BSLZBW8",
+              "name": "Acide chlorhydrique",
+              "formula": "HCl",
+              "molfile": null,
+              "casNumber": "7647-01-0",
+              "barcode": null,
+              "quantity": "532.100",
+              "unit": "g",
+              "minQuantity": null,
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2631.600",
+              "createdAt": "2025-07-23T12:36:55.000Z",
+              "updatedAt": "2025-07-31T09:08:03.000Z"
+            },
+            "updateData": {
+              "quantity": 84.5
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 27,
+        "timestamp": "2025-07-31T19:01:27.220Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "532.100",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-07-31T09:08:03.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "84.500",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-07-31T19:01:27.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "84.500",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753988487193_j5bawo0k1",
+      "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+      "method": "PUT",
+      "duration": 27
+    },
+    "status": "SUCCESS"
   }
 ]
