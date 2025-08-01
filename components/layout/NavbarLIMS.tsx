@@ -161,8 +161,6 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 
   // Debug pour voir les notifications au chargement
   useEffect(() => {
-    console.log('🔔 [NavbarLIMS] Current notifications:', notifications.length);
-    console.log('🔔 [NavbarLIMS] Stats:', stats);
   }, [notifications, stats]);
   
   // Charger les notifications depuis la base de données au démarrage

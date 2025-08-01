@@ -46,6 +46,7 @@ interface CreateTPDialogProps {
   tpPresets: any[]
   eventToCopy?: CalendarEvent | null // NOUVEAU: événement à copier
   isMobile?: boolean
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour déterminer l'API à utiliser
 }
 
 export function CreateTPDialog({
@@ -60,7 +61,8 @@ export function CreateTPDialog({
   saveNewClass,
   tpPresets,
   eventToCopy,
-  isMobile = false
+  isMobile = false,
+  discipline = 'chimie' // Par défaut chimie pour la compatibilité
 }: CreateTPDialogProps) {
   const theme = useTheme()
 
@@ -360,7 +362,8 @@ const handleCreateCalendarEvent = async () => {
     }
 
     // Créer l'événement
-    const response = await fetch('/api/calendrier', {
+    const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+    const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(eventData)

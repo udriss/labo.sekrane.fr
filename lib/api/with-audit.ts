@@ -75,6 +75,52 @@ function createChemicalNotificationMessage(
       return `${userName} a modifié la quantité de ${chemicalName} : ${oldQuantity}${unit} → ${newQuantity}${unit}`;
     }
     
+    // Changement de localisation (salle et/ou localisation précise)
+    if (details?.locationUpdate) {
+      const oldRoom = details?.before?.room || '';
+      const newRoom = details?.after?.room || '';
+      const oldLocation = details?.before?.location || '';
+      const newLocation = details?.after?.location || '';
+      
+      if (oldRoom !== newRoom && oldLocation !== newLocation) {
+        return `${userName} a déplacé ${chemicalName} : ${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}`;
+      } else if (oldRoom !== newRoom) {
+        return `${userName} a déplacé ${chemicalName} de ${oldRoom} vers ${newRoom}`;
+      } else if (oldLocation !== newLocation) {
+        return `${userName} a changé la localisation de ${chemicalName} : ${oldLocation} → ${newLocation}`;
+      }
+    }
+    
+    // Changement de date d'expiration
+    if (details?.expirationUpdate && details?.before?.expirationDate !== details?.after?.expirationDate) {
+      const oldDate = details?.before?.expirationDate ? new Date(details.before.expirationDate).toLocaleDateString('fr-FR') : 'aucune';
+      const newDate = details?.after?.expirationDate ? new Date(details.after.expirationDate).toLocaleDateString('fr-FR') : 'aucune';
+      return `${userName} a modifié la date d'expiration de ${chemicalName} : ${oldDate} → ${newDate}`;
+    }
+    
+    // Changement de statut
+    if (details?.statusUpdate && details?.before?.status !== details?.after?.status) {
+      const oldStatus = details?.before?.status || '';
+      const newStatus = details?.after?.status || '';
+      const statusLabels: { [key: string]: string } = {
+        'IN_STOCK': 'En stock',
+        'LOW_STOCK': 'Stock faible',
+        'OUT_OF_STOCK': 'Rupture de stock',
+        'EXPIRED': 'Expiré',
+        'EMPTY': 'Vide',
+        'OPENED': 'Ouvert',
+        'QUARANTINE': 'Quarantaine'
+      };
+      return `${userName} a changé le statut de ${chemicalName} : ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}`;
+    }
+    
+    // Changement de fournisseur
+    if (details?.supplierUpdate && details?.before?.supplierName !== details?.after?.supplierName) {
+      const oldSupplier = details?.before?.supplierName || 'Aucun fournisseur';
+      const newSupplier = details?.after?.supplierName || 'Aucun fournisseur';
+      return `${userName} a changé le fournisseur de ${chemicalName} : ${oldSupplier} → ${newSupplier}`;
+    }
+    
     // Mise à jour générale
     const fieldsUpdated = details?.fields || [];
     if (fieldsUpdated.length > 0) {
@@ -115,6 +161,56 @@ function createEquipmentNotificationMessage(
       const oldQuantity = details.before.quantity;
       const newQuantity = details.after.quantity;
       return `${userName} a modifié la quantité de ${equipmentName} : ${oldQuantity} → ${newQuantity}`;
+    }
+    
+    // Changement de localisation (salle et/ou localisation précise)
+    if (details?.locationUpdate) {
+      const oldRoom = details?.before?.room || '';
+      const newRoom = details?.after?.room || '';
+      const oldLocation = details?.before?.location || '';
+      const newLocation = details?.after?.location || '';
+      
+      if (oldRoom !== newRoom && oldLocation !== newLocation) {
+        return `${userName} a déplacé ${equipmentName} : ${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}`;
+      } else if (oldRoom !== newRoom) {
+        return `${userName} a déplacé ${equipmentName} de ${oldRoom} vers ${newRoom}`;
+      } else if (oldLocation !== newLocation) {
+        return `${userName} a changé la localisation de ${equipmentName} : ${oldLocation} → ${newLocation}`;
+      }
+    }
+    
+    // Changement de statut
+    if (details?.statusUpdate && details?.before?.status !== details?.after?.status) {
+      const oldStatus = details?.before?.status || '';
+      const newStatus = details?.after?.status || '';
+      const statusLabels: { [key: string]: string } = {
+        'AVAILABLE': 'Disponible',
+        'IN_USE': 'En cours d\'utilisation',
+        'MAINTENANCE': 'En maintenance',
+        'OUT_OF_ORDER': 'Hors service',
+        'RESERVED': 'Réservé'
+      };
+      return `${userName} a changé le statut de ${equipmentName} : ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}`;
+    }
+    
+    // Changement de date d'achat
+    if (details?.purchaseDateUpdate && details?.before?.purchase_date !== details?.after?.purchase_date) {
+      const oldDate = details?.before?.purchase_date ? new Date(details.before.purchase_date).toLocaleDateString('fr-FR') : 'aucune';
+      const newDate = details?.after?.purchase_date ? new Date(details.after.purchase_date).toLocaleDateString('fr-FR') : 'aucune';
+      return `${userName} a modifié la date d'achat de ${equipmentName} : ${oldDate} → ${newDate}`;
+    }
+    
+    // Changement de modèle ou numéro de série
+    if (details?.modelUpdate && details?.before?.model !== details?.after?.model) {
+      const oldModel = details?.before?.model || 'Non spécifié';
+      const newModel = details?.after?.model || 'Non spécifié';
+      return `${userName} a modifié le modèle de ${equipmentName} : ${oldModel} → ${newModel}`;
+    }
+    
+    if (details?.serialUpdate && details?.before?.serial_number !== details?.after?.serial_number) {
+      const oldSerial = details?.before?.serial_number || 'Non spécifié';
+      const newSerial = details?.after?.serial_number || 'Non spécifié';
+      return `${userName} a modifié le numéro de série de ${equipmentName} : ${oldSerial} → ${newSerial}`;
     }
     
     // Mise à jour générale

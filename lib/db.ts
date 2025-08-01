@@ -247,7 +247,7 @@ export async function initializeDatabase() {
 
     // Table des types d'équipements
     await query(`
-      CREATE TABLE IF NOT EXISTS equipment_types (
+      CREATE TABLE IF NOT EXISTS chimie_equipment_types (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         svg VARCHAR(500) DEFAULT NULL,
@@ -262,7 +262,7 @@ export async function initializeDatabase() {
 
     // Table des items d'équipements (sous-catégories)
     await query(`
-      CREATE TABLE IF NOT EXISTS equipment_items (
+      CREATE TABLE IF NOT EXISTS chimie_equipment_items (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         svg VARCHAR(500) DEFAULT NULL,
@@ -278,13 +278,13 @@ export async function initializeDatabase() {
         INDEX idx_name (name),
         INDEX idx_equipment_type_id (equipment_type_id),
         INDEX idx_is_custom (is_custom),
-        FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE CASCADE
+        FOREIGN KEY (equipment_type_id) REFERENCES chimie_equipment_types(id) ON DELETE CASCADE
       )
     `);
 
     // Table des équipements (inventaire)
     await query(`
-      CREATE TABLE IF NOT EXISTS equipment (
+      CREATE TABLE IF NOT EXISTS chimie_equipment (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         equipment_type_id VARCHAR(100) NOT NULL,
@@ -309,8 +309,8 @@ export async function initializeDatabase() {
         INDEX idx_equipment_item_id (equipment_item_id),
         INDEX idx_room (room),
         INDEX idx_serial_number (serial_number),
-        FOREIGN KEY (equipment_type_id) REFERENCES equipment_types(id) ON DELETE RESTRICT,
-        FOREIGN KEY (equipment_item_id) REFERENCES equipment_items(id) ON DELETE SET NULL
+        FOREIGN KEY (equipment_type_id) REFERENCES chimie_equipment_types(id) ON DELETE RESTRICT,
+        FOREIGN KEY (equipment_item_id) REFERENCES chimie_equipment_items(id) ON DELETE SET NULL
       )
     `);
 

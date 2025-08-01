@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       return withConnection(async (connection) => {
         // Récupérer les types d'équipements
         const [typeRows] = await connection.execute(`
-          SELECT * FROM equipment_types 
+          SELECT * FROM chimie_equipment_types 
           ORDER BY is_custom ASC, name ASC
         `);
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         const typesWithItems = await Promise.all(
           types.map(async (type) => {
             const [itemRows] = await connection.execute(`
-              SELECT * FROM equipment_items 
+              SELECT * FROM chimie_equipment_items 
               WHERE equipment_type_id = ? 
               ORDER BY name ASC
             `, [type.id]);
@@ -101,7 +101,7 @@ export const POST = withAudit(
 
         // Insérer le nouveau type
         await connection.execute(`
-          INSERT INTO equipment_types (id, name, svg, is_custom, owner_id)
+          INSERT INTO chimie_equipment_types (id, name, svg, is_custom, owner_id)
           VALUES (?, ?, ?, ?, ?)
         `, [
           typeId,
@@ -117,7 +117,7 @@ export const POST = withAudit(
             const itemId = item.id || `${typeId}_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
             await connection.execute(`
-              INSERT INTO equipment_items (
+              INSERT INTO chimie_equipment_items (
                 id, name, svg, equipment_type_id, volumes, resolutions, 
                 tailles, materiaux, custom_fields, is_custom
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -138,12 +138,12 @@ export const POST = withAudit(
 
         // Récupérer le type créé avec ses items
         const [typeRows] = await connection.execute(
-          'SELECT * FROM equipment_types WHERE id = ?',
+          'SELECT * FROM chimie_equipment_types WHERE id = ?',
           [typeId]
         );
 
         const [itemRows] = await connection.execute(
-          'SELECT * FROM equipment_items WHERE equipment_type_id = ?',
+          'SELECT * FROM chimie_equipment_items WHERE equipment_type_id = ?',
           [typeId]
         );
 
@@ -202,7 +202,7 @@ export const PUT = withAudit(
       return withConnection(async (connection) => {
         // Vérifier que le type existe
         const [existingRows] = await connection.execute(
-          'SELECT id FROM equipment_types WHERE id = ?',
+          'SELECT id FROM chimie_equipment_types WHERE id = ?',
           [data.id]
         );
 
@@ -215,7 +215,7 @@ export const PUT = withAudit(
 
         // Mettre à jour le type
         await connection.execute(`
-          UPDATE equipment_types 
+          UPDATE chimie_equipment_types 
           SET name = ?, svg = ?, updated_at = NOW()
           WHERE id = ?
         `, [
@@ -228,7 +228,7 @@ export const PUT = withAudit(
         if (data.items && Array.isArray(data.items)) {
           // Supprimer les anciens items
           await connection.execute(
-            'DELETE FROM equipment_items WHERE equipment_type_id = ?',
+            'DELETE FROM chimie_equipment_items WHERE equipment_type_id = ?',
             [data.id]
           );
 
@@ -237,7 +237,7 @@ export const PUT = withAudit(
             const itemId = item.id || `${data.id}_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
             await connection.execute(`
-              INSERT INTO equipment_items (
+              INSERT INTO chimie_equipment_items (
                 id, name, svg, equipment_type_id, volumes, resolutions, 
                 tailles, materiaux, custom_fields, is_custom
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -290,7 +290,7 @@ export const DELETE = withAudit(
       return withConnection(async (connection) => {
         // Vérifier que le type existe
         const [existingRows] = await connection.execute(
-          'SELECT id, name FROM equipment_types WHERE id = ?',
+          'SELECT id, name FROM chimie_equipment_types WHERE id = ?',
           [typeId]
         );
 
@@ -305,7 +305,7 @@ export const DELETE = withAudit(
 
         // Vérifier s'il y a des équipements qui utilisent ce type
         const [equipmentRows] = await connection.execute(
-          'SELECT COUNT(*) as count FROM equipment WHERE equipment_type_id = ?',
+          'SELECT COUNT(*) as count FROM chimie_equipment WHERE equipment_type_id = ?',
           [typeId]
         );
 
@@ -319,7 +319,7 @@ export const DELETE = withAudit(
         }
 
         // Supprimer le type (les items seront supprimés automatiquement grâce à ON DELETE CASCADE)
-        await connection.execute('DELETE FROM equipment_types WHERE id = ?', [typeId]);
+        await connection.execute('DELETE FROM chimie_equipment_types WHERE id = ?', [typeId]);
 
         return NextResponse.json({ 
           success: true,

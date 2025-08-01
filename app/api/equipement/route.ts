@@ -32,7 +32,7 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
   return withConnection(async (connection) => {
     // Total des équipements
     const [totalResult] = await connection.execute(
-      'SELECT COUNT(*) as total FROM equipment'
+      'SELECT COUNT(*) as total FROM chimie_equipment'
     );
     const total = (totalResult as any)[0].total;
 
@@ -41,7 +41,7 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
       SELECT 
         status,
         COUNT(*) as count 
-      FROM equipment 
+      FROM chimie_equipment
       GROUP BY status
     `);
 
@@ -78,8 +78,8 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
       SELECT 
         et.name as type_name,
         COUNT(e.id) as count
-      FROM equipment e
-      JOIN equipment_types et ON e.equipment_type_id = et.id
+      FROM chimie_equipment e
+      JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
       GROUP BY et.id, et.name
       ORDER BY count DESC
     `);
@@ -96,7 +96,7 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
         name,
         quantity,
         min_quantity
-      FROM equipment 
+      FROM chimie_equipment 
       WHERE min_quantity IS NOT NULL 
         AND quantity <= min_quantity
         AND status = 'AVAILABLE'
@@ -139,9 +139,9 @@ export async function GET(request: NextRequest) {
             ei.name as item_name,
             ei.svg as item_svg,
             ei.volumes as item_volumes
-        FROM equipment e
-        LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
-        LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+        FROM chimie_equipment e
+        LEFT JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
+        LEFT JOIN chimie_equipment_items ei ON e.equipment_item_id = ei.id
         WHERE 1=1
       `;
       const params: any[] = [];
@@ -223,7 +223,7 @@ export const POST = withAudit(
 
         // D'abord, vérifier si data.equipmentTypeId est un equipment_item_id
         const [itemCheck] = await connection.execute(
-          'SELECT id, equipment_type_id FROM equipment_items WHERE id = ?',
+          'SELECT id, equipment_type_id FROM chimie_equipment_items WHERE id = ?',
           [data.equipmentTypeId]
         );
 
@@ -236,7 +236,7 @@ export const POST = withAudit(
         } else {
           // Vérifier si c'est un equipment_type_id direct
           const [typeRows] = await connection.execute(
-            'SELECT id, name FROM equipment_types WHERE id = ?',
+            'SELECT id, name FROM chimie_equipment_types WHERE id = ?',
             [data.equipmentTypeId]
           );
 
@@ -257,7 +257,7 @@ export const POST = withAudit(
         // Validation supplémentaire : si equipmentItemId est fourni, s'assurer qu'il correspond au type
         if (equipmentItemId) {
           const [validationRows] = await connection.execute(
-            'SELECT id FROM equipment_items WHERE id = ? AND equipment_type_id = ?',
+            'SELECT id FROM chimie_equipment_items WHERE id = ? AND equipment_type_id = ?',
             [equipmentItemId, equipmentTypeId]
           );
 
@@ -285,7 +285,7 @@ export const POST = withAudit(
 
         // Insérer le nouvel équipement
         await connection.execute(`
-          INSERT INTO equipment (
+          INSERT INTO chimie_equipment (
             id, name, equipment_type_id, equipment_item_id, model, serial_number,
             barcode, quantity, min_quantity, volume, location, room, status,
             purchase_date, notes
@@ -317,9 +317,9 @@ export const POST = withAudit(
             ei.name as item_name,
             ei.svg as item_svg,
             ei.volumes as item_volumes
-          FROM equipment e
-          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
-          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+          FROM chimie_equipment e
+          LEFT JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN chimie_equipment_items ei ON e.equipment_item_id = ei.id
           WHERE e.id = ?
         `, [equipmentId]);
 

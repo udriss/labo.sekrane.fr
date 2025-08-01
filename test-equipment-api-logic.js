@@ -27,7 +27,7 @@ async function testEquipmentAPI() {
       e.id, e.name, e.equipment_type_id, e.equipment_item_id,
       et.name as type_name,
       ei.name as item_name
-    FROM equipment e
+    FROM chimie_equipment e
     LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
     LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
     LIMIT 3

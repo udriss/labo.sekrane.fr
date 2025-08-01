@@ -75,7 +75,7 @@ async function migrateEquipment() {
       try {
         // Insérer le type d'équipement
         await connection.execute(`
-          INSERT INTO equipment_types (id, name, svg, is_custom, created_at, updated_at)
+          INSERT INTO chimie_equipment_types (id, name, svg, is_custom, created_at, updated_at)
           VALUES (?, ?, ?, ?, NOW(), NOW())
           ON DUPLICATE KEY UPDATE
             name = VALUES(name),
@@ -94,7 +94,7 @@ async function migrateEquipment() {
         // Insérer les items de ce type
         for (const item of type.items || []) {
           await connection.execute(`
-            INSERT INTO equipment_items (id, name, svg, equipment_type_id, volumes, resolutions, tailles, materiaux, custom_fields, is_custom, created_at, updated_at)
+            INSERT INTO chimie_equipment_items (id, name, svg, equipment_type_id, volumes, resolutions, tailles, materiaux, custom_fields, is_custom, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
             ON DUPLICATE KEY UPDATE
               name = VALUES(name),
@@ -159,7 +159,7 @@ async function migrateEquipment() {
         console.log(`  - Item final: ${equipmentItemId}`);
         
         await connection.execute(`
-          INSERT INTO equipment (
+          INSERT INTO chimie_equipment  (
             id, name, equipment_type_id, equipment_item_id, model, serial_number, 
             barcode, quantity, min_quantity, volume, location, room, status, 
             purchase_date, notes, created_at, updated_at
@@ -220,9 +220,9 @@ async function migrateEquipment() {
     
     console.log('\n📊 Vérification des données migrées...');
     
-    const [typesCount] = await connection.execute('SELECT COUNT(*) as count FROM equipment_types');
-    const [itemsCount] = await connection.execute('SELECT COUNT(*) as count FROM equipment_items');
-    const [equipmentCount] = await connection.execute('SELECT COUNT(*) as count FROM equipment');
+    const [typesCount] = await connection.execute('SELECT COUNT(*) as count FROM chimie_equipment_types');
+    const [itemsCount] = await connection.execute('SELECT COUNT(*) as count FROM chimie_equipment_items');
+    const [equipmentCount] = await connection.execute('SELECT COUNT(*) as count FROM chimie_equipment');
     
     console.log(`✅ Types d'équipements migrés: ${typesCount[0].count}`);
     console.log(`✅ Items d'équipements migrés: ${itemsCount[0].count}`);
@@ -231,7 +231,7 @@ async function migrateEquipment() {
     // Affichage des équipements par statut
     const [statusStats] = await connection.execute(`
       SELECT status, COUNT(*) as count 
-      FROM equipment 
+      FROM chimie_equipment 
       GROUP BY status
     `);
     

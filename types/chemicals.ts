@@ -64,6 +64,7 @@ export interface Chemical {
   openedDate?: Date | string | null
   storage?: string | null
   room?: string | null
+  location?: string | null
   cabinet?: string | null
   shelf?: string | null
   hazardClass?: HazardClass | null

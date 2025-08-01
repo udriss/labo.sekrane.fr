@@ -1,3 +1,5 @@
+// types/prisma.ts
+
 // Types et enums définis manuellement basés sur le schéma Prisma
 
 // Import and re-export Prisma client types

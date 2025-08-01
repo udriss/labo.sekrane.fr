@@ -81,7 +81,9 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
   const [error, setError] = useState<string | null>(null)
   const [presetCategories, setPresetCategories] = useState<any[]>([])
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
-  
+
+  const [suppliers, setSuppliers] = useState<any[]>([])
+
   // États pour l'auto-complétion
   const [nameOptions, setNameOptions] = useState<any[]>([])
   const [casOptions, setCasOptions] = useState<any[]>([])

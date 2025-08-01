@@ -77,14 +77,11 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     
     try {
       setIsLoading(true);
-      console.log('🔄 [WebSocket] Loading database notifications for user:', userId);
       
       const response = await fetch(`/api/notifications?userId=${userId}`);
-      console.log('📡 [WebSocket] API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 [WebSocket] Loaded notifications:', data);
         
         if (data.success && Array.isArray(data.notifications)) {
           // Convertir les notifications de la base de données au format WebSocketNotification
@@ -101,8 +98,6 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
             triggeredBy: dbNotif.triggeredBy || dbNotif.triggered_by,
             isRead: !!dbNotif.isRead
           }));
-          
-          console.log('📋 [WebSocket] Converted notifications:', dbNotifications.length);
           
           // Fusionner avec les notifications WebSocket existantes
           setNotifications(prev => {
@@ -159,7 +154,6 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     await loadDatabaseNotifications();
 
     try {
-      console.log(`🔄 [WebSocket] Attempting to connect for user ${userId}...`);
       setIsLoading(true);
       setError(null);
       
@@ -189,8 +183,6 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
             setLastHeartbeat(new Date());
             return; // Process silently
           }
-
-          console.log('📨 [WebSocket] Message received:', message);
 
           switch (message.type) {
             case 'notification':
@@ -237,7 +229,6 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
   }, [userId, autoReconnect, maxReconnectAttempts, reconnectDelay, disconnect]);
 
   const reconnect = useCallback(() => {
-    console.log('🔄 [WebSocket] Manual reconnect triggered.');
     reconnectAttemptsRef.current = 0; // Reset attempts for manual reconnect
     connect();
   }, [connect]);
@@ -259,12 +250,10 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     if (!userId) return;
     
     // Charger les notifications au montage
-    console.log('🔄 [WebSocket] Initial database load triggered for user:', userId);
     loadDatabaseNotifications();
     
     // Charger les notifications toutes les 30 secondes
     const intervalId = setInterval(() => {
-      console.log('🔄 [WebSocket] Periodic database refresh triggered');
       loadDatabaseNotifications();
     }, 30000);
     

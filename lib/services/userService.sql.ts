@@ -37,8 +37,21 @@ export class UserServiceSQL {
       'SELECT * FROM users WHERE id = ? LIMIT 1',
       [id]
     );
-    if (!rows || rows.length === 0) return null;
-    return UserServiceSQL.deserialize(rows[0]);
+
+    // Vérifier si rows est un tableau et contient des éléments
+    if (!Array.isArray(rows) || rows.length === 0) {
+      console.log(`[UserServiceSQL] Aucune donnée trouvée pour l'ID: ${id}`);
+      return null;
+    }
+    
+    const userRow = rows[0];
+    if (!userRow) {
+      console.log(`[UserServiceSQL] Première ligne vide pour l'ID: ${id}`);
+      return null;
+    }
+    
+    console.log(`[UserServiceSQL] Utilisateur trouvé pour l'ID: ${id}: `, userRow);
+    return UserServiceSQL.deserialize(userRow);
   }
 
   // Vérifier le mot de passe
@@ -91,6 +104,11 @@ export class UserServiceSQL {
     );
     // Récupérer l'utilisateur créé
     const [rows] = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [userData.email]);
+    
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error('Erreur lors de la récupération de l\'utilisateur créé');
+    }
+    
     return UserServiceSQL.deserialize(rows[0]);
   }
 
@@ -118,7 +136,13 @@ export class UserServiceSQL {
 
   // Obtenir tous les utilisateurs actifs
   static async getAllActive(): Promise<User[]> {
-    const rows = await query('SELECT * FROM users WHERE isActive = 1');
+    const [rows] = await query('SELECT * FROM users WHERE isActive = 1');
+    
+    if (!Array.isArray(rows)) {
+      console.error('[UserServiceSQL] Réponse inattendue de la base de données:', rows);
+      return [];
+    }
+    
     return rows.map(UserServiceSQL.deserialize).filter(Boolean) as User[];
   }
 

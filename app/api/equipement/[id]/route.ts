@@ -19,16 +19,16 @@ export async function GET(
       return withConnection(async (connection) => {
         const [rows] = await connection.execute(`
           SELECT 
-            e.*,
-            et.name as type_name,
-            et.svg as type_svg,
-            ei.name as item_name,
-            ei.svg as item_svg,
-            ei.volumes as item_volumes
-          FROM equipment e
-          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
-          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
-          WHERE e.id = ?
+            ec.*,
+            ect.name as type_name,
+            ect.svg as type_svg,
+            eci.name as item_name,
+            eci.svg as item_svg,
+            eci.volumes as item_volumes
+          FROM chimie_equipment ec
+          LEFT JOIN chimie_equipment_types ect ON ec.equipment_type_id = ect.id
+          LEFT JOIN chimie_equipment_items eci ON ec.equipment_item_id = eci.id
+          WHERE ec.id = ?
         `, [id]);
 
         const equipment = (rows as any[])[0];
@@ -75,9 +75,9 @@ export const PUT = withAudit(
             e.*,
             et.name as type_name,
             ei.name as item_name
-          FROM equipment e
-          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
-          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
+          FROM chimie_equipment e
+          LEFT JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN chimie_equipment_items ei ON e.equipment_item_id = ei.id
           WHERE e.id = ?
         `, [id]);
 
@@ -93,7 +93,7 @@ export const PUT = withAudit(
         // Si equipment_type_id est fourni, vérifier qu'il existe
         if (data.equipmentItemId) {
           const [typeRows] = await connection.execute(
-            'SELECT id FROM equipment_types WHERE id = ?',
+            'SELECT id FROM chimie_equipment_types WHERE id = ?',
             [data.equipmentTypeId]
           );
 
@@ -108,7 +108,7 @@ export const PUT = withAudit(
         // Si equipment_item_id est fourni, vérifier qu'il existe et est compatible
         if (data.equipmentItemId && data.equipmentTypeId) {
           const [itemRows] = await connection.execute(
-            'SELECT id FROM equipment_items WHERE id = ? AND equipment_type_id = ?',
+            'SELECT id FROM chimie_equipment_items WHERE id = ? AND equipment_type_id = ?',
             [data.equipmentItemId, data.equipmentTypeId]
           );
 
@@ -180,23 +180,23 @@ export const PUT = withAudit(
 
         // Exécuter la mise à jour
         await connection.execute(
-          `UPDATE equipment SET ${updateFields.join(', ')} WHERE id = ?`,
+          `UPDATE chimie_equipment SET ${updateFields.join(', ')} WHERE id = ?`,
           updateValues
         );
 
         // Récupérer l'équipement mis à jour avec ses relations
         const [updatedRows] = await connection.execute(`
           SELECT 
-            e.*,
-            et.name as type_name,
-            et.svg as type_svg,
-            ei.name as item_name,
-            ei.svg as item_svg,
-            ei.volumes as item_volumes
-          FROM equipment e
-          LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
-          LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
-          WHERE e.id = ?
+            ec.*,
+            ect.name as type_name,
+            ect.svg as type_svg,
+            eci.name as item_name,
+            eci.svg as item_svg,
+            eci.volumes as item_volumes
+          FROM chimie_equipment ec
+          LEFT JOIN chimie_equipment_types ect ON ec.equipment_type_id = ect.id
+          LEFT JOIN chimie_equipment_items eci ON ec.equipment_item_id = eci.id
+          WHERE ec.id = ?
         `, [id]);
 
         const updatedEquipment = (updatedRows as any[])[0];
@@ -269,7 +269,7 @@ export const DELETE = withAudit(
       return withConnection(async (connection) => {
         // Vérifier que l'équipement existe
         const [existingRows] = await connection.execute(
-          'SELECT id, name FROM equipment WHERE id = ?',
+          'SELECT id, name FROM chimie_equipment WHERE id = ?',
           [id]
         );
 
@@ -283,7 +283,7 @@ export const DELETE = withAudit(
         const equipment = (existingRows as any[])[0];
 
         // Supprimer l'équipement
-        await connection.execute('DELETE FROM equipment WHERE id = ?', [id]);
+        await connection.execute('DELETE FROM chimie_equipment WHERE id = ?', [id]);
 
         return NextResponse.json({ 
           success: true,

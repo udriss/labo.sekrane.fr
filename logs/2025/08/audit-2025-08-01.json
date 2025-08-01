@@ -96046,5 +96046,7483 @@
       "duration": 30
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "9ea15ef9-c5c5-4259-90d0-1300d542a92b",
+    "timestamp": "2025-08-01T10:42:44.932Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T10:42:44.931Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754044964928_ls4uz9t9y",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e34a059f-1bc3-4ba1-b3c7-70335fb08af8",
+    "timestamp": "2025-08-01T10:42:44.988Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T10:42:44.988Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754044964985_enzmg39zw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "618f3356-17d2-4524-be5c-ae454633c0c8",
+    "timestamp": "2025-08-01T10:43:51.905Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-08-01T10:43:51.905Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754045031889_byttyilmc",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "2929ff64-7950-4f98-ae63-ca67c2feecc4",
+    "timestamp": "2025-08-01T10:43:51.983Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-01T10:43:51.983Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754045031976_08i6oh122",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e11e8d18-0bf4-42a3-8b18-f1991919ced3",
+    "timestamp": "2025-08-01T11:09:47.380Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T11:09:47.380Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046587359_ixs37dtvx",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c367d1f6-74ed-495f-a0a9-b4f466e8466e",
+    "timestamp": "2025-08-01T11:09:47.453Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T11:09:47.453Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046587450_x3usgamrp",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6b29e83c-934b-468a-ae3e-46e5c325e9d9",
+    "timestamp": "2025-08-01T11:10:20.355Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T11:10:20.355Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046620349_2692hi181",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6702b05f-839d-46ea-a40f-479177d3c068",
+    "timestamp": "2025-08-01T11:10:20.393Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T11:10:20.393Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046620390_bvzx95t3q",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cfdf8071-15ba-43ed-90d9-dd96d394405a",
+    "timestamp": "2025-08-01T11:10:52.459Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T11:10:52.459Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046652441_h89y1f306",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "61e15dfd-4bcf-413a-949d-f3cb92d8d124",
+    "timestamp": "2025-08-01T11:10:52.563Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T11:10:52.563Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046652558_at1dskz74",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "67407d7e-1fcf-4cb1-99c0-4e233de62db4",
+    "timestamp": "2025-08-01T11:14:23.635Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-01T11:14:23.635Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754046863628_bexdqhqad",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d65e6e95-f7a6-4064-8ed9-3defd9737086",
+    "timestamp": "2025-08-01T12:41:13.668Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 26,
+        "timestamp": "2025-08-01T12:41:13.668Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754052073642_3f6voezlf",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 26
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cb1ef240-553f-485c-a2e1-caa50c5c297c",
+    "timestamp": "2025-08-01T12:41:54.689Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T12:41:54.688Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754052114677_4n5svxhly",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e3919f4d-2e30-4507-9bc8-07cb94d24090",
+    "timestamp": "2025-08-01T12:41:54.982Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T12:41:54.982Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754052114977_r2e0hgr0p",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d0ef6c90-a6e4-485e-89dd-a33bf2c0f50f",
+    "timestamp": "2025-08-01T13:09:41.137Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 123,
+        "timestamp": "2025-08-01T13:09:41.137Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754053781014_z4d6z65jh",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 123
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9ab667d2-4299-4e62-9428-aada2ad78235",
+    "timestamp": "2025-08-01T13:09:41.262Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-01T13:09:41.262Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754053781255_flnlgqt7t",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1d0a44d5-539a-4201-aa82-db15c25d4885",
+    "timestamp": "2025-08-01T13:09:56.051Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-08-01T13:09:56.051Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754053796039_vrlasvpqh",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "304902ef-1ff8-45f4-8602-bf89a16b412f",
+    "timestamp": "2025-08-01T13:10:09.866Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T13:10:09.866Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754053809860_l08hh09ko",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "134f9a72-30c0-41d5-9d0f-e91ce625a662",
+    "timestamp": "2025-08-01T13:10:28.040Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 13,
+        "timestamp": "2025-08-01T13:10:28.039Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754053828026_2socwno0e",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 13
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a5d03964-aa66-4a03-8051-6c255f2a03b4",
+    "timestamp": "2025-08-01T13:10:28.107Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T13:10:28.107Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754053828100_3vxh3txl0",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c7891981-6841-488f-a525-58fd82fff06b",
+    "timestamp": "2025-08-01T13:10:33.887Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T13:10:33.887Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754053833876_5g76x5ic9",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a10ac057-6380-483b-a389-882b5b3d9525",
+    "timestamp": "2025-08-01T13:27:44.623Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-01T13:27:44.623Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754054864616_qano9p8fs",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e8ccfa9e-073d-4ec9-9df1-4c47f20645ec",
+    "timestamp": "2025-08-01T13:27:44.666Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T13:27:44.666Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754054864658_0fnapoek4",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "78cffb02-1236-4110-b58d-bb5febf18fc6",
+    "timestamp": "2025-08-01T13:27:44.746Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T13:27:44.746Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754054864740_e9us36w46",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d8070ea5-20e1-4506-828d-b292ffaf06e4",
+    "timestamp": "2025-08-01T13:28:19.967Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T13:28:19.967Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754054899957_fzlveeec0",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5811e127-3ef5-408a-b4cc-d29a65c4a52a",
+    "timestamp": "2025-08-01T13:28:33.482Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T13:28:33.482Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754054913461_bxnso6j38",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "055bcc38-9d34-4012-b907-a38541e30f65",
+    "timestamp": "2025-08-01T13:54:20.874Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T13:54:20.874Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056460866_cps1co7o7",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1c03db1e-2f69-46cf-b7ed-aff031dfbbc2",
+    "timestamp": "2025-08-01T13:55:06.364Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T13:55:06.364Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056506343_kyq8hg7if",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c80427c7-1329-4d32-b299-00c674118f8c",
+    "timestamp": "2025-08-01T13:55:12.559Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T13:55:12.559Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056512555_ky8jtmfki",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ef3c752c-6236-4a5c-b643-c33075cc1f1b",
+    "timestamp": "2025-08-01T13:55:13.705Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 20,
+        "timestamp": "2025-08-01T13:55:13.705Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056513685_yb63vdox2",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 20
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8962844a-579e-4c7e-a4e0-0d8fb6f19829",
+    "timestamp": "2025-08-01T13:55:21.028Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T13:55:21.028Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056521010_605807w8z",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "23da8d60-4e91-478b-9388-4f9222860b7c",
+    "timestamp": "2025-08-01T13:56:51.808Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 294,
+        "timestamp": "2025-08-01T13:56:51.808Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056611514_hqjjvkn3c",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 294
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cf3b65b1-ca86-4513-b2dd-b4f4a3c865d7",
+    "timestamp": "2025-08-01T13:57:30.991Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 14,
+        "timestamp": "2025-08-01T13:57:30.990Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056650976_euamuz7yu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 14
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c87d9a87-2dfd-4245-bafb-2fa3f929db78",
+    "timestamp": "2025-08-01T13:58:11.070Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T13:58:11.070Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056691064_nvo3939yw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "675f0d13-9051-4044-91aa-cef9e7240789",
+    "timestamp": "2025-08-01T13:59:27.527Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T13:59:27.527Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056767516_8zrmsc4qv",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e4771ef1-bb48-452b-93b5-80881df81626",
+    "timestamp": "2025-08-01T14:00:00.859Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 86,
+        "timestamp": "2025-08-01T14:00:00.859Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056800773_hayzb33q9",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 86
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "af000e4a-3af3-45de-8989-ef0b35483360",
+    "timestamp": "2025-08-01T14:00:05.751Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 24,
+        "timestamp": "2025-08-01T14:00:05.751Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056805727_79x9pd8jw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 24
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a1ce0f43-0ef6-4cc4-8435-e77b7b5a6a74",
+    "timestamp": "2025-08-01T14:00:07.221Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 74,
+        "timestamp": "2025-08-01T14:00:07.220Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056807146_kkrvz6wn8",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 74
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8d2e8ee1-f43e-4dc0-a735-c6a8e01ed0b0",
+    "timestamp": "2025-08-01T14:00:09.602Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 71,
+        "timestamp": "2025-08-01T14:00:09.602Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056809531_4h57h6xll",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 71
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "9097d03a-c610-4b7e-bb2f-9014cecfa013",
+    "timestamp": "2025-08-01T14:01:25.744Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T14:01:25.744Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056885723_imyjar2gu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d9b517ee-156a-4ca2-8167-4d929bfe0a56",
+    "timestamp": "2025-08-01T14:03:00.534Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 23,
+        "timestamp": "2025-08-01T14:03:00.534Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056980511_60v06hp2e",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 23
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5019fd6b-0356-464d-bee2-75c4e815a6c0",
+    "timestamp": "2025-08-01T14:03:04.229Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T14:03:04.229Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056984224_zpfoxcyaw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d5389f87-f980-45aa-b582-1be876656f39",
+    "timestamp": "2025-08-01T14:03:08.903Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 87,
+        "timestamp": "2025-08-01T14:03:08.903Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754056988816_zvns00suf",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 87
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "979ff180-8fb5-43fe-bc59-f2d09792b27d",
+    "timestamp": "2025-08-01T15:06:21.911Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T15:06:21.911Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754060781903_fl52p7c92",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7ab41987-2176-42e6-963c-e8aa11ea0bfe",
+    "timestamp": "2025-08-01T15:06:27.031Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 64,
+        "timestamp": "2025-08-01T15:06:27.031Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754060786967_4xlhgfo96",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 64
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "edf20ff0-3774-4fd4-a821-abe80d4c4976",
+    "timestamp": "2025-08-01T15:06:28.748Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 250,
+        "timestamp": "2025-08-01T15:06:28.748Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754060788498_ltf6kcvaf",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 250
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "49047dcb-73e1-4944-b3d2-23f5f9a34b2c",
+    "timestamp": "2025-08-01T15:16:06.465Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 176,
+        "timestamp": "2025-08-01T15:16:06.465Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061366289_x43ifna4w",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 176
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d3c87856-25ae-496f-a438-5d1bf6ccfec0",
+    "timestamp": "2025-08-01T15:16:06.658Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T15:16:06.658Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061366640_su3yyknpw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b87b6637-bc4d-4500-ad58-f51bdb74fdd8",
+    "timestamp": "2025-08-01T15:16:06.818Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T15:16:06.818Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061366813_b1kugqd0j",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "daee0ec4-9cb3-4543-a6eb-a3c0d33d9442",
+    "timestamp": "2025-08-01T15:16:07.119Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 72,
+        "timestamp": "2025-08-01T15:16:07.119Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061367047_3mk9n2frm",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 72
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f365d741-56c2-4022-8d46-eb78769f04ad",
+    "timestamp": "2025-08-01T15:16:07.252Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:16:07.252Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061367248_0354aidwi",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ece2a905-b861-4a21-a90d-07ae0d9f0c8a",
+    "timestamp": "2025-08-01T15:24:16.151Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 48,
+        "timestamp": "2025-08-01T15:24:16.151Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061856103_f9nx31xix",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 48
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "04c3dcd3-d90b-479a-87a1-8d62b8dadb29",
+    "timestamp": "2025-08-01T15:24:17.051Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 29,
+        "timestamp": "2025-08-01T15:24:17.051Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061857022_megwyzusr",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 29
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c4c1de51-4c1c-4ecd-ba5c-d07be3e92edc",
+    "timestamp": "2025-08-01T15:24:17.546Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-08-01T15:24:17.546Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061857529_5k1c7oact",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e0f0312f-052e-48bd-9950-82cc50f9a133",
+    "timestamp": "2025-08-01T15:24:17.799Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:24:17.799Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061857793_q1s9j0t2u",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "24ffe566-c4f5-4330-8162-3e24c38b45d4",
+    "timestamp": "2025-08-01T15:24:17.888Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T15:24:17.888Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061857883_id7wcfblf",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a69c42e9-668b-4450-8cf3-f9c6c9b43d67",
+    "timestamp": "2025-08-01T15:24:35.174Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 15,
+        "timestamp": "2025-08-01T15:24:35.174Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061875159_difketydu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 15
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3da92dde-8a15-43bb-a80b-2e217784e835",
+    "timestamp": "2025-08-01T15:24:35.497Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:24:35.497Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061875488_xa9d02x0k",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e26c9fb7-1bec-483c-84d4-38430d2eb554",
+    "timestamp": "2025-08-01T15:24:58.037Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T15:24:58.037Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061898029_kxlf64ufn",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b56c11e5-7d4b-4999-bee5-9e1c698988d3",
+    "timestamp": "2025-08-01T15:24:58.278Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:24:58.278Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061898269_obdibrn9m",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "95aa7e00-c0de-4fce-b732-3f60e911dc27",
+    "timestamp": "2025-08-01T15:25:16.958Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T15:25:16.958Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061916953_n8aq5vfx6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "2fdb3de1-da23-4f1d-9655-fa07f7fd77db",
+    "timestamp": "2025-08-01T15:25:17.631Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:25:17.631Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061917627_f8nxvmtqz",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "21613c97-0915-4269-b644-6e38f5ca8e6e",
+    "timestamp": "2025-08-01T15:25:45.013Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:25:45.013Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061945004_cjy5qlu5a",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a39e1ccb-5fd5-409e-9b44-2116dd9891a0",
+    "timestamp": "2025-08-01T15:25:45.360Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:25:45.360Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754061945350_ih1dnbqfm",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "eced4c3b-4527-4e6f-9dbd-1a815ac5d49d",
+    "timestamp": "2025-08-01T15:27:19.732Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T15:27:19.732Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062039729_2swvgr6q6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f85d9321-0a62-489e-84ce-613dfdeb84ec",
+    "timestamp": "2025-08-01T15:27:20.088Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T15:27:20.088Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062040085_k20ptjhpx",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a777ed6d-d21e-44fb-9da3-13c33624439e",
+    "timestamp": "2025-08-01T15:27:32.855Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:27:32.855Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062052851_63t81pdzr",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "381fcd49-94d4-4599-929c-99c3735634e2",
+    "timestamp": "2025-08-01T15:27:33.145Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-08-01T15:27:33.145Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062053133_pl6rxtl12",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "fc5c80fa-6b7d-4062-8f2f-63978be0e673",
+    "timestamp": "2025-08-01T15:27:44.005Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-08-01T15:27:44.005Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062063989_h66cq4rxe",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "65549a12-9716-4cfc-8b2e-7cc6fd34e486",
+    "timestamp": "2025-08-01T15:27:44.099Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:27:44.099Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062064088_psw8fzvcw",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f0b66763-1470-41b7-afcc-6ea05dfeedba",
+    "timestamp": "2025-08-01T15:27:44.186Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:27:44.186Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062064176_kywuy2q6r",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4cb9be3b-8934-4320-8ae3-94b8bc63f960",
+    "timestamp": "2025-08-01T15:27:54.661Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:27:54.661Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062074650_otnwlx3td",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "98c40575-5e5b-4da1-b22b-4568f37ddb77",
+    "timestamp": "2025-08-01T15:27:54.940Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:27:54.940Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062074930_k69n51ac7",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "53acf2ac-bb18-4adc-b96a-045081b05056",
+    "timestamp": "2025-08-01T15:30:12.067Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:30:12.067Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062212061_r3odkoghc",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f0bdd933-ef29-4e17-933e-a2164ddaf59f",
+    "timestamp": "2025-08-01T15:30:12.426Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-08-01T15:30:12.426Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062212414_gy7jsy2b8",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4549ebf6-ac31-4e3d-b40e-6221772aba45",
+    "timestamp": "2025-08-01T15:30:19.436Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:30:19.436Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062219430_hd2tnb3rb",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b0b5b49c-433e-4cda-aea6-6997f99939ba",
+    "timestamp": "2025-08-01T15:30:19.752Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:30:19.752Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062219743_8dtk0vnm7",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a8171d28-d6b2-4e86-907f-0d2e3bd26e26",
+    "timestamp": "2025-08-01T15:32:04.421Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 104,
+        "timestamp": "2025-08-01T15:32:04.421Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062324317_mwswi1ffd",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 104
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d233f5cd-9419-4e68-ad03-fe06fdae9890",
+    "timestamp": "2025-08-01T15:32:04.664Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 35,
+        "timestamp": "2025-08-01T15:32:04.664Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062324629_12z71bkv9",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 35
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c3c4b233-c11c-4256-a998-5e452cf05ce0",
+    "timestamp": "2025-08-01T15:32:04.778Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T15:32:04.778Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062324760_mwb34buj2",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f87028e5-c83b-4025-b549-89861d787475",
+    "timestamp": "2025-08-01T15:32:04.880Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-08-01T15:32:04.880Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062324864_n1cjac1h2",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f0d6dc4b-e469-4204-85bc-70ecf4878329",
+    "timestamp": "2025-08-01T15:32:52.247Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:32:52.247Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062372238_7qh4apxnz",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ac922f0c-135e-4719-868b-5bd31eef2a56",
+    "timestamp": "2025-08-01T15:32:52.428Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:32:52.428Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062372424_lji9e3vye",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "5acf0994-d997-41a1-a549-df774b623d8c",
+    "timestamp": "2025-08-01T15:33:04.416Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 28,
+        "timestamp": "2025-08-01T15:33:04.416Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062384388_vlsrqjy2i",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 28
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ba73985f-c1aa-4666-82f1-3fdb91b7be16",
+    "timestamp": "2025-08-01T15:33:04.540Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:33:04.540Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062384531_x8h15irif",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cb166293-87e8-4283-8b68-12cd55f26140",
+    "timestamp": "2025-08-01T15:33:16.930Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 29,
+        "timestamp": "2025-08-01T15:33:16.930Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062396901_lpaowv9tu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 29
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "63db55a3-3b0a-4508-a2fc-04cb5cdfa3e9",
+    "timestamp": "2025-08-01T15:33:17.036Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:33:17.036Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062397026_f855ofddg",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1ad4988a-d879-4475-bc0a-2f0093745bd2",
+    "timestamp": "2025-08-01T15:33:17.480Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:33:17.480Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062397469_x8ykuo20h",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "798f5293-03e3-4968-af29-61789a690563",
+    "timestamp": "2025-08-01T15:34:07.507Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 33,
+        "timestamp": "2025-08-01T15:34:07.507Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062447474_lcmv5qcn1",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 33
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d947bd70-481e-4973-b5e1-e45e3d8f8b60",
+    "timestamp": "2025-08-01T15:34:07.607Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T15:34:07.607Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062447589_lhat3glk3",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c813acf7-b1fa-44e9-9172-e2a2898cd0b1",
+    "timestamp": "2025-08-01T15:34:11.403Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 20,
+        "timestamp": "2025-08-01T15:34:11.403Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062451383_9yoykxyuu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 20
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "d960bf14-7222-4d0d-8d90-142299a3bc42",
+    "timestamp": "2025-08-01T15:34:11.521Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 15,
+        "timestamp": "2025-08-01T15:34:11.521Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062451506_hngbe2137",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 15
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3405ad18-51b9-4655-890a-101c73c8db3c",
+    "timestamp": "2025-08-01T15:34:11.966Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:34:11.966Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062451960_ul1wtj11a",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "14d9964b-f657-491c-89ce-d8e404f26638",
+    "timestamp": "2025-08-01T15:34:59.964Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:34:59.964Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062499954_4iekw91fn",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0c9e2069-bdb5-4bd3-a4da-374893cb7f74",
+    "timestamp": "2025-08-01T15:35:00.119Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:35:00.119Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062500109_1zd4wqlm1",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e275ec4b-f8cf-462c-8f5e-a5b80182e89c",
+    "timestamp": "2025-08-01T15:36:04.726Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:36:04.726Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062564717_ymwfssd52",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "08c80f02-128f-43fb-bea2-e015ba35cc3f",
+    "timestamp": "2025-08-01T15:36:04.975Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T15:36:04.975Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062564967_mpnqv6y05",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "182fca57-1f74-4f51-b7ce-5f35639c2041",
+    "timestamp": "2025-08-01T15:36:21.563Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:36:21.563Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062581552_mtddm47fm",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0512cecf-b691-4817-a032-d29588c13399",
+    "timestamp": "2025-08-01T15:36:21.605Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T15:36:21.605Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062581602_z1dnl8a9n",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bf4f4908-0f29-444e-af4f-574380becf6c",
+    "timestamp": "2025-08-01T15:36:36.370Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-08-01T15:36:36.370Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062596354_3l1cgwhya",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "17ce20bc-084d-4497-bf78-9c3f02f62ae1",
+    "timestamp": "2025-08-01T15:36:36.566Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 13,
+        "timestamp": "2025-08-01T15:36:36.566Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062596553_ntac6eqxs",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 13
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4d3e67c0-342b-4a93-b9c0-8423adef61f5",
+    "timestamp": "2025-08-01T15:36:59.515Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 27,
+        "timestamp": "2025-08-01T15:36:59.514Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062619487_khajm4qpf",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 27
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4c60736b-4e0b-4077-a1cc-d59e32dedc35",
+    "timestamp": "2025-08-01T15:36:59.720Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:36:59.720Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062619710_hv060allf",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8303a8c3-01e1-470f-b421-d02eb27a09dd",
+    "timestamp": "2025-08-01T15:37:27.935Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 28,
+        "timestamp": "2025-08-01T15:37:27.935Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062647907_8sc6aqdxs",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 28
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "311261a1-836e-49ed-9027-1bb5a1546916",
+    "timestamp": "2025-08-01T15:37:28.029Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:37:28.029Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062648023_bev35u7fq",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "09615b16-c5b2-4c3b-be25-3818a51f4e24",
+    "timestamp": "2025-08-01T15:37:28.096Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-08-01T15:37:28.096Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062648077_8gu7ggea0",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "228e990c-3c6f-4ccb-9730-dee564f54d4c",
+    "timestamp": "2025-08-01T15:37:28.176Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:37:28.176Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062648165_9bpvytdt7",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f3f55158-0c17-4c0f-8940-1aa05406db5e",
+    "timestamp": "2025-08-01T15:37:36.717Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-01T15:37:36.717Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062656712_yxflxiovs",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7098fc65-590c-430f-b30b-bcca79dede62",
+    "timestamp": "2025-08-01T15:37:36.873Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:37:36.873Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062656862_tncsnyrui",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "70161db8-b6ac-4a5c-94ac-84238a9e6b6f",
+    "timestamp": "2025-08-01T15:37:53.415Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-08-01T15:37:53.415Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062673396_wzhc4iug3",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "13d82fe6-7e8a-4ee2-b3f8-a9b8e212ed37",
+    "timestamp": "2025-08-01T15:37:53.581Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:37:53.580Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062673574_bq207q080",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6c7a8794-3ab9-4ce9-985d-2dec299e34c0",
+    "timestamp": "2025-08-01T15:38:49.325Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T15:38:49.325Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062729304_05updga6w",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b294bffc-4654-40c4-ac62-e05a79ee1eca",
+    "timestamp": "2025-08-01T15:38:51.141Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 713,
+        "timestamp": "2025-08-01T15:38:51.141Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062730428_h7avazpg6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 713
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "c269f94b-f4b4-4b5d-b8a0-f3bc4b588fd4",
+    "timestamp": "2025-08-01T15:38:58.199Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-08-01T15:38:58.199Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062738180_pud6h9k11",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e604af0d-9a72-464d-b207-2e50372e48e4",
+    "timestamp": "2025-08-01T15:38:58.286Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:38:58.285Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062738279_cwz26lfe6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "cbd98a8d-97ff-47f3-b016-592a5a030ad4",
+    "timestamp": "2025-08-01T15:38:58.393Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:38:58.393Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062738382_0ke2dxlkm",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "07c6abcc-6967-4c7d-94d8-a7ffaf3275f6",
+    "timestamp": "2025-08-01T15:39:16.787Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-01T15:39:16.787Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062756779_tyvfrvq4r",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "655a39d7-9879-4be4-9944-434620a62f28",
+    "timestamp": "2025-08-01T15:39:16.877Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 3,
+        "timestamp": "2025-08-01T15:39:16.877Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062756874_qrrna3hfd",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 3
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3e52a688-81f8-4e85-8f9a-0469b0083c1a",
+    "timestamp": "2025-08-01T15:39:23.538Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 21,
+        "timestamp": "2025-08-01T15:39:23.538Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062763517_dlkmwb3v2",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 21
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1cc9bbc3-6637-4ebf-961c-23776771a2b8",
+    "timestamp": "2025-08-01T15:39:23.645Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-01T15:39:23.645Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062763635_rygttodw8",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0cfbbd45-4cb0-4650-aa6b-e01a92b67b6f",
+    "timestamp": "2025-08-01T15:40:01.763Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 24,
+        "timestamp": "2025-08-01T15:40:01.763Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062801739_4lk12ktyg",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 24
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "6e0c2ad9-ecbe-4d9a-9ab7-f7c0f74548b2",
+    "timestamp": "2025-08-01T15:40:01.825Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:40:01.825Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062801821_pdrvmg8tv",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ceb0b29d-1ef7-400b-a2b6-2bdfaced65b8",
+    "timestamp": "2025-08-01T15:41:19.211Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-08-01T15:41:19.211Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062879192_170gse6el",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3ae8ad98-fab4-472d-9d9e-9f222a73d719",
+    "timestamp": "2025-08-01T15:41:19.297Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 4,
+        "timestamp": "2025-08-01T15:41:19.297Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062879293_dij4katpu",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 4
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ecf97868-6ff0-4ee7-b32d-a29a5399c17d",
+    "timestamp": "2025-08-01T15:42:48.819Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 1186,
+        "timestamp": "2025-08-01T15:42:48.819Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062967633_mhr7322nh",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 1186
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0ac50acf-e4db-441f-b2f1-4acd3ccb8fe7",
+    "timestamp": "2025-08-01T15:42:49.070Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 33,
+        "timestamp": "2025-08-01T15:42:49.070Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062969037_mozr6hexb",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 33
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "827dffb8-ddc1-4e8f-9113-c07d2edd1d56",
+    "timestamp": "2025-08-01T15:42:54.535Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 33,
+        "timestamp": "2025-08-01T15:42:54.534Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062974501_gpdlhs5oa",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 33
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f3a2ce76-ec39-4672-834e-19f0629a3593",
+    "timestamp": "2025-08-01T15:42:54.689Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 18,
+        "timestamp": "2025-08-01T15:42:54.689Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754062974671_8xb2p2vw6",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 18
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "00022258-6fa4-4f84-9614-115f896ec143",
+    "timestamp": "2025-08-01T15:43:55.820Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 6,
+        "timestamp": "2025-08-01T15:43:55.820Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063035814_jnn1xj2fy",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 6
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "30a47cd4-8c2d-4b89-9785-71f900c0e3fa",
+    "timestamp": "2025-08-01T15:43:56.026Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 11,
+        "timestamp": "2025-08-01T15:43:56.026Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063036015_dqcuh4h6g",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 11
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7722c1a8-7534-49f8-ae3f-16c11a3a48ed",
+    "timestamp": "2025-08-01T15:44:03.734Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 23,
+        "timestamp": "2025-08-01T15:44:03.734Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063043711_o9vw2mo0y",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 23
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "81a13d57-d256-49ce-b055-416cf583490b",
+    "timestamp": "2025-08-01T15:44:03.872Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 9,
+        "timestamp": "2025-08-01T15:44:03.872Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063043863_z9kxnuhf7",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 9
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "635a35ec-9aac-4273-a1f1-772f0893ff0a",
+    "timestamp": "2025-08-01T15:44:36.110Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-08-01T15:44:36.110Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063076094_oy3hwg08h",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "2bf97338-8e4f-4cd6-accf-aeb738a7588b",
+    "timestamp": "2025-08-01T15:44:36.898Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-08-01T15:44:36.898Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063076886_b5f0etvmo",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7cd51cd3-c3fd-4de5-b438-3cc000f579df",
+    "timestamp": "2025-08-01T15:44:42.384Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 29,
+        "timestamp": "2025-08-01T15:44:42.384Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063082355_y2mj5upea",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 29
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "e7711780-46d1-4527-b3be-22a9faacbd12",
+    "timestamp": "2025-08-01T15:44:42.506Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "statusText": "",
+        "data": {
+          "error": "Utilisateur non trouvé"
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-01T15:44:42.506Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063082499_2wdwilrj9",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "7964fae0-b5cd-4530-94d4-067a135a647a",
+    "timestamp": "2025-08-01T15:46:51.066Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "1",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2024-12-31T23:00:00.000Z",
+          "updatedAt": "2025-07-28T01:19:13.000Z",
+          "siteConfig": {
+            "theme": "light",
+            "language": "fr",
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z",
+            "notifications": {
+              "push": false,
+              "email": true
+            },
+            "chemicalsViewMode": "list",
+            "materialsViewMode": "list"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 42,
+        "timestamp": "2025-08-01T15:46:51.066Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063211024_21rjtfj9p",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 42
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ff3d4820-b2a7-4f47-aff6-a84fd23bde7b",
+    "timestamp": "2025-08-01T15:46:53.542Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "1",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2024-12-31T23:00:00.000Z",
+          "updatedAt": "2025-07-28T01:19:13.000Z",
+          "siteConfig": {
+            "theme": "light",
+            "language": "fr",
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z",
+            "notifications": {
+              "push": false,
+              "email": true
+            },
+            "chemicalsViewMode": "list",
+            "materialsViewMode": "list"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 36,
+        "timestamp": "2025-08-01T15:46:53.542Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063213506_q2p28fzja",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 36
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a9180816-8097-4e88-b9a2-9d73ae06b6f4",
+    "timestamp": "2025-08-01T15:46:57.374Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "1",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2024-12-31T23:00:00.000Z",
+          "updatedAt": "2025-07-28T01:19:13.000Z",
+          "siteConfig": {
+            "theme": "light",
+            "language": "fr",
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z",
+            "notifications": {
+              "push": false,
+              "email": true
+            },
+            "chemicalsViewMode": "list",
+            "materialsViewMode": "list"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 35,
+        "timestamp": "2025-08-01T15:46:57.374Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063217339_zudhz1ugz",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 35
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0d3b669c-b1cc-4dc8-957d-4d1ee134698d",
+    "timestamp": "2025-08-01T15:46:57.553Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "user",
+      "entityId": "1"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/user/1/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "1",
+          "email": "admin@labo.fr",
+          "name": "Administrateur",
+          "role": "ADMIN",
+          "isActive": true,
+          "createdAt": "2024-12-31T23:00:00.000Z",
+          "updatedAt": "2025-07-28T01:19:13.000Z",
+          "siteConfig": {
+            "theme": "light",
+            "language": "fr",
+            "dashboard": {
+              "defaultView": "overview",
+              "widgetsOrder": [
+                "stats",
+                "recent",
+                "calendar"
+              ]
+            },
+            "lastUpdated": "2025-07-27T22:09:57.032Z",
+            "notifications": {
+              "push": false,
+              "email": true
+            },
+            "chemicalsViewMode": "list",
+            "materialsViewMode": "list"
+          },
+          "associatedClasses": [],
+          "customClasses": [
+            "MaClasse",
+            "MaCLASSE 2"
+          ]
+        }
+      },
+      "metadata": {
+        "duration": 14,
+        "timestamp": "2025-08-01T15:46:57.553Z"
+      },
+      "viewedUser": "admin@labo.fr",
+      "viewedUserRole": "ADMIN",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754063217539_dk3c2afs4",
+      "path": "/api/user/1/",
+      "method": "GET",
+      "duration": 14
+    },
+    "status": "SUCCESS"
   }
 ]

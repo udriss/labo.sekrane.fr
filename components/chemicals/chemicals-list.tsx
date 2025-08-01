@@ -667,13 +667,35 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
                     </Stack>
                   )}
 
-                  {/* Localisation */}
-                  {chemical.storage && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {chemical.storage}
-                      </Typography>
+                  {/* Localisation - Salle et localisation précise */}
+                  {(chemical.room || chemical.location) && (
+                    <Stack direction="column" spacing={0.5}>
+                      {chemical.room && (
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="text.secondary">
+                            {chemical.room}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {chemical.location && (
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary"
+                          sx={{ ml: 3, fontStyle: 'italic' }}
+                        >
+                          → {chemical.location}
+                        </Typography>
+                      )}
+                      {/* Fallback pour l'ancien champ storage */}
+                      {!chemical.room && !chemical.location && chemical.storage && (
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="text.secondary">
+                            {chemical.storage}
+                          </Typography>
+                        </Stack>
+                      )}
                     </Stack>
                   )}
 

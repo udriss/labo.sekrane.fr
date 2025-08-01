@@ -152,7 +152,7 @@ export const GET = withAudit(
 
     const { id } = await params;
     const userId = id;
-
+    console.log('🔍 [GET User Profile] User ID:', userId);
     // Vérifier que l'utilisateur peut voir ce profil
     if (session.user.id !== userId && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
@@ -161,6 +161,7 @@ export const GET = withAudit(
 
     // Récupérer l'utilisateur
     const user = await UserServiceSQL.findById(userId);
+    console.log('🔍 [GET User Profile] User found:', user);
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }

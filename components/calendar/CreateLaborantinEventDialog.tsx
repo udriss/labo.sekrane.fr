@@ -20,6 +20,7 @@ interface CreateLaborantinEventDialogProps {
   onSuccess: () => void
   materials: any[]
   isMobile?: boolean
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour déterminer l'API à utiliser
 }
 
 export function CreateLaborantinEventDialog({
@@ -27,7 +28,8 @@ export function CreateLaborantinEventDialog({
   onClose,
   onSuccess,
   materials,
-  isMobile
+  isMobile,
+  discipline = 'chimie' // Par défaut chimie pour la compatibilité
 }: CreateLaborantinEventDialogProps) {
   const theme = useTheme()
 
@@ -170,7 +172,8 @@ const isOutsideBusinessHours = useMemo(() => {
         notes: formData.notes
       }
 
-      const response = await fetch('/api/calendrier', {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData)
