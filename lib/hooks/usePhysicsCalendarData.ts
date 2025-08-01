@@ -7,7 +7,7 @@ export const usePhysicsCalendarData = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  
   const loadEvents = useCallback(async (startDate?: string, endDate?: string) => {
     setLoading(true)
     setError(null)
@@ -15,7 +15,6 @@ export const usePhysicsCalendarData = () => {
     try {
       let url = '/api/calendrier/physique'
       const params = new URLSearchParams()
-      
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
       
@@ -24,7 +23,6 @@ export const usePhysicsCalendarData = () => {
       }
 
       const response = await fetch(url)
-      
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`)
       }

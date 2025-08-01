@@ -5,56 +5,9 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { promises as fs } from 'fs';
-import { UserServiceSQL } from '@/lib/services/userService.sql';
-import { withAudit } from '@/lib/api/with-audit';
+import { ClassServiceSQL } from '@/lib/services/classService.sql';
 
-import path from 'path';
-const CLASSES_FILE = path.join(process.cwd(), 'data', 'classes.json');
-
-interface ClassData {
-  id: string;
-  name: string;
-  type: 'predefined' | 'custom';
-  createdAt: string;
-  createdBy: string;
-  userId?: string; // Pour les classes personnalisées
-  userEmail?: string; // Pour identifier facilement le propriétaire
-}
-
-interface ClassesFile {
-  predefinedClasses: ClassData[];
-  customClasses: ClassData[];
-}
-
-// Fonction pour lire le fichier classes.json
-async function readClassesFile(): Promise<ClassesFile> {
-  try {
-    const data = await fs.readFile(CLASSES_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    // Si le fichier n'existe pas, le créer avec la structure de base
-    const defaultData: ClassesFile = {
-      predefinedClasses: [],
-      customClasses: []
-    };
-    await fs.writeFile(CLASSES_FILE, JSON.stringify(defaultData, null, 2));
-    return defaultData;
-  }
-}
-
-// Fonction pour écrire dans le fichier classes.json
-async function writeClassesFile(data: ClassesFile): Promise<boolean> {
-  try {
-    await fs.writeFile(CLASSES_FILE, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Erreur écriture classes.json:', error);
-    return false;
-  }
-}
-
-// GET - Récupérer toutes les classes
+// GET - Récupérer les classes
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -62,36 +15,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const classesData = await readClassesFile();
-    
-    // Si c'est un admin, récupérer aussi les infos des utilisateurs pour les classes custom
-    if (session.user.role === "ADMIN") {
-      // Utiliser le service SQL pour enrichir les données des classes custom
-      try {
-        const users = await UserServiceSQL.getAllActive();
-        const allCustomClasses: ClassData[] = [];
-        users.forEach((user: any) => {
-          if (user.customClasses && Array.isArray(user.customClasses)) {
-            user.customClasses.forEach((className: string) => {
-              allCustomClasses.push({
-                id: `CLASS_CUSTOM_${user.id}_${className.replace(/\s+/g, '_')}`,
-                name: className,
-                type: 'custom',
-                createdAt: user.updatedAt || user.createdAt,
-                createdBy: user.id,
-                userId: user.id,
-                userEmail: user.email
-              });
-            });
-          }
-        });
-        classesData.customClasses = allCustomClasses;
-      } catch (error) {
-        console.error('Erreur lecture utilisateurs SQL:', error);
-      }
-    }
+    const userId = session.user.id || session.user.email;
+    const classes = await ClassServiceSQL.getClassesForUser(userId);
 
-    return NextResponse.json(classesData);
+    return NextResponse.json(classes);
   } catch (error) {
     console.error("Erreur lors de la récupération des classes:", error);
     return NextResponse.json(
@@ -101,155 +28,143 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Ajouter une nouvelle classe prédéfinie (Admin seulement)
-export const POST = withAudit(
-  async (request: NextRequest) => {
+// POST - Créer une nouvelle classe personnalisée
+export async function POST(request: NextRequest) {
+  try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const { name, type = 'predefined' } = await request.json();
+    const body = await request.json();
+    const { name, type = 'custom' } = body;
 
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: "Nom de classe requis" }, { status: 400 });
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Le nom de la classe est requis" },
+        { status: 400 }
+      );
     }
 
-    const classesData = await readClassesFile();
-    
+    const trimmedName = name.trim();
+    const userId = session.user.id || session.user.email;
+    const userEmail = session.user.email;
+
     // Vérifier si la classe existe déjà
-    const exists = classesData.predefinedClasses.some(c => c.name === name.trim());
+    const exists = await ClassServiceSQL.classExists(trimmedName, userId);
     if (exists) {
-      return NextResponse.json({ error: "Cette classe existe déjà" }, { status: 409 });
+      // return NextResponse.json(
+      //   { error: "Une classe avec ce nom existe déjà" },
+      //   { status: 409 }
+      // );
     }
 
-    const newClass: ClassData = {
-      id: `CLASS_PRE_${Date.now()}`,
-      name: name.trim(),
-      type: 'predefined',
-      createdAt: new Date().toISOString(),
-      createdBy: session.user.id
-    };
+    // Créer la classe
+    const newClass = await ClassServiceSQL.createCustomClass(
+      trimmedName,
+      userId,
+      userEmail,
+      session.user.name || session.user.email
+    );
 
-    classesData.predefinedClasses.push(newClass);
-    
-    const success = await writeClassesFile(classesData);
-    if (!success) {
-      return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 });
-    }
+    return NextResponse.json({
+      success: true,
+      data: newClass
+    });
 
-    return NextResponse.json(newClass, { status: 201 });
-  },
-  {
-    module: 'USERS',
-    entity: 'class',
-    action: 'CREATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      className: response?.name,
-      classType: response?.type
-    })
+  } catch (error) {
+    console.error("Erreur lors de la création de la classe:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la création de la classe" },
+      { status: 500 }
+    );
   }
-);
+}
 
-// PUT - Modifier une classe prédéfinie (Admin seulement)
-export const PUT = withAudit(
-  async (request: NextRequest) => {
+// PUT - Mettre à jour une classe personnalisée
+export async function PUT(request: NextRequest) {
+  try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const { id, name } = await request.json();
+    const body = await request.json();
+    const { id, name } = body;
 
-    if (!id || !name || !name.trim()) {
-      return NextResponse.json({ error: "ID et nom requis" }, { status: 400 });
+    if (!id || !name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "L'ID et le nom de la classe sont requis" },
+        { status: 400 }
+      );
     }
 
-    const classesData = await readClassesFile();
-    const classIndex = classesData.predefinedClasses.findIndex(c => c.id === id);
-    
-    if (classIndex === -1) {
-      return NextResponse.json({ error: "Classe non trouvée" }, { status: 404 });
-    }
+    const userId = session.user.id || session.user.email;
+    const updatedClass = await ClassServiceSQL.updateCustomClass(id, name.trim(), userId);
 
-    // Vérifier si le nouveau nom n'existe pas déjà
-    const exists = classesData.predefinedClasses.some(c => c.name === name.trim() && c.id !== id);
-    if (exists) {
-      return NextResponse.json({ error: "Ce nom de classe existe déjà" }, { status: 409 });
-    }
-
-    // Stocker l'ancien nom pour l'audit
-    const oldName = classesData.predefinedClasses[classIndex].name;
-    classesData.predefinedClasses[classIndex].name = name.trim();
-    
-    const success = await writeClassesFile(classesData);
-    if (!success) {
-      return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 });
+    if (!updatedClass) {
+      return NextResponse.json(
+        { error: "Classe non trouvée ou non autorisé" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
-      ...classesData.predefinedClasses[classIndex],
-      oldName // Pour l'audit
+      success: true,
+      data: updatedClass
     });
-  },
-  {
-    module: 'USERS',
-    entity: 'class',
-    action: 'UPDATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      className: response?.name,
-      oldName: response?.oldName
-    })
+
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de la classe:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la mise à jour de la classe" },
+      { status: 500 }
+    );
   }
-)
+}
 
-
-// DELETE - Supprimer une classe prédéfinie (Admin seulement)
-export const DELETE = withAudit(
-  async (request: NextRequest) => {
+// DELETE - Supprimer une classe personnalisée
+export async function DELETE(request: NextRequest) {
+  try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const classId = searchParams.get('id');
 
-    if (!id) {
-      return NextResponse.json({ error: "ID requis" }, { status: 400 });
+    if (!classId) {
+      return NextResponse.json(
+        { error: "L'ID ou l'email de la classe est requis" },
+        { status: 400 }
+      );
     }
 
-    const classesData = await readClassesFile();
-    
-    // Trouver la classe à supprimer pour récupérer son nom
-    const classToDelete = classesData.predefinedClasses.find(c => c.id === id);
-    if (!classToDelete) {
-      return NextResponse.json({ error: "Classe non trouvée" }, { status: 404 });
-    }
-    
-    // Filtrer pour supprimer
-    const filteredClasses = classesData.predefinedClasses.filter(c => c.id !== id);
-    classesData.predefinedClasses = filteredClasses;
-    
-    const success = await writeClassesFile(classesData);
-    if (!success) {
-      return NextResponse.json({ error: "Erreur lors de la sauvegarde" }, { status: 500 });
+    const userId = session.user.id;
+    let deleted = false;
+
+    if (classId) {
+      deleted = await ClassServiceSQL.deleteCustomClass(classId, userId);
+    } 
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Classe non trouvée ou non autorisé" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ 
-      message: "Classe supprimée avec succès",
-      deletedClass: classToDelete
+    return NextResponse.json({
+      success: true,
+      message: "Classe supprimée avec succès"
     });
-  },
-  {
-    module: 'USERS',
-    entity: 'class',
-    action: 'DELETE',
-    extractEntityIdFromResponse: (response) => response?.deletedClass?.id,
-    customDetails: (req, response) => ({
-      className: response?.deletedClass?.name
-    })
+
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la classe:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression de la classe" },
+      { status: 500 }
+    );
   }
-)
+}

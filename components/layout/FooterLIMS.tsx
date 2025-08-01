@@ -1,8 +1,10 @@
-import { Box, Container, Typography, Link, Divider, Stack, IconButton } from '@mui/material';
-import { GitHub, Email, Info, Science, Insights } from '@mui/icons-material';
+import { Box, Container, Typography, Link, Divider, Stack, IconButton, Alert, useTheme, alpha } from '@mui/material';
+import { GitHub, Email, Info, Science, Insights, InfoOutlined } from '@mui/icons-material';
 
 export function FooterLIMS() {
   const currentYear = new Date().getFullYear();
+
+  const theme = useTheme();
 
   return (
     <Box
@@ -20,6 +22,26 @@ export function FooterLIMS() {
       }}
     >
       <Container maxWidth="lg">
+      {/* Info box */}
+      <Box
+      sx= {{
+        mb:2
+      }}
+      >
+        <Alert 
+          severity="info" 
+          icon={<InfoOutlined />}
+          sx={{ 
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.info.main, 0.08),
+            border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`
+          }}
+        >
+          <Typography variant="body2">
+            Besoin d'aide ? Consultez la <Link href="/docs" style={{ color: theme.palette.info.main }}>documentation</Link> ou contactez le support.
+          </Typography>
+        </Alert>
+      </Box>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"

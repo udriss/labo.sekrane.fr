@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from "next/server";
 import { UserServiceSQL } from '@/lib/services/userService.sql';
-import { promises as fs } from 'fs';
+import { ClassServiceSQL } from '@/lib/services/classService.sql';
 import path from 'path';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -34,12 +34,10 @@ interface UsersFile {
 
 async function getPredefinedClasses(): Promise<string[]> {
   try {
-    const classesFile = path.join(process.cwd(), 'data', 'classes.json');
-    const data = await fs.readFile(classesFile, 'utf-8');
-    const parsed = JSON.parse(data);
-    return parsed.predefinedClasses.map((c: any) => c.name);
+    const classes = await ClassServiceSQL.getAllClasses();
+    return classes.predefinedClasses.map(c => c.name);
   } catch (error) {
-    console.error('Erreur lecture classes.json:', error);
+    console.error('Erreur lecture classes depuis SQL:', error);
     // Retourner les classes par défaut en cas d'erreur
     return [
       "1ère ES", "Terminale ES", "1ère STI2D", "Terminale STI2D",
@@ -152,7 +150,6 @@ export const GET = withAudit(
 
     const { id } = await params;
     const userId = id;
-    console.log('🔍 [GET User Profile] User ID:', userId);
     // Vérifier que l'utilisateur peut voir ce profil
     if (session.user.id !== userId && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
@@ -161,7 +158,6 @@ export const GET = withAudit(
 
     // Récupérer l'utilisateur
     const user = await UserServiceSQL.findById(userId);
-    console.log('🔍 [GET User Profile] User found:', user);
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }

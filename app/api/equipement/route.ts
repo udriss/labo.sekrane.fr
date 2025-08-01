@@ -129,76 +129,179 @@ export async function GET(request: NextRequest) {
       const status = searchParams.get('status');
       const type_id = searchParams.get('type_id');
       const room = searchParams.get('room');
+      const discipline = searchParams.get('discipline'); // Nouveau paramètre
 
       return withConnection(async (connection) => {
-        let query = `
-          SELECT 
-            e.*,
-            et.name as type_name,
-            et.svg as type_svg,
-            ei.name as item_name,
-            ei.svg as item_svg,
-            ei.volumes as item_volumes
-        FROM chimie_equipment e
-        LEFT JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
-        LEFT JOIN chimie_equipment_items ei ON e.equipment_item_id = ei.id
-        WHERE 1=1
-      `;
-      const params: any[] = [];
+        let query, params: any[] = [];
 
-      // Filtres
-      if (search) {
-        query += ` AND (e.name LIKE ? OR e.serial_number LIKE ? OR e.barcode LIKE ?)`;
-        const searchPattern = `%${search}%`;
-        params.push(searchPattern, searchPattern, searchPattern);
-      }
+        // Si discipline=physique, utiliser la table physics_equipment
+        if (discipline === 'physique') {
+          query = `
+            SELECT 
+              pe.id,
+              pe.name,
+              pe.model,
+              pe.serial_number,
+              pe.barcode,
+              pe.quantity,
+              pe.min_quantity,
+              pe.volume,
+              pe.location,
+              pe.room,
+              pe.status,
+              pe.purchase_date,
+              pe.notes,
+              pe.created_at,
+              pe.updated_at,
+              pet.name as type_name,
+              pei.name as item_name,
+              pei.description as item_description
+            FROM physics_equipment pe
+            LEFT JOIN physics_equipment_types pet ON pe.physics_equipment_type_id = pet.id
+            LEFT JOIN physics_equipment_items pei ON pe.physics_equipment_item_id = pei.id
+            WHERE 1=1
+          `;
+        } else {
+          // Sinon, utiliser la table chimie_equipment par défaut
+          query = `
+            SELECT 
+              e.*,
+              et.name as type_name,
+              et.svg as type_svg,
+              ei.name as item_name,
+              ei.svg as item_svg,
+              ei.volumes as item_volumes
+          FROM chimie_equipment e
+          LEFT JOIN chimie_equipment_types et ON e.equipment_type_id = et.id
+          LEFT JOIN chimie_equipment_items ei ON e.equipment_item_id = ei.id
+          WHERE 1=1
+        `;
+        }
 
-      if (status) {
-        query += ` AND e.status = ?`;
-        params.push(status);
-      }
+        // Filtres communs
+        if (search) {
+          if (discipline === 'physique') {
+            query += ` AND (pe.name LIKE ? OR pe.model LIKE ? OR pe.location LIKE ?)`;
+          } else {
+            query += ` AND (e.name LIKE ? OR ei.name LIKE ?)`;
+          }
+          const searchPattern = `%${search}%`;
+          params.push(searchPattern, searchPattern);
+          if (discipline === 'physique') {
+            params.push(searchPattern); // Pour location aussi en physique
+          }
+        }
 
-      if (type_id) {
-        query += ` AND e.equipment_type_id = ?`;
-        params.push(type_id);
-      }
+        if (status) {
+          if (discipline === 'physique') {
+            query += ` AND pe.status = ?`;
+          } else {
+            query += ` AND e.status = ?`;
+          }
+          params.push(status);
+        }
 
-      if (room) {
-        query += ` AND e.room LIKE ?`;
-        params.push(`%${room}%`);
-      }
+        if (type_id && discipline !== 'physique') {
+          query += ` AND e.equipment_type_id = ?`;
+          params.push(type_id);
+        }
 
-      query += ` ORDER BY e.created_at DESC`;
+        if (room) {
+          if (discipline === 'physique') {
+            query += ` AND pe.room = ?`;
+          } else {
+            query += ` AND e.room = ?`;
+          }
+          params.push(room);
+        }
 
-      const [rows] = await connection.execute(query, params);
-      const equipment = rows as EquipmentWithRelations[];
+        if (discipline === 'physique') {
+          query += ` ORDER BY pe.name ASC`;
+        } else {
+          query += ` ORDER BY e.name ASC`;
+        }
 
-      // Calculer les statistiques
-      const stats = await calculateEquipmentStats();
+        try {
+          const [rows] = await connection.execute(query, params);
+          
+          if (discipline === 'physique') {
+            // Format pour physique
+            const equipment = (rows as any[]).map(row => ({
+              id: row.id,
+              name: row.name,
+              itemName: row.item_name || row.name,
+              type: row.type_name,
+              model: row.model,
+              serialNumber: row.serial_number,
+              barcode: row.barcode,
+              quantity: row.quantity,
+              minQuantity: row.min_quantity,
+              volume: row.volume,
+              location: row.location,
+              room: row.room,
+              status: row.status,
+              purchaseDate: row.purchase_date,
+              notes: row.notes,
+              description: row.item_description,
+              createdAt: row.created_at,
+              updatedAt: row.updated_at
+            }));
 
-      return NextResponse.json({
-        materiel: equipment.map(eq => ({
-          ...eq,
-          // Compatibilité avec l'ancien format
-          typeName: eq.type_name,
-          itemName: eq.item_name,
-          svg: eq.item_svg || eq.type_svg,
-          availableVolumes: safeJSONParse(eq.item_volumes, null),
-          equipmentTypeId: eq.equipment_type_id // Compatibilité
-        })),
-        total: stats.total,
-        available: stats.by_status.available,
-        maintenance: stats.by_status.maintenance,
-        stats
+            return NextResponse.json(equipment);
+          } else {
+            // Format pour chimie (existant)
+            const equipment = (rows as any[]).map(row => {
+              const volumes = safeJSONParse(row.item_volumes, []);
+              
+              return {
+                id: row.id,
+                name: row.name,
+                itemName: row.item_name || row.name,
+                type: row.type_name,
+                typeSvg: row.type_svg,
+                itemSvg: row.item_svg,
+                availableVolumes: volumes,
+                volume: row.volume,
+                location: row.location,
+                room: row.room,
+                status: row.status,
+                quantity: row.quantity,
+                minQuantity: row.min_quantity,
+                description: row.description,
+                maintenanceHistory: safeJSONParse(row.maintenance_history, []),
+                lastMaintenanceDate: row.last_maintenance_date,
+                notes: row.notes,
+                barcode: row.barcode,
+                serialNumber: row.serial_number,
+                manufacturer: row.manufacturer,
+                model: row.model,
+                purchaseDate: row.purchase_date,
+                warrantyExpiry: row.warranty_expiry,
+                value: row.value,
+                createdAt: row.created_at,
+                updatedAt: row.updated_at
+              };
+            });
+
+            return NextResponse.json(equipment);
+          }
+        } catch (dbError: any) {
+          // Si la table physics_equipment n'existe pas, retourner une liste vide pour physique
+          if (discipline === 'physique' && dbError.code === 'ER_NO_SUCH_TABLE') {
+            console.log('📋 Table physics_equipment non trouvée, retour de liste vide');
+            return NextResponse.json([]);
+          } else {
+            throw dbError;
+          }
+        }
       });
-    });
-  } catch (error) {
-    console.error("Erreur lors de la récupération des équipements:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération des équipements" },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des équipements:", error);
+      return NextResponse.json(
+        { error: "Erreur lors de la récupération des équipements" },
+        { status: 500 }
+      );
+    }
 }
 
 

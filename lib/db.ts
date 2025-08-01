@@ -316,6 +316,44 @@ export async function initializeDatabase() {
 
     // ==================== FIN TABLES EQUIPMENT ====================
 
+    // ==================== TABLES POUR LES CLASSES ====================
+    
+    // Table des classes (prédéfinies et personnalisées)
+    await query(`
+      CREATE TABLE IF NOT EXISTS classes (
+        id VARCHAR(100) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type ENUM('predefined', 'custom') DEFAULT 'predefined',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by VARCHAR(100) DEFAULT NULL,
+        user_id VARCHAR(100) DEFAULT NULL,
+        user_email VARCHAR(255) DEFAULT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_type (type),
+        INDEX idx_user_id (user_id),
+        INDEX idx_created_by (created_by)
+      )
+    `);
+
+    // Insérer les classes prédéfinies par défaut si elles n'existent pas
+    await query(`
+      INSERT IGNORE INTO classes (id, name, type, created_by) VALUES
+      ('CLASS_PRE_001', '1ère ES', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_002', 'Terminale ES', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_003', '1ère STI2D', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_004', 'Terminale STI2D', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_005', '201', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_006', '202', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_007', '203', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_008', '1ère année BTS', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_009', '2ème année BTS', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_010', '1ère S', 'predefined', 'SYSTEM'),
+      ('CLASS_PRE_011', 'Terminale S', 'predefined', 'SYSTEM')
+    `);
+
+    // ==================== FIN TABLES CLASSES ====================
+
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,

@@ -25,10 +25,9 @@ export class UserServiceSQL {
         [email]
     );
     
-    const userRow = Array.isArray(rows) ? rows[0] : rows;
-    
-    if (!userRow) return null;
-    return UserServiceSQL.deserialize(userRow);
+    // rows est déjà le premier élément après destructuration
+    if (!rows) return null;
+    return UserServiceSQL.deserialize(rows);
     }
 
   // Trouver un utilisateur par ID
@@ -38,20 +37,13 @@ export class UserServiceSQL {
       [id]
     );
 
-    // Vérifier si rows est un tableau et contient des éléments
-    if (!Array.isArray(rows) || rows.length === 0) {
-      console.log(`[UserServiceSQL] Aucune donnée trouvée pour l'ID: ${id}`);
+    // rows est déjà le premier élément après destructuration
+    // Si la requête ne retourne rien, rows sera undefined
+    if (!rows) {
       return null;
     }
-    
-    const userRow = rows[0];
-    if (!userRow) {
-      console.log(`[UserServiceSQL] Première ligne vide pour l'ID: ${id}`);
-      return null;
-    }
-    
-    console.log(`[UserServiceSQL] Utilisateur trouvé pour l'ID: ${id}: `, userRow);
-    return UserServiceSQL.deserialize(userRow);
+
+    return UserServiceSQL.deserialize(rows);
   }
 
   // Vérifier le mot de passe
@@ -105,11 +97,11 @@ export class UserServiceSQL {
     // Récupérer l'utilisateur créé
     const [rows] = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [userData.email]);
     
-    if (!Array.isArray(rows) || rows.length === 0) {
+    if (!rows) {
       throw new Error('Erreur lors de la récupération de l\'utilisateur créé');
     }
     
-    return UserServiceSQL.deserialize(rows[0]);
+    return UserServiceSQL.deserialize(rows);
   }
 
   // Mettre à jour un utilisateur
@@ -127,7 +119,11 @@ export class UserServiceSQL {
     if (updates.siteConfig) { fields.push('siteConfig = ?'); values.push(JSON.stringify(updates.siteConfig)); }
     if (updates.associatedClasses) { fields.push('associatedClasses = ?'); values.push(JSON.stringify(updates.associatedClasses)); }
     if (updates.customClasses) { fields.push('customClasses = ?'); values.push(JSON.stringify(updates.customClasses)); }
-    fields.push('updatedAt = ?'); values.push(new Date().toISOString());
+    // Format MySQL DATETIME: YYYY-MM-DD HH:mm:ss
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const mysqlDatetime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    fields.push('updatedAt = ?'); values.push(mysqlDatetime);
     if (fields.length === 0) return this.findById(id);
     values.push(id);
     await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
@@ -136,10 +132,10 @@ export class UserServiceSQL {
 
   // Obtenir tous les utilisateurs actifs
   static async getAllActive(): Promise<User[]> {
-    const [rows] = await query('SELECT * FROM users WHERE isActive = 1');
+    const result = await query('SELECT * FROM users WHERE isActive = 1');
+    const rows = result[0]; // Le premier élément contient les résultats
     
     if (!Array.isArray(rows)) {
-      console.error('[UserServiceSQL] Réponse inattendue de la base de données:', rows);
       return [];
     }
     

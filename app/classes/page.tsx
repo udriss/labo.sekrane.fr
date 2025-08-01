@@ -1,4 +1,4 @@
-// app/admin/classes/page.tsx
+// app/classes/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -52,10 +52,10 @@ interface ClassData {
   id: string;
   name: string;
   type: 'predefined' | 'custom';
-  createdAt: string;
-  createdBy: string;
-  userId?: string;
-  userEmail?: string;
+  created_at: string;
+  created_by: string;
+  user_id?: string;
+  user_email?: string;
 }
 
 interface ClassesData {
@@ -73,15 +73,17 @@ export default function ClassesManagementPage() {
     predefinedClasses: [],
     customClasses: []
   });
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingClass, setPendingClass] = useState<{ name: string; type: 'predefined' | 'custom' } | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassData | null>(null);
   const [className, setClassName] = useState("");
   const [classType, setClassType] = useState<'predefined' | 'custom'>('predefined');
 
-  // Vérifier l'autorisation
+  // Vérifier l'autorisation - permettre tous les utilisateurs connectés
   useEffect(() => {
-    if (session && session.user.role !== "ADMIN") {
+    if (session && !session.user) {
       router.push("/");
     }
   }, [session, router]);
@@ -105,50 +107,39 @@ export default function ClassesManagementPage() {
   };
 
   useEffect(() => {
-    if (session?.user?.role === "ADMIN") {
+    if (session?.user) {
       fetchClasses();
     }
   }, [session]);
 
   const handleAddClass = async () => {
+    setError(null);
+    // Vérifier si la classe existe déjà
+    const existingClass = [...(classType === 'predefined' ? classesData.predefinedClasses : classesData.customClasses)]
+      .find(c => c.name.toLowerCase() === className.toLowerCase());
+    if (existingClass) {
+      setPendingClass({ name: className, type: classType });
+      setConfirmDialogOpen(true);
+      return;
+    }
+    await actuallyAddClass(className, classType);
+  };
+
+  const actuallyAddClass = async (name: string, type: 'predefined' | 'custom') => {
     try {
       setError(null);
-      
-      if (classType === 'predefined') {
-        // Ajouter une classe système
-        const response = await fetch("/api/classes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: className, type: 'predefined' }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erreur lors de l'ajout");
-        }
-      } else {
-        // Ajouter une classe personnalisée pour l'admin
-        const response = await fetch(`/api/user/${session?.user?.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: session?.user?.name,
-            email: session?.user?.email,
-            selectedClasses: [className] // Ajouter la nouvelle classe
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erreur lors de l'ajout");
-        }
+      const response = await fetch("/api/classes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, type }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de l'ajout");
       }
-
-      setSuccessMessage(`Classe ${classType === 'predefined' ? 'système' : 'personnalisée'} ajoutée avec succès`);
+      setSuccessMessage(`Classe ${type === 'predefined' ? 'système' : 'personnalisée'} ajoutée avec succès`);
       setTimeout(() => setSuccessMessage(null), 3000);
       setClassName("");
       setClassType('predefined');
@@ -235,14 +226,14 @@ export default function ClassesManagementPage() {
     setClassType('predefined');
   };
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) {
     return (
       <Container maxWidth="sm" sx={{ textAlign: "center", mt: 8 }}>
         <Typography variant="h4" gutterBottom>
           Accès restreint
         </Typography>
         <Typography variant="body1">
-          Cette page est réservée aux administrateurs.
+          Veuillez vous connecter pour accéder à cette page.
         </Typography>
       </Container>
     );
@@ -300,6 +291,7 @@ export default function ClassesManagementPage() {
               Classes système ({classesData.predefinedClasses.length})
             </Box>
           } 
+          disabled={false}
         />
         <Tab 
           label={
@@ -308,6 +300,7 @@ export default function ClassesManagementPage() {
               Classes personnalisées ({classesData.customClasses.length})
             </Box>
           } 
+          disabled={false}
         />
       </Tabs>
 
@@ -335,15 +328,15 @@ export default function ClassesManagementPage() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {new Date(classItem.createdAt).toLocaleDateString("fr-FR")}
+                    {classItem.created_at ? new Date(classItem.created_at).toLocaleDateString("fr-FR") : "Date inconnue"}
                   </TableCell>
                   <TableCell>
                     <Chip 
                       icon={<AdminPanelSettings fontSize="small" />}
-                      label={classItem.createdBy === "SYSTEM" ? "Système initial" : `Admin ${classItem.createdBy}`}
+                      label={classItem.created_by === "SYSTEM" ? "Système initial" : `Admin ${classItem.created_by}`}
                       size="small"
                       variant="outlined"
-                      color={classItem.createdBy === "SYSTEM" ? "default" : "primary"}
+                      color={classItem.created_by === "SYSTEM" ? "default" : "primary"}
                     />
                   </TableCell>
                   <TableCell align="right">
@@ -351,6 +344,7 @@ export default function ClassesManagementPage() {
                       size="small"
                       onClick={() => handleOpenDialog(classItem)}
                       color="primary"
+                      disabled={!(session?.user?.role === "ADMIN" || session?.user?.role === "ADMINLABO")}
                     >
                       <Edit fontSize="small" />
                     </IconButton>
@@ -358,6 +352,7 @@ export default function ClassesManagementPage() {
                       size="small"
                       color="error"
                       onClick={() => handleDeleteClass(classItem.id)}
+                      disabled={!(session?.user?.role === "ADMIN" || session?.user?.role === "ADMINLABO")}
                     >
                       <Delete fontSize="small" />
                     </IconButton>
@@ -377,6 +372,30 @@ export default function ClassesManagementPage() {
           </Table>
         </TableContainer>
       )}
+      {/* Dialogue de confirmation pour ajout de classe avec nom existant */}
+      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+        <DialogTitle>Nom de classe déjà existant</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Une classe avec le nom "{pendingClass?.name}" existe déjà. Voulez-vous quand même l'ajouter ? (L'identifiant sera unique)
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setConfirmDialogOpen(false); setPendingClass(null); }}>Annuler</Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              if (pendingClass) {
+                await actuallyAddClass(pendingClass.name, pendingClass.type);
+                setConfirmDialogOpen(false);
+                setPendingClass(null);
+              }
+            }}
+          >
+            Ajouter quand même
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Onglet Classes personnalisées */}
       {tabValue === 1 && (
@@ -404,7 +423,7 @@ export default function ClassesManagementPage() {
                   <TableCell>
                     <Chip
                       icon={<Person fontSize="small" />}
-                      label={classItem.userId || "Inconnu"}
+                      label={classItem.created_by || "Inconnu"}
                       size="small"
                       color="secondary"
                       variant="outlined"
@@ -412,11 +431,11 @@ export default function ClassesManagementPage() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {classItem.userEmail || "-"}
+                      {classItem.user_email || "-"}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {new Date(classItem.createdAt).toLocaleDateString("fr-FR")}
+                    {classItem.created_at ? new Date(classItem.created_at).toLocaleDateString("fr-FR") : "Date inconnue"}
                   </TableCell>
                 </TableRow>
               ))}
@@ -471,7 +490,7 @@ export default function ClassesManagementPage() {
               </CardContent>
             </Card>
           </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">

@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth';
 import { getChemistryEvents, createChemistryEvent, updateChemistryEvent, deleteChemistryEvent } from '@/lib/calendar-utils'
-import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
 
 // GET - Récupérer les événements de chimie
@@ -41,8 +40,8 @@ export async function GET(request: NextRequest) {
       }],
       class: dbEvent.class_name,
       room: dbEvent.room,
-      materials: dbEvent.equipment_used?.map(id => ({ id, name: id })) || [],
-      chemicals: dbEvent.chemicals_used?.map(id => ({ id, name: id })) || [],
+      materials: dbEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
+      chemicals: dbEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
       remarks: dbEvent.notes,
       createdBy: dbEvent.created_by,
       createdAt: dbEvent.created_at || new Date().toISOString(),
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Créer un événement de chimie
+// POST - Créer un événement de chimie avec support multi-créneaux
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -90,48 +89,92 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Gérer les deux formats de timeSlots
-    let startDate, endDate;
-    const timeSlot = timeSlots[0]
+    // Créer plusieurs événements pour chaque créneau
+    const createdEvents: any[] = []
     
-    if (timeSlot.startDate && timeSlot.endDate) {
-      // Format: { startDate: "ISO", endDate: "ISO" }
-      startDate = timeSlot.startDate
-      endDate = timeSlot.endDate
-    } else if (date && timeSlot.startTime && timeSlot.endTime) {
-      // Format: date + { startTime: "HH:mm", endTime: "HH:mm" }
-      const startDateTime = new Date(`${date}T${timeSlot.startTime}`)
-      const endDateTime = new Date(`${date}T${timeSlot.endTime}`)
-      startDate = startDateTime.toISOString()
-      endDate = endDateTime.toISOString()
-    } else {
-      return NextResponse.json(
-        { error: 'Format de créneaux horaires invalide' },
-        { status: 400 }
-      )
+    for (let i = 0; i < timeSlots.length; i++) {
+      const timeSlot = timeSlots[i]
+      let startDate, endDate;
+      
+      if (timeSlot.startDate && timeSlot.endDate) {
+        // Format: { startDate: "ISO", endDate: "ISO" }
+        // Convertir en format MySQL DATETIME (YYYY-MM-DD HH:mm:ss)
+        const startDateObj = new Date(timeSlot.startDate)
+        const endDateObj = new Date(timeSlot.endDate)
+        startDate = startDateObj.toISOString().slice(0, 19).replace('T', ' ')
+        endDate = endDateObj.toISOString().slice(0, 19).replace('T', ' ')
+      } else if (timeSlot.date && timeSlot.startTime && timeSlot.endTime) {
+        // Format: { date: "YYYY-MM-DD", startTime: "HH:mm", endTime: "HH:mm" }
+        startDate = `${timeSlot.date} ${timeSlot.startTime}:00`
+        endDate = `${timeSlot.date} ${timeSlot.endTime}:00`
+      } else if (date && timeSlot.startTime && timeSlot.endTime) {
+        // Format: date + { startTime: "HH:mm", endTime: "HH:mm" }
+        const startDateTime = new Date(`${date}T${timeSlot.startTime}`)
+        const endDateTime = new Date(`${date}T${timeSlot.endTime}`)
+        startDate = startDateTime.toISOString().slice(0, 19).replace('T', ' ')
+        endDate = endDateTime.toISOString().slice(0, 19).replace('T', ' ')
+      } else {
+        return NextResponse.json(
+          { error: 'Format de créneau horaire invalide' },
+          { status: 400 }
+        )
+      }
+
+      const eventData = {
+        title: timeSlots.length > 1 ? `${title} (${i + 1}/${timeSlots.length})` : title,
+        start_date: startDate,
+        end_date: endDate,
+        description: description || '',
+        type: type?.toLowerCase() || 'other',
+        status: 'scheduled' as const,
+        room: room || '',
+        teacher: session.user.name || '',
+        class_name: className || classes?.[0] || '',
+        participants: [],
+        equipment_used: (materials || equipment)?.map((m: any) => typeof m === 'string' ? m : m.id || m.name || '') || [],
+        chemicals_used: chemicals?.map((c: any) => typeof c === 'string' ? c : c.id || c.name || '') || [],
+        notes: remarks || '',
+        color: '#2196f3', // Couleur bleue pour la chimie
+        created_by: session.user.id
+      }
+
+      const createdEvent = await createChemistryEvent(eventData)
+      createdEvents.push(createdEvent)
     }
 
-    const eventData = {
-      title,
-      start_date: startDate,
-      end_date: endDate,
-      description: description || '',
-      type: type?.toLowerCase() || 'other',
-      status: 'scheduled' as const,
-      room: room || '',
-      teacher: session.user.name || '',
-      class_name: className || classes?.[0] || '',
-      participants: [],
-      equipment_used: (materials || equipment)?.map((m: any) => typeof m === 'string' ? m : m.id || m.name || '') || [],
-      chemicals_used: chemicals?.map((c: any) => typeof c === 'string' ? c : c.id || c.name || '') || [],
-      notes: remarks || '',
-      color: '#2196F3', // Couleur bleue pour la chimie
-      created_by: session.user.id
-    }
+    // Retourner le format attendu avec tous les créneaux
+    const responseEvents = createdEvents.map((createdEvent, index) => ({
+      id: createdEvent.id,
+      title: createdEvent.title,
+      description: createdEvent.description,
+      type: createdEvent.type.toUpperCase() === 'TP' ? 'TP' : 
+            createdEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
+            createdEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
+      state: 'VALIDATED',
+      timeSlots: [{
+        id: `${createdEvent.id}-slot-1`,
+        startDate: createdEvent.start_date,
+        endDate: createdEvent.end_date,
+        status: 'active' as const
+      }],
+      actuelTimeSlots: [{
+        id: `${createdEvent.id}-slot-1`,
+        startDate: createdEvent.start_date,
+        endDate: createdEvent.end_date,
+        status: 'active' as const
+      }],
+      class: createdEvent.class_name,
+      room: createdEvent.room,
+      materials: createdEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
+      chemicals: createdEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
+      remarks: createdEvent.notes,
+      createdBy: createdEvent.created_by,
+      createdAt: createdEvent.created_at,
+      updatedAt: createdEvent.updated_at
+    }))
 
-    const createdEvent = await createChemistryEvent(eventData)
-
-    return NextResponse.json(createdEvent)
+    // Si un seul créneau, retourner l'événement directement, sinon retourner un tableau
+    return NextResponse.json(responseEvents.length === 1 ? responseEvents[0] : responseEvents)
   } catch (error) {
     console.error('Erreur lors de la création de l\'événement de chimie:', error)
     return NextResponse.json(
@@ -141,7 +184,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Mettre à jour un événement de chimie
+// PUT - Mettre à jour un événement de chimie avec support multi-créneaux
 export async function PUT(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -159,30 +202,70 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Gérer les deux formats de timeSlots si fournis
-    let startDate, endDate;
-    if (timeSlots && timeSlots.length > 0) {
-      const timeSlot = timeSlots[0]
-      startDate = timeSlot.startDate
-      endDate = timeSlot.endDate
+    // Pour PUT, gérer seulement un créneau (le premier) pour la compatibilité
+    const timeSlot = timeSlots?.[0]
+    const updates: any = {}
+    
+    if (title !== undefined) updates.title = title
+    if (description !== undefined) updates.description = description
+    if (timeSlot) {
+      if (timeSlot.startDate && timeSlot.endDate) {
+        // Format ISO
+        const startDateObj = new Date(timeSlot.startDate)
+        const endDateObj = new Date(timeSlot.endDate)
+        updates.start_date = startDateObj.toISOString().slice(0, 19).replace('T', ' ')
+        updates.end_date = endDateObj.toISOString().slice(0, 19).replace('T', ' ')
+      } else if (timeSlot.date && timeSlot.startTime && timeSlot.endTime) {
+        // Format séparé
+        updates.start_date = `${timeSlot.date} ${timeSlot.startTime}:00`
+        updates.end_date = `${timeSlot.date} ${timeSlot.endTime}:00`
+      }
+    }
+    if (type !== undefined) updates.type = type.toLowerCase()
+    if (room !== undefined) updates.room = room
+    if (className !== undefined) updates.class_name = className
+    if (materials !== undefined) {
+      updates.equipment_used = JSON.stringify(materials.map((m: any) => typeof m === 'string' ? m : m.id || m.name || ''))
+    }
+    if (chemicals !== undefined) {
+      updates.chemicals_used = JSON.stringify(chemicals.map((c: any) => typeof c === 'string' ? c : c.id || c.name || ''))
+    }
+    if (remarks !== undefined) updates.notes = remarks
+
+    const updatedEvent = await updateChemistryEvent(id, updates)
+
+    // Convertir en format CalendarEvent pour la réponse
+    const responseEvent = {
+      id: updatedEvent.id,
+      title: updatedEvent.title,
+      description: updatedEvent.description,
+      type: updatedEvent.type.toUpperCase() === 'TP' ? 'TP' : 
+            updatedEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
+            (updatedEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER'),
+      state: 'VALIDATED',
+      timeSlots: [{
+        id: `${updatedEvent.id}-slot-1`,
+        startDate: updatedEvent.start_date,
+        endDate: updatedEvent.end_date,
+        status: 'active' as const
+      }],
+      actuelTimeSlots: [{
+        id: `${updatedEvent.id}-slot-1`,
+        startDate: updatedEvent.start_date,
+        endDate: updatedEvent.end_date,
+        status: 'active' as const
+      }],
+      class: updatedEvent.class_name,
+      room: updatedEvent.room,
+      materials: updatedEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
+      chemicals: updatedEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
+      remarks: updatedEvent.notes,
+      createdBy: updatedEvent.created_by,
+      createdAt: updatedEvent.created_at,
+      updatedAt: updatedEvent.updated_at
     }
 
-    const updateData: any = {}
-    if (title !== undefined) updateData.title = title
-    if (description !== undefined) updateData.description = description
-    if (startDate) updateData.start_date = startDate
-    if (endDate) updateData.end_date = endDate
-    if (type !== undefined) updateData.type = type?.toLowerCase() || 'other'
-    if (room !== undefined) updateData.room = room
-    if (className !== undefined) updateData.class_name = className
-    if (materials !== undefined) updateData.equipment_used = materials.map((m: any) => typeof m === 'string' ? m : m.id || m.name || '')
-    if (chemicals !== undefined) updateData.chemicals_used = chemicals.map((c: any) => typeof c === 'string' ? c : c.id || c.name || '')
-    if (remarks !== undefined) updateData.notes = remarks
-    updateData.updated_at = new Date().toISOString()
-
-    const updatedEvent = await updateChemistryEvent(id, updateData)
-
-    return NextResponse.json(updatedEvent)
+    return NextResponse.json(responseEvent)
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'événement de chimie:', error)
     return NextResponse.json(
@@ -210,16 +293,9 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const success = await deleteChemistryEvent(id)
+    await deleteChemistryEvent(id)
 
-    if (success) {
-      return NextResponse.json({ message: 'Événement supprimé avec succès' })
-    } else {
-      return NextResponse.json(
-        { error: 'Événement non trouvé' },
-        { status: 404 }
-      )
-    }
+    return NextResponse.json({ message: 'Événement supprimé avec succès' })
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'événement de chimie:', error)
     return NextResponse.json(

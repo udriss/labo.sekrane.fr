@@ -1,12 +1,14 @@
 // lib/utils/notification-messages.ts
 
+import React from 'react';
+
 export interface EnhancedNotificationMessage {
   messageToDisplay: string;
   log_message: string;
 }
 
 export interface NotificationDisplayData {
-  displayMessage: string;
+  displayMessage: string | React.ReactElement;
   logMessage: string;
   details?: {
     userName?: string;
@@ -20,7 +22,7 @@ export interface NotificationDisplayData {
 }
 
 /**
- * Parse le message de notification et retourne les données d'affichage
+ * Parse le message de notification et retourne les données d'affichage avec mise en forme avancée
  */
 export function parseNotificationMessage(message: any): NotificationDisplayData {
   try {
@@ -33,41 +35,33 @@ export function parseNotificationMessage(message: any): NotificationDisplayData 
       };
     }
 
-    // Si c'est une chaîne JSON
+    // Si c'est une chaîne, on applique le parsing avancé avec mise en forme
     if (typeof message === 'string') {
       try {
         const parsed = JSON.parse(message);
         if (parsed.messageToDisplay) {
-          return {
-            displayMessage: parsed.messageToDisplay,
-            logMessage: parsed.log_message || 'Action effectuée',
-            details: extractDetailsFromMessage(parsed)
-          };
+          return parseAndStyleMessage(parsed.messageToDisplay, parsed);
         }
-        // Message simple
-        return {
-          displayMessage: parsed,
-          logMessage: parsed,
-        };
+        return parseAndStyleMessage(String(parsed), parsed);
       } catch {
-        // Chaîne simple
-        return {
-          displayMessage: message,
-          logMessage: message,
-        };
+        // Chaîne simple - appliquer le parsing avec style
+        return parseAndStyleMessage(message, {});
       }
     }
 
     // Format d'ancienne notification multilingue
     if (typeof message === 'object' && message !== null) {
-      if (message.fr) return { displayMessage: message.fr, logMessage: message.fr };
-      if (message.en) return { displayMessage: message.en, logMessage: message.en };
-      if (message.text) return { displayMessage: message.text, logMessage: message.text };
+      let messageText = '';
+      if (typeof message.fr === 'string') messageText = message.fr;
+      else if (typeof message.en === 'string') messageText = message.en;
+      else if (typeof message.text === 'string') messageText = message.text;
+      else {
+        const firstValue = Object.values(message).find(v => typeof v === 'string');
+        messageText = firstValue || '';
+      }
       
-      // Prendre la première valeur
-      const firstValue = Object.values(message)[0];
-      if (typeof firstValue === 'string') {
-        return { displayMessage: firstValue, logMessage: firstValue };
+      if (messageText) {
+        return parseAndStyleMessage(messageText, message);
       }
     }
 
@@ -80,6 +74,137 @@ export function parseNotificationMessage(message: any): NotificationDisplayData 
     return {
       displayMessage: 'Message non disponible',
       logMessage: 'Erreur de parsing',
+    };
+  }
+}
+
+/**
+ * Parse et stylise un message de notification
+ */
+function parseAndStyleMessage(message: string, originalData: any): NotificationDisplayData {
+  // Expression régulière pour capturer les éléments principaux du message
+  const patterns = {
+    // Capture: [Utilisateur] a [action] [item] : [détails]
+    general: /^(.+?)\s+a\s+(ajouté|modifié|supprimé|déplacé|changé)\s+(.+?)(?:\s*:\s*(.+))?$/i,
+    // Capture pour les changements spécifiques (quantité, localisation, etc.)
+    change: /^(.+?)\s+a\s+(modifié|changé|déplacé)\s+(.+?)\s+(?:de\s+)?(.+?)\s*:\s*(.+)\s*→\s*(.+)$/i,
+    // Capture pour les ajouts
+    addition: /^(.+?)\s+a\s+ajouté\s+(.+?)\s*\((.+?)\)\s+à\s+l'inventaire$/i,
+  };
+
+  // Fonction pour créer du texte stylisé
+  const createStyledText = (text: string, type: 'user' | 'item' | 'action' | 'quantity' | 'old' | 'new' | 'details') => {
+    const styles: Record<string, React.CSSProperties> = {
+      user: { fontWeight: 'bold', color: '#1976d2' },
+      item: { fontWeight: 'bold', color: '#2e7d32' },
+      action: { fontStyle: 'italic', color: '#f57c00' },
+      quantity: { fontWeight: 'bold', color: '#1976d2', backgroundColor: '#e3f2fd', padding: '2px 4px', borderRadius: '4px' },
+      old: { textDecoration: 'line-through', color: '#d32f2f', backgroundColor: '#ffebee', padding: '2px 4px', borderRadius: '4px' },
+      new: { fontWeight: 'bold', color: '#2e7d32', backgroundColor: '#e8f5e8', padding: '2px 4px', borderRadius: '4px' },
+      details: { color: '#666', fontStyle: 'italic' }
+    };
+    
+    return React.createElement('span', { 
+      style: styles[type],
+      key: `${type}-${Math.random()}`
+    }, text);
+  };
+
+  // Essayer de matcher le pattern de changement
+  let changeMatch: RegExpMatchArray | null = null;
+  if (typeof message === 'string') {
+    changeMatch = message.match(patterns.change);
+  }
+  if (changeMatch !== null) {
+    const [, userName, action, property, item, oldValue, newValue] = changeMatch;
+    return {
+      displayMessage: React.createElement('span', {},
+        createStyledText(userName, 'user'), ' a ',
+        createStyledText(action, 'action'), ' ', property, ' de ',
+        createStyledText(item, 'item'), ' : ',
+        createStyledText(oldValue, 'old'), ' → ',
+        createStyledText(newValue, 'new')
+      ),
+      logMessage: message,
+      details: {
+        userName,
+        itemName: item,
+        action,
+        oldValue,
+        newValue,
+        ...extractDetailsFromMessage(originalData)
+      }
+    };
+  }
+
+  // Essayer de matcher le pattern d'ajout
+  let additionMatch: RegExpMatchArray | null = null;
+  if (typeof message === 'string') {
+    additionMatch = message.match(patterns.addition);
+  }
+  if (additionMatch !== null) {
+    const [, userName, itemName, quantity] = additionMatch;
+    return {
+      displayMessage: React.createElement('span', {},
+        createStyledText(userName, 'user'), ' a ajouté ',
+        createStyledText(itemName, 'item'),
+        createStyledText(` (${quantity})`, 'quantity'), ' à l\'inventaire'
+      ),
+      logMessage: message,
+      details: {
+        userName,
+        itemName,
+        action: 'ajouté',
+        ...extractDetailsFromMessage(originalData)
+      }
+    };
+  }
+
+  // Pattern général
+  let generalMatch: RegExpMatchArray | null = null;
+  if (typeof message === 'string') {
+    generalMatch = message.match(patterns.general);
+  }
+  if (generalMatch !== null) {
+    const [, userName, action, item, details] = generalMatch;
+    return {
+      displayMessage: React.createElement('span', {},
+        createStyledText(userName, 'user'), ' a ',
+        createStyledText(action, 'action'), ' ',
+        createStyledText(item, 'item'),
+        details ? React.createElement('span', {}, ' : ', createStyledText(details, 'details')) : null
+      ),
+      logMessage: message,
+      details: {
+        userName,
+        itemName: item,
+        action,
+        ...extractDetailsFromMessage(originalData)
+      }
+    };
+  }
+
+  // Si aucun pattern ne correspond, retourner le message original avec le premier mot en gras
+  if (typeof message === 'string') {
+    const parts = message.split(' ');
+    const firstWord = parts[0];
+    const restOfMessage = parts.slice(1).join(' ');
+    return {
+      displayMessage: React.createElement('span', {},
+        createStyledText(firstWord, 'user'), ' ', restOfMessage
+      ),
+      logMessage: message,
+      details: {
+        userName: firstWord,
+        action: 'action',
+        ...extractDetailsFromMessage(originalData)
+      }
+    };
+  } else {
+    // Si ce n'est pas une chaîne, afficher le message brut
+    return {
+      displayMessage: String(message),
+      logMessage: String(message),
     };
   }
 }
@@ -110,9 +235,14 @@ export function getDetailedDescription(
 ): string {
   const { details } = displayData;
   
-  if (!details) return displayData.displayMessage;
+  // Si displayMessage est un React element, on utilise le logMessage
+  const baseMessage = typeof displayData.displayMessage === 'string' 
+    ? displayData.displayMessage 
+    : displayData.logMessage;
+  
+  if (!details) return baseMessage;
 
-  let description = displayData.displayMessage;
+  let description = baseMessage;
 
   // Ajouter des détails spécifiques selon le module
   if (notification.module === 'CHEMICALS') {
@@ -149,66 +279,82 @@ export function getDetailedDescription(
 }
 
 /**
- * Obtient l'icône appropriée selon le module et l'action
+ * Obtient l'icône Material-UI appropriée selon le module et l'action
  */
 export function getNotificationIcon(module: string, actionType: string): string {
+  // Icônes Material-UI par module
   const moduleIcons = {
-    CHEMICALS: '🧪',
-    EQUIPMENT: '🔬',
-    USERS: '👤',
-    CALENDAR: '📅',
-    ORDERS: '📦',
-    SECURITY: '🔒',
-    SYSTEM: '⚙️',
-    ROOMS: '🏢'
+    CHEMICALS: 'Science', // Science icon
+    EQUIPMENT: 'Biotech', // Biotech icon
+    USERS: 'Person', // Person icon
+    CALENDAR: 'Event', // Event icon
+    ORDERS: 'ShoppingCart', // ShoppingCart icon
+    SECURITY: 'Security', // Security icon
+    SYSTEM: 'Settings', // Settings icon
+    ROOMS: 'Business', // Business icon
+    NOTEBOOK: 'MenuBook', // MenuBook icon
+    AUDIT: 'Assignment' // Assignment icon
   };
 
+  // Icônes Material-UI par action
   const actionIcons = {
-    CREATE: '➕',
-    UPDATE: '✏️',
-    DELETE: '🗑️',
-    READ: '👀'
+    CREATE: 'Add', // Add icon
+    UPDATE: 'Edit', // Edit icon
+    DELETE: 'Delete', // Delete icon
+    READ: 'Visibility', // Visibility icon
+    POST: 'Send', // Send icon
+    GET: 'GetApp' // GetApp icon
   };
 
-  return moduleIcons[module as keyof typeof moduleIcons] || actionIcons[actionType as keyof typeof actionIcons] || '📢';
+  return moduleIcons[module as keyof typeof moduleIcons] || 
+         actionIcons[actionType as keyof typeof actionIcons] || 
+         'Notifications'; // Default Notifications icon
 }
 
 /**
- * Obtient la couleur d'affichage selon la sévérité
+ * Obtient la couleur d'affichage selon la sévérité avec plus d'options
  */
 export function getSeverityColor(severity: string): {
   color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
   bgcolor?: string;
 } {
-  switch (severity) {
+  switch (severity.toLowerCase()) {
     case 'critical':
-      return { color: 'error' };
+      return { color: 'error', bgcolor: '#ffebee' };
     case 'high':
-      return { color: 'warning' };
+      return { color: 'error', bgcolor: '#fff3e0' };
     case 'medium':
-      return { color: 'info' };
+      return { color: 'warning', bgcolor: '#fff8e1' };
     case 'low':
-      return { color: 'success' };
+      return { color: 'info', bgcolor: '#e3f2fd' };
+    case 'success':
+      return { color: 'success', bgcolor: '#e8f5e8' };
     default:
-      return { color: 'default' };
+      return { color: 'default', bgcolor: '#fafafa' };
   }
 }
 
 /**
- * Formate la date de façon relative
+ * Formate la date de façon relative avec plus de précision
  */
 export function formatRelativeTime(timestamp: string | Date): string {
   const date = new Date(timestamp);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMinutes < 1) return 'À l\'instant';
+  if (diffSeconds < 30) return 'À l\'instant';
+  if (diffSeconds < 60) return `Il y a ${diffSeconds}s`;
   if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
   if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays < 7) return `Il y a ${diffDays}j`;
+  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`;
+  }
   
   return date.toLocaleDateString('fr-FR', {
     day: 'numeric',
@@ -216,4 +362,46 @@ export function formatRelativeTime(timestamp: string | Date): string {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+/**
+ * Obtient une icône Material-UI basée sur l'action utilisateur
+ */
+export function getActionIcon(action: string): string {
+  const actionIconMap: Record<string, string> = {
+    'ajouté': 'Add',
+    'modifié': 'Edit',
+    'supprimé': 'Delete',
+    'déplacé': 'DriveFileMove',
+    'changé': 'SwapHoriz',
+    'créé': 'Add',
+    'mis à jour': 'Update',
+    'archivé': 'Archive',
+    'restauré': 'Restore',
+    'validé': 'CheckCircle',
+    'rejeté': 'Cancel'
+  };
+
+  return actionIconMap[action.toLowerCase()] || 'Circle';
+}
+
+/**
+ * Obtient une couleur basée sur l'action utilisateur
+ */
+export function getActionColor(action: string): string {
+  const actionColorMap: Record<string, string> = {
+    'ajouté': '#2e7d32',
+    'créé': '#2e7d32',
+    'modifié': '#f57c00',
+    'changé': '#f57c00',
+    'mis à jour': '#f57c00',
+    'supprimé': '#d32f2f',
+    'archivé': '#666',
+    'déplacé': '#1976d2',
+    'restauré': '#2e7d32',
+    'validé': '#2e7d32',
+    'rejeté': '#d32f2f'
+  };
+
+  return actionColorMap[action.toLowerCase()] || '#666';
 }

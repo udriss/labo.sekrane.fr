@@ -63,7 +63,11 @@ export default function NotificationItem({
   const detailedDescription = getDetailedDescription(notification, displayData);
   const icon = getNotificationIcon(notification.module || 'SYSTEM', notification.actionType || 'INFO');
   const severityColor = getSeverityColor(notification.severity);
-  
+  console.log('Notification Item:', notification, displayData);
+  if (notification.id === "001d4036-2827-488a-b05a-8e06c1fa1889") {
+     
+  }
+
   const handleClick = () => {
     if (onClick) {
       onClick();

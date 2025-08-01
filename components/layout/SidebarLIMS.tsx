@@ -96,7 +96,7 @@ const menuItems: MenuItem[] = [
         id: 'classes',
         label: 'Classes',
         icon: <GroupAdd />,
-        path: '/admin/classes',
+        path: '/classes',
         roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
       }
     ],

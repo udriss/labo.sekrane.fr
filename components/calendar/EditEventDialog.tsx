@@ -757,39 +757,35 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
           {/* Option multi-créneaux pour les TP */}
           {formData.type === 'TP' && (
-            <Alert severity="info">
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Typography variant="body2">
-                  Voulez-vous ajouter des créneaux supplémentaires pour cette séance TP ?
-                </Typography>
-                <Button
-                  size="small"
-                  onClick={() => setShowMultipleSlots(!showMultipleSlots)}
-                  startIcon={showMultipleSlots ? <Close /> : <Add />}
-                >
-                  {showMultipleSlots ? 'Mode simple' : 'Gérer les créneaux'}
-                </Button>
-              </Box>
-            </Alert>
-          )}
-
-          {/* Dates et heures */}
-          {showMultipleSlots && formData.type === 'TP' ? (
-            // Mode multi-créneaux
+      
             <Box>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+              <Box display="flex" alignItems="center" justifyContent="start" mb={2}>
                 <Typography variant="subtitle1" fontWeight="bold">
                   Créneaux horaires
                 </Typography>
+              </Box>
+            <Alert severity="info"
+              icon={<InfoOutlined />}
+              lang='Ajouter des créneaux'
+              action={
                 <Button
                   startIcon={<Add />}
                   onClick={addTimeSlot}
+                  color='success'
                   variant="outlined"
                   size="small"
                 >
                   Ajouter un créneau
                 </Button>
+              }
+              sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="body2">
+                  Voulez-vous ajouter des créneaux supplémentaires pour cette séance TP ?
+                </Typography>
               </Box>
+            </Alert>
 
               {timeSlots.map((slot, index) => (
                 <Box 
@@ -965,112 +961,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 </Alert>
               )}
             </Box>
-          ) : (
-            // Mode simple
-            <>
-              <Box display="flex" gap={2} flexWrap="wrap">
-                <DatePicker
-                  label="Date de début"
-                  value={formData.startDate}
-                  onChange={(newValue) => {
-                    // Correction du problème de timezone
-                    let correctedDate = null
-                    if (newValue) {
-                      correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
-                    }
-                    setFormData({ 
-                      ...formData, 
-                      startDate: correctedDate,
-                      // Si pas multi-jours, mettre à jour la date de fin aussi
-                      endDate: isMultiDay ? formData.endDate : correctedDate
-                    })
-                  }}
-                  slotProps={{
-                    textField: { 
-                      required: true,
-                      sx: { flexGrow: 1, minWidth: '200px' }
-                    }
-                  }}
-                />
 
-                {isMultiDay && (
-                  <DatePicker
-                    label="Date de fin"
-                    value={formData.endDate}
-                    onChange={(newValue) => {
-                      // Correction du problème de timezone
-                      let correctedDate = null
-                      if (newValue) {
-                        correctedDate = new Date(newValue.getFullYear(), newValue.getMonth(), newValue.getDate(), 12, 0, 0)
-                      }
-                      setFormData({ ...formData, endDate: correctedDate })
-                    }}
-                    minDate={formData.startDate || undefined}
-                    slotProps={{
-                      textField: { 
-                        required: true,
-                        sx: { flexGrow: 1, minWidth: '200px' }
-                      }
-                    }}
-                  />
-                )}
-              </Box>
-              <Box display="flex" gap={2}>
-                <TimePicker
-                  label="Heure de début"
-                  value={formData.startTime ? new Date(`2000-01-01T${formData.startTime}`) : null}
-                  onChange={(newValue) => {
-                    if (newValue) {
-                      const hours = newValue.getHours().toString().padStart(2, '0')
-                      const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                      setFormData({ ...formData, startTime: `${hours}:${minutes}` })
-                    }
-                  }}
-                      slotProps={{
-                        textField: { 
-                          size: "small",
-                          sx: { 
-                            minWidth: { xs: '48%', sm: 120 },
-                            transition: 'all 0.3s ease'
-                          },
-                          onClick: (e: any) => {
-                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                              const button = e.currentTarget.querySelector('button')
-                              if (button) button.click()
-                            }
-                          }
-                        }
-                      }}
-                />
-
-                <TimePicker
-                  label="Heure de fin"
-                  value={formData.endTime ? new Date(`2000-01-01T${formData.endTime}`) : null}
-                  onChange={(newValue) => {
-                    if (newValue) {
-                      const hours = newValue.getHours().toString().padStart(2, '0')
-                      const minutes = newValue.getMinutes().toString().padStart(2, '0')
-                      setFormData({ ...formData, endTime: `${hours}:${minutes}` })
-                    }
-                  }}
-                      slotProps={{
-                        textField: { 
-                          size: "small",
-                          sx: { 
-                            minWidth: { xs: '48%', sm: 120 },
-                            transition: 'all 0.3s ease'
-                          },
-                          onClick: (e: any) => {
-                            if (e.target && !(e.target as Element).closest('.MuiIconButton-root')) {
-                              const button = e.currentTarget.querySelector('button')
-                              if (button) button.click()
-                            }
-                          }
-                        }
-                      }}
-                />
-              </Box>
-            </>
           )}
 
           {/* Avertissement heures hors établissement */}
@@ -1102,7 +993,12 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             <>
 <Autocomplete
   freeSolo
-  options={userClasses}
+  options={[
+    // D'abord les classes personnalisées
+    ...customClasses.sort(),
+    // Puis les classes prédéfinies
+    ...userClasses.filter(c => !customClasses.includes(c)).sort()
+  ].filter((value, index, self) => self.indexOf(value) === index)}
   value={formData.class}
   onChange={async (_, newValue) => {
     // Si newValue est null ou vide, on réinitialise
@@ -1246,31 +1142,35 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       }}
     />
   )}
-  renderOption={(props, option) => (
-    <li {...props}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-        <School fontSize="small" color="action" />
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="body2">
-            {option}
-          </Typography>
-          {customClasses.includes(option) && (
-            <Typography variant="caption" color="text.secondary">
-              Classe personnalisée
+  renderOption={(props, option) => {
+    const isCustom = customClasses.includes(option)
+    
+    return (
+      <li {...props}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          <School fontSize="small" color={isCustom ? "secondary" : "action"} />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="body2">
+              {option}
             </Typography>
+            {isCustom && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                ID: USER_CLASS_{option.replace(/\s+/g, '_').toUpperCase()}
+              </Typography>
+            )}
+          </Box>
+          {isCustom && (
+            <Chip 
+              label="Personnalisée" 
+              size="small" 
+              color="secondary" 
+              sx={{ height: 20 }}
+            />
           )}
         </Box>
-        {customClasses.includes(option) && session?.user?.role === 'TEACHER' && (
-          <Chip 
-            label="Ma classe" 
-            size="small" 
-            color="secondary" 
-            sx={{ height: 20 }}
-          />
-        )}
-      </Box>
-    </li>
-  )}
+      </li>
+    )
+  }}
   filterOptions={(options, state) => {
     const filtered = options.filter(option =>
       option.toLowerCase().includes(state.inputValue.toLowerCase())
@@ -1281,6 +1181,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   isOptionEqualToValue={(option, value) => 
     option.toLowerCase() === value.toLowerCase()
   }
+  groupBy={(option) => customClasses.includes(option) ? "Mes classes personnalisées" : "Classes prédéfinies"}
 />
 
               <TextField

@@ -127,10 +127,8 @@ export function useReferenceData() {
         }
       }
 
-      // Déterminer l'API à utiliser
-      const apiEndpoint = type === 'predefined'
-        ? '/api/classes' 
-        : '/api/user/classes'
+      // Utiliser toujours l'API /api/classes qui gère maintenant les deux types
+      const apiEndpoint = '/api/classes'
 
       // Appel API pour créer la classe
       const response = await fetch(apiEndpoint, {
@@ -145,7 +143,8 @@ export function useReferenceData() {
       })
 
       if (response.ok) {
-        const newClass = await response.json()
+        const result = await response.json()
+        const newClass = result.data
         
         // Mettre à jour la liste locale
         setUserClasses(prev => [...prev, newClass.name])
@@ -214,7 +213,8 @@ export function useReferenceData() {
         }
       }
 
-      const response = await fetch(`/api/user/classes?name=${encodeURIComponent(className)}`, {
+      // Utiliser l'API /api/classes pour supprimer une classe personnalisée par nom
+      const response = await fetch(`/api/classes?name=${encodeURIComponent(className)}`, {
         method: 'DELETE'
       })
 

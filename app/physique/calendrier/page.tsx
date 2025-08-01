@@ -81,22 +81,30 @@ export default function PhysiqueCalendrierPage() {
   const calendarEvents = usePhysicsCalendarEvents(calendarData)
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   
-  // Pour la compatibilité avec les composants existants
+  // Utilisation directe des données du hook physique
   const { events, loading, error } = calendarData
-  const setEvents = (newEvents: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => {
-    // Cette fonction sera utilisée par les composants qui modifient directement les événements
-    if (typeof newEvents === 'function') {
-      // Si c'est une fonction, on ne peut pas facilement l'appliquer ici
-      // Les mises à jour se feront via les hooks spécialisés
-      console.warn('setEvents avec fonction non supporté pour physique, utiliser les hooks spécialisés')
-    } else {
-      // Pour l'instant, on recharge les données
-      calendarData.loadEvents()
-    }
-  }
   
   const fetchEvents = async () => {
-    await calendarData.loadEvents()
+    try {
+      await calendarData.loadEvents()
+    } catch (error) {
+      console.error('Erreur lors du rechargement des événements physique:', error)
+    }
+  }
+
+  // Fonction spécialisée pour récupérer les événements physique depuis l'API
+  const fetchPhysicsEvents = async () => {
+    try {
+      const response = await fetch('/api/calendrier/physique/')
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+      const physicsEvents = await response.json()
+      return physicsEvents
+    } catch (error) {
+      console.error('Erreur lors de la récupération des événements physique:', error)
+      return []
+    }
   }
 
   // Fonction pour déterminer si l'utilisateur est le créateur d'un événement
@@ -137,7 +145,7 @@ export default function PhysiqueCalendrierPage() {
     saveTabValue(newValue)
   }
 
-  // Récupération du rôle utilisateur
+  // Récupération du rôle utilisateur et chargement initial des événements
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
@@ -165,6 +173,13 @@ export default function PhysiqueCalendrierPage() {
     
     fetchUserRole()
   }, [session, status])
+
+  // Chargement initial des événements physique
+  useEffect(() => {
+    if (session && userRole) {
+      fetchEvents()
+    }
+  }, [session, userRole])
 
   // Handler pour ouvrir les détails d'un événement
   const handleEventClick = (event: CalendarEvent) => {

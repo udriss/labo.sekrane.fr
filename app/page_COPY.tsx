@@ -42,6 +42,7 @@ interface Module {
   color: string;
   gradient?: string;
   features: string[];
+  discipline?: string;
 }
 
 // Animation variants
@@ -314,45 +315,167 @@ const ModuleCard = ({ module, disabled = false }: { module: Module; disabled?: b
   );
 };
 
-// Modules principaux avec gradients
-const MAIN_MODULES: Module[] = [
-  {
-    title: "Inventaire Chimique",
-    description: "Gestion complète des réactifs chimiques, suivi des stocks et alertes de sécurité",
-    icon: <Science sx={{ fontSize: 32 }} />,
-    href: "/chemicals",
-    color: "#1976d2",
-    gradient: "linear-gradient(135deg, #0021b418 0%, #764ba218 100%)",
-    features: ["Scanner QR", "Stock temps réel", "Alertes sécurité"]
-  },
-  {
-    title: "Matériel de Laboratoire",
-    description: "Inventaire, maintenance et réservation du matériel",
-    icon: <Inventory sx={{ fontSize: 32 }} />,
-    href: "/materiel",
-    color: "#388e3c",
-    gradient: "linear-gradient(135deg, #84fab033 0%, #8fd3f433 100%)",
-    features: ["Maintenance", "Réservations", "Localisation"]
-  },
-  {
-    title: "Cahier de TP",
-    description: "Laboratoire électronique pour vos expériences",
-    icon: <Assignment sx={{ fontSize: 32 }} />,
-    href: "/notebook",
-    color: "#f57c00",
-    gradient: "linear-gradient(135deg, #fa709a33 0%, #fee14033 100%)",
-    features: ["Protocoles", "Calculs auto", "Historique"]
-  },
-  {
-    title: "Planification",
-    description: "Calendrier intelligent et gestion des ressources",
-    icon: <CalendarMonth sx={{ fontSize: 32 }} />,
-    href: "/calendrier",
-    color: "#d32f2f",
-    gradient: "linear-gradient(135deg, #93fb9c33 0%, #00411252 100%)",
-    features: ["Planning visuel", "Ressources", "Notifications"]
-  }
-]
+// Modules par discipline
+const MODULES_BY_DISCIPLINE = {
+  chemistry: [
+    {
+      title: "Inventaire Chimique",
+      description: "Gestion complète des réactifs chimiques, suivi des stocks et alertes de sécurité",
+      icon: <Science sx={{ fontSize: 32 }} />,
+      href: "/chimie/chemicals",
+      color: "#1976d2",
+      gradient: "linear-gradient(135deg, #0021b418 0%, #764ba218 100%)",
+      features: ["Scanner QR", "Stock temps réel", "Alertes sécurité"]
+    },
+    {
+      title: "Matériel Chimique",
+      description: "Inventaire, maintenance et réservation du matériel de chimie",
+      icon: <Inventory sx={{ fontSize: 32 }} />,
+      href: "/chimie/materiel",
+      color: "#388e3c",
+      gradient: "linear-gradient(135deg, #84fab033 0%, #8fd3f433 100%)",
+      features: ["Maintenance", "Réservations", "Localisation"]
+    },
+    {
+      title: "Cahier de TP Chimie",
+      description: "Laboratoire électronique pour vos expériences de chimie",
+      icon: <Assignment sx={{ fontSize: 32 }} />,
+      href: "/chimie/notebook",
+      color: "#f57c00",
+      gradient: "linear-gradient(135deg, #fa709a33 0%, #fee14033 100%)",
+      features: ["Protocoles", "Calculs auto", "Historique"]
+    },
+    {
+      title: "Planning Chimie",
+      description: "Calendrier intelligent et gestion des ressources chimiques",
+      icon: <CalendarMonth sx={{ fontSize: 32 }} />,
+      href: "/chimie/calendrier",
+      color: "#d32f2f",
+      gradient: "linear-gradient(135deg, #93fb9c33 0%, #00411252 100%)",
+      features: ["Planning visuel", "Ressources", "Notifications"]
+    }
+  ],
+  physics: [
+    {
+      title: "Consommables Physique",
+      description: "Gestion des composants et matériaux pour la physique",
+      icon: <Memory sx={{ fontSize: 32 }} />,
+      href: "/physique/consumables",
+      color: "#4caf50",
+      gradient: "linear-gradient(135deg, #4caf5018 0%, #2196f318 100%)",
+      features: ["Composants", "Stock temps réel", "Alertes"]
+    },
+    {
+      title: "Matériel Physique",
+      description: "Inventaire et maintenance des instruments de physique",
+      icon: <Speed sx={{ fontSize: 32 }} />,
+      href: "/physique/materiel",
+      color: "#ff5722",
+      gradient: "linear-gradient(135deg, #ff572233 0%, #795548333 100%)",
+      features: ["Instruments", "Maintenance", "Calibrage"]
+    },
+    {
+      title: "Cahier de TP Physique",
+      description: "Laboratoire électronique pour vos expériences de physique",
+      icon: <Assignment sx={{ fontSize: 32 }} />,
+      href: "/physique/notebook",
+      color: "#9c27b0",
+      gradient: "linear-gradient(135deg, #9c27b033 0%, #673ab733 100%)",
+      features: ["Mesures", "Graphiques", "Analyse"]
+    },
+    {
+      title: "Planning Physique",
+      description: "Calendrier et gestion des ressources physiques",
+      icon: <CalendarMonth sx={{ fontSize: 32 }} />,
+      href: "/physique/calendrier",
+      color: "#607d8b",
+      gradient: "linear-gradient(135deg, #607d8b33 0%, #45516733 100%)",
+      features: ["Planning labo", "Équipements", "Réservations"]
+    }
+  ],
+  all: [
+    {
+      title: "Inventaire Chimique",
+      description: "Gestion complète des réactifs chimiques, suivi des stocks et alertes de sécurité",
+      icon: <Science sx={{ fontSize: 32 }} />,
+      href: "/chimie/chemicals",
+      color: "#1976d2",
+      gradient: "linear-gradient(135deg, #0021b418 0%, #764ba218 100%)",
+      features: ["Scanner QR", "Stock temps réel", "Alertes sécurité"],
+      discipline: "Chimie"
+    },
+    {
+      title: "Consommables Physique",
+      description: "Gestion des composants et matériaux pour la physique",
+      icon: <Memory sx={{ fontSize: 32 }} />,
+      href: "/physique/consumables",
+      color: "#4caf50",
+      gradient: "linear-gradient(135deg, #4caf5018 0%, #2196f318 100%)",
+      features: ["Composants", "Stock temps réel", "Alertes"],
+      discipline: "Physique"
+    },
+    {
+      title: "Matériel Chimique",
+      description: "Inventaire, maintenance et réservation du matériel de chimie",
+      icon: <Inventory sx={{ fontSize: 32 }} />,
+      href: "/chimie/materiel",
+      color: "#388e3c",
+      gradient: "linear-gradient(135deg, #84fab033 0%, #8fd3f433 100%)",
+      features: ["Maintenance", "Réservations", "Localisation"],
+      discipline: "Chimie"
+    },
+    {
+      title: "Matériel Physique",
+      description: "Inventaire et maintenance des instruments de physique",
+      icon: <Speed sx={{ fontSize: 32 }} />,
+      href: "/physique/materiel",
+      color: "#ff5722",
+      gradient: "linear-gradient(135deg, #ff572233 0%, #795548333 100%)",
+      features: ["Instruments", "Maintenance", "Calibrage"],
+      discipline: "Physique"
+    },
+    {
+      title: "Cahier de TP Chimie",
+      description: "Laboratoire électronique pour vos expériences de chimie",
+      icon: <Assignment sx={{ fontSize: 32 }} />,
+      href: "/chimie/notebook",
+      color: "#f57c00",
+      gradient: "linear-gradient(135deg, #fa709a33 0%, #fee14033 100%)",
+      features: ["Protocoles", "Calculs auto", "Historique"],
+      discipline: "Chimie"
+    },
+    {
+      title: "Cahier de TP Physique",
+      description: "Laboratoire électronique pour vos expériences de physique",
+      icon: <Assignment sx={{ fontSize: 32 }} />,
+      href: "/physique/notebook",
+      color: "#9c27b0",
+      gradient: "linear-gradient(135deg, #9c27b033 0%, #673ab733 100%)",
+      features: ["Mesures", "Graphiques", "Analyse"],
+      discipline: "Physique"
+    },
+    {
+      title: "Planning Chimie",
+      description: "Calendrier intelligent et gestion des ressources chimiques",
+      icon: <CalendarMonth sx={{ fontSize: 32 }} />,
+      href: "/chimie/calendrier",
+      color: "#d32f2f",
+      gradient: "linear-gradient(135deg, #93fb9c33 0%, #00411252 100%)",
+      features: ["Planning visuel", "Ressources", "Notifications"],
+      discipline: "Chimie"
+    },
+    {
+      title: "Planning Physique",
+      description: "Calendrier et gestion des ressources physiques",
+      icon: <CalendarMonth sx={{ fontSize: 32 }} />,
+      href: "/physique/calendrier",
+      color: "#607d8b",
+      gradient: "linear-gradient(135deg, #607d8b33 0%, #45516733 100%)",
+      features: ["Planning labo", "Équipements", "Réservations"],
+      discipline: "Physique"
+    }
+  ]
+}
 
 // Modules en développement
 const DEVELOPMENT_MODULES: Module[] = [
@@ -410,6 +533,20 @@ export default function Home() {
   const [loadingSystem, setLoadingSystem] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<'chemistry' | 'physics' | 'all'>('all');
+
+  // Charger la préférence de discipline depuis localStorage
+  useEffect(() => {
+    const savedDiscipline = localStorage.getItem('selectedDiscipline') as 'chemistry' | 'physics' | 'all';
+    if (savedDiscipline && ['chemistry', 'physics', 'all'].includes(savedDiscipline)) {
+      setSelectedDiscipline(savedDiscipline);
+    }
+  }, []);
+
+  // Sauvegarder la préférence de discipline
+  useEffect(() => {
+    localStorage.setItem('selectedDiscipline', selectedDiscipline);
+  }, [selectedDiscipline]);
 
   const fetchStats = async () => {
     try {
@@ -586,23 +723,84 @@ useEffect(() => {
             {/* Modules principaux */}
             <div>
               <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  Modules principaux
-                </Typography>
-                <Chip 
-                  label="4 modules actifs" 
-                  color="primary" 
-                  size="small"
-                  sx={{ fontWeight: 500 }}
-                />
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    Modules disponibles
+                  </Typography>
+                  <Chip 
+                    label={`${MODULES_BY_DISCIPLINE[selectedDiscipline].length} modules`}
+                    color="primary" 
+                    size="small"
+                    sx={{ fontWeight: 500 }}
+                  />
+                </Box>
+                
+                {/* Sélecteur de discipline */}
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Typography variant="body2" color="text.secondary">
+                    Discipline :
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Chip
+                      label="Tout"
+                      variant={selectedDiscipline === 'all' ? 'filled' : 'outlined'}
+                      color={selectedDiscipline === 'all' ? 'primary' : 'default'}
+                      onClick={() => setSelectedDiscipline('all')}
+                      sx={{ cursor: 'pointer' }}
+                      icon={<Dashboard />}
+                    />
+                    <Chip
+                      label="Chimie"
+                      variant={selectedDiscipline === 'chemistry' ? 'filled' : 'outlined'}
+                      color={selectedDiscipline === 'chemistry' ? 'primary' : 'default'}
+                      onClick={() => setSelectedDiscipline('chemistry')}
+                      sx={{ cursor: 'pointer' }}
+                      icon={<Science />}
+                    />
+                    <Chip
+                      label="Physique"
+                      variant={selectedDiscipline === 'physics' ? 'filled' : 'outlined'}
+                      color={selectedDiscipline === 'physics' ? 'primary' : 'default'}
+                      onClick={() => setSelectedDiscipline('physics')}
+                      sx={{ cursor: 'pointer' }}
+                      icon={<Memory />}
+                    />
+                  </Stack>
+                </Box>
               </Box>
             </div>
 
             <Grid container spacing={3}>
-              {MAIN_MODULES.map((module) => (
+              {MODULES_BY_DISCIPLINE[selectedDiscipline].map((module) => (
                 <Grid key={module.title} size={{ 
-                  xs: 12, md: 6 }}>
-                  <ModuleCard module={module} />
+                  xs: 12, 
+                  md: selectedDiscipline === 'all' ? 4 : 6 
+                }}>
+                  <Box position="relative">
+                    <ModuleCard 
+                      module={{
+                        ...module,
+                        title: selectedDiscipline === 'all' && 'discipline' in module 
+                          ? `${module.title}`
+                          : module.title
+                      }} 
+                    />
+                    {selectedDiscipline === 'all' && 'discipline' in module && (
+                      <Chip
+                        label={(module as any).discipline}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 16,
+                          right: 16,
+                          bgcolor: module.color,
+                          color: 'white',
+                          fontWeight: 500,
+                          zIndex: 2
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Grid>
               ))}
             </Grid>
@@ -1086,22 +1284,6 @@ useEffect(() => {
                 )}
               </Paper>
 
-              {/* Info box */}
-              <div>
-                <Alert 
-                  severity="info" 
-                  icon={<InfoOutlined />}
-                  sx={{ 
-                    borderRadius: 2,
-                    bgcolor: alpha(theme.palette.info.main, 0.08),
-                    border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`
-                  }}
-                >
-                  <Typography variant="body2">
-                    Besoin d'aide ? Consultez la <Link href="/docs" style={{ color: theme.palette.info.main }}>documentation</Link> ou contactez le support.
-                  </Typography>
-                </Alert>
-              </div>
             </Stack>
           </Grid>
         </Grid>

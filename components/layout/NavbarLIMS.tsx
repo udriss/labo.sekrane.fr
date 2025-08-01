@@ -176,10 +176,16 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   const handleNotificationsOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorElNotifications(event.currentTarget);
   const handleNotificationsClose = () => setAnchorElNotifications(null);
 
+  console.log('process.env.NODE_ENV:', process.env.NODE_ENV);
   const handleSignOut = async () => {
     handleUserMenuClose();
     disconnect();
-    await signOut({ callbackUrl: `${window.location.origin}/auth/signin` });
+    // Correction: forcer le callbackUrl sur localhost en DEV
+    let callbackUrl = `${window.location.origin}/auth/signin`;
+    if (process.env.NODE_ENV === 'development') {
+      callbackUrl = 'http://localhost:3000/auth/signin';
+    }
+    await signOut({ callbackUrl });
   };
 
   const handleNotificationClick = async (notification: WebSocketNotification) => {
@@ -303,7 +309,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           </Tooltip>
                 <IconButton 
                   color="inherit"
-                  onClick={() => signOut()}
+                  onClick={() => handleSignOut()}
                   
                   sx={{ 
                     bgcolor: themeMUI.palette.action.hover,
@@ -413,107 +419,6 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 }
 
 
-
-const NavMenu = () => {
-    const { data: session } = useSession();
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-  // Gestionnaires de menu
-  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
-    const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-  const handleUserMenuClose = () => {
-    setAnchorElUser(null);
-  };
-    const handleSignOut = async () => {
-        handleClose();
-        await signOut({ callbackUrl: '/auth/signin' });
-    };
-
-    return (
-        <div>
-          <Tooltip title="Profil utilisateur">
-            <IconButton onClick={handleUserMenuOpen} sx={{ ml: 1 }}>
-              <Avatar sx={{ width: 32, height: 32 }}>
-                {session?.user?.name?.charAt(0) || <AccountCircle />}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-        {/* Menu utilisateur */}
-        <Menu
-          anchorEl={anchorElUser}
-          open={Boolean(anchorElUser)}
-          onClose={handleUserMenuClose}
-          PaperProps={{
-            sx: { mt: 1.5 }
-          }}
-        >
-          {session?.user ? (
-            // Menu pour utilisateur connecté
-            [
-              <Box key="user-info" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="subtitle1">
-                  {session.user.name || 'Utilisateur'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {session.user.email}
-                </Typography>
-              </Box>,
-              <MenuItem key="profile" component={Link} href="/utilisateurs" onClick={handleUserMenuClose}>
-                <ListItemIcon>
-                  <Person fontSize="small" />
-                </ListItemIcon>
-                Profil
-              </MenuItem>,
-              <MenuItem key="settings" component={Link} href="/reglages" onClick={handleUserMenuClose}>
-                <ListItemIcon>
-                  <Settings fontSize="small" />
-                </ListItemIcon>
-                Paramètres
-              </MenuItem>,
-              <Divider key="divider" />,
-              <MenuItem key="logout" onClick={handleSignOut}>
-                <ListItemIcon>
-                  <Logout fontSize="small" />
-                </ListItemIcon>
-                Déconnexion
-              </MenuItem>
-            ]
-          ) : (
-            // Menu pour utilisateur non connecté
-            [
-              <Box key="guest-info" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="subtitle1">
-                  Non connecté
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Cliquez pour vous connecter
-                </Typography>
-              </Box>,
-              <MenuItem
-                key="login"
-                component={Link}
-                href="/auth/signin"
-                onClick={handleUserMenuClose}
-              >
-                <ListItemIcon>
-                  <AccountCircle fontSize="small" />
-                </ListItemIcon>
-                Connexion
-              </MenuItem>
-            ]
-          )}
-        </Menu>
-        </div>
-    );
-};
 
 
 

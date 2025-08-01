@@ -76,11 +76,19 @@ export function CreateTPDialog({
   const [dragOver, setDragOver] = useState(false)
   const [materialInputValue, setMaterialInputValue] = useState('');
   const [chemicalInputValue, setChemicalInputValue] = useState('');
+  const [consommableInputValue, setConsommableInputValue] = useState('');
   const [swapMessage, setSwapMessage] = useState<string | null>(null)
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
   const [pendingSwap, setPendingSwap] = useState<{index: number, field: keyof TimeSlot, value: string} | null>(null)
   const [classInputValue, setClassInputValue] = useState<string>('');
+
+  // États pour les données spécifiques à chaque discipline
+  const [disciplineMaterials, setDisciplineMaterials] = useState<any[]>([]);
+  const [disciplineChemicals, setDisciplineChemicals] = useState<any[]>([]);
+  const [disciplineConsommables, setDisciplineConsommables] = useState<any[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [loadingChemicals, setLoadingChemicals] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -99,7 +107,8 @@ export function CreateTPDialog({
     timeSlots: [{ date: '', startTime: '', endTime: '' }] as { date: string; startTime: string; endTime: string }[],
     classes: [] as string[],
     materials: [] as any[],
-    chemicals: [] as any[]
+    chemicals: [] as any[],
+    consommables: [] as any[]
   })
 
   // Pre-fill form data when copying an event
@@ -121,7 +130,8 @@ export function CreateTPDialog({
         }) || [{ date: '', startTime: '', endTime: '' }],
         classes: eventToCopy.class ? [eventToCopy.class] : [],
         materials: eventToCopy.materials || [],
-        chemicals: eventToCopy.chemicals || []
+        chemicals: eventToCopy.chemicals || [],
+        consommables: discipline === 'physique' ? (eventToCopy.chemicals || []) : []
       })
     } else if (!eventToCopy && open) {
       // Reset form when not copying
@@ -132,10 +142,96 @@ export function CreateTPDialog({
         timeSlots: [{ date: '', startTime: '', endTime: '' }],
         classes: [],
         materials: [],
-        chemicals: []
+        chemicals: [],
+        consommables: []
       })
     }
   }, [eventToCopy, open])
+
+  // Charger les données spécifiques à la discipline
+  useEffect(() => {
+    if (open && discipline) {
+      loadDisciplineData();
+    }
+  }, [open, discipline]);
+
+  const loadDisciplineData = async () => {
+    try {
+      // Charger les matériaux/équipements
+      setLoadingMaterials(true);
+      let materialsEndpoint = '/api/equipement';
+      let materialsData = [];
+      
+      if (discipline === 'physique') {
+        // Essayer d'abord l'API spécifique physique, sinon fallback vers l'API générale
+        try {
+          const physiqueResponse = await fetch('/api/physique/equipement');
+          if (physiqueResponse.ok) {
+            materialsData = await physiqueResponse.json();
+          } else {
+            // Fallback vers l'API générale avec filtre physique si possible
+            const generalResponse = await fetch('/api/equipement?discipline=physique');
+            if (generalResponse.ok) {
+              materialsData = await generalResponse.json();
+            }
+          }
+        } catch (error) {
+          console.warn('API physique non disponible, utilisation de l\'API générale');
+          const generalResponse = await fetch('/api/equipement');
+          if (generalResponse.ok) {
+            materialsData = await generalResponse.json();
+          }
+        }
+      } else {
+        // Pour la chimie, utiliser l'API standard
+        const materialsResponse = await fetch(materialsEndpoint);
+        if (materialsResponse.ok) {
+          materialsData = await materialsResponse.json();
+        }
+      }
+      
+      setDisciplineMaterials(materialsData || []);
+      setLoadingMaterials(false);
+
+      // Charger les produits chimiques/composants
+      setLoadingChemicals(true);
+      let chemicalsData = [];
+      
+      if (discipline === 'physique') {
+        // Pour la physique, essayer l'API spécifique ou utiliser des données vides
+        try {
+          const physiqueChemResponse = await fetch('/api/physique/composants');
+          if (physiqueChemResponse.ok) {
+            chemicalsData = await physiqueChemResponse.json();
+          } else {
+            // Pour la physique, on peut avoir une liste vide ou des composants génériques
+            chemicalsData = [];
+          }
+        } catch (error) {
+          console.warn('API composants physique non disponible');
+          chemicalsData = [];
+        }
+        setDisciplineConsommables(chemicalsData || []);
+      } else {
+        // Pour la chimie, utiliser l'API standard
+        const chemicalsResponse = await fetch('/api/chemicals');
+        if (chemicalsResponse.ok) {
+          chemicalsData = await chemicalsResponse.json();
+        }
+        setDisciplineChemicals(chemicalsData || []);
+      }
+      
+      setLoadingChemicals(false);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      setDisciplineMaterials([]);
+      setDisciplineChemicals([]);
+      setDisciplineConsommables([]);
+      setLoadingMaterials(false);
+      setLoadingChemicals(false);
+    }
+  };
 
   // Correction du style pour RichTextEditor
   const richTextEditorStyles = {
@@ -198,7 +294,8 @@ export function CreateTPDialog({
       timeSlots: [{ date: '', startTime: '', endTime: '' }],
       classes: [],
       materials: [],
-      chemicals: []
+      chemicals: [],
+      consommables: []
     })
   }
 
@@ -265,12 +362,21 @@ const performTimeSwap = (index: number) => {
     const updatedSlots = [...formData.timeSlots]
     const slot = updatedSlots[index]
     
-    // Swap des valeurs
-    const temp = slot.startTime
-    slot.startTime = slot.endTime
-    slot.endTime = temp
+    // Swap des valeurs et s'assurer qu'elles ne sont pas null/undefined
+    const tempStartTime = slot.startTime
+    const tempEndTime = slot.endTime
     
-    setFormData({ ...formData, timeSlots: updatedSlots })
+    // Effectuer l'échange complet des valeurs
+    slot.startTime = tempEndTime || ''
+    slot.endTime = tempStartTime || ''
+    
+    // Forcer la mise à jour du state avec les nouvelles valeurs
+    setFormData(prev => ({ ...prev, timeSlots: updatedSlots }))
+    
+    // Déclencher une re-render pour s'assurer que les TimePickers sont mis à jour
+    setTimeout(() => {
+      setFormData(prev => ({ ...prev, timeSlots: [...updatedSlots] }))
+    }, 50)
   }, 300) // Délai pour laisser l'animation démarrer
   
   // Arrêter l'animation
@@ -297,13 +403,19 @@ const handleCreateCalendarEvent = async () => {
 
     // Filtrer les réactifs non-custom pour la vérification des quantités
     const nonCustomChemicals = formData.chemicals.filter(c => !c.isCustom)
+    const nonCustomConsommables = formData.consommables?.filter(c => !c.isCustom) || []
     
-    // Vérifier les quantités de réactifs chimiques (uniquement pour les non-custom)
-    const insufficientChemicals = nonCustomChemicals.filter(c => 
-      c.requestedQuantity > (c.quantity || 0)
-    )
-    if (insufficientChemicals.length > 0) {
-      throw new Error("Certains réactifs chimiques ont des quantités insuffisantes en stock.")
+    // Vérifier les quantités de réactifs chimiques (uniquement pour les non-custom et chimie)
+    if (discipline !== 'physique') {
+      const insufficientChemicals = nonCustomChemicals.filter(c => 
+        c.requestedQuantity > (c.quantity || 0)
+      )
+      if (insufficientChemicals.length > 0) {
+        throw new Error("Certains réactifs chimiques ont des quantités insuffisantes en stock.")
+      }
+    } else {
+      // Pour la physique, on permet de dépasser le stock des consommables
+      // Pas de vérification restrictive sur les quantités
     }
 
     // Préparer les données des fichiers avec le contenu uploadé
@@ -343,15 +455,26 @@ const handleCreateCalendarEvent = async () => {
         isCustom: m.isCustom || false,
         volume: m.volume || null
       })),
-      // Envoyer l'objet complet pour les réactifs chimiques
-      chemicals: formData.chemicals.map((c) => ({
-        id: c.id,
-        name: c.name || '',
-        requestedQuantity: c.requestedQuantity || 1,
-        unit: c.unit || '',
-        quantity: c.quantity || 0,  // Stock disponible
-        isCustom: c.isCustom || false  // Ajouter le flag isCustom
-      })),
+      // Pour la physique, utiliser "consommables", pour la chimie utiliser "chemicals"
+      ...(discipline === 'physique' ? {
+        consommables: formData.consommables?.map((c) => ({
+          id: c.id,
+          name: c.name || '',
+          requestedQuantity: c.requestedQuantity || 1,
+          unit: c.unit || '',
+          quantity: c.quantity || 0,  // Stock disponible
+          isCustom: c.isCustom || false  // Ajouter le flag isCustom
+        })) || []
+      } : {
+        chemicals: formData.chemicals.map((c) => ({
+          id: c.id,
+          name: c.name || '',
+          requestedQuantity: c.requestedQuantity || 1,
+          unit: c.unit || '',
+          quantity: c.quantity || 0,  // Stock disponible
+          isCustom: c.isCustom || false  // Ajouter le flag isCustom
+        }))
+      }),
       files: filesData,
       remarks: remarks,
       date: formData.timeSlots[0].date,
@@ -375,7 +498,10 @@ const handleCreateCalendarEvent = async () => {
     }
 
     // Mettre à jour les quantités prévisionnelles uniquement pour les réactifs non-custom
-    if (nonCustomChemicals.length > 0) {
+    if (discipline === 'physique' && nonCustomConsommables.length > 0) {
+      // Pour la physique, on pourrait avoir une API dédiée ou gérer différemment
+      // Pour l'instant, on peut ignorer la mise à jour des prévisions car on permet de dépasser le stock
+    } else if (discipline !== 'physique' && nonCustomChemicals.length > 0) {
       const updateResponse = await fetch('/api/chemicals/update-forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1036,7 +1162,12 @@ const handleCreateCalendarEvent = async () => {
     <Autocomplete
       multiple
       freeSolo
-      options={userClasses}
+      options={[
+        // D'abord les classes personnalisées
+        ...customClasses.sort(),
+        // Puis les classes prédéfinies
+        ...userClasses.filter(c => !customClasses.includes(c)).sort()
+      ].filter((value, index, self) => self.indexOf(value) === index)}
       value={formData.classes}
       onChange={async (_, newValue) => {
         // newValue est un tableau car c'est un Autocomplete multiple
@@ -1146,6 +1277,7 @@ const handleCreateCalendarEvent = async () => {
                   {params.InputProps.endAdornment}
                   {classInputValue && classInputValue.trim() && 
                    !userClasses.includes(classInputValue.trim()) && 
+                   !customClasses.includes(classInputValue.trim()) && 
                    !formData.classes.includes(classInputValue.trim()) && (
                     <InputAdornment position="end" sx={{ mr: 3 }}>
                       <IconButton
@@ -1237,23 +1369,25 @@ const handleCreateCalendarEvent = async () => {
       )}
       renderOption={(props, option) => {
         const { key, ...other } = props
+        const isCustom = customClasses.includes(option)
+        
         return (
           <li key={key} {...other}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-              <School fontSize="small" color="action" />
+              <School fontSize="small" color={isCustom ? "secondary" : "action"} />
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="body2">
                   {option}
                 </Typography>
-                {customClasses.includes(option) && (
-                  <Typography variant="caption" color="text.secondary">
-                    Classe personnalisée
+                {isCustom && (
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                    ID: USER_CLASS_{option.replace(/\s+/g, '_').toUpperCase()}
                   </Typography>
                 )}
               </Box>
-              {customClasses.includes(option) && session?.user?.role === 'TEACHER' && (
+              {isCustom && (
                 <Chip 
-                  label="Ma classe" 
+                  label="Personnalisée" 
                   size="small" 
                   color="secondary" 
                   sx={{ height: 20 }}
@@ -1290,6 +1424,7 @@ const handleCreateCalendarEvent = async () => {
         option.toLowerCase() === value.toLowerCase()
       }
       noOptionsText={classInputValue ? "Aucune classe trouvée" : "Tapez pour rechercher"}
+      groupBy={(option) => customClasses.includes(option) ? "Mes classes personnalisées" : "Classes prédéfinies"}
     />
 
     {/* Afficher les classes sélectionnées si besoin */}
@@ -1322,20 +1457,30 @@ const handleCreateCalendarEvent = async () => {
               onClick={() => handleStepClick(4)}
               sx={{ cursor: 'pointer' }}
             >
-              <Typography variant="h6">Matériel nécessaire</Typography>
+              <Typography variant="h6">
+                {discipline === 'physique' ? 'Équipement de physique' : 'Matériel nécessaire'}
+              </Typography>
             </StepLabel>
             <StepContent>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Sélectionnez le matériel qui sera utilisé pendant cette séance
+                {discipline === 'physique' 
+                  ? 'Sélectionnez l\'équipement de physique qui sera utilisé pendant cette séance'
+                  : 'Sélectionnez le matériel qui sera utilisé pendant cette séance'
+                }
               </Typography>
 
               {/* Autocomplete pour sélectionner le matériel */}
               <Autocomplete
                 freeSolo // Permet d'entrer du texte libre
-                options={materials}
+                options={Array.isArray(disciplineMaterials) ? disciplineMaterials : []}
+                loading={loadingMaterials}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') return option;
-                  return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
+                  if (discipline === 'physique') {
+                    return `${option.name || 'Équipement'} ${option.type ? `(${option.type})` : ''}`;
+                  } else {
+                    return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
+                  }
                 }}
                 value={null}
                 inputValue={materialInputValue || ''}
@@ -1363,8 +1508,9 @@ const handleCreateCalendarEvent = async () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Ajouter du matériel"
-                    placeholder="Rechercher ou demander un nouveau matériel..."
+                    label={discipline === 'physique' ? 'Ajouter un équipement' : 'Ajouter du matériel'}
+                    placeholder={discipline === 'physique' ? 'Rechercher des équipements physiques...' : 'Rechercher ou demander un nouveau matériel...'}
+                    helperText={loadingMaterials ? 'Chargement...' : undefined}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
                         e.preventDefault();
@@ -1585,79 +1731,124 @@ const handleCreateCalendarEvent = async () => {
             </StepContent>
           </Step>
 
-          {/* Étape 6: Réactifs chimiques */}
+          {/* Étape 6: Réactifs chimiques / composant en physique */}
         <Step>
           <StepLabel
             onClick={() => handleStepClick(5)}
             sx={{ cursor: 'pointer' }}
           >
-            <Typography variant="h6">Réactifs chimiques</Typography>
+            <Typography variant="h6">
+              {discipline === 'physique' ? 'Composants et accessoires' : 'Réactifs chimiques'}
+            </Typography>
           </StepLabel>
           <StepContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Sélectionnez les réactifs chimiques qui seront utilisés
+              {discipline === 'physique' 
+                ? 'Sélectionnez les composants et accessoires qui seront utilisés'
+                : 'Sélectionnez les réactifs chimiques qui seront utilisés'
+              }
             </Typography>
 
-            {/* Autocomplete pour sélectionner les réactifs chimiques */}
+            {/* Autocomplete pour sélectionner les réactifs chimiques ou composants physique */}
             <Autocomplete
-              options={chemicals}
+              options={discipline === 'physique' 
+                ? (Array.isArray(disciplineConsommables) ? disciplineConsommables : [])
+                : (Array.isArray(disciplineChemicals) ? disciplineChemicals : [])
+              }
+              loading={loadingChemicals}
               getOptionLabel={(option) => {
                 if (typeof option === 'string') return option;
-                const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity;
-                return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`;
+                if (discipline === 'physique') {
+                  // Pour la physique, affichage simple du nom
+                  return option.name || 'Composant physique';
+                } else {
+                  // Pour la chimie, affichage avec stock
+                  const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity;
+                  return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`;
+                }
               }}
               value={null}
-              inputValue={chemicalInputValue || ''}
+              inputValue={discipline === 'physique' ? consommableInputValue || '' : chemicalInputValue || ''}
               onInputChange={(event, newInputValue) => {
-                setChemicalInputValue(newInputValue);
+                if (discipline === 'physique') {
+                  setConsommableInputValue(newInputValue);
+                } else {
+                  setChemicalInputValue(newInputValue);
+                }
               }}
               onChange={(_, newValue) => {
-                if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
-                  handleFormDataChange('chemicals', [
-                    ...formData.chemicals,
-                    { ...newValue, requestedQuantity: 1 }
-                  ]);
-                  setChemicalInputValue('');
+                if (discipline === 'physique') {
+                  if (newValue && !formData.consommables.some((c) => c.id === newValue.id)) {
+                    handleFormDataChange('consommables', [
+                      ...formData.consommables,
+                      { ...newValue, requestedQuantity: 1 }
+                    ]);
+                    setConsommableInputValue('');
+                  }
+                } else {
+                  if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
+                    handleFormDataChange('chemicals', [
+                      ...formData.chemicals,
+                      { ...newValue, requestedQuantity: 1 }
+                    ]);
+                    setChemicalInputValue('');
+                  }
                 }
               }}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Ajouter un réactif chimique"
-                  placeholder="Rechercher et sélectionner..."
+                  label={discipline === 'physique' ? 'Ajouter un composant' : 'Ajouter un réactif chimique'}
+                  placeholder={discipline === 'physique' ? 'Rechercher des composants physiques...' : 'Rechercher et sélectionner...'}
+                  helperText={loadingChemicals ? 'Chargement...' : undefined}
                   slotProps={{
                     input: {
                       ...params.InputProps,
                       endAdornment: (
                         <>
                           {params.InputProps.endAdornment}
-                          {chemicalInputValue && chemicalInputValue.trim() && 
-                          !chemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase()) && (
+                          {((discipline === 'physique' && consommableInputValue) || (discipline !== 'physique' && chemicalInputValue)) &&
+                          ((discipline === 'physique' && consommableInputValue.trim()) || (discipline !== 'physique' && chemicalInputValue.trim())) && 
+                          !(discipline === 'physique' 
+                            ? disciplineConsommables.some(c => c.name?.toLowerCase() === consommableInputValue.trim().toLowerCase())
+                            : disciplineChemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase())
+                          ) && (
                             <InputAdornment position="end">
                               <IconButton
                                 size="small"
                                 onClick={() => {
-                                  const trimmedValue = chemicalInputValue.trim();
+                                  const trimmedValue = discipline === 'physique' 
+                                    ? consommableInputValue.trim() 
+                                    : chemicalInputValue.trim();
                                   
-                                  // Créer un réactif personnalisé
-                                  const customChemical = {
-                                    id: `CHEM_${Date.now()}_CUSTOM`,
+                                  // Créer un réactif/composant personnalisé
+                                  const customItem = {
+                                    id: `${discipline === 'physique' ? 'COMP' : 'CHEM'}_${Date.now()}_CUSTOM`,
                                     name: trimmedValue,
-                                    quantity: 0,
-                                    unit: 'g', // Unité par défaut
+                                    quantity: discipline === 'physique' ? 1 : 0,
+                                    unit: discipline === 'physique' ? 'unité' : 'g', // Unité par défaut
                                     requestedQuantity: 1,
                                     isCustom: true,
                                   };
                                   
-                                  // Ajouter le réactif personnalisé à la liste
-                                  if (!formData.chemicals.some(c => c.name === trimmedValue)) {
-                                    handleFormDataChange('chemicals', [
-                                      ...formData.chemicals,
-                                      customChemical
-                                    ]);
-                                    
-                                    // Réinitialiser l'input
-                                    setChemicalInputValue('');
+                                  // Ajouter l'élément personnalisé à la liste appropriée
+                                  if (discipline === 'physique') {
+                                    if (!formData.consommables.some(c => c.name === trimmedValue)) {
+                                      handleFormDataChange('consommables', [
+                                        ...formData.consommables,
+                                        customItem
+                                      ]);
+                                      setConsommableInputValue('');
+                                    }
+                                  } else {
+                                    if (!formData.chemicals.some(c => c.name === trimmedValue)) {
+                                      handleFormDataChange('chemicals', [
+                                        ...formData.chemicals,
+                                        customItem
+                                      ]);
+                                      setChemicalInputValue('');
+                                    }
+                                  }
                                     
                                     // Retirer le focus
                                     (document.activeElement as HTMLElement)?.blur();
@@ -1665,11 +1856,12 @@ const handleCreateCalendarEvent = async () => {
                                     // Afficher une notification si showSnackbar existe
                                     setSnackbar({
                                       open: true,
-                                      message: `Réactif personnalisé "${trimmedValue}" ajouté`,
+                                      message: `${discipline === 'physique' ? 'Composant' : 'Réactif'} personnalisé "${trimmedValue}" ajouté`,
                                       severity: 'info'
                                     });
                                   }
-                                }}
+                                }
+                                
                                 edge="end"
                                 sx={{ 
                                   mr: -1,
@@ -1691,7 +1883,7 @@ const handleCreateCalendarEvent = async () => {
                                   color="text.secondary"
                                   sx={{ ml: 0.5, mr: 0.5 }}
                                 >
-                                  Ajouter "{chemicalInputValue}"
+                                  Ajouter "{discipline === 'physique' ? consommableInputValue : chemicalInputValue}"
                                 </Typography>
                               </IconButton>
                             </InputAdornment>
@@ -1758,17 +1950,21 @@ const handleCreateCalendarEvent = async () => {
                 
                 return uniqueOptions;
               }}
-              noOptionsText={chemicalInputValue ? "Aucun réactif trouvé" : "Tapez pour rechercher"}
+              noOptionsText={chemicalInputValue ? 
+                (discipline === 'physique' ? "Aucun composant trouvé" : "Aucun réactif trouvé") : 
+                "Tapez pour rechercher"
+              }
             />
 
-            {/* Liste des réactifs chimiques sélectionnés avec quantités */}
-            {formData.chemicals.length > 0 && (
+            {/* Liste des réactifs chimiques/composants sélectionnés avec quantités */}
+            {((discipline === 'physique' && formData.consommables?.length > 0) || 
+              (discipline !== 'physique' && formData.chemicals.length > 0)) && (
               <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  Réactifs chimiques sélectionnés :
+                  {discipline === 'physique' ? 'Composants sélectionnés :' : 'Réactifs chimiques sélectionnés :'}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {formData.chemicals.map((chemical, index) => {
+                  {(discipline === 'physique' ? formData.consommables : formData.chemicals).map((chemical, index) => {
                     // Utiliser quantityPrevision si disponible, sinon quantity
                     const availableStock = chemical.quantityPrevision !== undefined 
                       ? chemical.quantityPrevision 
@@ -1948,36 +2144,55 @@ const handleCreateCalendarEvent = async () => {
                           type="number"
                           value={chemical.requestedQuantity || 1}
                           onChange={(e) => {
-                            const newQuantity = parseFloat(e.target.value) || 1;
-                            const updatedChemicals = [...formData.chemicals];
-                            updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity };
-                            handleFormDataChange('chemicals', updatedChemicals);
+                            const newQuantity = discipline === 'physique' 
+                              ? parseInt(e.target.value) || 1  // Entiers uniquement pour la physique
+                              : parseFloat(e.target.value) || 1;
+                            
+                            if (discipline === 'physique') {
+                              const updatedConsommables = [...formData.consommables];
+                              updatedConsommables[index] = { ...chemical, requestedQuantity: newQuantity };
+                              handleFormDataChange('consommables', updatedConsommables);
+                            } else {
+                              const updatedChemicals = [...formData.chemicals];
+                              updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity };
+                              handleFormDataChange('chemicals', updatedChemicals);
+                            }
                           }}
                           slotProps={{
                             htmlInput: {
-                              min: 0.1,
-                              step: 0.1,
-                              // Pas de max pour les réactifs custom
-                              ...(!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && { max: availableStock })
+                              min: discipline === 'physique' ? 1 : 0.1,
+                              step: discipline === 'physique' ? 1 : 0.1,
+                              // Pas de max pour les réactifs custom ou pour la physique (on permet de dépasser le stock)
+                              ...(!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && 
+                                  discipline !== 'physique' && { max: availableStock })
                             }
                           }}
                           sx={{ width: 150 }}
                           size="small"
-                          error={!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && chemical.requestedQuantity > availableStock}
+                          error={!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && 
+                                 discipline !== 'physique' && 
+                                 chemical.requestedQuantity > availableStock}
                           helperText={
                             (chemical.isCustom || chemical.id?.endsWith('_CUSTOM'))
                               ? '' // Pas de message d'erreur pour les custom
-                              : chemical.requestedQuantity > availableStock 
-                                ? 'Quantité insuffisante' 
-                                : stockAfterRequest < (chemical.minQuantity || 0)
+                              : discipline === 'physique'
+                                ? '' // Pas de limitation de stock pour la physique
+                                : chemical.requestedQuantity > availableStock 
+                                  ? 'Quantité insuffisante' 
+                                  : stockAfterRequest < (chemical.minQuantity || 0)
                                   ? 'Stock faible'
                                   : ''
                           }
                         />
                         <IconButton
                           onClick={() => {
-                            const updatedChemicals = formData.chemicals.filter((_, i) => i !== index);
-                            handleFormDataChange('chemicals', updatedChemicals);
+                            if (discipline === 'physique') {
+                              const updatedConsommables = formData.consommables.filter((_, i) => i !== index);
+                              handleFormDataChange('consommables', updatedConsommables);
+                            } else {
+                              const updatedChemicals = formData.chemicals.filter((_, i) => i !== index);
+                              handleFormDataChange('chemicals', updatedChemicals);
+                            }
                           }}
                           color="error"
                           size="small"
@@ -1991,8 +2206,8 @@ const handleCreateCalendarEvent = async () => {
               </Box>
             )}
 
-            {/* Ajouter un avertissement global si des réactifs seront en stock faible */}
-            {formData.chemicals.some(c => {
+            {/* Ajouter un avertissement global si des réactifs seront en stock faible - seulement pour la chimie */}
+            {discipline !== 'physique' && formData.chemicals.some(c => {
               // Ignorer les réactifs personnalisés
               if (c.isCustom || c.id?.endsWith('_CUSTOM')) {
                 return false;
@@ -2014,8 +2229,8 @@ const handleCreateCalendarEvent = async () => {
               </Alert>
             )}
 
-            {/* Erreur si des réactifs ont un stock insuffisant (sauf custom) */}
-            {formData.chemicals.some(c => {
+            {/* Erreur si des réactifs ont un stock insuffisant (sauf custom) - seulement pour la chimie */}
+            {discipline !== 'physique' && formData.chemicals.some(c => {
               if (c.isCustom || c.id?.endsWith('_CUSTOM')) return false;
               const availableStock = c.quantityPrevision !== undefined 
                 ? c.quantityPrevision 
@@ -2032,7 +2247,8 @@ const handleCreateCalendarEvent = async () => {
               </Alert>
             )}
             {/* Avertissement pour les réactifs personnalisés */}
-            {formData.chemicals.some(c => c.isCustom || c.id?.endsWith('_CUSTOM')) && (
+            {((discipline === 'physique' && formData.consommables?.some(c => c.isCustom || c.id?.endsWith('_CUSTOM'))) ||
+              (discipline !== 'physique' && formData.chemicals.some(c => c.isCustom || c.id?.endsWith('_CUSTOM')))) && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 <Typography variant="body2" fontWeight="bold">
                   Information : réactifs non référencés
