@@ -50,10 +50,12 @@ export const useEquipmentForm = () => {
       }))
     } else {
       // Pour tout équipement avec un ID (custom ou non)
+      // Envoyer le bon equipmentTypeId et equipmentItemId
       setFormData(prev => ({
         ...prev,
         name: item.name,
-        equipmentTypeId: item.id || ''
+        equipmentTypeId: (item as any).equipmentTypeId,
+        equipmentItemId: item.id // L'ID de l'item spécifique
       }))
     }
   }

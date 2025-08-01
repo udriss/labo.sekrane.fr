@@ -361,6 +361,8 @@ export default function RootLayout({
             </SnackbarProvider>
           </LocalizationProvider>
           </NotificationProvider>
+          {/* Footer */}
+          <FooterLIMS />
         </SessionProvider>
       </body>
     </html>

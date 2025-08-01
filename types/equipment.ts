@@ -20,6 +20,7 @@ export interface EquipmentItem {
   materiaux?: string[]
   customFields?: { [key: string]: string[] } // Pour les champs personnalisés
   isCustom?: boolean
+  equipmentTypeId: string // Référence vers le type d'équipement
 }
 
 export interface EditingItemData {

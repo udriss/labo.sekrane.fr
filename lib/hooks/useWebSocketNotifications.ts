@@ -102,7 +102,7 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
             isRead: !!dbNotif.isRead
           }));
           
-          console.log('📋 [WebSocket] Converted notifications:', dbNotifications);
+          console.log('📋 [WebSocket] Converted notifications:', dbNotifications.length);
           
           // Fusionner avec les notifications WebSocket existantes
           setNotifications(prev => {

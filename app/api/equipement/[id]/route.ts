@@ -8,10 +8,13 @@ import { withAudit } from '@/lib/api/with-audit';
 import type { EquipmentWithRelations, EquipmentFormData, EquipmentStatus } from '@/types/equipment-mysql';
 
 // GET - Récupérer un équipement par ID
-export const GET = withAudit(
-  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-    try {
-      const { id } = await params;
+export async function GET(
+  request: NextRequest, 
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+
 
       return withConnection(async (connection) => {
         const [rows] = await connection.execute(`
@@ -56,14 +59,7 @@ export const GET = withAudit(
         { status: 500 }
       );
     }
-  },
-  {
-    module: 'EQUIPMENT',
-    entity: 'equipment',
-    action: 'READ',
-    extractEntityIdFromResponse: (response) => response?.materiel?.id
-  }
-);
+  };
 
 // PUT - Mettre à jour un équipement
 export const PUT = withAudit(
@@ -95,10 +91,10 @@ export const PUT = withAudit(
         const beforeState = (existingRows as any[])[0];
 
         // Si equipment_type_id est fourni, vérifier qu'il existe
-        if (data.equipment_type_id) {
+        if (data.equipmentItemId) {
           const [typeRows] = await connection.execute(
             'SELECT id FROM equipment_types WHERE id = ?',
-            [data.equipment_type_id]
+            [data.equipmentTypeId]
           );
 
           if ((typeRows as any[]).length === 0) {
@@ -110,10 +106,10 @@ export const PUT = withAudit(
         }
 
         // Si equipment_item_id est fourni, vérifier qu'il existe et est compatible
-        if (data.equipment_item_id && data.equipment_type_id) {
+        if (data.equipmentItemId && data.equipmentTypeId) {
           const [itemRows] = await connection.execute(
             'SELECT id FROM equipment_items WHERE id = ? AND equipment_type_id = ?',
-            [data.equipment_item_id, data.equipment_type_id]
+            [data.equipmentItemId, data.equipmentTypeId]
           );
 
           if ((itemRows as any[]).length === 0) {
@@ -145,13 +141,13 @@ export const PUT = withAudit(
 
         const fieldsMapping = {
           name: 'name',
-          equipment_type_id: 'equipment_type_id',
-          equipment_item_id: 'equipment_item_id',
+          equipmentTypeId: 'equipment_type_id',
+          equipmentItemId: 'equipment_item_id',
           model: 'model',
           serial_number: 'serial_number',
           barcode: 'barcode',
           quantity: 'quantity',
-          min_quantity: 'min_quantity',
+          minQuantity: 'min_quantity',
           volume: 'volume',
           location: 'location',
           room: 'room',
@@ -204,7 +200,6 @@ export const PUT = withAudit(
         `, [id]);
 
         const updatedEquipment = (updatedRows as any[])[0];
-
         return NextResponse.json({
           materiel: {
             ...updatedEquipment,
@@ -212,7 +207,22 @@ export const PUT = withAudit(
             typeName: updatedEquipment.type_name,
             itemName: updatedEquipment.item_name,
             svg: updatedEquipment.item_svg || updatedEquipment.type_svg,
-            availableVolumes: updatedEquipment.item_volumes ? JSON.parse(updatedEquipment.item_volumes) : null,
+            availableVolumes: (() => {
+              const v = updatedEquipment.item_volumes;
+              if (!v || v === 'null') return null;
+              if (Array.isArray(v)) return v;
+              if (typeof v === 'string') {
+                try {
+                  // Si la chaîne est vide ou "null", retourne null
+                  if (v.trim() === '' || v.trim() === 'null') return null;
+                  return JSON.parse(v);
+                } catch (e) {
+                  console.warn('item_volumes JSON parse error:', v, e);
+                  return null;
+                }
+              }
+              return null;
+            })(),
             equipmentTypeId: updatedEquipment.equipment_type_id
           },
           _audit: {

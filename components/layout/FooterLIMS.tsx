@@ -1,5 +1,5 @@
 import { Box, Container, Typography, Link, Divider, Stack, IconButton } from '@mui/material';
-import { GitHub, Email, Info, Science } from '@mui/icons-material';
+import { GitHub, Email, Info, Science, Insights } from '@mui/icons-material';
 
 export function FooterLIMS() {
   const currentYear = new Date().getFullYear();
@@ -89,9 +89,11 @@ export function FooterLIMS() {
           alignItems="center"
           spacing={1}
         >
-          <Typography variant="caption" color="text.secondary" align="center">
-            Développé avec ❤️ pour simplifier la gestion de laboratoire
-          </Typography>
+            <Typography variant="caption" color="text.secondary" align="center">
+            Développé avec{' '}
+            <Insights sx={{ fontSize: 16, color: 'primary.main' }} />
+            {' '}pour simplifier la gestion de laboratoire
+            </Typography>
           <Typography variant="caption" color="text.secondary">
             •
           </Typography>

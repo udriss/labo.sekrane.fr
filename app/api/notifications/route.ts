@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || (session.user as any).id;
-    const limit = parseInt(searchParams.get('limit') || '50');
+    // const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // Vérifier que l'utilisateur peut accéder à ces notifications
@@ -39,9 +39,10 @@ export async function GET(request: NextRequest) {
       LEFT JOIN notification_read_status nrs ON (n.id = nrs.notification_id AND nrs.user_id = ?)
       WHERE (n.user_id = ? OR JSON_SEARCH(n.target_roles, 'one', ?) IS NOT NULL)
       ORDER BY n.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
     `, [userId, userId, userId, userRole]);
-
+    // possibilité de limiter les résultats
+    // LIMIT ${limit} OFFSET ${offset}
+    
     return NextResponse.json({
       success: true,
       notifications: notifications.map((notif: any) => {

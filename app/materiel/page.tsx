@@ -27,6 +27,7 @@ import { useEquipmentFilters } from "@/lib/hooks/useEquipmentFilters"
 import { useEquipmentQuantity } from "@/lib/hooks/useEquipmentQuantity"
 import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm" 
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
+import { useEquipmentHandlers } from "@/lib/hooks/useEquipmentHandlers"
 import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 import { useSession } from 'next-auth/react'
@@ -60,12 +61,11 @@ import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment
 export default function EquipmentPage() {
   const [tabValue, setTabValue] = useState(0)
   
-  // Utilisation des hooks personnalisés
-  const equipmentData = useEquipmentData()
-  const filters = useEquipmentFilters(equipmentData.materiel)
-  const quantity = useEquipmentQuantity(equipmentData.fetchEquipment)
-  const form = useEquipmentForm()
-  const dialogs = useEquipmentDialogs()
+  // Utilisation du hook centralisé pour les gestionnaires d'équipement
+  const equipmentHandlers = useEquipmentHandlers()
+  
+  // Utilisation des hooks personnalisés pour les fonctionnalités spécifiques
+  const filters = useEquipmentFilters(equipmentHandlers.materiel)
   
   // Nouveaux hooks pour les fonctionnalités avancées
   const deletion = useEquipmentDeletion()
@@ -89,9 +89,9 @@ export default function EquipmentPage() {
 
   // Gestionnaires pour l'édition des items de gestion
 const handleAddVolumeToEditingItem = (value?: string) => {
-    const volumeToAdd = value || dialogs.editingItemData.newVolume
-    if (volumeToAdd.trim() && !dialogs.editingItemData.volumes.includes(volumeToAdd)) {
-      dialogs.setEditingItemData((prev: EditingItemData) => ({
+    const volumeToAdd = value || equipmentHandlers.editingItemData.newVolume
+    if (volumeToAdd.trim() && !equipmentHandlers.editingItemData.volumes.includes(volumeToAdd)) {
+      equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
         ...prev,
         volumes: [...prev.volumes, volumeToAdd.trim()],
         newVolume: ''
@@ -99,7 +99,7 @@ const handleAddVolumeToEditingItem = (value?: string) => {
     }
   }
   const handleRemoveVolumeFromEditingItem = (volumeToRemove: string) => {
-    dialogs.setEditingItemData((prev: EditingItemData) => ({
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
       ...prev,
       volumes: prev.volumes.filter(v => v !== volumeToRemove)
     }))
@@ -107,9 +107,9 @@ const handleAddVolumeToEditingItem = (value?: string) => {
 
   // Handler pour les résolutions
 const handleAddResolutionToEditingItem = (value?: string) => {
-    const resolutionToAdd = value || dialogs.editingItemData.newResolution
-    if (resolutionToAdd.trim() && !dialogs.editingItemData.resolutions?.includes(resolutionToAdd)) {
-      dialogs.setEditingItemData((prev: EditingItemData) => ({
+    const resolutionToAdd = value || equipmentHandlers.editingItemData.newResolution
+    if (resolutionToAdd.trim() && !equipmentHandlers.editingItemData.resolutions?.includes(resolutionToAdd)) {
+      equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
         ...prev,
         resolutions: [...(prev.resolutions || []), resolutionToAdd.trim()],
         newResolution: ''
@@ -118,7 +118,7 @@ const handleAddResolutionToEditingItem = (value?: string) => {
   }
 
 const handleRemoveResolutionFromEditingItem = (resolutionToRemove: string) => {
-    dialogs.setEditingItemData((prev: EditingItemData) => ({
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
       ...prev,
       resolutions: prev.resolutions.filter(r => r !== resolutionToRemove)
     }))
@@ -126,9 +126,9 @@ const handleRemoveResolutionFromEditingItem = (resolutionToRemove: string) => {
 
 // Handler pour les tailles
 const handleAddTailleToEditingItem = (value?: string) => {
-    const tailleToAdd = value || dialogs.editingItemData.newTaille
-    if (tailleToAdd.trim() && !dialogs.editingItemData.tailles?.includes(tailleToAdd)) {
-      dialogs.setEditingItemData((prev: EditingItemData) => ({
+    const tailleToAdd = value || equipmentHandlers.editingItemData.newTaille
+    if (tailleToAdd.trim() && !equipmentHandlers.editingItemData.tailles?.includes(tailleToAdd)) {
+      equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
         ...prev,
         tailles: [...(prev.tailles || []), tailleToAdd.trim()],
         newTaille: ''
@@ -137,7 +137,7 @@ const handleAddTailleToEditingItem = (value?: string) => {
   }
 
 const handleRemoveTailleFromEditingItem = (tailleToRemove: string) => {
-    dialogs.setEditingItemData((prev: EditingItemData) => ({
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
       ...prev,
       tailles: prev.tailles.filter(t => t !== tailleToRemove)
     }))
@@ -145,9 +145,9 @@ const handleRemoveTailleFromEditingItem = (tailleToRemove: string) => {
 
 // Handler pour les matériaux
 const handleAddMateriauToEditingItem = (value?: string) => {
-    const materiauToAdd = value || dialogs.editingItemData.newMateriau
-    if (materiauToAdd.trim() && !dialogs.editingItemData.materiaux?.includes(materiauToAdd)) {
-      dialogs.setEditingItemData((prev: EditingItemData) => ({
+    const materiauToAdd = value || equipmentHandlers.editingItemData.newMateriau
+    if (materiauToAdd.trim() && !equipmentHandlers.editingItemData.materiaux?.includes(materiauToAdd)) {
+      equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
         ...prev,
         materiaux: [...(prev.materiaux || []), materiauToAdd.trim()],
         newMateriau: ''
@@ -156,7 +156,7 @@ const handleAddMateriauToEditingItem = (value?: string) => {
   }
 
 const handleRemoveMateriauFromEditingItem = (materiauToRemove: string) => {
-    dialogs.setEditingItemData((prev: EditingItemData) => ({
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
       ...prev,
       materiaux: prev.materiaux.filter(m => m !== materiauToRemove)
     }))
@@ -166,7 +166,7 @@ const handleRemoveMateriauFromEditingItem = (materiauToRemove: string) => {
 // Handler pour les champs personnalisés
 const handleAddCustomFieldToEditingItem = (fieldName: string, values: string[]) => {
   if (fieldName.trim() && values.length > 0) {
-    dialogs.setEditingItemData((prev: EditingItemData) => ({
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => ({
       ...prev,
       customFields: {
         ...prev.customFields,
@@ -179,7 +179,7 @@ const handleAddCustomFieldToEditingItem = (fieldName: string, values: string[]) 
 }
 
 const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
-    dialogs.setEditingItemData((prev: EditingItemData) => {
+    equipmentHandlers.setEditingItemData((prev: EditingItemData) => {
       const newCustomFields = { ...prev.customFields }
       delete newCustomFields[fieldName]
       return {
@@ -202,7 +202,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   }
 
   const handleEditCategory = (categoryId: string) => {
-    const category = equipmentData.equipmentTypes.find(t => t.id === categoryId)
+    const category = equipmentHandlers.equipmentTypes.find(t => t.id === categoryId)
     if (category) {
       setEditingCategoryId(categoryId)
       setEditingCategoryName(category.name)
@@ -212,7 +212,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
   // Fonction pour supprimer une catégorie
   const handleDeleteCategory = async (categoryId: string) => {
-    const category = equipmentData.equipmentTypes.find(t => t.id === categoryId)
+    const category = equipmentHandlers.equipmentTypes.find(t => t.id === categoryId)
     if (!category) return
 
     try {
@@ -246,11 +246,11 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             
             if (response.ok) {
               const result = await response.json()
-              await equipmentData.loadEquipmentTypes()
+              await equipmentHandlers.loadEquipmentTypes()
               
               // Si on était en train de voir cette catégorie, revenir à la liste
-              if (dialogs.selectedManagementCategory === categoryId) {
-                dialogs.setSelectedManagementCategory('')
+              if (equipmentHandlers.selectedManagementCategory === categoryId) {
+                equipmentHandlers.setSelectedManagementCategory('')
               }
               
               // Afficher un message de succès
@@ -291,7 +291,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
       })
 
       if (response.ok) {
-        await equipmentData.loadEquipmentTypes()
+        await equipmentHandlers.loadEquipmentTypes()
         setEditCategoryDialog(false)
         setEditingCategoryId('')
         setEditingCategoryName('')
@@ -307,7 +307,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   }
   // Fonction pour obtenir les volumes disponibles pour un équipement
   const getAvailableVolumes = (equipmentTypeId: string): string[] => {
-    for (const equipmentType of equipmentData.getAllEquipmentTypes()) {
+    for (const equipmentType of equipmentHandlers.getAllEquipmentTypes()) {
       const item = equipmentType.items.find((item: EquipmentItem) => item.id === equipmentTypeId)
       if (item) {
         return item.volumes || []
@@ -319,10 +319,10 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   // Gestion de l'ajout rapide
   const handleQuickAdd = () => {
     setTabValue(0)
-    form.setActiveStep(0)
-    form.setSelectedCategory('')
-    form.setSelectedItem(null)
-    form.setFormData({
+    equipmentHandlers.setActiveStep(0)
+    equipmentHandlers.setSelectedCategory('')
+    equipmentHandlers.setSelectedItem(null)
+    equipmentHandlers.setFormData({
       name: '',
       equipmentTypeId: '',
       quantity: 1,
@@ -333,87 +333,25 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   // Gestionnaire pour la soumission avec gestion des onglets
   const handleSubmitWithTabSwitch = async () => {
     try {  
-      const newEquipment = await equipmentService.submitEquipment(
-        form.formData,
-        form.selectedCategory,
-        form.selectedItem,
-        equipmentData.getAllEquipmentTypes
-      )
+      const result = await equipmentHandlers.handleSubmit()
       
-      // Utiliser isNewCustom retourné par submitEquipment
-      if (newEquipment.isNewCustom || (form.selectedItem?.isCustom && !form.selectedItem?.id)) {
-        dialogs.setNewlyCreatedItem({
-          ...newEquipment.materiel,
-          category: form.selectedCategory
-        })
-        dialogs.setContinueDialog(true)
-      } else {
-        form.handleReset()
+      // Si le hook retourne une indication de basculer vers l'inventaire
+      if (result?.switchToInventory) {
         setTabValue(1) // Basculer vers l'onglet inventaire
       }
-      
-      await equipmentData.fetchEquipment()
-      await equipmentData.loadEquipmentTypes()
     } catch (error) {
       console.error('Erreur dans handleSubmitWithTabSwitch:', error)
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de l'ajout")
+      equipmentHandlers.setError(error instanceof Error ? error.message : "Erreur lors de l'ajout")
     }
   }
 
-  // Gestionnaire pour la modification d'équipement
-  const handleSaveEdit = async () => {
-    try {
-      await equipmentService.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment)
-      
-      await equipmentData.fetchEquipment()
-      dialogs.setOpenEditDialog(false)
-      dialogs.setEditingEquipment(null)
-    } catch (error) {
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de la modification")
-    }
-  }
-
-  // Gestionnaire pour la suppression d'équipement
-  const confirmDeleteEquipment = async () => {
-    if (!dialogs.equipmentToDelete?.id) {
-      equipmentData.setError("Impossible de supprimer l'équipement : ID manquant.")
-      dialogs.setDeleteDialog(false)
-      dialogs.setEquipmentToDelete(null)
-      return
-    }
-
-    try {
-      dialogs.setDeletingItems(prev => new Set([...prev, dialogs.equipmentToDelete.id]))
-      dialogs.setDeleteDialog(false)
-
-      await equipmentService.deleteEquipment(dialogs.equipmentToDelete.id)
-      
-      setTimeout(async () => {
-        await equipmentData.fetchEquipment()
-        dialogs.setDeletingItems(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(dialogs.equipmentToDelete.id)
-          return newSet
-        })
-        dialogs.setEquipmentToDelete(null)
-      }, 500)
-
-    } catch (error) {
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de la suppression")
-      dialogs.setDeletingItems(prev => {
-        const newSet = new Set(prev)
-        if (dialogs.equipmentToDelete) {
-          newSet.delete(dialogs.equipmentToDelete.id)
-        }
-        return newSet
-      })
-      dialogs.setEquipmentToDelete(null)
-    }
-  }
+  // Les gestionnaires pour l'édition et la suppression sont maintenant dans le hook centralisé
+  // handleSaveEdit -> equipmentHandlers.handleSaveEdit
+  // confirmDeleteEquipment -> equipmentHandlers.confirmDeleteEquipment
 
   // Gestionnaire pour créer une catégorie personnalisée
   const handleCreateCustomCategory = async () => {
-    if (!dialogs.newCategoryName.trim()) {
+    if (!equipmentHandlers.newCategoryName.trim()) {
       alert('Veuillez entrer un nom pour la catégorie')
       return
     }
@@ -421,7 +359,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     try {
       const newCategory = {
         id: `CUSTOM_${Date.now()}`,
-        name: dialogs.newCategoryName,
+        name: equipmentHandlers.newCategoryName,
         svg: '/svg/default.svg',
         ownerId: session?.user?.id // Ajouter l'ID du créateur
       }
@@ -436,9 +374,9 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
       })
 
       if (response.ok) {
-        await equipmentData.loadEquipmentTypes()
-        dialogs.setNewCategoryName('')
-        dialogs.setNewCategoryDialog(false)
+        await equipmentHandlers.loadEquipmentTypes()
+        equipmentHandlers.setNewCategoryName('')
+        equipmentHandlers.setNewCategoryDialog(false)
         alert('Catégorie créée avec succès !')
       }
     } catch (error) {
@@ -449,8 +387,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
   // Gestionnaires pour les volumes dans l'équipement personnalisé
   const handleAddVolumeToCustomEquipment = () => {
-    if (dialogs.customEquipmentData.newVolume.trim()) {
-      dialogs.setCustomEquipmentData(prev => ({
+    if (equipmentHandlers.customEquipmentData.newVolume.trim()) {
+      equipmentHandlers.setCustomEquipmentData(prev => ({
         ...prev,
         volumes: [...prev.volumes, prev.newVolume.trim()],
         newVolume: ''
@@ -459,7 +397,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   }
 
   const handleRemoveVolumeFromCustomEquipment = (volumeToRemove: string) => {
-    dialogs.setCustomEquipmentData(prev => ({
+    equipmentHandlers.setCustomEquipmentData(prev => ({
       ...prev,
       volumes: prev.volumes.filter(v => v !== volumeToRemove)
     }))
@@ -467,107 +405,57 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
   // Gestionnaire pour sauvegarder un équipement personnalisé
   const handleSaveCustomEquipment = async () => {
-    if (!dialogs.customEquipmentData.name.trim()) {
+    if (!equipmentHandlers.customEquipmentData.name.trim()) {
       alert('Veuillez entrer un nom pour l\'équipement')
       return
     }
 
-    // if (!dialogs.customEquipmentData.category) {
+    // if (!equipmentHandlers.customEquipmentData.category) {
     //   alert('Veuillez sélectionner une catégorie')
     //   return
     // }
 
     try {
-      await equipmentService.saveCustomEquipment(dialogs.customEquipmentData)
+      await equipmentService.saveCustomEquipment(equipmentHandlers.customEquipmentData)
       
-      await equipmentData.loadEquipmentTypes()
+      await equipmentHandlers.loadEquipmentTypes()
       
-      dialogs.setAddCustomEquipmentDialog(false)
-      dialogs.setNewlyCreatedItem({
-        name: dialogs.customEquipmentData.name,
-        category: dialogs.customEquipmentData.category,
-        volumes: dialogs.customEquipmentData.volumes
+      equipmentHandlers.setAddCustomEquipmentDialog(false)
+      equipmentHandlers.setNewlyCreatedItem({
+        name: equipmentHandlers.customEquipmentData.name,
+        category: equipmentHandlers.customEquipmentData.category,
+        volumes: equipmentHandlers.customEquipmentData.volumes
       })
-      dialogs.setContinueDialog(true)
+      equipmentHandlers.setContinueDialog(true)
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'équipement personnalisé:', error)
       alert('Erreur lors de l\'ajout de l\'équipement')
     }
   }
 
-  // Gestionnaires pour les dialogues de continuation
+  // Gestionnaires pour les dialogues de continuation avec gestion des onglets
   const handleFinishWithoutContinue = () => {
-    dialogs.setContinueDialog(false)
-    dialogs.setNewlyCreatedItem(null)
-    form.handleReset()
-    setTabValue(1) // Basculer vers l'onglet inventaire
+    const result = equipmentHandlers.handleFinishWithoutContinue()
+    if (result?.switchToInventory) {
+      setTabValue(1) // Basculer vers l'onglet inventaire
+    }
   }
 
   const handleContinueToInventory = () => {
-    dialogs.setContinueDialog(false)
-    if (dialogs.newlyCreatedItem) {
-      form.setSelectedItem({
-        name: dialogs.newlyCreatedItem.name,
-        svg: '/svg/default.svg',
-        volumes: dialogs.newlyCreatedItem.volumes || ['N/A']
-      })
-      form.setFormData(prev => ({
-        ...prev,
-        name: dialogs.newlyCreatedItem.name,
-        type: dialogs.newlyCreatedItem.category
-      }))
-      form.setActiveStep(2) // Aller à l'étape des détails
+    const result = equipmentHandlers.handleContinueToInventory()
+    if (result?.switchToAddTab) {
       setTabValue(0) // Rester sur l'onglet d'ajout
     }
-    dialogs.setNewlyCreatedItem(null)
   }
 
-
-
-  const handleSaveEditedItem = async () => {
-    if (!dialogs.selectedManagementItem || !dialogs.selectedManagementCategory) return
-
-    try {
-      const updatedItem = {
-      ...dialogs.selectedManagementItem, // Conserver les propriétés existantes comme l'ID
-      name: dialogs.editingItemData.name,
-      volumes: dialogs.editingItemData.volumes,
-      resolutions: dialogs.editingItemData.resolutions,
-      tailles: dialogs.editingItemData.tailles,
-      materiaux: dialogs.editingItemData.materiaux,
-      customFields: dialogs.editingItemData.customFields, // Important : inclure les champs personnalisés
-      svg: dialogs.selectedManagementItem.svg || '/svg/default.svg',
-      isCustom: dialogs.selectedManagementItem.isCustom
-      }
-
-      const result = await equipmentService.saveEditedItem(
-        dialogs.selectedManagementCategory,
-        dialogs.selectedManagementItem,
-        updatedItem
-      )
-
-      await equipmentData.loadEquipmentTypes()
-      
-      dialogs.setEditItemDialog(false)
-      dialogs.setSelectedManagementItem(null)
-      
-      if (result.targetCategory) {
-        dialogs.setSelectedManagementCategory(result.targetCategory)
-        alert('Équipement déplacé avec succès vers la nouvelle catégorie !')
-      } else {
-        alert('Équipement mis à jour avec succès !')
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'équipement:', error)
-      alert('Erreur lors de la mise à jour de l\'équipement')
-    }
-  }
+  // handleSaveEditedItem est maintenant dans le hook centralisé
+  // equipmentHandlers.handleSaveEditedItem
 
   // Gestionnaire de changement de quantité
   const handleQuantityChangeWithMaterial = (equipmentId: string, newValue: number) => {
-    const currentItem = equipmentData.materiel.find((item: any) => item.id === equipmentId) as any
+    const currentItem = equipmentHandlers.materiel.find((item: any) => item.id === equipmentId) as any
     if (newValue !== currentItem?.quantity) {
-      quantity.handleQuantityChange(equipmentId, newValue, equipmentData.materiel)
+      equipmentHandlers.handleQuantityChange(equipmentId, newValue, equipmentHandlers.materiel)
     }
   }
 
@@ -592,36 +480,36 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
       {/* Onglet Ajout */}
       <TabPanel value={tabValue} index={0}>
         <EquipmentAddTab
-          activeStep={form.activeStep}
-          setActiveStep={form.setActiveStep}
-          selectedCategory={form.selectedCategory}
-          setSelectedCategory={form.setSelectedCategory}
-          selectedItem={form.selectedItem}
-          setSelectedItem={form.setSelectedItem}
-          formData={form.formData}
-          setFormData={form.setFormData}
-          equipmentTypes={equipmentData.equipmentTypes}
-          rooms={equipmentData.rooms}
-          onCategorySelect={form.handleCategorySelect}
-          onItemSelect={form.handleItemSelect}
-          onFormChange={form.handleFormChange}
+          activeStep={equipmentHandlers.activeStep}
+          setActiveStep={equipmentHandlers.setActiveStep}
+          selectedCategory={equipmentHandlers.selectedCategory}
+          setSelectedCategory={equipmentHandlers.setSelectedCategory}
+          selectedItem={equipmentHandlers.selectedItem}
+          setSelectedItem={equipmentHandlers.setSelectedItem}
+          formData={equipmentHandlers.formData}
+          setFormData={equipmentHandlers.setFormData}
+          equipmentTypes={equipmentHandlers.equipmentTypes}
+          rooms={equipmentHandlers.rooms}
+          onCategorySelect={equipmentHandlers.handleCategorySelect}
+          onItemSelect={equipmentHandlers.handleItemSelect}
+          onFormChange={equipmentHandlers.handleFormChange}
           onSubmit={handleSubmitWithTabSwitch}
-          onReset={form.handleReset}
-          loading={equipmentData.loading}
+          onReset={equipmentHandlers.handleReset}
+          loading={equipmentHandlers.loading}
           currentUser={session?.user}
           users={users}
           onEditCategory={handleEditCategory}
           onDeleteCategory={handleDeleteCategory}
-          getAllCategories={equipmentData.getAllCategories}
+          getAllCategories={equipmentHandlers.getAllCategories}
         />
       </TabPanel>
 
       {/* Onglet Inventaire */}
       <TabPanel value={tabValue} index={1}>
         <EquipmentInventoryTab
-          materiel={equipmentData.materiel}
-          loading={equipmentData.loading}
-          error={equipmentData.error}
+          materiel={equipmentHandlers.materiel}
+          loading={equipmentHandlers.loading}
+          error={equipmentHandlers.error}
           searchTerm={filters.searchTerm}
           setSearchTerm={filters.setSearchTerm}
           typeFilter={filters.typeFilter}
@@ -630,13 +518,13 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
           setLocationFilter={filters.setLocationFilter}
           sortBy={filters.sortBy}
           setSortBy={filters.setSortBy}
-          rooms={equipmentData.rooms}
-          quantityValues={quantity.quantityValues}
-          setQuantityValues={quantity.setQuantityValues}
-          updatingCards={quantity.updatingCards}
+          rooms={equipmentHandlers.rooms}
+          quantityValues={equipmentHandlers.quantityValues}
+          setQuantityValues={equipmentHandlers.setQuantityValues}
+          updatingCards={equipmentHandlers.updatingCards}
           onQuantityChange={handleQuantityChangeWithMaterial}
-          onEditEquipment={dialogs.handleEditEquipment}
-          onDeleteEquipment={dialogs.handleDeleteEquipment}
+          onEditEquipment={equipmentHandlers.handleEditEquipment}
+          onDeleteEquipment={equipmentHandlers.handleDeleteEquipment}
           getTypeLabel={filters.getTypeLabel}
           getFilteredMateriel={filters.getFilteredMateriel}
         />
@@ -645,19 +533,19 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
       {/* Onglet Gestion des types */}
       <TabPanel value={tabValue} index={2}>
           <EquipmentManagementTab
-            selectedManagementCategory={dialogs.selectedManagementCategory}
-            setSelectedManagementCategory={dialogs.setSelectedManagementCategory}
-            selectedManagementItem={dialogs.selectedManagementItem}
-            setSelectedManagementItem={dialogs.setSelectedManagementItem}
-            editItemDialog={dialogs.editItemDialog}
-            setEditItemDialog={dialogs.setEditItemDialog}
-            editingItemData={dialogs.editingItemData}
-            setEditingItemData={dialogs.setEditingItemData}
-            equipmentTypes={equipmentData.equipmentTypes}
-            onSaveEditedItem={handleSaveEditedItem}
+            selectedManagementCategory={equipmentHandlers.selectedManagementCategory}
+            setSelectedManagementCategory={equipmentHandlers.setSelectedManagementCategory}
+            selectedManagementItem={equipmentHandlers.selectedManagementItem}
+            setSelectedManagementItem={equipmentHandlers.setSelectedManagementItem}
+            editItemDialog={equipmentHandlers.editItemDialog}
+            setEditItemDialog={equipmentHandlers.setEditItemDialog}
+            editingItemData={equipmentHandlers.editingItemData}
+            setEditingItemData={equipmentHandlers.setEditingItemData}
+            equipmentTypes={equipmentHandlers.equipmentTypes}
+            onSaveEditedItem={equipmentHandlers.handleSaveEditedItem}
             onAddVolumeToEditingItem={handleAddVolumeToEditingItem}
             onRemoveVolumeFromEditingItem={handleRemoveVolumeFromEditingItem}
-            getAllCategories={equipmentData.getAllCategories}
+            getAllCategories={equipmentHandlers.getAllCategories}
             currentUser={session?.user}
             users={users}
             onEditCategory={handleEditCategory}
@@ -690,8 +578,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               variant="outlined"
               startIcon={<Category />}
               onClick={() => {
-                dialogs.setNewCategoryName('')
-                dialogs.setNewCategoryDialog(true)
+                equipmentHandlers.setNewCategoryName('')
+                equipmentHandlers.setNewCategoryDialog(true)
               }}
             >
               Nouvelle catégorie
@@ -700,13 +588,13 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               variant="contained"
               startIcon={<Add />}
               onClick={() => {
-                dialogs.setCustomEquipmentData({
+                equipmentHandlers.setCustomEquipmentData({
                   name: '',
                   category: '',
                   volumes: [],
                   newVolume: ''
                 })
-                dialogs.setAddCustomEquipmentDialog(true)
+                equipmentHandlers.setAddCustomEquipmentDialog(true)
               }}
             >
               Ajouter équipement
@@ -727,34 +615,34 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
       {/* Dialogue de continuation après ajout de matériel personnalisé */}
       <ContinueDialog
-        open={dialogs.continueDialog}
-        onClose={() => dialogs.setContinueDialog(false)}
-        newlyCreatedItem={dialogs.newlyCreatedItem}
+        open={equipmentHandlers.continueDialog}
+        onClose={() => equipmentHandlers.setContinueDialog(false)}
+        newlyCreatedItem={equipmentHandlers.newlyCreatedItem}
         onFinishWithoutContinue={handleFinishWithoutContinue}
         onContinueToInventory={handleContinueToInventory}
       />
 
       {/* Dialogue pour créer une nouvelle catégorie */}
       <NewCategoryDialog
-        open={dialogs.newCategoryDialog}
-        onClose={() => dialogs.setNewCategoryDialog(false)}
-        categoryName={dialogs.newCategoryName}
-        setCategoryName={dialogs.setNewCategoryName}
+        open={equipmentHandlers.newCategoryDialog}
+        onClose={() => equipmentHandlers.setNewCategoryDialog(false)}
+        categoryName={equipmentHandlers.newCategoryName}
+        setCategoryName={equipmentHandlers.setNewCategoryName}
         onCreateCategory={handleCreateCustomCategory}
       />
 
       {/* Dialogue de suppression stylisé */}
       <DeleteDialog
-        open={dialogs.deleteDialog}
-        onClose={() => dialogs.setDeleteDialog(false)}
-        equipmentToDelete={dialogs.equipmentToDelete}
-        onConfirmDelete={confirmDeleteEquipment}
+        open={equipmentHandlers.deleteDialog}
+        onClose={() => equipmentHandlers.setDeleteDialog(false)}
+        equipmentToDelete={equipmentHandlers.equipmentToDelete}
+        onConfirmDelete={equipmentHandlers.confirmDeleteEquipment}
       />
 
       {/* Dialog pour ajouter un équipement personnalisé aux catégories */}
       <Dialog
-        open={dialogs.addCustomEquipmentDialog}
-        onClose={() => dialogs.setAddCustomEquipmentDialog(false)}
+        open={equipmentHandlers.addCustomEquipmentDialog}
+        onClose={() => equipmentHandlers.setAddCustomEquipmentDialog(false)}
         maxWidth="md"
         fullWidth
         slotProps={{
@@ -778,7 +666,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                 Ajouter un équipement personnalisé
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Catégorie: {equipmentData.getAllCategories().find(c => c.id === dialogs.customEquipmentData.category)?.name}
+                Catégorie: {equipmentHandlers.getAllCategories().find(c => c.id === equipmentHandlers.customEquipmentData.category)?.name}
               </Typography>
             </Box>
           </Box>
@@ -799,9 +687,9 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               <FormControl fullWidth>
                 <InputLabel sx={{ color: 'white' }}>Catégorie</InputLabel>
                 <Select
-                  value={dialogs.customEquipmentData.category}
+                  value={equipmentHandlers.customEquipmentData.category}
                   label="Catégorie"
-                  onChange={(e) => dialogs.setCustomEquipmentData(prev => ({
+                  onChange={(e) => equipmentHandlers.setCustomEquipmentData(prev => ({
                     ...prev,
                     category: e.target.value
                   }))}
@@ -813,7 +701,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                     '& .MuiSvgIcon-root': { color: 'white' }
                   }}
                 >
-                  {equipmentData.getAllCategories().map((category) => (
+                  {equipmentHandlers.getAllCategories().map((category) => (
                     <MenuItem key={category.id} value={category.id}>
                       {category.name}
                     </MenuItem>
@@ -824,8 +712,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               <TextField
                 fullWidth
                 label="Nom de l'équipement"
-                value={dialogs.customEquipmentData.name}
-                onChange={(e) => dialogs.setCustomEquipmentData(prev => ({
+                value={equipmentHandlers.customEquipmentData.name}
+                onChange={(e) => equipmentHandlers.setCustomEquipmentData(prev => ({
                   ...prev,
                   name: e.target.value
                 }))}
@@ -848,8 +736,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                 <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                   <TextField
                     label="Ajouter un volume"
-                    value={dialogs.customEquipmentData.newVolume}
-                    onChange={(e) => dialogs.setCustomEquipmentData(prev => ({
+                    value={equipmentHandlers.customEquipmentData.newVolume}
+                    onChange={(e) => equipmentHandlers.setCustomEquipmentData(prev => ({
                       ...prev,
                       newVolume: e.target.value
                     }))}
@@ -879,9 +767,9 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                   </Button>
                 </Stack>
 
-                {dialogs.customEquipmentData.volumes.length > 0 && (
+                {equipmentHandlers.customEquipmentData.volumes.length > 0 && (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {dialogs.customEquipmentData.volumes.map((volume, index) => (
+                    {equipmentHandlers.customEquipmentData.volumes.map((volume, index) => (
                       <Chip
                         key={index}
                         label={volume}
@@ -902,7 +790,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         
         <DialogActions sx={{ pt: 1 }}>
           <Button 
-            onClick={() => dialogs.setAddCustomEquipmentDialog(false)}
+            onClick={() => equipmentHandlers.setAddCustomEquipmentDialog(false)}
             sx={{ 
               color: 'rgba(255,255,255,0.8)',
               '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
@@ -920,7 +808,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               fontWeight: 'bold'
             }}
             startIcon={<Save />}
-            disabled={!dialogs.customEquipmentData.name.trim()}
+            disabled={!equipmentHandlers.customEquipmentData.name.trim()}
           >
             Ajouter l'équipement
           </Button>
@@ -930,10 +818,10 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
       {/* Dialog d'édition d'un équipement de l'inventaire */}
       <Dialog
-        open={dialogs.openEditDialog}
+        open={equipmentHandlers.openEditDialog}
         onClose={() => {
-          dialogs.setOpenEditDialog(false)
-          dialogs.setEditingEquipment(null)
+          equipmentHandlers.setOpenEditDialog(false)
+          equipmentHandlers.setEditingEquipment(null)
         }}
         maxWidth="sm"
         fullWidth
@@ -951,10 +839,10 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Edit />
             <Typography variant="h6">
-              Modifier {dialogs.editingEquipment?.name}
-              {dialogs.editingEquipment?.volume && (
+              Modifier {equipmentHandlers.editingEquipment?.name}
+              {equipmentHandlers.editingEquipment?.volume && (
                 <span style={{ fontWeight: 400, fontSize: '1rem', marginLeft: 8 }}>
-                  ({dialogs.editingEquipment.volume})
+                  ({equipmentHandlers.editingEquipment.volume})
                 </span>
               )}
             </Typography>
@@ -967,8 +855,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             <TextField
               fullWidth
               label="Nom de l'équipement"
-              value={dialogs.editingEquipment?.name || ''}
-              onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, name: e.target.value }))}
+              value={equipmentHandlers.editingEquipment?.name || ''}
+              onChange={(e) => equipmentHandlers.setEditingEquipment((prev: any) => ({ ...prev, name: e.target.value }))}
               sx={{
                 '& .MuiInputLabel-root': { color: 'white' },
                 '& .MuiOutlinedInput-root': {
@@ -981,7 +869,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             />
             
             {/* Volume avec sélection des volumes preset */}
-            {dialogs.editingEquipment?.equipmentTypeId && getAvailableVolumes(dialogs.editingEquipment.equipmentTypeId).length > 0 ? (
+            {equipmentHandlers.editingEquipment?.equipmentTypeId && getAvailableVolumes(equipmentHandlers.editingEquipment.equipmentTypeId).length > 0 ? (
               <FormControl 
                 fullWidth
                 sx={{
@@ -997,14 +885,14 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               >
                 <InputLabel>Volume</InputLabel>
                 <Select
-                  value={dialogs.editingEquipment?.volume || ''}
+                  value={equipmentHandlers.editingEquipment?.volume || ''}
                   label="Volume"
-                  onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
+                  onChange={(e) => equipmentHandlers.setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
                 >
                   <MenuItem value="">
                     <em>Aucun volume</em>
                   </MenuItem>
-                  {getAvailableVolumes(dialogs.editingEquipment.equipmentTypeId).map((volume) => (
+                  {getAvailableVolumes(equipmentHandlers.editingEquipment.equipmentTypeId).map((volume) => (
                     <MenuItem key={volume} value={volume}>
                       {volume}
                     </MenuItem>
@@ -1015,8 +903,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               <TextField
                 fullWidth
                 label="Volume"
-                value={dialogs.editingEquipment?.volume || ''}
-                onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
+                value={equipmentHandlers.editingEquipment?.volume || ''}
+                onChange={(e) => equipmentHandlers.setEditingEquipment((prev: any) => ({ ...prev, volume: e.target.value }))}
                 sx={{
                   '& .MuiInputLabel-root': { color: 'white' },
                   '& .MuiOutlinedInput-root': {
@@ -1034,8 +922,8 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               fullWidth
               label="Quantité"
               type="number"
-              value={dialogs.editingEquipment?.quantity || 1}
-              onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, quantity: Number(e.target.value) }))}
+              value={equipmentHandlers.editingEquipment?.quantity || 1}
+              onChange={(e) => equipmentHandlers.setEditingEquipment((prev: any) => ({ ...prev, quantity: Number(e.target.value) }))}
               sx={{
                 '& .MuiInputLabel-root': { color: 'white' },
                 '& .MuiOutlinedInput-root': {
@@ -1063,10 +951,10 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             >
               <InputLabel>Salle</InputLabel>
               <Select
-                value={dialogs.editingEquipment?.room || ''}
+                value={equipmentHandlers.editingEquipment?.room || ''}
                 label="Salle"
                 onChange={(e) => {
-                  dialogs.setEditingEquipment((prev: any) => ({ 
+                  equipmentHandlers.setEditingEquipment((prev: any) => ({ 
                     ...prev, 
                     room: e.target.value,
                     location: '' // Reset location when room changes
@@ -1076,7 +964,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                 <MenuItem value="">
                   <em>Aucune salle spécifiée</em>
                 </MenuItem>
-                {equipmentData.rooms.map((room) => (
+                {equipmentHandlers.rooms.map((room) => (
                   <MenuItem key={room.id} value={room.name}>
                     <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {room.name}
                   </MenuItem>
@@ -1085,7 +973,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
             </FormControl>
 
             {/* Localisation dans la salle */}
-            {dialogs.editingEquipment?.room && (
+            {equipmentHandlers.editingEquipment?.room && (
               <FormControl 
                 fullWidth
                 sx={{
@@ -1101,15 +989,15 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
               >
                 <InputLabel>Localisation</InputLabel>
                 <Select
-                  value={dialogs.editingEquipment?.location || ''}
+                  value={equipmentHandlers.editingEquipment?.location || ''}
                   label="Localisation"
-                  onChange={(e) => dialogs.setEditingEquipment((prev: any) => ({ ...prev, location: e.target.value }))}
+                  onChange={(e) => equipmentHandlers.setEditingEquipment((prev: any) => ({ ...prev, location: e.target.value }))}
                 >
                   <MenuItem value="">
                     <em>Aucune localisation spécifiée</em>
                   </MenuItem>
                   {(() => {
-                    const selectedRoom = equipmentData.rooms.find(room => room.name === dialogs.editingEquipment.room)
+                    const selectedRoom = equipmentHandlers.rooms.find(room => room.name === equipmentHandlers.editingEquipment.room)
                     return selectedRoom?.locations?.map((location: any) => (
                       <MenuItem key={location.id} value={location.name}>
                         <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {location.name}
@@ -1124,22 +1012,22 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
           <Button
             onClick={() => {
-              dialogs.setOpenEditDialog(false)
-              dialogs.setEditingEquipment(null)
+              equipmentHandlers.setOpenEditDialog(false)
+              equipmentHandlers.setEditingEquipment(null)
             }}
             sx={{ color: 'rgba(255,255,255,0.7)' }}
           >
             Annuler
           </Button>
           <Button
-            onClick={handleSaveEdit}
+            onClick={equipmentHandlers.handleSaveEdit}
             variant="contained"
             sx={{ 
               fontWeight: 'bold'
             }}
             startIcon={<Save />}
             color="success"
-            disabled={!dialogs.editingEquipment?.name?.trim()}
+            disabled={!equipmentHandlers.editingEquipment?.name?.trim()}
           >
             Sauvegarder
           </Button>
@@ -1154,7 +1042,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
           onConfirm={async () => {
             const success = await deletion.confirmDeletion()
             if (success) {
-              await equipmentData.loadEquipmentTypes()
+              await equipmentHandlers.loadEquipmentTypes()
               
             } else {
               console.error('Erreur lors de la suppression')
@@ -1191,7 +1079,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         categoryName={editingCategoryName}
         setCategoryName={setEditingCategoryName}
         onUpdateCategory={handleUpdateCategory}
-        originalName={equipmentData.equipmentTypes.find(t => t.id === editingCategoryId)?.name || ''}
+        originalName={equipmentHandlers.equipmentTypes.find(t => t.id === editingCategoryId)?.name || ''}
       />
     </Container>
   )

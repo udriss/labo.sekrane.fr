@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth';
 import { auditLogger } from '@/lib/services/audit-logger';
 import { wsNotificationService } from '@/lib/services/websocket-notification-service';
 import { AuditAction, AuditUser, AuditContext } from '@/types/audit';
+import util from 'util'; // Ajoutez cet import en haut du fichier
+
 
 type RouteHandler = (req: NextRequest, context?: any) => Promise<NextResponse> | NextResponse;
 
@@ -98,7 +100,7 @@ function createEquipmentNotificationMessage(
   details?: any
 ): string {
   const userName = triggeredBy.name;
-  
+
   if (actionType === 'CREATE') {
     const equipmentName = details?.equipmentName || 'un nouvel équipement';
     const quantity = details?.quantity || 'une quantité';
@@ -130,6 +132,12 @@ function createEquipmentNotificationMessage(
     return `${userName} a supprimé ${equipmentName} de l'inventaire`;
   }
   
+  if (actionType === 'POST') {
+    console.log("#############################details: ", util.inspect(details, { depth: null, colors: true }));
+    const equipmentName = details?.equipmentName || 'un équipement';
+    return `${userName} a ajouté ${equipmentName} (${details?.quantity || 1} unité${details?.quantity > 1 ? 's' : ''}) à l'inventaire`;
+  }
+
   return `${userName} a effectué une action sur un équipement`;
 }
 
@@ -195,16 +203,6 @@ async function triggerNotifications(
       customNotifyUsers
     );
 
-    console.log('✅ Notification WebSocket envoyée avec succès:', {
-      targetRoles,
-      customUserIds: customNotifyUsers,
-      module,
-      actionType,
-      entityType,
-      entityId,
-      triggeredBy: triggeredBy.id,
-      severity
-    });
 
   } catch (error) {
     console.error('❌ Erreur lors de l\'envoi de la notification WebSocket:', error);

@@ -7,6 +7,26 @@ import { withConnection } from '@/lib/db';
 import { withAudit } from '@/lib/api/with-audit';
 import type { EquipmentWithRelations, EquipmentStats, EquipmentFormData } from '@/types/equipment-mysql';
 
+// Fonction pour parser JSON de manière sécurisée
+function safeJSONParse(jsonString: any, fallback: any = null) {
+  if (!jsonString || jsonString === '' || jsonString === null || jsonString === undefined) {
+    return fallback;
+  }
+  
+  // Si c'est déjà un objet/array, le retourner tel quel
+  if (typeof jsonString === 'object') {
+    return jsonString || fallback;
+  }
+  
+  try {
+    const parsed = JSON.parse(jsonString);
+    return parsed || fallback;
+  } catch (error) {
+    console.warn(`🔧 [equipement] JSON parse error for value: "${jsonString}":`, error);
+    return fallback;
+  }
+}
+
 // Fonction pour calculer les statistiques des équipements
 async function calculateEquipmentStats(): Promise<EquipmentStats> {
   return withConnection(async (connection) => {
@@ -88,7 +108,7 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
       id: row.id,
       name: row.name,
       quantity: row.quantity,
-      min_quantity: row.min_quantity
+      minQuantity: row.min_quantity
     }));
 
     return {
@@ -101,8 +121,8 @@ async function calculateEquipmentStats(): Promise<EquipmentStats> {
 }
 
 // GET - Récupérer tous les équipements
-export const GET = withAudit(
-  async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
+
     try {
       const { searchParams } = new URL(request.url);
       const search = searchParams.get('search');
@@ -163,7 +183,7 @@ export const GET = withAudit(
           typeName: eq.type_name,
           itemName: eq.item_name,
           svg: eq.item_svg || eq.type_svg,
-          availableVolumes: eq.item_volumes ? JSON.parse(eq.item_volumes) : null,
+          availableVolumes: safeJSONParse(eq.item_volumes, null),
           equipmentTypeId: eq.equipment_type_id // Compatibilité
         })),
         total: stats.total,
@@ -179,23 +199,18 @@ export const GET = withAudit(
       { status: 500 }
     );
   }
-},
-{
-  module: 'EQUIPMENT',
-  entity: 'equipment',
-  action: 'READ',
-  extractEntityIdFromResponse: (response) => undefined // Pas d'ID spécifique pour la liste
 }
-);
+
 
 // POST - Ajouter un nouvel équipement
 export const POST = withAudit(
   async (request: NextRequest) => {
     try {
       const data: EquipmentFormData = await request.json();
-      
+      console.log('############################# POST /api/equipement - #############################', data);
       // Validation des données requises
-      if (!data.name || !data.equipment_type_id) {
+      if (!data.name || !data.equipmentTypeId) {
+        console.log('POST /api/equipement - Erreur de validation:', !data.name, !data.equipmentTypeId);
         return NextResponse.json(
           { error: "Le nom et l'ID du type d'équipement sont requis" },
           { status: 400 }
@@ -203,29 +218,53 @@ export const POST = withAudit(
       }
 
       return withConnection(async (connection) => {
-        // Vérifier que le type d'équipement existe
-        const [typeRows] = await connection.execute(
-          'SELECT id, name FROM equipment_types WHERE id = ?',
-          [data.equipment_type_id]
+        let equipmentTypeId: string;
+        let equipmentItemId: string | null = null;
+
+        // D'abord, vérifier si data.equipmentTypeId est un equipment_item_id
+        const [itemCheck] = await connection.execute(
+          'SELECT id, equipment_type_id FROM equipment_items WHERE id = ?',
+          [data.equipmentTypeId]
         );
 
-        if ((typeRows as any[]).length === 0) {
-          return NextResponse.json(
-            { error: "Type d'équipement non trouvé" },
-            { status: 400 }
+        if ((itemCheck as any[]).length > 0) {
+          // C'est un equipment_item_id, récupérer le bon equipment_type_id
+          const item = (itemCheck as any[])[0];
+          equipmentTypeId = item.equipment_type_id;
+          equipmentItemId = item.id;
+          console.log(`🔧 [equipement] ID fourni est un equipment_item_id: ${item.id} -> equipment_type_id: ${equipmentTypeId}`);
+        } else {
+          // Vérifier si c'est un equipment_type_id direct
+          const [typeRows] = await connection.execute(
+            'SELECT id, name FROM equipment_types WHERE id = ?',
+            [data.equipmentTypeId]
           );
+
+          if ((typeRows as any[]).length === 0) {
+            console.log(`❌ Ni type ni item d'équipement trouvé pour ID: ${data.equipmentTypeId}`);
+            return NextResponse.json(
+              { error: "Type ou item d'équipement non trouvé" },
+              { status: 400 }
+            );
+          }
+
+          equipmentTypeId = data.equipmentTypeId;
+          // Si equipmentItemId est fourni séparément dans les données
+          equipmentItemId = data.equipmentItemId || null;
+          console.log(`🔧 [equipement] ID fourni est un equipmentTypeId: ${equipmentTypeId}, equipmentItemId: ${equipmentItemId}`);
         }
 
-        // Si equipment_item_id est fourni, vérifier qu'il existe
-        if (data.equipment_item_id) {
-          const [itemRows] = await connection.execute(
+        // Validation supplémentaire : si equipmentItemId est fourni, s'assurer qu'il correspond au type
+        if (equipmentItemId) {
+          const [validationRows] = await connection.execute(
             'SELECT id FROM equipment_items WHERE id = ? AND equipment_type_id = ?',
-            [data.equipment_item_id, data.equipment_type_id]
+            [equipmentItemId, equipmentTypeId]
           );
 
-          if ((itemRows as any[]).length === 0) {
+          if ((validationRows as any[]).length === 0) {
+            console.log(`❌ equipment_item_id ${equipmentItemId} incompatible avec equipment_type_id ${equipmentTypeId}`);
             return NextResponse.json(
-              { error: "Item d'équipement non trouvé ou incompatible avec le type" },
+              { error: "Item d'équipement incompatible avec le type" },
               { status: 400 }
             );
           }
@@ -254,13 +293,13 @@ export const POST = withAudit(
         `, [
           equipmentId,
           data.name,
-          data.equipment_type_id,
-          data.equipment_item_id || null,
+          equipmentTypeId,
+          equipmentItemId,
           data.model || null,
-          data.serial_number || null,
+          data.serialNumber || null,
           data.barcode || null,
           data.quantity || 1,
-          data.min_quantity || null,
+          data.minQuantity || null,
           data.volume || null,
           data.location || null,
           data.room || null,
@@ -276,7 +315,8 @@ export const POST = withAudit(
             et.name as type_name,
             et.svg as type_svg,
             ei.name as item_name,
-            ei.svg as item_svg
+            ei.svg as item_svg,
+            ei.volumes as item_volumes
           FROM equipment e
           LEFT JOIN equipment_types et ON e.equipment_type_id = et.id
           LEFT JOIN equipment_items ei ON e.equipment_item_id = ei.id
@@ -285,6 +325,8 @@ export const POST = withAudit(
 
         const newEquipment = (newEquipmentRows as any[])[0];
 
+        console.log(`✅ [equipement] Équipement créé: ${equipmentId} - Type: ${equipmentTypeId}, Item: ${equipmentItemId}`);
+
         return NextResponse.json({
           materiel: {
             ...newEquipment,
@@ -292,6 +334,7 @@ export const POST = withAudit(
             typeName: newEquipment.type_name,
             itemName: newEquipment.item_name,
             svg: newEquipment.item_svg || newEquipment.type_svg,
+            availableVolumes: safeJSONParse(newEquipment.item_volumes, null),
             equipmentTypeId: newEquipment.equipment_type_id
           }
         });

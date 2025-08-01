@@ -38,9 +38,11 @@ interface Chemical {
   updatedAt: string
 }
 
-export const GET = withAudit(
-  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-    const { id } = await params;
+export async function GET(
+  request: NextRequest, 
+  context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
     const chemicalId = id;
 
     // Récupérer le chemical depuis la base de données
@@ -68,15 +70,8 @@ export const GET = withAudit(
     };
 
     return NextResponse.json(chemicalWithSupplier);
-  },
-  {
-    module: 'CHEMICALS',
-    entity: 'chemical',
-    action: 'READ',
-    extractEntityIdFromResponse: (response) => response?._auditId || response?.id
-  }
-)
-
+  };
+  
 // PUT - Envelopper car c'est une modification sensible
 export const PUT = withAudit(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {

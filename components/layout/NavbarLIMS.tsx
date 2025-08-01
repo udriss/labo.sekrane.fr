@@ -6,8 +6,8 @@ import React, { useState, useEffect } from 'react';
 import {
   AppBar, Toolbar, IconButton, Typography, Box, Badge, Avatar,
   Menu, MenuItem, Divider, ListItemIcon, Tooltip, InputBase,
-  alpha, styled, Chip, Button, CircularProgress, List, ListItem, ListItemText,
-  ListItemAvatar, ListItemButton
+  alpha, styled, Chip, Button, CircularProgress, List, ListItem, useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Menu as MenuIcon, Notifications, Brightness4, Brightness7,
@@ -21,6 +21,8 @@ import { useAppSettings } from '@/app/layout';
 import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
 import type { WebSocketNotification } from '@/types/notifications';
 import NotificationItem from '@/components/notifications/NotificationItem';
+import Image from "next/image"
+import { is } from 'date-fns/locale';
 
 
 
@@ -138,6 +140,12 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
+  const themeMUI = useTheme();
+  
+  // Responsive breakpoints
+  const isDesktop = useMediaQuery(themeMUI.breakpoints.up('md'));
+  const isTablet = useMediaQuery(themeMUI.breakpoints.between('sm', 'md'));
+  const isMobile = useMediaQuery(themeMUI.breakpoints.down('sm'));
 
   const {
     notifications,
@@ -153,7 +161,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
 
   // Debug pour voir les notifications au chargement
   useEffect(() => {
-    console.log('🔔 [NavbarLIMS] Current notifications:', notifications);
+    console.log('🔔 [NavbarLIMS] Current notifications:', notifications.length);
     console.log('🔔 [NavbarLIMS] Stats:', stats);
   }, [notifications, stats]);
   
@@ -200,15 +208,45 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
         <IconButton edge="start" onClick={onMenuClick} aria-label="menu" sx={{ mr: 2 }}>
           <MenuIcon />
         </IconButton>
-
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Paul VALÉRY - Gestion du Laboratoire
-        </Typography>
-
-        <Search>
-          <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
-          <StyledInputBase placeholder="Rechercher..." inputProps={{ 'aria-label': 'search' }} />
-        </Search>
+            <Box display="flex" justifyContent="space-between" alignItems="center" position="relative"
+            sx={{ flexGrow: 1 }}
+            >
+              <Box display="flex" alignItems="center" gap={isMobile ? 2 : 3}>
+                <Avatar
+                  sx={{
+                    width: isMobile ? 40 : 50,
+                    height: isMobile ? 40 : 50,
+                    bgcolor: themeMUI.palette.background.paper,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <Image
+                    src="/logo_2.png"
+                    alt="Logo"
+                    width={100}
+                    height={100}
+                  />
+                </Avatar>
+                {!isMobile && (
+                  <Box>
+                    <Typography variant={isTablet ? "h6" : "h5"} component="div" sx={{ fontWeight: 700 }}>
+                      Gestion du Labo
+                    </Typography>
+                    {isDesktop && (
+                      <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+                        Version 2.1 • CMR Paul VALÉRY
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
+              </Box>
+        {!isMobile && !isTablet && (
+          <Search>
+            <SearchIconWrapper><SearchIcon /></SearchIconWrapper>
+            <StyledInputBase placeholder="Rechercher..." inputProps={{ 'aria-label': 'search' }} />
+          </Search>
+        )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
           <Tooltip title={isDarkMode ? "Mode clair" : "Mode sombre"}>
@@ -217,28 +255,73 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={`Notifications ${isConnected ? '(temps réel)' : '(hors ligne)'}`}>
-            <IconButton id="notification-icon" onClick={handleNotificationsOpen}>
+          <Tooltip title={`Notifications ${isConnected ? '(temps réel)' : '(hors ligne)'}`}
+          >
+            <IconButton 
+            id="notification-icon" 
+            onClick={handleNotificationsOpen}
+          sx ={{
+            mx: 1
+          }}
+            >
               <Badge badgeContent={stats.unreadNotifications} color="error">
                 {isConnected ? <NotificationsActive /> : <Notifications />}
               </Badge>
             </IconButton>
           </Tooltip>
 
+          {/* Responsive user info */}
           <Tooltip title="Profil utilisateur">
-            <IconButton onClick={handleUserMenuOpen} sx={{ ml: 1 }}>
-              <Avatar sx={{ width: 32, height: 32 }}>
-                {session?.user?.name?.charAt(0) || <AccountCircle />}
-              </Avatar>
-            </IconButton>
+          <IconButton onClick={handleUserMenuOpen}
+                  sx={{ 
+                    bgcolor: themeMUI.palette.action.hover,
+                    color: themeMUI.palette.text.primary,
+                    height: 48,
+                    borderRadius: 24,
+                    '& .MuiChip-label': { px: 2 },
+                    ml: 1,
+                  }}
+                  >
+          {!isMobile  && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', mr: 1, px: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {session?.user?.name || "Utilisateur"}
+                  </Typography>
+            {!isTablet  && (
+                  <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                    {(session?.user as any)?.role === 'ADMIN' ? 'ADMIN' : 
+                     (session?.user as any)?.role === 'TEACHER' ? 'Enseignant' : 
+                     (session?.user as any)?.role === 'ADMINLABO' ? 'Administrateur de Laboratoire' : 
+                     (session?.user as any)?.role === 'LABORANTIN' ? 'Laborantin' : 'Utilisateur'}
+                  </Typography>
+            )}
+            </Box>
+            )}
+                
+                  <Avatar sx={{ width: 32, height: 32 }}>
+                    {session?.user?.name?.charAt(0) || <AccountCircle />}
+                  </Avatar>
+                </IconButton>
           </Tooltip>
+                <IconButton 
+                  color="inherit"
+                  onClick={() => signOut()}
+                  
+                  sx={{ 
+                    bgcolor: themeMUI.palette.action.hover,
+                    '&:hover': { bgcolor: themeMUI.palette.action.selected }
+                  }}
+                >
+                  <Logout />
+                </IconButton>
         </Box>
 
         <Menu
           anchorEl={anchorElNotifications}
           open={Boolean(anchorElNotifications)}
           onClose={handleNotificationsClose}
-          slotProps={{ paper: { sx: { width: 400, maxHeight: 500, mt: 1.5 } } }}
+          slotProps={{ paper: { sx: { 
+            width: 400, maxHeight: 500, mt: 1.5 } } }}
         >
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6">
@@ -262,7 +345,9 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
           ) : notifications.length === 0 ? (
-            <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="text.secondary">Aucune notification</Typography></Box>
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">Aucune notification</Typography>
+            </Box>
           ) : (
             <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
               {notifications.slice(0, 10).map((notification) => (

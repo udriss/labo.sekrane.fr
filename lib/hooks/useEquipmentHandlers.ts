@@ -18,21 +18,26 @@ export const useEquipmentHandlers = () => {
         form.selectedItem,
         equipmentData.getAllEquipmentTypes
       );
+
+      console.log('Équipement ajouté avec succès:', newEquipment);
       
-      // Si c'est un équipement personnalisé, l'ajouter aux types d'équipement
+      // Actualiser les données
+      await equipmentData.fetchEquipment();
+      await equipmentData.loadEquipmentTypes();
+      
+      // Si c'est un équipement personnalisé, ouvrir le dialogue de continuation
       if (form.selectedItem?.name === 'Équipement personnalisé') {
         dialogs.setNewlyCreatedItem(newEquipment);
         dialogs.setContinueDialog(true);
+        return { switchToInventory: false }; // Rester sur l'onglet actuel pour le dialogue
       } else {
         form.handleReset();
         // Retourner l'indication de basculer vers l'onglet inventaire
         return { switchToInventory: true };
       }
-      
-      await equipmentData.fetchEquipment();
-      await equipmentData.loadEquipmentTypes();
     } catch (error) {
       equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de l'ajout");
+      return { switchToInventory: false }; // Rester sur l'onglet actuel en cas d'erreur
     }
   };
 

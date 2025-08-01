@@ -7,10 +7,29 @@ import { withConnection } from '@/lib/db';
 import { withAudit } from '@/lib/api/with-audit'
 import type { EquipmentType, EquipmentItem } from '@/types/equipment-mysql';
 
+// Fonction pour parser JSON de manière sécurisée
+function safeJSONParse(jsonString: any, fallback: any = []) {
+  if (!jsonString || jsonString === '' || jsonString === null || jsonString === undefined) {
+    return fallback;
+  }
+  
+  // Si c'est déjà un objet/array, le retourner tel quel
+  if (typeof jsonString === 'object') {
+    return jsonString || fallback;
+  }
+  
+  try {
+    const parsed = JSON.parse(jsonString);
+    return parsed || fallback;
+  } catch (error) {
+    console.warn(`🔧 [equipment-types] JSON parse error for value: "${jsonString}":`, error);
+    return fallback;
+  }
+}
+
 // GET - Récupérer tous les types d'équipements avec leurs items
-export const GET = withAudit(
-  async () => {
-    try {
+export async function GET(request: NextRequest) {
+  try {
       return withConnection(async (connection) => {
         // Récupérer les types d'équipements
         const [typeRows] = await connection.execute(`
@@ -32,11 +51,11 @@ export const GET = withAudit(
             const items = (itemRows as EquipmentItem[]).map(item => ({
               ...item,
               // Convertir les JSON strings en objets pour la compatibilité
-              volumes: item.volumes ? JSON.parse(item.volumes) : [],
-              resolutions: item.resolutions ? JSON.parse(item.resolutions) : [],
-              tailles: item.tailles ? JSON.parse(item.tailles) : [],
-              materiaux: item.materiaux ? JSON.parse(item.materiaux) : [],
-              customFields: item.custom_fields ? JSON.parse(item.custom_fields) : {},
+              volumes: safeJSONParse(item.volumes, []),
+              resolutions: safeJSONParse(item.resolutions, []),
+              tailles: safeJSONParse(item.tailles, []),
+              materiaux: safeJSONParse(item.materiaux, []),
+              customFields: safeJSONParse(item.custom_fields, {}),
               // Compatibilité avec l'ancien format
               isCustom: item.is_custom
             }));
@@ -61,14 +80,7 @@ export const GET = withAudit(
       { status: 500 }
     );
   }
-},
-{
-  module: 'EQUIPMENT',
-  entity: 'equipment_type',
-  action: 'READ',
-  extractEntityIdFromResponse: (response) => undefined
 }
-);
 
 // POST - Créer un nouveau type d'équipement
 export const POST = withAudit(

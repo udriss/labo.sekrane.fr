@@ -14,7 +14,7 @@ export const equipmentService = {
       }
 
       // Générer un ID unique pour le nouvel équipement
-      const newItemId = `EQ${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}_CUSTOM`;
+      const newItemId = `EQ_CUSTOM_${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
       // Créer le nouvel item avec l'ID généré
       const newItem = {
@@ -22,7 +22,8 @@ export const equipmentService = {
         name: formData.name || selectedItem.name, // Utiliser le nom du formulaire
         svg: selectedItem.svg || '/svg/default.svg',
         volumes: formData.volume ? [formData.volume] : (selectedItem.volumes || []),
-        isCustom: true
+        isCustom: true,
+        equipmentTypeId: selectedCategory, // ID de la catégorie sélectionnée
       };
 
       // Dans submitEquipment, après avoir créé le type
@@ -48,7 +49,8 @@ export const equipmentService = {
       // Créer l'équipement dans l'inventaire avec l'ID généré
       const dataToSubmit = {
         name: formData.name || selectedItem.name,
-        equipmentTypeId: generatedId,
+        equipmentTypeId: selectedCategory, // Utiliser l'ID de la catégorie
+        equipmentItemId: generatedId, 
         quantity: formData.quantity || 1,
         volume: formData.volume || null,
         model: formData.model || null,
@@ -78,24 +80,27 @@ export const equipmentService = {
     }
 
     // Pour un équipement existant (custom ou non) qui a déjà un ID
-    const equipmentTypeId = formData.equipmentTypeId || selectedItem?.id;
+    const equipmentItemId = formData.equipmentItemId;
     
-    if (!equipmentTypeId) {
-      throw new Error("ID du type d'équipement manquant");
+    if (!equipmentItemId) {
+      throw new Error("ID de l'équipement manquant");
     }
 
     const dataToSubmit = {
       name: formData.name,
-      equipmentTypeId: equipmentTypeId,
+      equipmentTypeId: selectedCategory, // Sera analysé par l'API pour déterminer si c'est un type ou un item
+      equipmentItemId: formData.equipmentItemId || 'ITEM_ID_INTROUVABLE', // Si fourni séparément
       quantity: formData.quantity || 1,
       volume: formData.volume || null,
       model: formData.model || null,
       serialNumber: formData.serialNumber || null,
+      barcode: formData.barcode || null,
       location: formData.location || null,
       room: formData.room || null,
       supplier: formData.supplier || null,
       purchaseDate: formData.purchaseDate || null,
-      notes: formData.notes || null
+      notes: formData.notes || null,
+      status: formData.status || 'AVAILABLE'
     };
 
     

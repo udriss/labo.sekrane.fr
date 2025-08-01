@@ -42,7 +42,7 @@ export interface Equipment {
   serial_number?: string | null
   barcode?: string | null
   quantity: number
-  min_quantity?: number | null
+  minQuantity?: number | null
   volume?: string | null
   location?: string | null
   room?: string | null
@@ -83,20 +83,20 @@ export interface EquipmentStats {
     id: string
     name: string
     quantity: number
-    min_quantity: number
+    minQuantity: number
   }>
 }
 
 // Formulaire
 export interface EquipmentFormData {
   name: string
-  equipment_type_id: string
-  equipment_item_id?: string
+  equipmentTypeId: string
+  equipmentItemId?: string
   model?: string
-  serial_number?: string
+  serialNumber?: string
   barcode?: string
   quantity: number
-  min_quantity?: number
+  minQuantity?: number
   volume?: string
   location?: string
   room?: string

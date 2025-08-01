@@ -7246,5 +7246,1557 @@
       "duration": 27
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "fae35d7c-1855-4547-a788-3ae370c9655e",
+    "timestamp": "2025-07-31T19:10:08.654Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "EQUIPMENT",
+      "entity": "equipment_type"
+    },
+    "details": {
+      "error": {
+        "message": "Unexpected end of JSON input"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/api/equipment-types/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 31,
+        "timestamp": "2025-07-31T19:10:08.651Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753989008620_rp0veygiu",
+      "path": "/api/equipment-types/",
+      "method": "GET",
+      "duration": 31
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "139b2273-72a0-410d-a9ca-75b702922f62",
+    "timestamp": "2025-07-31T19:10:08.658Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "USERS",
+      "entity": "users-list",
+      "entityId": "utilisateurs"
+    },
+    "details": {
+      "request": {
+        "method": "GET",
+        "path": "/api/utilisateurs/",
+        "query": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": [
+          {
+            "id": "1",
+            "email": "admin@labo.fr",
+            "name": "Administrateur",
+            "role": "ADMIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-28T01:19:13.000Z",
+            "siteConfig": {
+              "theme": "light",
+              "language": "fr",
+              "dashboard": {
+                "defaultView": "overview",
+                "widgetsOrder": [
+                  "stats",
+                  "recent",
+                  "calendar"
+                ]
+              },
+              "lastUpdated": "2025-07-27T22:09:57.032Z",
+              "notifications": {
+                "push": false,
+                "email": true
+              },
+              "chemicalsViewMode": "list",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [],
+            "customClasses": [
+              "MaClasse",
+              "MaCLASSE 2"
+            ]
+          },
+          {
+            "id": "2",
+            "email": "laborantin@labo.fr",
+            "name": "Professeur Martin",
+            "role": "LABORANTIN",
+            "isActive": true,
+            "createdAt": "2024-12-31T23:00:00.000Z",
+            "updatedAt": "2025-07-24T07:05:03.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "list"
+            },
+            "associatedClasses": [
+              "1ère ES",
+              "Terminale ES"
+            ],
+            "customClasses": []
+          },
+          {
+            "id": "3",
+            "email": "student@labo.fr",
+            "name": "Étudiant Dupont",
+            "role": "STUDENT",
+            "isActive": true,
+            "createdAt": "2025-01-09T23:00:00.000Z",
+            "updatedAt": "2025-07-24T06:21:14.000Z",
+            "siteConfig": {
+              "chemicalsViewMode": "cards",
+              "materialsViewMode": "cards"
+            },
+            "associatedClasses": [
+              "Terminale STI2D",
+              "201"
+            ],
+            "customClasses": []
+          }
+        ]
+      },
+      "metadata": {
+        "duration": 23,
+        "timestamp": "2025-07-31T19:10:08.658Z"
+      },
+      "usersCount": 3,
+      "action": "list-all-users",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753989008635_pnjlm9qpx",
+      "path": "/api/utilisateurs/",
+      "method": "GET",
+      "duration": 23
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0644a788-686e-44b4-8a7a-698dc35313ff",
+    "timestamp": "2025-07-31T19:10:08.662Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "READ",
+      "module": "EQUIPMENT",
+      "entity": "equipment"
+    },
+    "details": {
+      "error": {
+        "message": "Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)"
+      },
+      "request": {
+        "method": "GET",
+        "path": "/api/equipement/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 37,
+        "timestamp": "2025-07-31T19:10:08.662Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753989008625_b0qhcjj1v",
+      "path": "/api/equipement/",
+      "method": "GET",
+      "duration": 37
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "642e0097-7d17-4fbe-90aa-74580642b034",
+    "timestamp": "2025-07-31T21:58:00.817Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 1495
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "1495.000",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:00.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "1556.300",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T09:08:04.000Z"
+            },
+            "updateData": {
+              "quantity": 1495
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-07-31T21:58:00.817Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "1556.300",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T09:08:04.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "1495.000",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:00.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "1495.000",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999080800_usy7fc8t1",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "51cc1be8-0ded-4241-8128-44b355a0668b",
+    "timestamp": "2025-07-31T21:58:02.120Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 1074.5
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "1074.500",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:02.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "1495.000",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:00.000Z"
+            },
+            "updateData": {
+              "quantity": 1074.5
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-07-31T21:58:02.120Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "1495.000",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:00.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "1074.500",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:02.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "1074.500",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999082103_guwp6995z",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b7c63e41-f1d2-402f-a8f1-627a8a2ab29b",
+    "timestamp": "2025-07-31T21:58:03.162Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 772.3
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "772.300",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:03.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "1074.500",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:02.000Z"
+            },
+            "updateData": {
+              "quantity": 772.3
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 13,
+        "timestamp": "2025-07-31T21:58:03.162Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "1074.500",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:02.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "772.300",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:03.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "772.300",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999083149_2pr0e0r1z",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 13
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bcbacca5-c83a-49da-992d-104e39ef1e83",
+    "timestamp": "2025-07-31T21:58:03.888Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 555.1
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "555.100",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:03.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "772.300",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:03.000Z"
+            },
+            "updateData": {
+              "quantity": 555.1
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 15,
+        "timestamp": "2025-07-31T21:58:03.888Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "772.300",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:03.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "555.100",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:03.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "555.100",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999083873_sgvm31618",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 15
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "bb89968f-8c5f-42c4-bef5-5b89de83989d",
+    "timestamp": "2025-07-31T21:58:04.395Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 399
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "399.000",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:04.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "555.100",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:03.000Z"
+            },
+            "updateData": {
+              "quantity": 399
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 16,
+        "timestamp": "2025-07-31T21:58:04.395Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "555.100",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:03.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "399.000",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:04.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "399.000",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999084379_w1pwfkck3",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 16
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "54afe139-2c11-4f5c-a798-3b04885a2649",
+    "timestamp": "2025-07-31T21:58:04.700Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 286.8
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "286.800",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:04.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "399.000",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:04.000Z"
+            },
+            "updateData": {
+              "quantity": 286.8
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 14,
+        "timestamp": "2025-07-31T21:58:04.700Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "399.000",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:04.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "286.800",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:04.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "286.800",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999084686_u6tuf4u8p",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 14
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "844eed70-2447-48a2-bcd0-3ded19954aa5",
+    "timestamp": "2025-07-31T21:58:05.115Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_4GA1WP5SXVMG"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+        "query": {},
+        "body": {
+          "quantity": 206.1
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_4GA1WP5SXVMG",
+            "name": "Acide oxalique",
+            "formula": "C₂H₂O₄",
+            "molfile": null,
+            "casNumber": "144-62-7",
+            "barcode": null,
+            "quantity": "206.100",
+            "unit": "g",
+            "minQuantity": "200.000",
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2999.000",
+            "createdAt": "2025-07-27T20:08:22.000Z",
+            "updatedAt": "2025-07-31T21:58:05.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_4GA1WP5SXVMG",
+              "name": "Acide oxalique",
+              "formula": "C₂H₂O₄",
+              "molfile": null,
+              "casNumber": "144-62-7",
+              "barcode": null,
+              "quantity": "286.800",
+              "unit": "g",
+              "minQuantity": "200.000",
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2999.000",
+              "createdAt": "2025-07-27T20:08:22.000Z",
+              "updatedAt": "2025-07-31T21:58:04.000Z"
+            },
+            "updateData": {
+              "quantity": 206.1
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-07-31T21:58:05.115Z"
+      },
+      "chemicalName": "Acide oxalique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "286.800",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:04.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_4GA1WP5SXVMG",
+        "name": "Acide oxalique",
+        "formula": "C₂H₂O₄",
+        "molfile": null,
+        "casNumber": "144-62-7",
+        "barcode": null,
+        "quantity": "206.100",
+        "unit": "g",
+        "minQuantity": "200.000",
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2999.000",
+        "createdAt": "2025-07-27T20:08:22.000Z",
+        "updatedAt": "2025-07-31T21:58:05.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "206.100",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999085098_y9if7s2mr",
+      "path": "/api/chemicals/CHEM_INV_4GA1WP5SXVMG/",
+      "method": "PUT",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "f8c31615-e685-4626-89e9-617ab2dad002",
+    "timestamp": "2025-07-31T21:58:37.972Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "Unknown column 'supplier' in 'field list'"
+      },
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T21:58:37.971Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999117966_kpqx8g5lj",
+      "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b8413498-29ad-46ab-9be9-9875184e9947",
+    "timestamp": "2025-07-31T21:59:27.948Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "module": "CHEMICALS",
+      "entity": "chemical"
+    },
+    "details": {
+      "error": {
+        "message": "Incorrect date value: '2025-07-30T10:00:00.000Z' for column 'purchaseDate' at row 1"
+      },
+      "request": {
+        "method": "POST",
+        "path": "/api/chemicals/",
+        "query": {}
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-07-31T21:59:27.947Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "89.158.80.136",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1753999167942_umofsx7hq",
+      "path": "/api/chemicals/",
+      "method": "POST",
+      "duration": 5
+    },
+    "status": "SUCCESS"
   }
 ]
