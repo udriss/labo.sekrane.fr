@@ -1,19 +1,19 @@
-// lib/hooks/useEquipmentHandlers-physics.ts
-import { useEquipmentData } from '@/lib/hooks/useEquipmentData-physics';
+// lib/hooks/useEquipmentHandlersPhysics.ts
+import { useEquipmentDataPhysics } from '@/lib/hooks/useEquipmentDataPhysics';
 import { useEquipmentForm } from '@/lib/hooks/useEquipmentForm';
 import { useEquipmentDialogs } from '@/lib/hooks/useEquipmentDialogs';
 import { useEquipmentQuantity } from '@/lib/hooks/useEquipmentQuantity-physics';
-import { physicsEquipmentService } from '@/lib/services/equipmentService-physics';
+import { equipmentServicePhysics } from '@/lib/services/equipmentServicePhysics';
 
 export const useEquipmentHandlersPhysics = () => {
-  const equipmentData = useEquipmentData();
+  const equipmentData = useEquipmentDataPhysics();
   const form = useEquipmentForm();
   const dialogs = useEquipmentDialogs();
   const quantity = useEquipmentQuantity(equipmentData.fetchEquipment);
 
   const handleSubmit = async () => {
     try {
-      const newEquipment = await physicsEquipmentService.submitEquipment(
+      const newEquipment = await equipmentServicePhysics.submitEquipment(
         form.formData,
         form.selectedCategory,
         form.selectedItem,
@@ -44,7 +44,7 @@ export const useEquipmentHandlersPhysics = () => {
 
   const handleSaveEdit = async () => {
     try {
-      await physicsEquipmentService.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment);
+      await equipmentServicePhysics.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment);
       
       await equipmentData.fetchEquipment();
       dialogs.setOpenEditDialog(false);
@@ -66,7 +66,7 @@ export const useEquipmentHandlersPhysics = () => {
       dialogs.setDeletingItems(prev => new Set([...prev, dialogs.equipmentToDelete.id]));
       dialogs.setDeleteDialog(false);
 
-      await physicsEquipmentService.deleteEquipment(dialogs.equipmentToDelete.id);
+      await equipmentServicePhysics.deleteEquipment(dialogs.equipmentToDelete.id);
       
       setTimeout(async () => {
         await equipmentData.fetchEquipment();
@@ -98,7 +98,7 @@ export const useEquipmentHandlersPhysics = () => {
     }
 
     try {
-      await physicsEquipmentService.createCustomCategory(dialogs.newCategoryName);
+      await equipmentServicePhysics.createCustomCategory(dialogs.newCategoryName);
       
       await equipmentData.loadEquipmentTypes();
       dialogs.setNewCategoryDialog(false);
@@ -161,7 +161,7 @@ export const useEquipmentHandlersPhysics = () => {
     if (!dialogs.selectedManagementItem || !dialogs.selectedManagementCategory) return;
 
     try {
-      const result = await physicsEquipmentService.saveEditedItem(
+      const result = await equipmentServicePhysics.saveEditedItem(
         dialogs.selectedManagementCategory,
         dialogs.selectedManagementItem,
         dialogs.editingItemData

@@ -183,7 +183,7 @@ export function CreateTPDialog({
       if (discipline === 'physique') {
         // Pour la physique, essayer l'API spécifique ou utiliser des données vides
         try {
-          const physiqueChemResponse = await fetch('/api/physique/composants');
+          const physiqueChemResponse = await fetch('/api/physique/consommables');
           if (physiqueChemResponse.ok) {
             consommablesData = await physiqueChemResponse.json();
           } else {
@@ -199,10 +199,12 @@ export function CreateTPDialog({
         // Pour la chimie, utiliser l'API standard
         const chemicalsResponse = await fetch('/api/chimie/chemicals');
         if (chemicalsResponse.ok) {
-          consommablesData = await chemicalsResponse.json();
+          const chemicalsData = await chemicalsResponse.json();
+          consommablesData = chemicalsData.chemicals || []; // Extraire la propriété chemicals
         }
         setDisciplineChemicals(consommablesData || []);
       }
+      console.log('Données de la discipline chargées:', { materials: materialsData, chemicals: consommablesData });
       
       setLoadingChemicals(false);
 

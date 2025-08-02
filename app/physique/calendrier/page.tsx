@@ -33,7 +33,7 @@ import { EditEventDialog } from '@/components/calendar/EditEventDialog'
 import { CalendarEvent } from '@/types/calendar'
 import { usePhysicsCalendarData } from '@/lib/hooks/usePhysicsCalendarData'
 import { usePhysicsCalendarEvents } from '@/lib/hooks/usePhysicsCalendarEvents'
-import { useReferenceData } from '@/lib/hooks/useReferenceData'
+import { useReferenceDataByDiscipline } from '@/lib/hooks/useReferenceDataByDiscipline'
 import { UserRole } from "@/types/global";
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 
@@ -79,7 +79,7 @@ export default function PhysiqueCalendrierPage() {
   // Hooks personnalisés pour la physique
   const calendarData = usePhysicsCalendarData()
   const calendarEvents = usePhysicsCalendarEvents(calendarData)
-  const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
+  const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceDataByDiscipline({ discipline: 'physique' })
   
   // Utilisation directe des données du hook physique
   const { events, loading, error } = calendarData

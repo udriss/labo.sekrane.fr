@@ -33,7 +33,7 @@ import { EditEventDialog } from '@/components/calendar/EditEventDialog'
 import { CalendarEvent } from '@/types/calendar'
 import { useCalendarData } from '@/lib//hooks/useCalendarData'
 import { useChemistryCalendarData } from '@/lib//hooks/useChemistryCalendarData'
-import { useReferenceData } from '@/lib//hooks/useReferenceData'
+import { useReferenceDataByDiscipline } from '@/lib//hooks/useReferenceDataByDiscipline'
 import { UserRole } from "@/types/global";
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 
@@ -78,7 +78,7 @@ export default function CalendarPage() {
 
   // Hooks personnalisés
   const { events, loading, error, loadEvents: fetchEvents, addEvent, updateEvent, removeEvent, setError } = useChemistryCalendarData()
-  const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
+  const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceDataByDiscipline({ discipline: 'chimie' })
   const { tpPresets } = useCalendarData()
 
   // Fonction pour déterminer si l'utilisateur est le créateur d'un événement

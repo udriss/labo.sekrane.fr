@@ -63,8 +63,8 @@ export default function PhysicsPage() {
   const loadStats = async () => {
     try {
       const [consumablesRes, equipmentRes] = await Promise.all([
-        fetch('/api/physics/consumables'),
-        fetch('/api/physics/equipment')
+        fetch('/api/physique/consumables'),
+        fetch('/api/physique/equipment')
       ])
 
       if (consumablesRes.ok) {

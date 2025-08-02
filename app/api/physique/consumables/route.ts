@@ -1,3 +1,5 @@
+// app/api/physique/consumables/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { withConnection } from "@/lib/db";
 
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
         FROM physics_consumables
       `);
 
+      console.log("Statistiques des consommables physiques:", statsRows);
+      console.log("Données des consommables physiques:", rows);
       return NextResponse.json({
         consumables: rows,
         stats: (statsRows as any[])[0],

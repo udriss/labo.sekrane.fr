@@ -116,8 +116,8 @@ const disciplineConfig = {
       }
     ],
     statsEndpoints: {
-      consumables: '/api/physics/consumables',
-      equipment: '/api/physics/equipment'
+      consumables: '/api/physique/consumables',
+      equipment: '/api/physique/equipment'
     }
   }
 }

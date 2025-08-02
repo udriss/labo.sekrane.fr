@@ -22,13 +22,13 @@ import {
 } from "@mui/icons-material"
 
 // Import des hooks personnalisés
-import { useEquipmentData } from "@/lib/hooks/useEquipmentDataChimie"
+import { useEquipmentDataChimie } from "@/lib/hooks/useEquipmentDataChimie"
 import { useEquipmentFilters } from "@/lib/hooks/useEquipmentFilters"
 import { useEquipmentQuantity } from "@/lib/hooks/useEquipmentQuantity"
 import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm" 
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
 import { useEquipmentHandlersChimie } from "@/lib/hooks/useEquipmentHandlers"
-import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
+import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletionChimie"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 import { useSession } from 'next-auth/react'
 
@@ -53,7 +53,7 @@ import { useUsers } from '@/lib/hooks/useUsers';
 
 
 // Import des services
-import { equipmentService } from "@/lib/services/equipmentServiceChimie"
+import { equipmentServiceChimie } from "@/lib/services/equipmentServiceChimie"
 
 // Import des types
 import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment"
@@ -416,7 +416,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     // }
 
     try {
-      await equipmentService.saveCustomEquipment(equipmentHandlers.customEquipmentData)
+      await equipmentServiceChimie.saveCustomEquipment(equipmentHandlers.customEquipmentData)
       
       await equipmentHandlers.loadEquipmentTypes()
       

@@ -1,9 +1,9 @@
-// lib/hooks/useEquipmentDeletion.ts
+// lib/hooks/useEquipmentDeletionPhysique.ts
 
 'use client'
 
 import { useState } from 'react'
-import { equipmentService } from '@/lib/services/equipmentServiceChimie'
+import { equipmentServicePhysique } from '@/lib/services/equipmentServicePhysique'
 
 interface DeleteState {
   isOpen: boolean
@@ -12,8 +12,8 @@ interface DeleteState {
   itemName: string | null
   title: string
   relatedItems: string[]
-  inventoryUsage?: number // Ajouter cette ligne
-  onConfirm?: (deleteItems?: boolean) => void // Ajouter cette ligne
+  inventoryUsage?: number
+  onConfirm?: (deleteItems?: boolean) => void
 }
 
 interface DuplicateState {
@@ -23,7 +23,7 @@ interface DuplicateState {
   onConfirmCallback: (() => void) | null
 }
 
-export const useEquipmentDeletion = () => {
+export const useEquipmentDeletionPhysique = () => {
   const [deleteState, setDeleteState] = useState<DeleteState>({
     isOpen: false,
     type: null,
@@ -128,9 +128,9 @@ export const useEquipmentDeletion = () => {
     setLoading(true)
     try {
       if (deleteState.type === 'category') {
-        await equipmentService.deleteCategory(deleteState.categoryId)
+        await equipmentServicePhysique.deleteCategory(deleteState.categoryId)
       } else if (deleteState.type === 'item' && deleteState.itemName) {
-        await equipmentService.deleteCustomEquipment(deleteState.categoryId, deleteState.itemName)
+        await equipmentServicePhysique.deleteCustomEquipment(deleteState.categoryId, deleteState.itemName)
       }
       closeDeletionDialog()
       return true
@@ -144,7 +144,7 @@ export const useEquipmentDeletion = () => {
 
   // Fonctions pour la détection de doublons
   const checkForDuplicates = async (newItem: any, equipmentTypes: any[]): Promise<boolean> => {
-    const duplicates = equipmentService.findDuplicates(newItem, equipmentTypes)
+    const duplicates = equipmentServicePhysique.findDuplicates(newItem, equipmentTypes)
     
     if (duplicates.length > 0) {
       setDuplicateState({
@@ -196,7 +196,7 @@ export const useEquipmentDeletion = () => {
     // État de suppression
     deleteState,
     loading,
-    openDeletionDialog, // Ajouter cette ligne
+    openDeletionDialog,
     openCategoryDeletion,
     openItemDeletion,
     closeDeletionDialog,
@@ -212,4 +212,4 @@ export const useEquipmentDeletion = () => {
   }
 }
 
-export default useEquipmentDeletion
+export default useEquipmentDeletionPhysique

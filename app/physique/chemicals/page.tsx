@@ -78,7 +78,7 @@ export default function PhysicsPage() {
   const fetchChemicals = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/physics/consumables")
+      const response = await fetch("/api/physique/consumables")
       
       if (!response.ok) {
         throw new Error("Erreur lors du chargement des produits chimiques de physique")

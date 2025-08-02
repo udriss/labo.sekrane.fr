@@ -1,4 +1,4 @@
-// lib/hooks/useEquipmentData-physics.ts
+// lib/hooks/useEquipmentDataPhysics.ts
 
 import { useState, useEffect } from 'react';
 import { EquipmentType } from '@/types/equipment';
@@ -14,7 +14,7 @@ export const useEquipmentDataPhysics = () => {
   // Charger les types d'équipement depuis l'API de physique
   const loadEquipmentTypes = async () => {
     try {
-      const response = await fetch('/api/physics/equipment-types');
+      const response = await fetch('/api/physique/equipment-types');
       if (response.ok) {
         const data = await response.json();
         setEquipmentTypes(data.types || []);
@@ -27,7 +27,7 @@ export const useEquipmentDataPhysics = () => {
   const fetchEquipment = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/physics/equipment");
+      const response = await fetch("/api/physique/equipment");
       if (!response.ok) throw new Error("Erreur lors du chargement du matériel de physique");
       const data = await response.json();
       setEquipment(data.materiel || []);

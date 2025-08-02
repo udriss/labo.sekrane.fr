@@ -1,6 +1,6 @@
-// lib/services/equipmentService-physics.ts
+// lib/services/equipmentServicePhysics.ts
 
-export const physicsEquipmentService = {
+export const equipmentServicePhysics = {
   
 
   async submitEquipment(formData: any, selectedCategory: string, selectedItem: any, getAllEquipmentTypes: () => any[]) {
@@ -27,7 +27,7 @@ export const physicsEquipmentService = {
       };
 
       // Dans submitEquipment, après avoir créé le type
-      const typeResponse = await fetch('/api/physics/equipment-types', {
+      const typeResponse = await fetch('/api/physique/equipment-types', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -62,7 +62,7 @@ export const physicsEquipmentService = {
         notes: formData.notes || null
       };
 
-      const response = await fetch("/api/physics/equipment", {
+      const response = await fetch("/api/physique/equipment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSubmit)
@@ -102,7 +102,7 @@ export const physicsEquipmentService = {
       notes: formData.notes || null
     };
 
-    const response = await fetch("/api/physics/equipment", {
+    const response = await fetch("/api/physique/equipment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSubmit)
@@ -117,7 +117,7 @@ export const physicsEquipmentService = {
   },
 
   async editEquipment(id: string, equipmentData: any) {
-    const response = await fetch(`/api/physics/equipment/${id}`, {
+    const response = await fetch(`/api/physique/equipment/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(equipmentData)
@@ -132,7 +132,7 @@ export const physicsEquipmentService = {
   },
 
   async deleteEquipment(id: string) {
-    const response = await fetch(`/api/physics/equipment/${id}`, {
+    const response = await fetch(`/api/physique/equipment/${id}`, {
       method: 'DELETE'
     });
 
@@ -145,7 +145,7 @@ export const physicsEquipmentService = {
   },
 
   async createCustomCategory(categoryName: string) {
-    const response = await fetch('/api/physics/equipment-types', {
+    const response = await fetch('/api/physique/equipment-types', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -163,7 +163,7 @@ export const physicsEquipmentService = {
   },
 
   async updateCategoryName(categoryId: string, newName: string) {
-    const response = await fetch(`/api/physics/equipment-types/${categoryId}`, {
+    const response = await fetch(`/api/physique/equipment-types/${categoryId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newName })
@@ -178,7 +178,7 @@ export const physicsEquipmentService = {
   },
 
   async deleteCategory(categoryId: string) {
-    const response = await fetch(`/api/physics/equipment-types/${categoryId}`, {
+    const response = await fetch(`/api/physique/equipment-types/${categoryId}`, {
       method: 'DELETE'
     });
 
@@ -191,7 +191,7 @@ export const physicsEquipmentService = {
   },
 
   async getEquipmentTypes() {
-    const response = await fetch('/api/physics/equipment-types');
+    const response = await fetch('/api/physique/equipment-types');
     
     if (!response.ok) {
       throw new Error("Erreur lors du chargement des types d'équipement");
@@ -206,7 +206,7 @@ export const physicsEquipmentService = {
 
     if (isCategoryChange) {
       // Si on change de catégorie, faire un déplacement (suppression + ajout)
-      const response = await fetch('/api/physics/equipment-types', {
+      const response = await fetch('/api/physique/equipment-types', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ export const physicsEquipmentService = {
       return { response, targetCategory };
     } else {
       // Mise à jour normale dans la même catégorie
-      const response = await fetch('/api/physics/equipment-types', {
+      const response = await fetch('/api/physique/equipment-types', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export const physicsEquipmentService = {
   },
 
   async getEquipment() {
-    const response = await fetch('/api/physics/equipment');
+    const response = await fetch('/api/physique/equipment');
     
     if (!response.ok) {
       throw new Error("Erreur lors du chargement de l'équipement");
@@ -258,7 +258,7 @@ export const physicsEquipmentService = {
   },
 
   async updateEquipmentQuantity(equipmentId: string, newQuantity: number) {
-    const response = await fetch(`/api/physics/equipment/${equipmentId}`, {
+    const response = await fetch(`/api/physique/equipment/${equipmentId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ quantity: newQuantity })
@@ -273,7 +273,7 @@ export const physicsEquipmentService = {
   },
 
   async addCustomItemToCategory(categoryId: string, newItem: any) {
-    const response = await fetch('/api/physics/equipment-types', {
+    const response = await fetch('/api/physique/equipment-types', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -291,7 +291,7 @@ export const physicsEquipmentService = {
   },
 
   async createCustomItem(categoryId: string, itemData: any) {
-    const response = await fetch('/api/physics/equipment-types', {
+    const response = await fetch('/api/physique/equipment-types', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -312,7 +312,7 @@ export const physicsEquipmentService = {
   },
 
   async deleteCustomItem(categoryId: string, itemId: string) {
-    const response = await fetch(`/api/physics/equipment-types/${categoryId}/items/${itemId}`, {
+    const response = await fetch(`/api/physique/equipment-types/${categoryId}/items/${itemId}`, {
       method: 'DELETE'
     });
 
@@ -325,7 +325,7 @@ export const physicsEquipmentService = {
   },
 
   async updateCustomItem(categoryId: string, itemId: string, itemData: any) {
-    const response = await fetch(`/api/physics/equipment-types/${categoryId}/items/${itemId}`, {
+    const response = await fetch(`/api/physique/equipment-types/${categoryId}/items/${itemId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(itemData)

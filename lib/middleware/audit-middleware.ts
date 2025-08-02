@@ -13,8 +13,8 @@ interface ExtendedNextRequest extends NextRequest {
 // Helper to extract module from path
 function getModuleFromPath(pathname: string): AuditAction['module'] {
   if (pathname.includes('/api/utilisateurs') || pathname.includes('/api/user')) return 'USERS';
-  if (pathname.includes('/api/chimie/chemicals')) return 'CHEMICALS';
-  if (pathname.includes('/api/chimie/equipement') || pathname.includes('/api/equipment')) return 'EQUIPMENT';
+  if (pathname.includes('/api/chimie/chemicals') || pathname.includes('/api/physique/consumables')) return 'CHEMICALS';
+  if (pathname.includes('/api/chimie/equipement') || pathname.includes('/api/physique/equipement') || pathname.includes('/api/equipment')) return 'EQUIPMENT';
   if (pathname.includes('/api/rooms') || pathname.includes('/api/salles')) return 'ROOMS';
   if (pathname.includes('/api/calendrier')) return 'CALENDAR';
   if (pathname.includes('/api/orders')) return 'ORDERS';
@@ -86,6 +86,17 @@ function getClientIP(request: NextRequest): string {
   }
   
   return realIp || remoteAddr || 'unknown';
+}
+
+// Helper to extract discipline from path
+function getDisciplineFromPath(pathname: string): 'chimie' | 'physique' | null {
+  if (pathname.includes('/api/chimie/') || pathname.includes('/chimie/')) {
+    return 'chimie';
+  }
+  if (pathname.includes('/api/physique/') || pathname.includes('/physique/')) {
+    return 'physique';
+  }
+  return null;
 }
 
 export async function auditMiddleware(request: NextRequest): Promise<NextResponse> {
@@ -163,6 +174,7 @@ export async function auditMiddleware(request: NextRequest): Promise<NextRespons
         requestBody: sanitizeData(requestBody),
         metadata: {
           duration,
+          discipline: getDisciplineFromPath(request.nextUrl.pathname),
           contentType: request.headers.get('content-type'),
           acceptLanguage: request.headers.get('accept-language'),
           referer: request.headers.get('referer')

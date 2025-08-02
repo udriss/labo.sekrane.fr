@@ -5,6 +5,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { withAudit } from '@/lib/api/with-audit'
+import { c } from 'framer-motion/dist/types.d-Bq-Qm38R';
 
 // Interface pour les chemicals
 interface Chemical {
@@ -106,7 +107,8 @@ export async function GET(request: NextRequest) {
 
     // Calculer les statistiques
     const stats = calculateChemicalStats(chemicalsWithPrevision)
-
+    console.log('Statistiques des réactifs chimiques:', stats)
+    console.log('Réactifs chimiques récupérés:', chemicalsWithPrevision)
     return NextResponse.json({ 
       chemicals: chemicalsWithPrevision,
       stats

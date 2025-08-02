@@ -22,13 +22,13 @@ import {
 } from "@mui/icons-material"
 
 // Import des hooks personnalisés pour la physique
-import { useEquipmentDataPhysics } from "@/lib/hooks/useEquipmentData-physics"
+import { useEquipmentDataPhysics } from "@/lib/hooks/useEquipmentDataPhysics"
 import { useEquipmentFilters } from "@/lib/hooks/useEquipmentFilters"
 import { useEquipmentQuantity } from "@/lib/hooks/useEquipmentQuantity-physics"
 import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm" 
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
-import { useEquipmentHandlersPhysics } from "@/lib/hooks/useEquipmentHandlers-physics"
-import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
+import { useEquipmentHandlersPhysics } from "@/lib/hooks/useEquipmentHandlersPhysics"
+import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletionChimie"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 import { useSession } from 'next-auth/react'
 
@@ -214,7 +214,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
     try {
       // Vérifier l'utilisation dans l'inventaire
-      const checkResponse = await fetch('/api/equipment-types/check-usage', {
+      const checkResponse = await fetch('/api/physique/equipment-types/check-usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categoryId })
@@ -231,7 +231,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         inventoryUsage: usageData.inventoryUsage || 0,
         onConfirm: async (deleteItems?: boolean) => {
           try {
-            const response = await fetch('/api/equipment-types', {
+            const response = await fetch('/api/physique/equipment-types', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
@@ -278,7 +278,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     if (!editingCategoryName.trim() || !editingCategoryId) return
 
     try {
-      const response = await fetch('/api/equipment-types/category', {
+      const response = await fetch('/api/physique/equipment-types/category', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -361,7 +361,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         ownerId: session?.user?.id // Ajouter l'ID du créateur
       }
 
-      const response = await fetch('/api/equipment-types', {
+      const response = await fetch('/api/physique/equipment-types', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
