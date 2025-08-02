@@ -79,6 +79,56 @@ export function EditEventDialog({
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
   const [showCustomChemicalInfo, setShowCustomChemicalInfo] = useState(false)
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
+  const [consommableInputValue, setConsommableInputValue] = useState('');
+
+  // États pour les données spécifiques à chaque discipline
+  const [disciplineMaterials, setDisciplineMaterials] = useState<any[]>([]);
+  const [disciplineChemicals, setDisciplineChemicals] = useState<any[]>([]);
+  interface Stats {
+    expired: string;
+    inStock: string;
+    lowStock: string;
+    outOfStock: string;
+    total: number;
+  }
+
+  interface PhysicsConsumable {
+    id: string;
+    name: string;
+    physics_consumable_type_id: string;
+    physics_consumable_item_id: string;
+    barcode: string | null;
+    batchNumber: string | null;
+    brand: string | null;
+    createdAt: string;
+    expirationDate: string | null;
+    item_description: string;
+    item_name: string;
+    location: string;
+    minQuantity: string;
+    model: string | null;
+    notes: string | null;
+    orderReference: string | null;
+    purchaseDate: string | null;
+    quantity: string;
+    room: string;
+    specifications: string | null;
+    status: string;
+    storage: string | null;
+    supplierId: string | null;
+    supplier_name: string | null;
+    type_color: string;
+    type_name: string;
+    unit: string;
+    updatedAt: string;
+  }
+
+  const [physicsInventoryData, setPhysicsInventoryData] = useState<{
+    consumables: PhysicsConsumable[];
+    stats: Stats;
+  } | null>(null);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [loadingChemicals, setLoadingChemicals] = useState(false);
   
   const { data: session } = useSession();
   const theme = useTheme()
@@ -223,6 +273,77 @@ export function EditEventDialog({
     message: '',
     severity: 'info'
   });
+
+  // Charger les données spécifiques à la discipline
+  useEffect(() => {
+    if (open && discipline) {
+      loadDisciplineData();
+    }
+  }, [open, discipline]);
+
+  const loadDisciplineData = async () => {
+    try {
+      // Charger les matériaux/équipements
+      setLoadingMaterials(true);
+      let materialsEndpoint = discipline === 'physique' ? '/api/physique/equipement' : '/api/chimie/equipement';
+      let materialsData = [];
+      
+      // Essayer d'abord l'API spécifique physique, sinon fallback vers l'API générale
+      try {
+        const response = await fetch(materialsEndpoint);
+        if (response.ok) {
+          materialsData = await response.json();
+        }
+      } catch (error) {
+        console.warn(`API ${materialsEndpoint} indisponible`);
+      }
+
+      
+      setDisciplineMaterials(materialsData || []);
+      setLoadingMaterials(false);
+
+      // Charger les produits chimiques/composants
+      setLoadingChemicals(true);
+      let consommablesData = [];
+      
+      if (discipline === 'physique') {
+        // Pour la physique, essayer l'API spécifique ou utiliser des données vides
+        try {
+          const physiqueChemResponse = await fetch('/api/physique/consommables');
+          if (physiqueChemResponse.ok) {
+            consommablesData = await physiqueChemResponse.json();
+          } else {
+            // Pour la physique, on peut avoir une liste vide ou des composants génériques
+            consommablesData = [];
+          }
+        } catch (error) {
+          console.warn('API composants physique non disponible');
+          consommablesData = [];
+        }
+        console.log('Données de la physique chargées:', consommablesData);
+        setPhysicsInventoryData(consommablesData || null);
+      } else {
+        // Pour la chimie, utiliser l'API standard
+        const chemicalsResponse = await fetch('/api/chimie/chemicals');
+        if (chemicalsResponse.ok) {
+          const chemicalsData = await chemicalsResponse.json();
+          consommablesData = chemicalsData.chemicals || []; // Extraire la propriété chemicals
+        }
+        setDisciplineChemicals(consommablesData || []);
+      }
+      console.log('Données de la discipline chargées:', { materials: materialsData, chemicals: consommablesData });
+      
+      setLoadingChemicals(false);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      setDisciplineMaterials([]);
+      setDisciplineChemicals([]);
+      setPhysicsInventoryData(null);
+      setLoadingMaterials(false);
+      setLoadingChemicals(false);
+    }
+  };
 
   // Ajouter cette fonction après les autres fonctions helper
   const performTimeSwap = (index: number) => {
@@ -1211,24 +1332,34 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             <>
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Matériel nécessaire
+                  {discipline === 'physique' ? 'Équipement de physique' : 'Matériel nécessaire'}
                 </Typography>
                 
                 {/* Autocomplete pour ajouter du matériel */}
                 <Autocomplete
                   freeSolo
-                  options={materials}
+                  options={Array.isArray(disciplineMaterials) ? disciplineMaterials : []}
+                  loading={loadingMaterials}
                   getOptionLabel={(option) => {
-                    if (typeof option === 'string') return option
-                    return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`
+                    if (typeof option === 'string') return option;
+                    if (discipline === 'physique') {
+                      return `${option.name || 'Équipement'} ${option.type ? `(${option.type})` : ''}`;
+                    } else {
+                      return `${option.itemName || option.name || 'Matériel'} ${option.volume ? `(${option.volume})` : ''}`;
+                    }
                   }}
                   value={null}
                   inputValue={materialInputValue || ''}
-                  onInputChange={(event, newInputValue) => {
-                    setMaterialInputValue(newInputValue)
+                  onInputChange={(event, newInputValue, reason) => {
+                    if (reason !== 'reset') {
+                      setMaterialInputValue(newInputValue);
+                    }
                   }}
                   onChange={(_, newValue) => {
-                    if (typeof newValue === 'string') return
+                    if (typeof newValue === 'string') {
+                      // Si c'est une string (texte libre), ne rien faire ici
+                      return;
+                    }
                     
                     if (newValue && !formData.materials.some((m) => 
                       (m.itemName || m.name) === (newValue.itemName || newValue.name)
@@ -1246,8 +1377,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ajouter du matériel"
-                      placeholder="Rechercher ou créer..."
+                      label={discipline === 'physique' ? 'Ajouter un équipement' : 'Ajouter du matériel'}
+                      placeholder={discipline === 'physique' ? 'Rechercher des équipements physiques...' : 'Rechercher ou créer...'}
+                      helperText={loadingMaterials ? 'Chargement...' : undefined}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
                           e.preventDefault()
@@ -1273,8 +1405,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                         }
                       }}
                       InputProps={{
-                        ...params.
-                                                InputProps,
+                        ...params.InputProps,
                         endAdornment: (
                           <>
                             {params.InputProps.endAdornment}
@@ -1307,9 +1438,19 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                                     }
                                   }}
                                   edge="end"
-                                  sx={{ mr: -1 }}
+                                  sx={{ 
+                                    mr: -1,
+                                    "&:hover": {
+                                      color: 'success.main',
+                                      borderColor: 'primary.main',
+                                      borderRadius: '0%',
+                                    } 
+                                  }}
                                 >
                                   <AddIcon />
+                                  <Typography variant="body2" color="text.secondary">
+                                    Ajouter "{materialInputValue}"
+                                  </Typography>
                                 </IconButton>
                               </InputAdornment>
                             )}
@@ -1321,32 +1462,97 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   isOptionEqualToValue={(option, value) => 
                     (option.itemName || option.name) === (value.itemName || value.name)
                   }
+                  // Grouper par catégorie et filtrer
                   filterOptions={(options, state) => {
-                    const selectedNames = formData.materials.map(m => m.itemName || m.name)
+                    // Obtenir les noms déjà sélectionnés
+                    const selectedNames = formData.materials.map(m => m.itemName || m.name);
+                    
+                    // Filtrer les options non sélectionnées
                     const availableOptions = options.filter(option => {
-                      const optionName = option.itemName || option.name
-                      return !selectedNames.includes(optionName)
-                    })
+                      const optionName = option.itemName || option.name;
+                      return !selectedNames.includes(optionName);
+                    });
                     
-                    const uniqueByName = new Map()
+                    // Créer un Map pour garder uniquement la première occurrence de chaque nom
+                    const uniqueByName = new Map();
                     availableOptions.forEach(option => {
-                      const optionName = option.itemName || option.name
+                      const optionName = option.itemName || option.name;
                       if (!uniqueByName.has(optionName)) {
-                        uniqueByName.set(optionName, option)
+                        uniqueByName.set(optionName, option);
                       }
-                    })
+                    });
                     
-                    const uniqueOptions = Array.from(uniqueByName.values())
+                    // Convertir le Map en array
+                    let uniqueOptions = Array.from(uniqueByName.values());
                     
+                    // Appliquer le filtre de recherche
                     if (state.inputValue) {
-                      return uniqueOptions.filter(option => {
-                        const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase()
-                        return label.includes(state.inputValue.toLowerCase())
-                      })
+                      uniqueOptions = uniqueOptions.filter(option => {
+                        const label = `${option.itemName || option.name || ''} ${option.volume || ''}`.toLowerCase();
+                        return label.includes(state.inputValue.toLowerCase());
+                      });
                     }
                     
-                    return uniqueOptions
+                    // Trier par catégorie puis par nom
+                    uniqueOptions.sort((a, b) => {
+                      const categoryA = a.categoryName || a.typeName || 'Sans catégorie';
+                      const categoryB = b.categoryName || b.typeName || 'Sans catégorie';
+                      
+                      // D'abord par catégorie
+                      if (categoryA !== categoryB) {
+                        return categoryA.localeCompare(categoryB);
+                      }
+                      
+                      // Puis par nom dans la même catégorie
+                      const nameA = a.itemName || a.name || '';
+                      const nameB = b.itemName || b.name || '';
+                      return nameA.localeCompare(nameB);
+                    });
+                    
+                    return uniqueOptions;
                   }}
+                  groupBy={(option) => {
+                    const category = option.categoryName || option.typeName || 'Sans catégorie';
+                    console.log('GroupBy pour matériel (EditDialog):', { 
+                      name: option.itemName || option.name, 
+                      categoryName: option.categoryName, 
+                      typeName: option.typeName,
+                      category 
+                    });
+                    return category;
+                  }}
+                  renderGroup={(params) => (
+                    <li key={params.key}>
+                      <Typography
+                        component="div"
+                        variant="caption"
+                        sx={{
+                          bgcolor: 'rgba(76, 175, 80, 0.1)', // Vert clair
+                          color: 'success.main',
+                          fontWeight: 'bold',
+                          px: 2,
+                          py: 1,
+                          borderRadius: 1,
+                          m: 1,
+                          mb: 0
+                        }}
+                      >
+                        {params.group}
+                      </Typography>
+                      <ul style={{ padding: 0, margin: 0 }}>{params.children}</ul>
+                    </li>
+                  )}
+                  renderOption={({ key, ...otherProps }, option) => (
+                    <li key={key} {...otherProps} style={{ paddingLeft: '16px' }}>
+                      {option.itemName || option.name || 'Matériel'}
+                      {option.volume && ` (${option.volume})`}
+                    </li>
+                  )}
+                  noOptionsText={
+                    materialInputValue && materialInputValue.trim() 
+                      ? "Aucun matériel trouvé. Cliquez sur + pour créer"
+                      : "Aucun matériel disponible"
+                  }
                 />
 
                 {/* Liste du matériel sélectionné avec quantités */}
@@ -1423,85 +1629,122 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             <>
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Réactifs chimiques
+                  {discipline === 'physique' ? 'Composants et accessoires' : 'Réactifs chimiques'}
                 </Typography>
                 
 
                 {/* Autocomplete pour ajouter des réactifs chimiques */}
                 <Autocomplete
-                  options={chemicals}
+                  options={discipline === 'physique' 
+                    ? (Array.isArray(physicsInventoryData?.consumables) ? physicsInventoryData?.consumables : [])
+                    : (Array.isArray(disciplineChemicals) ? disciplineChemicals : [])
+                  }
+                  loading={loadingChemicals}
                   getOptionLabel={(option) => {
-                    if (typeof option === 'string') return option
-                    const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity
-                    return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`
+                    if (typeof option === 'string') return option;
+                    if (discipline === 'physique') {
+                      // Pour la physique, affichage simple du nom
+                      return option.name || 'Composant physique';
+                    } else {
+                      // Pour la chimie, affichage avec stock
+                      const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity;
+                      return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`;
+                    }
                   }}
                   value={null}
-                  inputValue={chemicalInputValue || ''}
+                  inputValue={discipline === 'physique' ? consommableInputValue || '' : chemicalInputValue || ''}
                   onInputChange={(event, newInputValue) => {
-                    setChemicalInputValue(newInputValue)
+                    if (discipline === 'physique') {
+                      setConsommableInputValue(newInputValue);
+                    } else {
+                      setChemicalInputValue(newInputValue);
+                    }
                   }}
                   onChange={(_, newValue) => {
-                    if (newValue && !formData.chemicals.some((c) => c.name === newValue.name)) {
-                      setFormData({ 
-                        ...formData, 
-                        chemicals: [
-                          ...formData.chemicals,
-                          { ...newValue, requestedQuantity: 1 }
-                        ]
-                      })
-                      setChemicalInputValue('')
+                    if (discipline === 'physique') {
+                      if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
+                        setFormData({ 
+                          ...formData, 
+                          chemicals: [
+                            ...formData.chemicals,
+                            { ...newValue, requestedQuantity: 1 }
+                          ]
+                        })
+                        setConsommableInputValue('')
+                      }
+                    } else {
+                      if (newValue && !formData.chemicals.some((c) => c.name === newValue.name)) {
+                        setFormData({ 
+                          ...formData, 
+                          chemicals: [
+                            ...formData.chemicals,
+                            { ...newValue, requestedQuantity: 1 }
+                          ]
+                        })
+                        setChemicalInputValue('')
+                      }
                     }
                   }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ajouter un réactif chimique"
-                      placeholder="Rechercher et sélectionner..."
+                      label={discipline === 'physique' ? 'Ajouter un composant' : 'Ajouter un réactif chimique'}
+                      placeholder={discipline === 'physique' ? 'Rechercher des composants physiques...' : 'Rechercher et sélectionner...'}
+                      helperText={loadingChemicals ? 'Chargement...' : undefined}
                       slotProps={{
                         input: {
                           ...params.InputProps,
                           endAdornment: (
                             <>
                               {params.InputProps.endAdornment}
-                              {chemicalInputValue && chemicalInputValue.trim() && 
-                              !chemicalsWithForecast.some(c => c.name.toLowerCase() === chemicalInputValue.trim().toLowerCase()) && (
+                              {((discipline === 'physique' && consommableInputValue) || (discipline !== 'physique' && chemicalInputValue)) &&
+                              ((discipline === 'physique' && consommableInputValue.trim()) || (discipline !== 'physique' && chemicalInputValue.trim())) && 
+                              !(discipline === 'physique' 
+                                ? physicsInventoryData?.consumables.some(c => c.name?.toLowerCase() === consommableInputValue.trim().toLowerCase())
+                                : disciplineChemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase())
+                              ) && (
                                 <InputAdornment position="end">
                                   <IconButton
                                     size="small"
                                     onClick={() => {
-                                      const trimmedValue = chemicalInputValue.trim();
+                                      const trimmedValue = discipline === 'physique' 
+                                        ? consommableInputValue.trim() 
+                                        : chemicalInputValue.trim();
                                       
-                                      // Créer un réactif personnalisé
-                                      const customChemical = {
-                                        id: `CHEM_${Date.now()}_CUSTOM`,
+                                      // Créer un réactif/composant personnalisé
+                                      const customItem = {
+                                        id: `${discipline === 'physique' ? 'COMP' : 'CHEM'}_${Date.now()}_CUSTOM`,
                                         name: trimmedValue,
-                                        quantity: 0,
-                                        unit: 'g', // Unité par défaut
+                                        quantity: discipline === 'physique' ? 1 : 0,
+                                        unit: discipline === 'physique' ? 'unité' : 'g', // Unité par défaut
                                         requestedQuantity: 1,
                                         isCustom: true,
-                                        // Pas de forecastQuantity pour les réactifs personnalisés
                                       };
                                       
-                                      // Ajouter le réactif personnalisé à la liste
+                                      // Ajouter l'élément personnalisé à la liste appropriée
                                       if (!formData.chemicals.some(c => c.name === trimmedValue)) {
                                         setFormData({ 
                                           ...formData, 
                                           chemicals: [
                                             ...formData.chemicals,
-                                            customChemical
+                                            customItem
                                           ]
                                         });
                                         
                                         // Réinitialiser l'input
-                                        setChemicalInputValue('');
+                                        if (discipline === 'physique') {
+                                          setConsommableInputValue('');
+                                        } else {
+                                          setChemicalInputValue('');
+                                        }
                                         
                                         // Retirer le focus
                                         (document.activeElement as HTMLElement)?.blur();
                                         
-                                        // Afficher une notification
+                                        // Afficher une notification si showSnackbar existe
                                         setSnackbar({
                                           open: true,
-                                          message: `Réactif personnalisé "${trimmedValue}" ajouté`,
+                                          message: `${discipline === 'physique' ? 'Composant' : 'Réactif'} personnalisé "${trimmedValue}" ajouté`,
                                           severity: 'info'
                                         });
                                       }
@@ -1527,7 +1770,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                                       color="text.secondary"
                                       sx={{ ml: 0.5, mr: 0.5 }}
                                     >
-                                      Ajouter "{chemicalInputValue}"
+                                      Ajouter "{discipline === 'physique' ? consommableInputValue : chemicalInputValue}"
                                     </Typography>
                                   </IconButton>
                                 </InputAdornment>
@@ -1538,57 +1781,129 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                       }}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <li {...props}>
-                      <Box sx={{ width: '100%' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Science fontSize="small" color="action" />
-                          <Typography variant="body2">
-                            {option.name}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Stock actuel : {option.quantity}{option.unit}
-                          </Typography>
-                          {option.forecastQuantity !== undefined && (
-                            <Typography 
-                              variant="caption" 
-                              color={option.forecastQuantity < option.minQuantity ? 'error' : 'text.secondary'}
-                            >
-                              Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit}
-                              {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit})`}
+                  renderOption={(props, option) => {
+                    const { key, ...other } = props;
+                    return (
+                      <li 
+                        key={key} 
+                        {...other} 
+                        style={{ 
+                          paddingLeft: discipline === 'physique' ? '16px' : '8px'
+                        }}
+                      >
+                        <Box sx={{ width: '100%' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Science fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              {option.name}
                             </Typography>
-                          )}
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Stock actuel : {option.quantity || 0}{option.unit || ''}
+                            </Typography>
+                            {discipline !== 'physique' && option.forecastQuantity !== undefined && (
+                              <Typography 
+                                variant="caption" 
+                                color={option.forecastQuantity < (option.minQuantity || 0) ? 'error' : 'text.secondary'}
+                              >
+                                Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit || ''}
+                                {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit || ''})`}
+                              </Typography>
+                            )}
+                          </Box>
                         </Box>
-                      </Box>
-                    </li>
-                  )}
-                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                      </li>
+                    );
+                  }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
                   filterOptions={(options, state) => {
-                    const selectedNames = formData.chemicals.map(c => c.name)
+                    const selectedIds = formData.chemicals.map(c => c.id);
+                      
                     const availableOptions = options.filter(option => 
-                      !selectedNames.includes(option.name)
-                    )
+                      !selectedIds.includes(option.id)
+                    );
                     
-                    const uniqueByName = new Map()
+                    // Supprimer les doublons basés sur l'ID
+                    const uniqueByName = new Map();
                     availableOptions.forEach(option => {
                       if (!uniqueByName.has(option.name)) {
-                        uniqueByName.set(option.name, option)
+                        uniqueByName.set(option.name, option);
                       }
-                    })
+                    });
                     
-                    const uniqueOptions = Array.from(uniqueByName.values())
+                    let uniqueOptions = Array.from(uniqueByName.values());
                     
+                    // Appliquer le filtre de recherche
                     if (state.inputValue) {
-                      return uniqueOptions.filter(option => {
-                        const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase()
-                        return label.includes(state.inputValue.toLowerCase())
-                      })
+                      uniqueOptions = uniqueOptions.filter(option => {
+                        const label = `${option.name || ''} ${option.quantity || ''} ${option.unit || ''}`.toLowerCase();
+                        return label.includes(state.inputValue.toLowerCase());
+                      });
                     }
                     
-                    return uniqueOptions
+                    // Trier par catégorie puis par nom (seulement pour physique)
+                    if (discipline === 'physique') {
+                      uniqueOptions.sort((a, b) => {
+                        const categoryA = a.categoryName || a.typeName || 'Sans catégorie';
+                        const categoryB = b.categoryName || b.typeName || 'Sans catégorie';
+                        
+                        // D'abord par catégorie
+                        if (categoryA !== categoryB) {
+                          return categoryA.localeCompare(categoryB);
+                        }
+                        
+                        // Puis par nom dans la même catégorie
+                        const nameA = a.name || '';
+                        const nameB = b.name || '';
+                        return nameA.localeCompare(nameB);
+                      });
+                    }
+                    
+                    return uniqueOptions;
                   }}
+                  // Grouper par catégorie seulement pour la physique
+                  groupBy={discipline === 'physique' 
+                    ? ((option) => {
+                        const category = option.categoryName || option.typeName || 'Sans catégorie';
+                        console.log('GroupBy pour composants physique (EditDialog):', { 
+                          name: option.name, 
+                          categoryName: option.categoryName, 
+                          typeName: option.typeName,
+                          category 
+                        });
+                        return category;
+                      })
+                    : undefined
+                  }
+                  renderGroup={discipline === 'physique' 
+                    ? ((params) => (
+                        <li key={params.key}>
+                          <Typography
+                            component="div"
+                            variant="caption"
+                            sx={{
+                              bgcolor: 'rgba(76, 175, 80, 0.1)', // Vert clair
+                              color: 'success.main',
+                              fontWeight: 'bold',
+                              px: 2,
+                              py: 1,
+                              borderRadius: 1,
+                              m: 1,
+                              mb: 0
+                            }}
+                          >
+                            {params.group}
+                          </Typography>
+                          <ul style={{ padding: 0, margin: 0 }}>{params.children}</ul>
+                        </li>
+                      ))
+                    : undefined
+                  }
+                  noOptionsText={chemicalInputValue ? 
+                    (discipline === 'physique' ? "Aucun composant trouvé" : "Aucun réactif trouvé") : 
+                    "Tapez pour rechercher"
+                  }
                 />
 
 

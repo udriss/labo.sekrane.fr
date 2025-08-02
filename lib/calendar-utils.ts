@@ -25,6 +25,8 @@ export interface CalendarEvent {
   created_by?: string
   created_at?: string
   updated_at?: string
+  timeSlots?: TimeSlot[] // Array des TimeSlots proposés/modifiés
+  actuelTimeSlots?: TimeSlot[] // Array des TimeSlots actuels acceptés par l'owner
 }
 
 // Fonction pour obtenir tous les événements de chimie
@@ -48,12 +50,42 @@ export async function getChemistryEvents(startDate?: string, endDate?: string): 
     
     const [rows] = await pool.execute(query, params)
     
-    return (rows as any[]).map(row => ({
-      ...row,
-      participants: row.participants ? JSON.parse(row.participants) : [],
-      equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
-      chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : []
-    }))
+    return (rows as any[]).map(row => {
+      // Parser les TimeSlots depuis les notes JSON
+      let timeSlots: TimeSlot[] = []
+      let actuelTimeSlots: TimeSlot[] = []
+      
+      try {
+        const parsedNotes = row.notes ? JSON.parse(row.notes) : {}
+        timeSlots = parsedNotes.timeSlots || []
+        actuelTimeSlots = parsedNotes.actuelTimeSlots || []
+      } catch {
+        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
+        const fallbackSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: new Date(row.start_date).toISOString(),
+          endDate: new Date(row.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: row.created_by || 'system',
+          modifiedBy: [{
+            userId: row.created_by || 'system',
+            date: row.created_at || new Date().toISOString(),
+            action: 'created' as const
+          }]
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
+      }
+
+      return {
+        ...row,
+        participants: row.participants ? JSON.parse(row.participants) : [],
+        equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
+        chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : [],
+        timeSlots,
+        actuelTimeSlots
+      }
+    })
   } catch (error) {
     console.error('Error fetching chemistry events:', error)
     throw error
@@ -81,12 +113,42 @@ export async function getPhysicsEvents(startDate?: string, endDate?: string): Pr
     
     const [rows] = await pool.execute(query, params)
     
-    return (rows as any[]).map(row => ({
-      ...row,
-      participants: row.participants ? JSON.parse(row.participants) : [],
-      equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
-      chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : []
-    }))
+    return (rows as any[]).map(row => {
+      // Parser les TimeSlots depuis les notes JSON
+      let timeSlots: TimeSlot[] = []
+      let actuelTimeSlots: TimeSlot[] = []
+      
+      try {
+        const parsedNotes = row.notes ? JSON.parse(row.notes) : {}
+        timeSlots = parsedNotes.timeSlots || []
+        actuelTimeSlots = parsedNotes.actuelTimeSlots || []
+      } catch {
+        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
+        const fallbackSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: new Date(row.start_date).toISOString(),
+          endDate: new Date(row.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: row.created_by || 'system',
+          modifiedBy: [{
+            userId: row.created_by || 'system',
+            date: row.created_at || new Date().toISOString(),
+            action: 'created' as const
+          }]
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
+      }
+
+      return {
+        ...row,
+        participants: row.participants ? JSON.parse(row.participants) : [],
+        equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
+        chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : [],
+        timeSlots,
+        actuelTimeSlots
+      }
+    })
   } catch (error) {
     console.error('Error fetching physics events:', error)
     throw error
@@ -189,6 +251,20 @@ export async function updateChemistryEvent(id: string, updates: Partial<Calendar
       chemicals_used: updates.chemicals_used ? JSON.stringify(updates.chemicals_used) : undefined
     }
     
+    // Convertir les dates ISO en format MySQL
+    if (updateData.updated_at && typeof updateData.updated_at === 'string') {
+      updateData.updated_at = new Date(updateData.updated_at).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.created_at && typeof updateData.created_at === 'string') {
+      updateData.created_at = new Date(updateData.created_at).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.start_date && typeof updateData.start_date === 'string') {
+      updateData.start_date = new Date(updateData.start_date).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.end_date && typeof updateData.end_date === 'string') {
+      updateData.end_date = new Date(updateData.end_date).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    
     // Construire la requête de mise à jour dynamiquement
     const fields = Object.keys(updateData).filter(key => updateData[key as keyof typeof updateData] !== undefined)
     const setClause = fields.map(field => `${field} = ?`).join(', ')
@@ -221,6 +297,20 @@ export async function updatePhysicsEvent(id: string, updates: Partial<CalendarEv
       participants: updates.participants ? JSON.stringify(updates.participants) : undefined,
       equipment_used: updates.equipment_used ? JSON.stringify(updates.equipment_used) : undefined,
       chemicals_used: updates.chemicals_used ? JSON.stringify(updates.chemicals_used) : undefined
+    }
+    
+    // Convertir les dates ISO en format MySQL
+    if (updateData.updated_at && typeof updateData.updated_at === 'string') {
+      updateData.updated_at = new Date(updateData.updated_at).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.created_at && typeof updateData.created_at === 'string') {
+      updateData.created_at = new Date(updateData.created_at).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.start_date && typeof updateData.start_date === 'string') {
+      updateData.start_date = new Date(updateData.start_date).toISOString().slice(0, 19).replace('T', ' ')
+    }
+    if (updateData.end_date && typeof updateData.end_date === 'string') {
+      updateData.end_date = new Date(updateData.end_date).toISOString().slice(0, 19).replace('T', ' ')
     }
     
     // Construire la requête de mise à jour dynamiquement

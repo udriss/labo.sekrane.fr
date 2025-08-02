@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
       let query = `
         SELECT 
           pc.*,
-          pct.name as type_name,
+          pct.name as typeName,
+          pct.name as categoryName,
           pct.color as type_color,
           pci.name as item_name,
           pci.description as item_description,
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
       const [newRows] = await connection.execute(`
         SELECT 
           pc.*,
-          pct.name as type_name,
+          pct.name as typeName,
           pct.color as type_color,
           pci.name as item_name,
           s.name as supplier_name

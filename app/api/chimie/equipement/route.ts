@@ -167,6 +167,7 @@ export async function GET(request: NextRequest) {
             SELECT 
               e.*,
               et.name as type_name,
+              et.name as categoryName,
               et.svg as type_svg,
               ei.name as item_name,
               ei.svg as item_svg,

@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
           pe.created_at,
           pe.updated_at,
           pet.name as type,
+          pet.name as categoryName,
           pei.name as item_name,
           pei.description as item_description
         FROM physics_equipment pe
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
         id: row.id,
         name: row.name,
         itemName: row.item_name || row.name,
-        type: row.type,
+        typeName: row.type,
         model: row.model,
         serialNumber: row.serial_number,
         barcode: row.barcode,

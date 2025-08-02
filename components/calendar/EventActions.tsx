@@ -375,6 +375,8 @@ const EventActions: React.FC<EventActionsProps> = ({
 
   // Boutons d'action sous forme de menu déroulant ou directement affichés
   const menuItems: React.ReactNode[] = []
+  
+  
 
   if (onViewDetails) {
     menuItems.push(
@@ -504,6 +506,7 @@ const EventActions: React.FC<EventActionsProps> = ({
     }
   }
 
+  
   // Si showAsMenu est true, afficher sous forme de menu déroulant
   if (showAsMenu) {
     return (

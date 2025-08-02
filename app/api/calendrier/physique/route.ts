@@ -5,8 +5,8 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth';
-import { getPhysicsEvents, createPhysicsEvent, updatePhysicsEvent, deletePhysicsEvent } from '@/lib/calendar-utils'
-
+import { getPhysicsEvents, createPhysicsEvent, updatePhysicsEvent, deletePhysicsEvent, getPhysicsEventById } from '@/lib/calendar-utils'
+import { getActiveTimeSlots, synchronizeActuelTimeSlots } from '@/lib/calendar-slot-utils'
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
 
 // GET - Récupérer les événements de physique
@@ -19,35 +19,53 @@ export async function GET(request: NextRequest) {
     const events = await getPhysicsEvents(startDate || undefined, endDate || undefined)
 
     // Convertir les événements DB en format CalendarEvent
-    const convertedEvents = events.map(dbEvent => ({
-      id: dbEvent.id,
-      title: dbEvent.title,
-      description: dbEvent.description,
-      type: dbEvent.type.toUpperCase() === 'TP' ? 'TP' : 
-            dbEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
-            dbEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
-      state: 'VALIDATED',
-      timeSlots: [{
-        id: `${dbEvent.id}-slot-1`,
-        startDate: dbEvent.start_date,
-        endDate: dbEvent.end_date,
-        status: 'active' as const
-      }],
-      actuelTimeSlots: [{
-        id: `${dbEvent.id}-slot-1`,
-        startDate: dbEvent.start_date,
-        endDate: dbEvent.end_date,
-        status: 'active' as const
-      }],
-      class: dbEvent.class_name,
-      room: dbEvent.room,
-      materials: dbEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
-      chemicals: dbEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
-      remarks: dbEvent.notes,
-      createdBy: dbEvent.created_by,
-      createdAt: dbEvent.created_at || new Date().toISOString(),
-      updatedAt: dbEvent.updated_at || new Date().toISOString()
-    }))
+    const convertedEvents = events.map(dbEvent => {
+      // Parser les TimeSlots depuis les notes JSON
+      let timeSlots: TimeSlot[] = []
+      let actuelTimeSlots: TimeSlot[] = []
+      
+      try {
+        const parsedNotes = JSON.parse(dbEvent.notes || '{}')
+        timeSlots = parsedNotes.timeSlots || []
+        actuelTimeSlots = parsedNotes.actuelTimeSlots || []
+      } catch {
+        // Fallback: créer des TimeSlots depuis les dates de l'événement
+        const fallbackSlot: TimeSlot = {
+          id: `${dbEvent.id}-legacy-slot`,
+          startDate: new Date(dbEvent.start_date).toISOString(),
+          endDate: new Date(dbEvent.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: dbEvent.created_by,
+          modifiedBy: []
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
+      }
+
+      // Filtrer seulement les slots actifs
+      const activeTimeSlots = getActiveTimeSlots(timeSlots)
+      const activeActuelTimeSlots = getActiveTimeSlots(actuelTimeSlots)
+
+      return {
+        id: dbEvent.id,
+        title: dbEvent.title,
+        description: dbEvent.description,
+        type: dbEvent.type.toUpperCase() === 'TP' ? 'TP' : 
+              dbEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
+              dbEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
+        state: 'VALIDATED',
+        timeSlots: activeTimeSlots,
+        actuelTimeSlots: activeActuelTimeSlots,
+        class: dbEvent.class_name,
+        room: dbEvent.room,
+        materials: dbEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
+        chemicals: dbEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
+        remarks: dbEvent.notes,
+        createdBy: dbEvent.created_by,
+        createdAt: dbEvent.created_at || new Date().toISOString(),
+        updatedAt: dbEvent.updated_at || new Date().toISOString()
+      }
+    })
 
     return NextResponse.json(convertedEvents)
   } catch (error) {
@@ -90,8 +108,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Créer plusieurs événements pour chaque créneau
-    const createdEvents: any[] = []
+    // Générer les TimeSlots avec des IDs uniques
+    const generatedTimeSlots: TimeSlot[] = []
+    let firstSlotStartDate = ''
+    let firstSlotEndDate = ''
     
     for (let i = 0; i < timeSlots.length; i++) {
       const timeSlot = timeSlots[i]
@@ -121,30 +141,55 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const eventData = {
-        title: timeSlots.length > 1 ? `${title} (${i + 1}/${timeSlots.length})` : title,
-        start_date: startDate,
-        end_date: endDate,
-        description: description || '',
-        type: type?.toLowerCase() || 'other',
-        status: 'scheduled' as const,
-        room: room || '',
-        teacher: session.user.name || '',
-        class_name: className || classes?.[0] || '',
-        participants: [],
-        equipment_used: (materials || equipment)?.map((m: any) => typeof m === 'string' ? m : m.id || m.name || '') || [],
-        chemicals_used: consommables?.map((c: any) => typeof c === 'string' ? c : c.id || c.name || '') || [],
-        notes: remarks || '',
-        color: '#9c27b0', // Couleur violette pour la physique
-        created_by: session.user.id
+      // Premier créneau pour l'événement principal
+      if (i === 0) {
+        firstSlotStartDate = startDate
+        firstSlotEndDate = endDate
       }
 
-      const createdEvent = await createPhysicsEvent(eventData)
-      createdEvents.push(createdEvent)
+      // Créer le TimeSlot avec un ID unique
+      const timeSlotWithId: TimeSlot = {
+        id: `${Date.now()}-${i}`,
+        startDate: startDate.replace(' ', 'T') + 'Z', // Reconvertir en ISO
+        endDate: endDate.replace(' ', 'T') + 'Z', // Reconvertir en ISO
+        status: 'active' as const,
+        createdBy: session.user.id,
+        modifiedBy: [{
+          userId: session.user.id,
+          date: new Date().toISOString(),
+          action: 'created' as const
+        }]
+      }
+
+      generatedTimeSlots.push(timeSlotWithId)
     }
 
-    // Retourner le format attendu avec tous les créneaux
-    const responseEvents = createdEvents.map((createdEvent, index) => ({
+    // Créer les données d'événement pour la DB avec le premier créneau
+    const eventData = {
+      title: title,
+      start_date: firstSlotStartDate,
+      end_date: firstSlotEndDate,
+      description: description || '',
+      type: type?.toLowerCase() || 'other',
+      status: 'scheduled' as const,
+      room: room || '',
+      teacher: session.user.name || '',
+      class_name: className || classes?.[0] || '',
+      participants: [],
+      equipment_used: (materials || equipment)?.map((m: any) => typeof m === 'string' ? m : m.id || m.name || '') || [],
+      chemicals_used: consommables?.map((c: any) => typeof c === 'string' ? c : c.id || c.name || '') || [],
+      notes: JSON.stringify({
+        timeSlots: generatedTimeSlots,
+        actuelTimeSlots: synchronizeActuelTimeSlots({ timeSlots: generatedTimeSlots } as CalendarEvent, generatedTimeSlots)
+      }),
+      color: '#9c27b0', // Couleur violette pour la physique
+      created_by: session.user.id
+    }
+
+    const createdEvent = await createPhysicsEvent(eventData)
+
+    // Retourner le format attendu
+    const responseEvent = {
       id: createdEvent.id,
       title: createdEvent.title,
       description: createdEvent.description,
@@ -152,18 +197,8 @@ export async function POST(request: NextRequest) {
             createdEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
             createdEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
       state: 'VALIDATED',
-      timeSlots: [{
-        id: `${createdEvent.id}-slot-1`,
-        startDate: createdEvent.start_date,
-        endDate: createdEvent.end_date,
-        status: 'active' as const
-      }],
-      actuelTimeSlots: [{
-        id: `${createdEvent.id}-slot-1`,
-        startDate: createdEvent.start_date,
-        endDate: createdEvent.end_date,
-        status: 'active' as const
-      }],
+      timeSlots: generatedTimeSlots,
+      actuelTimeSlots: synchronizeActuelTimeSlots({ timeSlots: generatedTimeSlots } as CalendarEvent, generatedTimeSlots),
       class: createdEvent.class_name,
       room: createdEvent.room,
       materials: createdEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
@@ -172,10 +207,9 @@ export async function POST(request: NextRequest) {
       createdBy: createdEvent.created_by,
       createdAt: createdEvent.created_at,
       updatedAt: createdEvent.updated_at
-    }))
+    }
 
-    // Si un seul créneau, retourner l'événement directement, sinon retourner un tableau
-    return NextResponse.json(responseEvents.length === 1 ? responseEvents[0] : responseEvents)
+    return NextResponse.json(responseEvent)
   } catch (error) {
     console.error('Erreur lors de la création de l\'événement de physique:', error)
     return NextResponse.json(
@@ -203,24 +237,87 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Pour PUT, gérer seulement un créneau (le premier) pour la compatibilité
-    const timeSlot = timeSlots?.[0]
+    // Récupérer l'événement existant pour récupérer les TimeSlots actuels
+    const existingEvent = await getPhysicsEventById(id)
+    if (!existingEvent) {
+      return NextResponse.json(
+        { error: 'Événement non trouvé' },
+        { status: 404 }
+      )
+    }
+
+    // Parser les TimeSlots existants depuis les notes
+    let existingTimeSlots: TimeSlot[] = []
+    try {
+      const parsedNotes = JSON.parse(existingEvent.notes || '{}')
+      existingTimeSlots = parsedNotes.timeSlots || []
+    } catch {
+      // Si les notes ne contiennent pas de TimeSlots valides, créer depuis les dates de l'événement
+      existingTimeSlots = [{
+        id: `${existingEvent.id}-legacy-slot`,
+        startDate: new Date(existingEvent.start_date).toISOString(),
+        endDate: new Date(existingEvent.end_date).toISOString(),
+        status: 'active' as const,
+        createdBy: existingEvent.created_by,
+        modifiedBy: []
+      }]
+    }
+
+    // Générer les nouveaux TimeSlots si fournis
+    let updatedTimeSlots: TimeSlot[] = existingTimeSlots
+    if (timeSlots && timeSlots.length > 0) {
+      updatedTimeSlots = timeSlots.map((timeSlot: any, index: number) => {
+        let startDate, endDate;
+        
+        if (timeSlot.startDate && timeSlot.endDate) {
+          startDate = timeSlot.startDate
+          endDate = timeSlot.endDate
+        } else if (timeSlot.date && timeSlot.startTime && timeSlot.endTime) {
+          const startDateTime = new Date(`${timeSlot.date}T${timeSlot.startTime}`)
+          const endDateTime = new Date(`${timeSlot.date}T${timeSlot.endTime}`)
+          startDate = startDateTime.toISOString()
+          endDate = endDateTime.toISOString()
+        } else {
+          return null
+        }
+
+        // Conserver l'ID existant si possible, sinon générer un nouveau
+        const existingSlot = existingTimeSlots[index]
+        return {
+          id: existingSlot?.id || `${Date.now()}-${index}`,
+          startDate,
+          endDate,
+          status: timeSlot.status || 'active' as const,
+          createdBy: existingSlot?.createdBy || session.user.id,
+          modifiedBy: [
+            ...(existingSlot?.modifiedBy || []),
+            {
+              userId: session.user.id,
+              date: new Date().toISOString(),
+              action: 'modified' as const
+            }
+          ]
+        }
+      }).filter(Boolean) as TimeSlot[]
+    }
+
+    // Calculer les actuelTimeSlots synchronisés
+    const actuelTimeSlots = synchronizeActuelTimeSlots(
+      { timeSlots: updatedTimeSlots } as CalendarEvent,
+      updatedTimeSlots
+    )
+
+    // Préparer les mises à jour de l'événement avec le premier créneau
+    const firstSlot = updatedTimeSlots[0]
     const updates: any = {}
     
     if (title !== undefined) updates.title = title
     if (description !== undefined) updates.description = description
-    if (timeSlot) {
-      if (timeSlot.startDate && timeSlot.endDate) {
-        // Format ISO
-        const startDateObj = new Date(timeSlot.startDate)
-        const endDateObj = new Date(timeSlot.endDate)
-        updates.start_date = startDateObj.toISOString().slice(0, 19).replace('T', ' ')
-        updates.end_date = endDateObj.toISOString().slice(0, 19).replace('T', ' ')
-      } else if (timeSlot.date && timeSlot.startTime && timeSlot.endTime) {
-        // Format séparé
-        updates.start_date = `${timeSlot.date} ${timeSlot.startTime}:00`
-        updates.end_date = `${timeSlot.date} ${timeSlot.endTime}:00`
-      }
+    if (firstSlot) {
+      const startDateObj = new Date(firstSlot.startDate)
+      const endDateObj = new Date(firstSlot.endDate)
+      updates.start_date = startDateObj.toISOString().slice(0, 19).replace('T', ' ')
+      updates.end_date = endDateObj.toISOString().slice(0, 19).replace('T', ' ')
     }
     if (type !== undefined) updates.type = type.toLowerCase()
     if (room !== undefined) updates.room = room
@@ -231,7 +328,13 @@ export async function PUT(request: NextRequest) {
     if (consommables !== undefined) {
       updates.chemicals_used = JSON.stringify(consommables.map((c: any) => typeof c === 'string' ? c : c.id || c.name || ''))
     }
-    if (remarks !== undefined) updates.notes = remarks
+    
+    // Mettre à jour les notes avec les TimeSlots synchronisés
+    updates.notes = JSON.stringify({
+      timeSlots: updatedTimeSlots,
+      actuelTimeSlots: actuelTimeSlots,
+      originalRemarks: remarks
+    })
 
     const updatedEvent = await updatePhysicsEvent(id, updates)
 
@@ -244,23 +347,13 @@ export async function PUT(request: NextRequest) {
             updatedEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
             (updatedEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER'),
       state: 'VALIDATED',
-      timeSlots: [{
-        id: `${updatedEvent.id}-slot-1`,
-        startDate: updatedEvent.start_date,
-        endDate: updatedEvent.end_date,
-        status: 'active' as const
-      }],
-      actuelTimeSlots: [{
-        id: `${updatedEvent.id}-slot-1`,
-        startDate: updatedEvent.start_date,
-        endDate: updatedEvent.end_date,
-        status: 'active' as const
-      }],
+      timeSlots: updatedTimeSlots,
+      actuelTimeSlots: actuelTimeSlots,
       class: updatedEvent.class_name,
       room: updatedEvent.room,
       materials: updatedEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
       chemicals: updatedEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
-      remarks: updatedEvent.notes,
+      remarks: remarks || '',
       createdBy: updatedEvent.created_by,
       createdAt: updatedEvent.created_at,
       updatedAt: updatedEvent.updated_at

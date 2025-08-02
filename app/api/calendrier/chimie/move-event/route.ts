@@ -43,11 +43,28 @@ export const PUT = withAudit(
       }
 
       const body = await request.json();
-      const { newStartDate, newEndDate, timeSlotId } = body;
+      const { newStartDate, newEndDate, timeSlots, reason } = body;
 
-      if (!newStartDate || !newEndDate) {
+      let finalStartDate, finalEndDate;
+
+      // Support des deux formats : timeSlots ou dates directes
+      if (timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0) {
+        const firstSlot = timeSlots[0];
+        if (firstSlot.date && firstSlot.startTime && firstSlot.endTime) {
+          finalStartDate = `${firstSlot.date}T${firstSlot.startTime}:00`;
+          finalEndDate = `${firstSlot.date}T${firstSlot.endTime}:00`;
+        } else if (firstSlot.startDate && firstSlot.endDate) {
+          finalStartDate = firstSlot.startDate;
+          finalEndDate = firstSlot.endDate;
+        }
+      } else if (newStartDate && newEndDate) {
+        finalStartDate = newStartDate;
+        finalEndDate = newEndDate;
+      }
+
+      if (!finalStartDate || !finalEndDate) {
         return NextResponse.json(
-          { error: 'Nouvelles dates requises' },
+          { error: 'Nouvelles dates requises (via timeSlots ou newStartDate/newEndDate)' },
           { status: 400 }
         );
       }
@@ -55,9 +72,9 @@ export const PUT = withAudit(
       // Mettre à jour l'événement avec les nouvelles dates
       const updatedEvent = await updateChemistryEvent(eventId, {
         ...event,
-        start_date: newStartDate,
-        end_date: newEndDate,
-        updated_at: new Date().toISOString()
+        start_date: finalStartDate,
+        end_date: finalEndDate,
+        updated_at: new Date().toISOString().slice(0, 19).replace('T', ' ') // Format MySQL
       });
 
       return NextResponse.json(updatedEvent);

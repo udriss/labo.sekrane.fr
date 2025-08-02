@@ -66,6 +66,7 @@ export default function NotebookPage() {
         />
           ) : (
         <NotebookFormAdvanced
+          discipline="general"
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />

@@ -38,8 +38,6 @@ export class UserServiceSQL {
       [userId]
     );
 
-    console.log('[findById] Utilisateur trouvé:', rows, "Résultat complet:", rows);
-
     if (!rows || rows.length === 0) {
       return null;
     }
