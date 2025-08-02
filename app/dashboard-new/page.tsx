@@ -84,8 +84,8 @@ const disciplineConfig = {
       }
     ],
     statsEndpoints: {
-      consumables: '/api/chemicals',
-      equipment: '/api/equipement'
+      consumables: '/api/chimie/chemicals',
+      equipment: '/api/chimie/equipement'
     }
   },
   physics: {

@@ -67,6 +67,7 @@ interface DailyPlanningProps {
   isCreator?: (event: CalendarEvent) => boolean
   currentUserId?: string
   isMobile?: boolean
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour les appels API
 }
 
 const EVENT_TYPES = {
@@ -90,7 +91,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
   onRejectTimeSlotChanges,
   isCreator,
   currentUserId,
-  isMobile = false
+  isMobile = false,
+  discipline = 'chimie' // Valeur par défaut
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | EventType>('all')
@@ -160,7 +162,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [key]: 'approve' }))
     
     try {
-      const response = await fetch('/api/calendrier/approve-single-timeslot', {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(`${apiEndpoint}/approve-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -196,7 +199,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [key]: 'reject' }))
     
     try {
-      const response = await fetch('/api/calendrier/reject-single-timeslot', {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(`${apiEndpoint}/reject-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -710,7 +714,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                             disabled={!hasAnyPending}
                             onClick={async () => {
                               try {
-                                const response = await fetch('/api/calendrier/approve-timeslots', {
+                                const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+                                const response = await fetch(`${apiEndpoint}/approve-timeslots`, {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ eventId: event.id })
@@ -737,7 +742,8 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
                             disabled={!hasAnyPending}
                             onClick={async () => {
                               try {
-                                const response = await fetch('/api/calendrier/reject-timeslots', {
+                                const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+                                const response = await fetch(`${apiEndpoint}/reject-timeslots`, {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ eventId: event.id })

@@ -35,7 +35,7 @@ async function testEquipmentPOST() {
 
     console.log('\n📤 Envoi des données:', JSON.stringify(testData, null, 2));
 
-    const response = await fetch('http://localhost:3000/api/equipement', {
+    const response = await fetch('http://localhost:3000/api/chimie/equipement', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

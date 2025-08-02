@@ -22,12 +22,12 @@ import {
 } from "@mui/icons-material"
 
 // Import des hooks personnalisés pour la physique
-import { useEquipmentData } from "@/lib/hooks/useEquipmentData-physics"
+import { useEquipmentDataPhysics } from "@/lib/hooks/useEquipmentData-physics"
 import { useEquipmentFilters } from "@/lib/hooks/useEquipmentFilters"
 import { useEquipmentQuantity } from "@/lib/hooks/useEquipmentQuantity-physics"
 import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm" 
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
-import { useEquipmentHandlers } from "@/lib/hooks/useEquipmentHandlers-physics"
+import { useEquipmentHandlersPhysics } from "@/lib/hooks/useEquipmentHandlers-physics"
 import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 import { useSession } from 'next-auth/react'
@@ -52,9 +52,6 @@ import { DeleteDialog } from "@/components/equipment/dialogs/DeleteDialog"
 import { useUsers } from '@/lib/hooks/useUsers';
 
 
-// Import des services
-import { equipmentService } from "@/lib/services/equipmentService"
-
 // Import des types
 import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment"
 
@@ -62,7 +59,7 @@ export default function EquipmentPage() {
   const [tabValue, setTabValue] = useState(0)
   
   // Utilisation du hook centralisé pour les gestionnaires d'équipement
-  const equipmentHandlers = useEquipmentHandlers()
+  const equipmentHandlers = useEquipmentHandlersPhysics()
   
   // Utilisation des hooks personnalisés pour les fonctionnalités spécifiques
   const filters = useEquipmentFilters(equipmentHandlers.materiel)
@@ -202,7 +199,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
   }
 
   const handleEditCategory = (categoryId: string) => {
-    const category = equipmentHandlers.equipmentTypes.find(t => t.id === categoryId)
+    const category = equipmentHandlers.equipmentTypes.find((t: EquipmentType) => t.id === categoryId)
     if (category) {
       setEditingCategoryId(categoryId)
       setEditingCategoryName(category.name)
@@ -212,7 +209,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
   // Fonction pour supprimer une catégorie
   const handleDeleteCategory = async (categoryId: string) => {
-    const category = equipmentHandlers.equipmentTypes.find(t => t.id === categoryId)
+    const category = equipmentHandlers.equipmentTypes.find((t: EquipmentType) => t.id === categoryId)
     if (!category) return
 
     try {
@@ -385,53 +382,9 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     }
   }
 
-  // Gestionnaires pour les volumes dans l'équipement personnalisé
-  const handleAddVolumeToCustomEquipment = () => {
-    if (equipmentHandlers.customEquipmentData.newVolume.trim()) {
-      equipmentHandlers.setCustomEquipmentData(prev => ({
-        ...prev,
-        volumes: [...prev.volumes, prev.newVolume.trim()],
-        newVolume: ''
-      }))
-    }
-  }
 
-  const handleRemoveVolumeFromCustomEquipment = (volumeToRemove: string) => {
-    equipmentHandlers.setCustomEquipmentData(prev => ({
-      ...prev,
-      volumes: prev.volumes.filter(v => v !== volumeToRemove)
-    }))
-  }
 
-  // Gestionnaire pour sauvegarder un équipement personnalisé
-  const handleSaveCustomEquipment = async () => {
-    if (!equipmentHandlers.customEquipmentData.name.trim()) {
-      alert('Veuillez entrer un nom pour l\'équipement')
-      return
-    }
 
-    // if (!equipmentHandlers.customEquipmentData.category) {
-    //   alert('Veuillez sélectionner une catégorie')
-    //   return
-    // }
-
-    try {
-      await equipmentService.saveCustomEquipment(equipmentHandlers.customEquipmentData)
-      
-      await equipmentHandlers.loadEquipmentTypes()
-      
-      equipmentHandlers.setAddCustomEquipmentDialog(false)
-      equipmentHandlers.setNewlyCreatedItem({
-        name: equipmentHandlers.customEquipmentData.name,
-        category: equipmentHandlers.customEquipmentData.category,
-        volumes: equipmentHandlers.customEquipmentData.volumes
-      })
-      equipmentHandlers.setContinueDialog(true)
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'équipement personnalisé:', error)
-      alert('Erreur lors de l\'ajout de l\'équipement')
-    }
-  }
 
   // Gestionnaires pour les dialogues de continuation avec gestion des onglets
   const handleFinishWithoutContinue = () => {
@@ -775,7 +728,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                 <MenuItem value="">
                   <em>Aucune salle spécifiée</em>
                 </MenuItem>
-                {equipmentHandlers.rooms.map((room) => (
+                {equipmentHandlers.rooms.map((room: { id: string; name: string }) => (
                   <MenuItem key={room.id} value={room.name}>
                     <HomeFilled sx={{ fontSize: 16, color: 'text.secondary' }} /> {room.name}
                   </MenuItem>
@@ -808,7 +761,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
                     <em>Aucune localisation spécifiée</em>
                   </MenuItem>
                   {(() => {
-                    const selectedRoom = equipmentHandlers.rooms.find(room => room.name === equipmentHandlers.editingEquipment.room)
+                    const selectedRoom = equipmentHandlers.rooms.find((room: { id: string; name: string; locations?: any[] }) => room.name === equipmentHandlers.editingEquipment.room)
                     return selectedRoom?.locations?.map((location: any) => (
                       <MenuItem key={location.id} value={location.name}>
                         <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {location.name}
@@ -890,7 +843,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         categoryName={editingCategoryName}
         setCategoryName={setEditingCategoryName}
         onUpdateCategory={handleUpdateCategory}
-        originalName={equipmentHandlers.equipmentTypes.find(t => t.id === editingCategoryId)?.name || ''}
+        originalName={equipmentHandlers.equipmentTypes.find((t: EquipmentType) => t.id === editingCategoryId)?.name || ''}
       />
     </Container>
   )

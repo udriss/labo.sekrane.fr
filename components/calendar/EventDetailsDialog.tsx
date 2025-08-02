@@ -81,6 +81,7 @@ interface EventDetailsDialogProps {
   currentUserId?: string
   isMobile?: boolean
   isTablet?: boolean
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour les appels API
 }
 
 // Définition corrigée de EVENT_TYPES
@@ -412,7 +413,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   userRole,
   currentUserId,
   isMobile = false,
-  isTablet = false
+  isTablet = false,
+  discipline = 'chimie' // Valeur par défaut
 }) => {
 
   const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
@@ -503,7 +505,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'approve' }))
     
     try {
-      const response = await fetch('/api/calendrier/approve-single-timeslot', {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(`${apiEndpoint}/approve-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -541,7 +544,8 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'reject' }))
     
     try {
-      const response = await fetch('/api/calendrier/reject-single-timeslot', {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(`${apiEndpoint}/reject-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1049,7 +1053,8 @@ useEffect(() => {
                     startIcon={<CheckCircle />}
                     onClick={async () => {
                       try {
-                        const response = await fetch('/api/calendrier/approve-timeslots', {
+                        const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+                        const response = await fetch(`${apiEndpoint}/approve-timeslots`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ eventId: event.id })
@@ -1075,7 +1080,8 @@ useEffect(() => {
                     startIcon={<Cancel />}
                     onClick={async () => {
                       try {
-                        const response = await fetch('/api/calendrier/reject-timeslots', {
+                        const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+                        const response = await fetch(`${apiEndpoint}/reject-timeslots`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ eventId: event.id })

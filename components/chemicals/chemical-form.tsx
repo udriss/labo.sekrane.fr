@@ -99,7 +99,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
       try {
         const [presetsRes, chemicalsRes, roomsRes] = await Promise.all([
           fetch('/api/preset-chemicals'),
-          fetch('/api/chemicals'),
+          fetch('/api/chimie/chemicals'),
           fetch('/api/salles?includeLocations=true')
         ])
 
@@ -169,7 +169,7 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
     setError(null)
 
     try {
-      const url = chemical ? `/api/chemicals/${chemical.id}` : "/api/chemicals"
+      const url = chemical ? `/api/chimie/chemicals/${chemical.id}` : "/api/chimie/chemicals"
       const method = chemical ? "PUT" : "POST"
 
       const response = await fetch(url, {

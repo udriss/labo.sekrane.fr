@@ -1,4 +1,4 @@
-// app/api/equipment-types/route-mysql.ts
+// app/api/chimie/equipment-types/route-mysql.ts
 
 export const runtime = 'nodejs';
 

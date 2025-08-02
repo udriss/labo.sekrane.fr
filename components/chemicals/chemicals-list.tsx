@@ -210,7 +210,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
       // Marquer la carte comme en cours de mise à jour
       setUpdatingCards(prev => new Set([...prev, chemicalId]))
       
-      const response = await fetch(`/api/chemicals/${chemicalId}`, {
+      const response = await fetch(`/api/chimie/chemicals/${chemicalId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
     }
 
     try {
-      const response = await fetch(`/api/chemicals/${chemicalId}`, {
+      const response = await fetch(`/api/chimie/chemicals/${chemicalId}`, {
         method: 'DELETE',
       })
 

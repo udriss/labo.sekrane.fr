@@ -36,6 +36,7 @@ interface EventsListProps {
   onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string) => void
   isMobile?: boolean
   isTablet?: boolean
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour la cohérence
 }
 
 const EVENT_TYPES = {
@@ -82,7 +83,8 @@ const EventsList: React.FC<EventsListProps> = ({
   canValidateEvent,
   onStateChange,
   isMobile = false,
-  isTablet = false
+  isTablet = false,
+  discipline = 'chimie' // NOUVEAU: discipline pour la cohérence
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | EventType>('all')
@@ -612,9 +614,10 @@ const renderEventItem = (event: CalendarEvent) => {
                 {event.files.map((file, index) => {
                   // Construire l'URL de manière sûre
                   const fileUrl = file?.fileUrl
+                  const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
                   const href = fileUrl 
                     ? (fileUrl.startsWith('/uploads/') 
-                        ? `/api/calendrier/files?path=${encodeURIComponent(fileUrl)}`
+                        ? `${apiEndpoint}/files?path=${encodeURIComponent(fileUrl)}`
                         : fileUrl)
                     : '#'
                   

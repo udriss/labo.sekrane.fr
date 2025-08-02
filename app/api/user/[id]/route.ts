@@ -140,16 +140,17 @@ export const PUT = withAudit(
 );
 
 
-export const GET = withAudit(
-  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export async function GET(
+  request: NextRequest, 
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
+    const { userId } = await context.params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const userId = id;
     // Vérifier que l'utilisateur peut voir ce profil
     if (session.user.id !== userId && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
@@ -175,18 +176,8 @@ export const GET = withAudit(
       { status: 500 }
     );
   }
-},
-  {
-    module: 'USERS',
-    entity: 'user',
-    action: 'READ',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      viewedUser: response?.email,
-      viewedUserRole: response?.role
-    })
-  }
-);
+}
+
 
 
 export const DELETE = withAudit(

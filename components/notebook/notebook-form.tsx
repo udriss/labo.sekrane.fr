@@ -4,11 +4,12 @@ import { useState } from "react"
 import { Box, TextField, Button, Stack, Typography, Alert } from "@mui/material"
 
 interface NotebookFormProps {
+  discipline?: 'chimie' | 'physique' | 'general'
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function NotebookForm({ onSuccess, onCancel }: NotebookFormProps) {
+export function NotebookForm({ discipline = 'general', onSuccess, onCancel }: NotebookFormProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [loading, setLoading] = useState(false)

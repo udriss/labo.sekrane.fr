@@ -1,4 +1,4 @@
-// app/calendrier/page.tsx
+// app/calendrier/chimie/page.tsx
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -32,7 +32,7 @@ import { EditEventDialog } from '@/components/calendar/EditEventDialog'
 
 import { CalendarEvent } from '@/types/calendar'
 import { useCalendarData } from '@/lib//hooks/useCalendarData'
-import { useCalendarEvents } from '@/lib//hooks/useCalendarEvents'
+import { useChemistryCalendarData } from '@/lib//hooks/useChemistryCalendarData'
 import { useReferenceData } from '@/lib//hooks/useReferenceData'
 import { UserRole } from "@/types/global";
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
@@ -77,7 +77,7 @@ export default function CalendarPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Hooks personnalisés
-  const { events, loading, error, fetchEvents, setEvents } = useCalendarEvents()
+  const { events, loading, error, loadEvents: fetchEvents, addEvent, updateEvent, removeEvent, setError } = useChemistryCalendarData()
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData()
   const { tpPresets } = useCalendarData()
 
@@ -199,7 +199,7 @@ const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: s
     // Si jamais il faut faire correspondre les créneaux proposés aux créneaux actuels ici, utiliser referentActuelTimeID
     // (Actuellement, la logique de correspondance est gérée côté composants et API)
 
-    const response = await fetch(`/api/calendrier/move-event?id=${event.id}`, {
+    const response = await fetch(`/api/calendrier/chimie/move-event?id=${event.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -230,11 +230,7 @@ const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: s
     }
 
     // Mettre à jour l'événement avec les données du serveur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(e => 
-        e.id === event.id ? updatedEventFromServer : e
-      )
-    );
+    updateEvent(updatedEventFromServer);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEventFromServer);
@@ -255,11 +251,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
     }
 
     // Mettre à jour l'état localement en attendant la confirmation de l'API
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(event => 
-        event.id === updatedEvent.id ? { ...event, state: newState } : event
-      )
-    );
+    updateEvent({ ...updatedEvent, state: newState });
 
     // Mettre à jour l'événement sélectionné si c'est celui qui a été modifié
     if (selectedEvent?.id === updatedEvent.id) {
@@ -267,7 +259,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
     }
 
     // Envoyer la requête à l'API pour enregistrer le changement d'état
-    const response = await fetch(`/api/calendrier/state-change?id=${updatedEvent.id}`, {
+    const response = await fetch(`/api/calendrier/chimie/state-change?id=${updatedEvent.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -292,11 +284,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
     }
 
     // Mettre à jour l'événement avec les données du serveur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(event => 
-        event.id === updatedEvent.id ? updatedEventFromServer : event
-      )
-    );
+    updateEvent(updatedEventFromServer);
 
     if (selectedEvent?.id === updatedEvent.id) {
       setSelectedEvent(updatedEventFromServer);
@@ -305,11 +293,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
   } catch (error) {
     console.error('Erreur lors du changement d\'état:', error);
     // Rétablir l'état précédent en cas d'erreur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(event => 
-        event.id === updatedEvent.id ? updatedEvent : event
-      )
-    );
+    updateEvent(updatedEvent);
     if (selectedEvent?.id === updatedEvent.id) {
       setSelectedEvent(updatedEvent);
     }
@@ -321,7 +305,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
 // Handler pour gérer la confirmation/rejet des modifications par le créateur
 const handleConfirmModification = async (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => {
   try {
-    const response = await fetch(`/api/calendrier/confirm-modification?eventId=${event.id}`, {
+    const response = await fetch(`/api/calendrier/chimie/confirm-modification?eventId=${event.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -340,11 +324,7 @@ const handleConfirmModification = async (event: CalendarEvent, modificationId: s
     const updatedEventFromServer = data.updatedEvent;
 
     // Mettre à jour l'événement avec les données du serveur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(e => 
-        e.id === event.id ? updatedEventFromServer : e
-      )
-    );
+    updateEvent(updatedEventFromServer);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEventFromServer);
@@ -358,7 +338,7 @@ const handleConfirmModification = async (event: CalendarEvent, modificationId: s
 // Handler pour approuver les changements de créneaux
 const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
   try {
-    const response = await fetch('/api/calendrier/approve-timeslots', {
+    const response = await fetch('/api/calendrier/chimie/approve-timeslots', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -376,11 +356,7 @@ const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
     const updatedEvent = data.event;
 
     // Mettre à jour l'événement avec les données du serveur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(e => 
-        e.id === event.id ? updatedEvent : e
-      )
-    );
+    updateEvent(updatedEvent);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEvent);
@@ -396,7 +372,7 @@ const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
 // Handler pour rejeter les changements de créneaux
 const handleRejectTimeSlotChanges = async (event: CalendarEvent) => {
   try {
-    const response = await fetch('/api/calendrier/reject-timeslots', {
+    const response = await fetch('/api/calendrier/chimie/reject-timeslots', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -414,11 +390,7 @@ const handleRejectTimeSlotChanges = async (event: CalendarEvent) => {
     const updatedEvent = data.event;
 
     // Mettre à jour l'événement avec les données du serveur
-    setEvents((prevEvents: CalendarEvent[]) => 
-      prevEvents.map(e => 
-        e.id === event.id ? updatedEvent : e
-      )
-    );
+    updateEvent(updatedEvent);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEvent);
@@ -442,7 +414,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     
     
 
-    const response = await fetch(`/api/calendrier?id=${eventToEdit.id}`, {
+    const response = await fetch(`/api/calendrier/chimie/?id=${eventToEdit.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -483,7 +455,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     }
 
     try {
-      const response = await fetch(`/api/calendrier?id=${event.id}`, {
+      const response = await fetch(`/api/calendrier/chimie/?id=${event.id}`, {
         method: 'DELETE'
       })
 
@@ -666,6 +638,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     canValidateEvent={canValidateEvent()}
     isMobile={isMobile}
     isTablet={isTablet}
+    discipline="chimie"
   />
 </TabPanel>
 
@@ -685,6 +658,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     isCreator={isCreator}
     currentUserId={session?.user?.id || session?.user?.email}
     isMobile={isMobile}
+    discipline="chimie"
   />
 </TabPanel>
 
@@ -705,6 +679,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           currentUserId={session?.user?.id || session?.user?.email}
           isMobile={isMobile}
           isTablet={isTablet}
+          discipline="chimie"
         />
 
         <EditEventDialog
@@ -723,6 +698,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           customClasses={customClasses}
           setCustomClasses={setCustomClasses}
           saveNewClass={saveNewClass}
+          discipline="chimie"
         />
 
         <CreateTPDialog

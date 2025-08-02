@@ -1,81 +1,123 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { 
-  Box, TextField, Button, Stack, Typography, Alert, Stepper, Step, StepLabel, StepContent,
-  Autocomplete, Chip, Card, Paper, Dialog, DialogTitle, DialogContent, DialogActions,
-  FormControl, InputLabel, Select, MenuItem
+import {
+  Box, Typography, Button, TextField, Stepper, Step, StepLabel,
+  StepContent, Card, Autocomplete, InputAdornment, IconButton,
+  Alert, Chip
 } from "@mui/material"
-import { 
-  Add, Upload, AttachFile, Save, Science, Assignment, School
+import {
+  CloudUpload, Assignment, Add
 } from "@mui/icons-material"
-import { SECTION_LEVELS } from "@/lib/constants/education-levels"
+import { RichTextEditor } from "@/components/calendar/RichTextEditor"
+import { FileUploadSection } from "@/components/calendar/FileUploadSection"
+import { FileWithMetadata } from '@/types/global'
+
+interface Material {
+  id: string
+  name?: string
+  itemName?: string
+  quantity: number
+  isCustom?: boolean
+}
+
+interface Chemical {
+  id: string
+  name: string
+  quantity?: number
+  unit?: string
+  requestedQuantity?: number
+  forecastQuantity?: number
+}
 
 interface NotebookFormAdvancedProps {
+  discipline: 'chimie' | 'physique' | 'general'
   onSuccess: () => void
   onCancel: () => void
 }
 
-interface FormData {
-  title: string
-  content: string
-  sections: string[]
-  file: File | null
-  materials: any[]
-  chemicals: any[]
-  estimatedDuration: number
-  difficulty: string
-}
-
-export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvancedProps) {
+export function NotebookFormAdvanced({
+  discipline = 'general',
+  onSuccess,
+  onCancel
+}: NotebookFormAdvancedProps) {
   const [activeStep, setActiveStep] = useState(0)
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'manual' | null>(null)
-  const [dragOver, setDragOver] = useState(false)
-  
-  const [formData, setFormData] = useState<FormData>({
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'manual'>('manual')
+  const [files, setFiles] = useState<FileWithMetadata[]>([])
+  const [formData, setFormData] = useState({
     title: '',
-    content: '',
-    sections: [],
-    file: null,
-    materials: [],
-    chemicals: [],
-    estimatedDuration: 60,
-    difficulty: 'Moyen'
+    description: '',
+    materials: [] as Material[],
+    chemicals: [] as Chemical[],
+    attachments: [] as any[]
   })
+  const [remarks, setRemarks] = useState('')
   
-  // États pour les données de référence
-  const [materials, setMaterials] = useState([])
-  const [chemicals, setChemicals] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // États pour les autocompletes
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [chemicals, setChemicals] = useState<Chemical[]>([])
+  const [loadingMaterials, setLoadingMaterials] = useState(false)
+  const [loadingChemicals, setLoadingChemicals] = useState(false)
+  const [materialInputValue, setMaterialInputValue] = useState('')
+  const [chemicalInputValue, setChemicalInputValue] = useState('')
 
-  // Chargement des données de référence
-  const loadReferenceData = async () => {
-    try {
-      const [materialsRes, chemicalsRes] = await Promise.all([
-        fetch('/api/equipement'),
-        fetch('/api/chemicals')
-      ])
-
-      if (materialsRes.ok) {
-        const materialsData = await materialsRes.json()
-        setMaterials(materialsData || [])
-      }
-
-      if (chemicalsRes.ok) {
-        const chemicalsData = await chemicalsRes.json()
-        setChemicals(chemicalsData || [])
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des données de référence:', error)
-    }
-  }
-
+  // Charger les matériels selon la discipline
   useEffect(() => {
-    loadReferenceData()
-  }, [])
+    const loadMaterials = async () => {
+      setLoadingMaterials(true)
+      try {
+        let response;
+        if (discipline === 'physique') {
+          // Utiliser l'API spécifique pour la physique
+          response = await fetch('/api/physique/equipement')
+        } else if (discipline === 'chimie') {
+          // Utiliser l'API spécifique pour la chimie
+          response = await fetch('/api/chimie/equipement')
+        } else {
+          // API générale
+          response = await fetch('/api/chimie/equipement')
+        }
+        
+        if (response.ok) {
+          const data = await response.json()
+          // Adapter la structure selon l'API
+          if (discipline === 'physique') {
+            setMaterials(data || [])
+          } else {
+            setMaterials(data.materials || data || [])
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des matériels:', error)
+      } finally {
+        setLoadingMaterials(false)
+      }
+    }
 
-  const handleFormDataChange = (field: keyof FormData, value: any) => {
+    const loadChemicals = async () => {
+      setLoadingChemicals(true)
+      try {
+        const response = await fetch('/api/chimie/chemicals')
+        if (response.ok) {
+          const data = await response.json()
+          setChemicals(data.chemicals || data || [])
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des produits chimiques:', error)
+      } finally {
+        setLoadingChemicals(false)
+      }
+    }
+
+    if (discipline !== 'general') {
+      loadMaterials()
+      if (discipline === 'chimie') {
+        loadChemicals()
+      }
+    }
+  }, [discipline])
+
+  const handleFormDataChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -87,196 +129,112 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
     setActiveStep(prev => prev - 1)
   }
 
-  // Gestion de l'upload de fichier
-  const handleFileUpload = (file: File) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.oasis.opendocument.text',
-      'text/plain',
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp'
-    ]
-    
-    if (allowedTypes.includes(file.type) || file.name.match(/\\.(pdf|doc|docx|odt|txt|jpg|jpeg|png|gif|webp)$/i)) {
-      handleFormDataChange('file', file)
-      handleFormDataChange('title', file.name.replace(/\\.[^/.]+$/, ""))
-      setUploadMethod('file')
-    } else {
-      alert('Type de fichier non supporté. Veuillez choisir un PDF, document Word, image ou fichier texte.')
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    const files = e.dataTransfer.files
-    if (files.length > 0) {
-      handleFileUpload(files[0])
-    }
-  }
-
-  const openFileExplorer = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.pdf,.doc,.docx,.odt,.txt,.jpg,.jpeg,.png,.gif,.webp'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        handleFileUpload(file)
-      }
-    }
-    input.click()
+  const handleStepClick = (step: number) => {
+    setActiveStep(step)
   }
 
   const handleSubmit = async () => {
     try {
-      setLoading(true)
-      setError(null)
-
-      const dataToSubmit = {
+      const submitData = {
+        type: 'entry',
         title: formData.title,
-        content: formData.content,
-        sections: formData.sections,
-        materials: formData.materials.map((m: any) => m.id),
-        chemicals: formData.chemicals.map((c: any) => c.id),
-        estimatedDuration: formData.estimatedDuration,
-        difficulty: formData.difficulty,
-        ...(formData.file && { fileName: formData.file.name })
+        description: formData.description,
+        discipline,
+        materials: formData.materials,
+        chemicals: formData.chemicals,
+        attachments: formData.attachments,
+        content: remarks
       }
 
-      const response = await fetch("/api/notebook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSubmit)
+      const response = await fetch('/api/notebook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData)
       })
 
-      if (!response.ok) throw new Error("Erreur lors de la création du TP")
-      
-      onSuccess()
+      if (response.ok) {
+        onSuccess()
+      } else {
+        const errorData = await response.json()
+        console.error('Erreur:', errorData.error)
+      }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Une erreur est survenue")
-    } finally {
-      setLoading(false)
+      console.error('Erreur lors de la soumission:', error)
     }
   }
 
-  const resetForm = () => {
-    setActiveStep(0)
-    setUploadMethod(null)
-    setFormData({
-      title: '',
-      content: '',
-      sections: [],
-      file: null,
-      materials: [],
-      chemicals: [],
-      estimatedDuration: 60,
-      difficulty: 'Moyen'
-    })
-  }
+  const maxStep = discipline === 'chimie' ? 5 : 4
 
   return (
-    <Box sx={{ minHeight: 600 }}>
-      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-        Créer un nouveau TP
-      </Typography>
-
-      <Stepper activeStep={activeStep} orientation="vertical">
+    <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+      <Stepper activeStep={activeStep} orientation="vertical" nonLinear>
+        
         {/* Étape 1: Méthode de création */}
         <Step>
-          <StepLabel>
-            <Typography variant="h6">Méthode de création</Typography>
+          <StepLabel onClick={() => handleStepClick(0)} sx={{ cursor: 'pointer' }}>
+            <Typography variant="h6">Méthode d'ajout</Typography>
           </StepLabel>
           <StepContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Choisissez comment vous souhaitez créer votre TP
+              Choisissez comment vous souhaitez créer votre séance TP
             </Typography>
             
-            <Box display="flex" gap={2} flexWrap="wrap">
-              <Card 
-                sx={{ 
-                  p: 2, 
-                  cursor: 'pointer',
-                  border: uploadMethod === 'file' ? '2px solid' : dragOver ? '2px dashed' : '1px solid',
-                  borderColor: uploadMethod === 'file' ? 'primary.main' : dragOver ? 'primary.light' : 'divider',
-                  '&:hover': { borderColor: 'primary.main' },
-                  flexBasis: 'calc(50% - 8px)',
-                  minWidth: '250px',
-                  backgroundColor: dragOver ? 'primary.light' : 'inherit',
-                  opacity: dragOver ? 0.8 : 1,
-                  transition: 'all 0.2s ease'
-                }}
-                onClick={openFileExplorer}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                  <Upload color={uploadMethod === 'file' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
-                  <Typography variant="h6">Importer un fichier TP</Typography>
-                  <Typography variant="body2" color="text.secondary" textAlign="center">
-                    {formData.file ? formData.file.name : 
-                     dragOver ? "Déposez votre fichier ici" :
-                     "Cliquez ou glissez-déposez votre fichier"}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" textAlign="center">
-                    PDF, Word, Images, documents acceptés
-                  </Typography>
-                </Box>
-              </Card>
-              
-              <Card 
-                sx={{ 
-                  p: 2, 
-                  cursor: 'pointer',
-                  border: uploadMethod === 'manual' ? '2px solid' : '1px solid',
-                  borderColor: uploadMethod === 'manual' ? 'primary.main' : 'divider',
-                  '&:hover': { borderColor: 'primary.main' },
-                  flexBasis: 'calc(50% - 8px)',
-                  minWidth: '250px'
-                }}
-                onClick={() => setUploadMethod('manual')}
-              >
-                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                  <Assignment color={uploadMethod === 'manual' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
-                  <Typography variant="h6">Création manuelle</Typography>
-                  <Typography variant="body2" color="text.secondary" textAlign="center">
-                    Saisissez manuellement les informations du TP
-                  </Typography>
-                </Box>
-              </Card>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Box display="flex" gap={2} flexWrap="wrap">
+                <Card 
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    border: uploadMethod === 'file' ? '2px solid' : '1px solid',
+                    borderColor: uploadMethod === 'file' ? 'primary.main' : 'divider',
+                    '&:hover': { borderColor: 'primary.main' },
+                    flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' }
+                  }}
+                  onClick={() => setUploadMethod('file')}
+                >
+                  <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                    <CloudUpload color={uploadMethod === 'file' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
+                    <Typography variant="h6">Importer des fichiers TP</Typography>
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                      {files.length > 0 ? `${files.length} fichier${files.length > 1 ? 's' : ''} sélectionné${files.length > 1 ? 's' : ''}` :
+                        "Glissez-déposez ou cliquez pour sélectionner"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" textAlign="center">
+                      PDF, Word, Images acceptés • Max 5 fichiers
+                    </Typography>
+                  </Box>
+                </Card>
+
+                <Card 
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    border: uploadMethod === 'manual' ? '2px solid' : '1px solid',
+                    borderColor: uploadMethod === 'manual' ? 'primary.main' : 'divider',
+                    '&:hover': { borderColor: 'primary.main' },
+                    flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' }
+                  }}
+                  onClick={() => setUploadMethod('manual')}
+                >
+                  <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                    <Assignment color={uploadMethod === 'manual' ? 'primary' : 'inherit'} sx={{ fontSize: 40 }} />
+                    <Typography variant="h6">Création manuelle</Typography>
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                      Saisissez manuellement les informations du TP
+                    </Typography>
+                  </Box>
+                </Card>
+              </Box>
             </Box>
 
-            {uploadMethod === 'manual' && (
+            {uploadMethod === 'file' && (
               <Box sx={{ mt: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Titre du TP"
-                  value={formData.title}
-                  onChange={(e) => handleFormDataChange('title', e.target.value)}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="Contenu / Protocole"
-                  multiline
-                  rows={6}
-                  value={formData.content}
-                  onChange={(e) => handleFormDataChange('content', e.target.value)}
+                <FileUploadSection
+                  files={files}
+                  onFilesChange={setFiles}
+                  maxFiles={5}
+                  maxSizePerFile={10}
+                  acceptedTypes={['.pdf', '.doc', '.docx', '.odt', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.svg']}
                 />
               </Box>
             )}
@@ -284,10 +242,14 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
             <Box sx={{ mt: 3 }}>
               <Button
                 variant="contained"
-                onClick={handleStepNext}
-                disabled={!uploadMethod || 
-                         (uploadMethod === 'file' && !formData.file) || 
-                         (uploadMethod === 'manual' && (!formData.title || !formData.content))}
+                onClick={() => {
+                  if (uploadMethod === 'manual') {
+                    setActiveStep(1) // Aller directement à l'étape titre
+                  } else {
+                    handleStepNext()
+                  }
+                }}
+                disabled={!uploadMethod || (uploadMethod === 'file' && files.length === 0)}
               >
                 Continuer
               </Button>
@@ -295,203 +257,316 @@ export function NotebookFormAdvanced({ onSuccess, onCancel }: NotebookFormAdvanc
           </StepContent>
         </Step>
 
-        {/* Étape 2: Sections et niveaux */}
+        {/* Étape 2: Titre (obligatoire) */}
         <Step>
-          <StepLabel>
-            <Typography variant="h6">Sections et niveaux</Typography>
+          <StepLabel onClick={() => handleStepClick(1)} sx={{ cursor: 'pointer' }}>
+            <Typography variant="h6">Titre du TP</Typography>
           </StepLabel>
           <StepContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Sélectionnez les sections/niveaux concernés par ce TP
+              Donnez un titre à votre TP (obligatoire)
+            </Typography>
+            
+            <TextField
+              fullWidth
+              label="Titre du TP *"
+              value={formData.title}
+              onChange={(e) => handleFormDataChange('title', e.target.value)}
+              sx={{ mb: 3 }}
+              placeholder="Donnez un titre à votre TP..."
+              required
+            />
+
+            {uploadMethod === 'manual' && (
+              <TextField
+                fullWidth
+                label="Description du TP"
+                multiline
+                rows={4}
+                value={formData.description}
+                onChange={(e) => handleFormDataChange('description', e.target.value)}
+                sx={{ mb: 3 }}
+                placeholder="Décrivez brièvement le contenu et les objectifs du TP..."
+              />
+            )}
+
+            <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+              <Button onClick={handleStepBack}>Retour</Button>
+              <Button
+                variant="contained"
+                onClick={handleStepNext}
+                disabled={!formData.title.trim()}
+              >
+                Continuer
+              </Button>
+            </Box>
+          </StepContent>
+        </Step>
+
+        {/* Étape 3: Description et remarques */}
+        <Step>
+          <StepLabel onClick={() => handleStepClick(2)} sx={{ cursor: 'pointer' }}>
+            <Typography variant="h6">Description et remarques</Typography>
+          </StepLabel>
+          <StepContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Ajoutez une description et des remarques pour cette séance
+            </Typography>
+            
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+              Remarques supplémentaires
+            </Typography>
+            
+            <Box sx={{ 
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+              minHeight: 200
+            }}>
+              <RichTextEditor
+                value={remarks}
+                onChange={setRemarks}
+                placeholder="Ajoutez des remarques, instructions spéciales, notes de sécurité..."
+              />
+            </Box>
+
+            <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+              <Button onClick={handleStepBack}>Retour</Button>
+              <Button variant="contained" onClick={handleStepNext}>
+                Continuer
+              </Button>
+            </Box>
+          </StepContent>
+        </Step>
+
+        {/* Étape 4: Matériel */}
+        <Step>
+          <StepLabel onClick={() => handleStepClick(3)} sx={{ cursor: 'pointer' }}>
+            <Typography variant="h6">
+              {discipline === 'physique' ? 'Équipement de physique' : 'Matériel nécessaire'}
+            </Typography>
+          </StepLabel>
+          <StepContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {discipline === 'physique' 
+                ? 'Sélectionnez l\'équipement de physique qui sera utilisé'
+                : 'Sélectionnez le matériel qui sera utilisé'
+              }
             </Typography>
 
             <Autocomplete
-              multiple
-              options={SECTION_LEVELS}
-              getOptionLabel={(option) => option.label}
-              value={SECTION_LEVELS.filter(level => formData.sections.includes(level.id))}
+              freeSolo
+              options={materials}
+              loading={loadingMaterials}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') return option
+                return option.itemName || option.name || 'Matériel'
+              }}
+              value={null}
+              inputValue={materialInputValue}
+              onInputChange={(_, newValue) => setMaterialInputValue(newValue || '')}
               onChange={(_, newValue) => {
-                handleFormDataChange('sections', newValue.map(level => level.id))
+                if (typeof newValue === 'string') return
+                
+                if (newValue && !formData.materials.some(m => 
+                  (m.itemName || m.name) === (newValue.itemName || newValue.name)
+                )) {
+                  handleFormDataChange('materials', [
+                    ...formData.materials,
+                    { ...newValue, quantity: 1 }
+                  ])
+                  setMaterialInputValue('')
+                }
               }}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Sections"
-                  placeholder="Choisir les sections/niveaux..."
+                  label={discipline === 'physique' ? 'Ajouter un équipement' : 'Ajouter du matériel'}
+                  placeholder={discipline === 'physique' ? 'Rechercher des équipements...' : 'Rechercher du matériel...'}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && materialInputValue?.trim()) {
+                      e.preventDefault()
+                      const customMaterial = {
+                        id: `custom_${Date.now()}`,
+                        name: materialInputValue.trim(),
+                        itemName: materialInputValue.trim(),
+                        quantity: 1,
+                        isCustom: true
+                      }
+                      handleFormDataChange('materials', [...formData.materials, customMaterial])
+                      setMaterialInputValue('')
+                    }
+                  }}
+                  slotProps={{
+                    input: {
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {params.InputProps.endAdornment}
+                          {materialInputValue?.trim() && (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  const customMaterial = {
+                                    id: `custom_${Date.now()}`,
+                                    name: materialInputValue.trim(),
+                                    itemName: materialInputValue.trim(),
+                                    quantity: 1,
+                                    isCustom: true
+                                  }
+                                  handleFormDataChange('materials', [...formData.materials, customMaterial])
+                                  setMaterialInputValue('')
+                                }}
+                              >
+                                <Add />
+                              </IconButton>
+                            </InputAdornment>
+                          )}
+                        </>
+                      )
+                    }
+                  }}
                 />
               )}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={option.label}
-                    {...getTagProps({ index })}
-                    key={option.id}
-                    color="primary"
-                  />
-                ))
-              }
             />
 
-            <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-              <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>Durée estimée</InputLabel>
-                <Select
-                  value={formData.estimatedDuration}
-                  label="Durée estimée"
-                  onChange={(e) => handleFormDataChange('estimatedDuration', e.target.value)}
-                >
-                  <MenuItem value={30}>30 min</MenuItem>
-                  <MenuItem value={45}>45 min</MenuItem>
-                  <MenuItem value={60}>1h</MenuItem>
-                  <MenuItem value={90}>1h30</MenuItem>
-                  <MenuItem value={120}>2h</MenuItem>
-                  <MenuItem value={180}>3h</MenuItem>
-                  <MenuItem value={240}>4h</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl sx={{ minWidth: 120 }}>
-                <InputLabel>Difficulté</InputLabel>
-                <Select
-                  value={formData.difficulty}
-                  label="Difficulté"
-                  onChange={(e) => handleFormDataChange('difficulty', e.target.value)}
-                >
-                  <MenuItem value="Facile">Facile</MenuItem>
-                  <MenuItem value="Moyen">Moyen</MenuItem>
-                  <MenuItem value="Difficile">Difficile</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
+            {formData.materials.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Matériel sélectionné :
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {formData.materials.map((material, index) => (
+                    <Chip
+                      key={index}
+                      label={material.itemName || material.name}
+                      onDelete={() => {
+                        const updated = formData.materials.filter((_, i) => i !== index)
+                        handleFormDataChange('materials', updated)
+                      }}
+                      color={material.isCustom ? 'secondary' : 'primary'}
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
 
             <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-              <Button onClick={handleStepBack}>
-                Retour
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleStepNext}
-                disabled={formData.sections.length === 0}
-              >
+              <Button onClick={handleStepBack}>Retour</Button>
+              <Button variant="contained" onClick={handleStepNext}>
                 Continuer
               </Button>
             </Box>
           </StepContent>
         </Step>
 
-        {/* Étape 3: Matériel nécessaire */}
+        {/* Étape 5: Réactifs chimiques (uniquement pour chimie) */}
+        {discipline === 'chimie' && (
+          <Step>
+            <StepLabel onClick={() => handleStepClick(4)} sx={{ cursor: 'pointer' }}>
+              <Typography variant="h6">Réactifs chimiques</Typography>
+            </StepLabel>
+            <StepContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Sélectionnez les réactifs chimiques qui seront utilisés
+              </Typography>
+
+              <Autocomplete
+                options={chemicals}
+                loading={loadingChemicals}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option
+                  const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity
+                  return `${option.name} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`
+                }}
+                value={null}
+                inputValue={chemicalInputValue}
+                onInputChange={(_, newValue) => setChemicalInputValue(newValue || '')}
+                onChange={(_, newValue) => {
+                  if (newValue && !formData.chemicals.some(c => c.id === newValue.id)) {
+                    handleFormDataChange('chemicals', [
+                      ...formData.chemicals,
+                      { ...newValue, requestedQuantity: 1 }
+                    ])
+                    setChemicalInputValue('')
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ajouter un réactif chimique"
+                    placeholder="Rechercher des réactifs chimiques..."
+                  />
+                )}
+                filterOptions={(options) => {
+                  const selectedIds = formData.chemicals.map(c => c.id)
+                  return options.filter(option => !selectedIds.includes(option.id))
+                }}
+              />
+
+              {formData.chemicals.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Réactifs sélectionnés :
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {formData.chemicals.map((chemical, index) => (
+                      <Chip
+                        key={index}
+                        label={chemical.name}
+                        onDelete={() => {
+                          const updated = formData.chemicals.filter((_, i) => i !== index)
+                          handleFormDataChange('chemicals', updated)
+                        }}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button onClick={handleStepBack}>Retour</Button>
+                <Button variant="contained" onClick={handleStepNext}>
+                  Continuer
+                </Button>
+              </Box>
+            </StepContent>
+          </Step>
+        )}
+
+        {/* Étape 6/7: Documents joints */}
         <Step>
-          <StepLabel>
-            <Typography variant="h6">Matériel nécessaire</Typography>
+          <StepLabel onClick={() => handleStepClick(maxStep)} sx={{ cursor: 'pointer' }}>
+            <Typography variant="h6">Documents joints</Typography>
           </StepLabel>
           <StepContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Sélectionnez le matériel nécessaire pour ce TP
+              Ajoutez des documents complémentaires pour ce TP
             </Typography>
 
-            <Autocomplete
-              multiple
-              options={Array.isArray(materials) ? materials : []}
-              getOptionLabel={(option: any) => `${option.name || option} ${option.volume ? `(${option.volume}mL)` : ''}`}
-              value={Array.isArray(formData.materials) ? formData.materials : []}
-              onChange={(_, newValue) => handleFormDataChange('materials', newValue || [])}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Matériel"
-                  placeholder="Choisir le matériel..."
-                />
-              )}
-              renderTags={(value, getTagProps) =>
-                value.map((option: any, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={`${option.name || option} ${option.volume ? `(${option.volume}mL)` : ''}`}
-                    {...getTagProps({ index })}
-                    key={index}
-                  />
-                ))
-              }
+            <FileUploadSection
+              files={formData.attachments}
+              onFilesChange={(newFiles) => handleFormDataChange('attachments', newFiles)}
+              maxFiles={10}
+              maxSizePerFile={20}
+              acceptedTypes={['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png', '.gif']}
             />
 
             <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-              <Button onClick={handleStepBack}>
-                Retour
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleStepNext}
-              >
-                Continuer
+              <Button onClick={handleStepBack}>Retour</Button>
+              <Button variant="contained" onClick={handleSubmit}>
+                Créer le TP
               </Button>
             </Box>
           </StepContent>
         </Step>
 
-        {/* Étape 4: Réactifs chimiques */}
-        <Step>
-          <StepLabel>
-            <Typography variant="h6">Réactifs chimiques</Typography>
-          </StepLabel>
-          <StepContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Sélectionnez les réactifs chimiques nécessaires (optionnel)
-            </Typography>
-
-            <Autocomplete
-              multiple
-              options={Array.isArray(chemicals) ? chemicals : []}
-              getOptionLabel={(option: any) => `${option.name || option} - ${option.quantity || 0}${option.unit || ''}`}
-              value={Array.isArray(formData.chemicals) ? formData.chemicals : []}
-              onChange={(_, newValue) => handleFormDataChange('chemicals', newValue || [])}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Réactifs chimiques"
-                  placeholder="Choisir les réactifs chimiques..."
-                />
-              )}
-              renderTags={(value, getTagProps) =>
-                value.map((option: any, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={`${option.name || option} - ${option.quantity || 0}${option.unit || ''}`}
-                    {...getTagProps({ index })}
-                    key={index}
-                  />
-                ))
-              }
-            />
-
-            <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-              <Button onClick={handleStepBack}>
-                Retour
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                startIcon={<Save />}
-                disabled={loading}
-              >
-                {loading ? 'Création...' : 'Créer le TP'}
-              </Button>
-            </Box>
-          </StepContent>
-        </Step>
       </Stepper>
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-        <Button variant="outlined" onClick={onCancel}>
-          Annuler
-        </Button>
-      </Stack>
     </Box>
   )
 }

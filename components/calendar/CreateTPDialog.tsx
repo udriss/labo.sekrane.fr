@@ -159,66 +159,49 @@ export function CreateTPDialog({
     try {
       // Charger les matériaux/équipements
       setLoadingMaterials(true);
-      let materialsEndpoint = '/api/equipement';
+      let materialsEndpoint = discipline === 'physique' ? '/api/physique/equipement' : '/api/chimie/equipement';
       let materialsData = [];
       
-      if (discipline === 'physique') {
-        // Essayer d'abord l'API spécifique physique, sinon fallback vers l'API générale
-        try {
-          const physiqueResponse = await fetch('/api/physique/equipement');
-          if (physiqueResponse.ok) {
-            materialsData = await physiqueResponse.json();
-          } else {
-            // Fallback vers l'API générale avec filtre physique si possible
-            const generalResponse = await fetch('/api/equipement?discipline=physique');
-            if (generalResponse.ok) {
-              materialsData = await generalResponse.json();
-            }
-          }
-        } catch (error) {
-          console.warn('API physique non disponible, utilisation de l\'API générale');
-          const generalResponse = await fetch('/api/equipement');
-          if (generalResponse.ok) {
-            materialsData = await generalResponse.json();
-          }
+      // Essayer d'abord l'API spécifique physique, sinon fallback vers l'API générale
+      try {
+        const response = await fetch(materialsEndpoint);
+        if (response.ok) {
+          materialsData = await response.json();
         }
-      } else {
-        // Pour la chimie, utiliser l'API standard
-        const materialsResponse = await fetch(materialsEndpoint);
-        if (materialsResponse.ok) {
-          materialsData = await materialsResponse.json();
-        }
+      } catch (error) {
+        console.warn(`API ${materialsEndpoint} indisponible`);
       }
+
       
       setDisciplineMaterials(materialsData || []);
       setLoadingMaterials(false);
 
       // Charger les produits chimiques/composants
       setLoadingChemicals(true);
-      let chemicalsData = [];
+      let consommablesData = [];
       
       if (discipline === 'physique') {
         // Pour la physique, essayer l'API spécifique ou utiliser des données vides
         try {
           const physiqueChemResponse = await fetch('/api/physique/composants');
           if (physiqueChemResponse.ok) {
-            chemicalsData = await physiqueChemResponse.json();
+            consommablesData = await physiqueChemResponse.json();
           } else {
             // Pour la physique, on peut avoir une liste vide ou des composants génériques
-            chemicalsData = [];
+            consommablesData = [];
           }
         } catch (error) {
           console.warn('API composants physique non disponible');
-          chemicalsData = [];
+          consommablesData = [];
         }
-        setDisciplineConsommables(chemicalsData || []);
+        setDisciplineConsommables(consommablesData || []);
       } else {
         // Pour la chimie, utiliser l'API standard
-        const chemicalsResponse = await fetch('/api/chemicals');
+        const chemicalsResponse = await fetch('/api/chimie/chemicals');
         if (chemicalsResponse.ok) {
-          chemicalsData = await chemicalsResponse.json();
+          consommablesData = await chemicalsResponse.json();
         }
-        setDisciplineChemicals(chemicalsData || []);
+        setDisciplineChemicals(consommablesData || []);
       }
       
       setLoadingChemicals(false);
@@ -502,7 +485,7 @@ const handleCreateCalendarEvent = async () => {
       // Pour la physique, on pourrait avoir une API dédiée ou gérer différemment
       // Pour l'instant, on peut ignorer la mise à jour des prévisions car on permet de dépasser le stock
     } else if (discipline !== 'physique' && nonCustomChemicals.length > 0) {
-      const updateResponse = await fetch('/api/chemicals/update-forecast', {
+      const updateResponse = await fetch('/api/chimie/chemicals/update-forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2276,8 +2259,6 @@ const handleCreateCalendarEvent = async () => {
             </Box>
           </StepContent>
         </Step>
-
-          {/* Étape 7: Matériel */}
 
           {/* Étape 7: Documents joints */}
           <Step>

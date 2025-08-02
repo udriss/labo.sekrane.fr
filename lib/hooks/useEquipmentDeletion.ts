@@ -3,7 +3,7 @@
 'use client'
 
 import { useState } from 'react'
-import { equipmentService } from '@/lib/services/equipmentService'
+import { equipmentService } from '@/lib/services/equipmentServiceChimie'
 
 interface DeleteState {
   isOpen: boolean

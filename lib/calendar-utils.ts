@@ -269,104 +269,184 @@ export async function deletePhysicsEvent(id: string): Promise<boolean> {
   }
 }
 
-// Fonction legacy pour maintenir la compatibilité avec l'ancien système de fichiers
-export async function migrateEventToNewFormat(event: any): Promise<any> {
-  // Si l'événement a déjà des timeSlots, vérifier les nouveaux champs
-  if (event.timeSlots && Array.isArray(event.timeSlots)) {
-    // S'assurer que actuelTimeSlots est présent
-    const migratedEvent = {
-      ...event,
-      actuelTimeSlots: event.actuelTimeSlots || event.timeSlots.filter((slot: any) => slot.status === 'active')
-    };
-    // Supprimer eventModifying s'il existe (n'est plus utilisé)
-    delete migratedEvent.eventModifying;
-    return migratedEvent;
-  }
-
-  // Créer un timeSlot à partir des anciennes données startDate/endDate
-  const timeSlot: TimeSlot = {
-    id: generateTimeSlotId(),
-    startDate: event.startDate,
-    endDate: event.endDate,
-    status: 'active'
-  };
-
-  // Retourner l'événement avec le nouveau format complet
-  const { startDate, endDate, parentEventId, eventModifying, ...restEvent } = event;
-  return {
-    ...restEvent,
-    timeSlots: [timeSlot],
-    actuelTimeSlots: [timeSlot] // NOUVEAU: créneaux actuellement retenus
-  };
-}
-
-// Fonctions legacy pour maintenir la compatibilité avec l'ancien système de fichiers
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const CALENDAR_FILE = path.join(process.cwd(), 'data', 'calendar.json')
-
-// Fonction pour écrire dans le fichier calendrier (legacy)
-export async function writeCalendarFile(data: any) {
+// Fonction pour obtenir un événement de chimie par ID
+export async function getChemistryEventById(id: string): Promise<CalendarEvent | null> {
   try {
-    await fs.writeFile(CALENDAR_FILE, JSON.stringify(data, null, 2))
+    const [rows] = await pool.execute('SELECT * FROM calendar_chimie WHERE id = ?', [id])
+    const events = rows as any[]
+    
+    if (events.length === 0) {
+      return null
+    }
+    
+    const event = events[0]
+    return {
+      ...event,
+      participants: event.participants ? JSON.parse(event.participants) : [],
+      equipment_used: event.equipment_used ? JSON.parse(event.equipment_used) : [],
+      chemicals_used: event.chemicals_used ? JSON.parse(event.chemicals_used) : []
+    }
   } catch (error) {
-    console.error('Erreur écriture fichier calendar:', error)
+    console.error('Error fetching chemistry event by ID:', error)
     throw error
   }
 }
 
-// Fonction pour lire le fichier calendrier (legacy)
-export async function readCalendarFile() {
+// Fonction pour obtenir un événement de physique par ID
+export async function getPhysicsEventById(id: string): Promise<CalendarEvent | null> {
   try {
-    const data = await fs.readFile(CALENDAR_FILE, 'utf-8')
-    return JSON.parse(data)
+    const [rows] = await pool.execute('SELECT * FROM calendar_physique WHERE id = ?', [id])
+    const events = rows as any[]
+    
+    if (events.length === 0) {
+      return null
+    }
+    
+    const event = events[0]
+    return {
+      ...event,
+      participants: event.participants ? JSON.parse(event.participants) : [],
+      equipment_used: event.equipment_used ? JSON.parse(event.equipment_used) : [],
+      chemicals_used: event.chemicals_used ? JSON.parse(event.chemicals_used) : []
+    }
   } catch (error) {
-    console.error('Erreur lecture fichier calendar:', error)
-    return { events: [] }
+    console.error('Error fetching physics event by ID:', error)
+    throw error
   }
 }
 
-export async function migrateCalendarData() {
+// Fonctions pour gérer les créneaux horaires (timeSlots) dans les notes JSON
+export async function addTimeSlotToEvent(eventId: string, timeSlot: TimeSlot, discipline: 'chemistry' | 'physics'): Promise<void> {
   try {
-    const calendarData = await readCalendarFile();
-    let needsMigration = false;
-
-    // Migrer tous les événements vers le nouveau format
-    const migratedEvents = await Promise.all(calendarData.events.map(async (event: any) => {
-      // Si l'événement a déjà des timeSlots, pas besoin de migration
-      if (event.timeSlots && Array.isArray(event.timeSlots)) {
-        return event;
-      }
-
-      needsMigration = true;
-
-      // Créer un timeSlot à partir des anciennes données startDate/endDate
-      const timeSlot: TimeSlot = {
-        id: generateTimeSlotId(),
-        startDate: event.startDate,
-        endDate: event.endDate,
-        status: 'active'
-      };
-
-      // Retourner l'événement avec le nouveau format
-      const { startDate, endDate, parentEventId, ...restEvent } = event;
-      return {
-        ...restEvent,
-        timeSlots: [timeSlot]
-      };
-    }));
-
-    if (needsMigration) {
-      
-      calendarData.events = migratedEvents;
-      await writeCalendarFile(calendarData);
-      
+    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
+    
+    const event = await getEventById(eventId)
+    if (!event) {
+      throw new Error('Événement non trouvé')
     }
 
-    return calendarData;
+    // Récupérer les timeSlots existants depuis les notes
+    let eventData: { timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[] } = { timeSlots: [], actuelTimeSlots: [] }
+    if (event.notes) {
+      try {
+        eventData = JSON.parse(event.notes)
+        // S'assurer que les propriétés existent
+        eventData.timeSlots = eventData.timeSlots || []
+        eventData.actuelTimeSlots = eventData.actuelTimeSlots || []
+      } catch {
+        eventData = { timeSlots: [], actuelTimeSlots: [] }
+      }
+    }
+
+    // Ajouter le nouveau timeSlot
+    eventData.timeSlots.push(timeSlot)
+
+    // Mettre à jour l'événement
+    await updateEvent(eventId, {
+      notes: JSON.stringify(eventData),
+      updated_at: new Date().toISOString()
+    })
   } catch (error) {
-    console.error('Erreur lors de la migration des données:', error);
-    throw error;
+    console.error('Error adding timeSlot to event:', error)
+    throw error
+  }
+}
+
+export async function updateTimeSlotInEvent(eventId: string, timeSlotId: string, updates: Partial<TimeSlot>, discipline: 'chemistry' | 'physics'): Promise<void> {
+  try {
+    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
+    
+    const event = await getEventById(eventId)
+    if (!event) {
+      throw new Error('Événement non trouvé')
+    }
+
+    // Récupérer les timeSlots existants depuis les notes
+    let eventData: { timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[] } = { timeSlots: [], actuelTimeSlots: [] }
+    if (event.notes) {
+      try {
+        eventData = JSON.parse(event.notes)
+        // S'assurer que les propriétés existent
+        eventData.timeSlots = eventData.timeSlots || []
+        eventData.actuelTimeSlots = eventData.actuelTimeSlots || []
+      } catch {
+        eventData = { timeSlots: [], actuelTimeSlots: [] }
+      }
+    }
+
+    // Mettre à jour le timeSlot
+    const timeSlotIndex = eventData.timeSlots.findIndex((slot: TimeSlot) => slot.id === timeSlotId)
+    if (timeSlotIndex !== -1) {
+      eventData.timeSlots[timeSlotIndex] = { ...eventData.timeSlots[timeSlotIndex], ...updates }
+    }
+
+    // Mettre à jour aussi dans actuelTimeSlots si présent
+    const actuelIndex = eventData.actuelTimeSlots.findIndex((slot: TimeSlot) => slot.id === timeSlotId)
+    if (actuelIndex !== -1) {
+      eventData.actuelTimeSlots[actuelIndex] = { ...eventData.actuelTimeSlots[actuelIndex], ...updates }
+    }
+
+    // Mettre à jour l'événement
+    await updateEvent(eventId, {
+      notes: JSON.stringify(eventData),
+      updated_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Error updating timeSlot in event:', error)
+    throw error
+  }
+}
+
+export async function updateEventTimeSlots(eventId: string, timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[], discipline: 'chemistry' | 'physics'): Promise<void> {
+  try {
+    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
+    
+    const event = await getEventById(eventId)
+    if (!event) {
+      throw new Error('Événement non trouvé')
+    }
+
+    // Mettre à jour les notes avec les nouveaux timeSlots
+    const eventData = { timeSlots, actuelTimeSlots }
+    
+    await updateEvent(eventId, {
+      notes: JSON.stringify(eventData),
+      updated_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Error updating event timeSlots:', error)
+    throw error
+  }
+}
+
+export async function getEventTimeSlots(eventId: string, discipline: 'chemistry' | 'physics'): Promise<{ timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[] }> {
+  try {
+    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
+    
+    const event = await getEventById(eventId)
+    if (!event) {
+      throw new Error('Événement non trouvé')
+    }
+
+    // Récupérer les timeSlots depuis les notes
+    if (event.notes) {
+      try {
+        const eventData = JSON.parse(event.notes)
+        return {
+          timeSlots: eventData.timeSlots || [],
+          actuelTimeSlots: eventData.actuelTimeSlots || []
+        }
+      } catch {
+        return { timeSlots: [], actuelTimeSlots: [] }
+      }
+    }
+
+    return { timeSlots: [], actuelTimeSlots: [] }
+  } catch (error) {
+    console.error('Error getting timeSlots from event:', error)
+    throw error
   }
 }

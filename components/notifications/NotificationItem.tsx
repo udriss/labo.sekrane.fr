@@ -63,10 +63,6 @@ export default function NotificationItem({
   const detailedDescription = getDetailedDescription(notification, displayData);
   const icon = getNotificationIcon(notification.module || 'SYSTEM', notification.actionType || 'INFO');
   const severityColor = getSeverityColor(notification.severity);
-  console.log('Notification Item:', notification, displayData);
-  if (notification.id === "001d4036-2827-488a-b05a-8e06c1fa1889") {
-     
-  }
 
   const handleClick = () => {
     if (onClick) {
@@ -105,13 +101,21 @@ export default function NotificationItem({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography 
                   variant="body2" 
+                  component="div"
                   sx={{ 
-                    fontWeight: notification.isRead ? 400 : 600, 
-                    flex: 1 
+                    // fontWeight: notification.isRead ? 400 : 600, 
+                    flex: 1,
+                    '& strong': {
+                      fontWeight: 600
+                    },
+                    '& span': {
+                      fontStyle: 'inherit'
+                    }
                   }}
-                >
-                  {displayData.displayMessage}
-                </Typography>
+                  dangerouslySetInnerHTML={{
+                    __html: String(notification.message || displayData.displayMessage || '')
+                  }}
+                />
                 {!notification.isRead && (
                   <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
                 )}
@@ -158,13 +162,21 @@ export default function NotificationItem({
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
               <Typography 
                 variant="subtitle1" 
+                component="div"
                 sx={{ 
-                  fontWeight: notification.isRead ? 500 : 600,
-                  color: notification.isRead ? 'text.primary' : 'primary.main'
+                  // fontWeight: notification.isRead ? 500 : 600,
+                  color: notification.isRead ? 'text.primary' : 'primary.main',
+                  '& strong': {
+                    fontWeight: 600
+                  },
+                  '& span': {
+                    fontStyle: 'inherit'
+                  }
                 }}
-              >
-                {displayData.displayMessage}
-              </Typography>
+                dangerouslySetInnerHTML={{
+                  __html: String(notification.message || displayData.displayMessage || '')
+                }}
+              />
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {!notification.isRead && (

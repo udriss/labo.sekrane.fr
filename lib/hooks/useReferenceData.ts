@@ -15,8 +15,8 @@ export function useReferenceData() {
       setLoading(true)
       
       const requests = [
-        fetch('/api/equipement'),
-        fetch('/api/chemicals'),
+        fetch('/api/chimie/equipement'),
+        fetch('/api/chimie/chemicals'),
         fetch('/api/classes')
       ]
 

@@ -37,6 +37,7 @@ export default function NotebookPage() {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <NotebookList 
         key={refreshKey}
+        discipline="chimie"
         onEdit={handleEdit}
         onAdd={handleAddNew}
       />
@@ -61,11 +62,13 @@ export default function NotebookPage() {
         <DialogContent>
           {editingEntry ? (
         <NotebookForm
+          discipline="chimie"
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />
           ) : (
         <NotebookFormAdvanced
+          discipline="chimie"
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />

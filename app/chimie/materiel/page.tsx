@@ -22,12 +22,12 @@ import {
 } from "@mui/icons-material"
 
 // Import des hooks personnalisés
-import { useEquipmentData } from "@/lib/hooks/useEquipmentData"
+import { useEquipmentData } from "@/lib/hooks/useEquipmentDataChimie"
 import { useEquipmentFilters } from "@/lib/hooks/useEquipmentFilters"
 import { useEquipmentQuantity } from "@/lib/hooks/useEquipmentQuantity"
 import { useEquipmentForm } from "@/lib/hooks/useEquipmentForm" 
 import { useEquipmentDialogs } from "@/lib/hooks/useEquipmentDialogs"
-import { useEquipmentHandlers } from "@/lib/hooks/useEquipmentHandlers"
+import { useEquipmentHandlersChimie } from "@/lib/hooks/useEquipmentHandlers"
 import { useEquipmentDeletion } from "@/lib/hooks/useEquipmentDeletion"
 import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 import { useSession } from 'next-auth/react'
@@ -53,7 +53,7 @@ import { useUsers } from '@/lib/hooks/useUsers';
 
 
 // Import des services
-import { equipmentService } from "@/lib/services/equipmentService"
+import { equipmentService } from "@/lib/services/equipmentServiceChimie"
 
 // Import des types
 import { EquipmentType, EquipmentItem, EditingItemData } from "@/types/equipment"
@@ -62,7 +62,7 @@ export default function EquipmentPage() {
   const [tabValue, setTabValue] = useState(0)
   
   // Utilisation du hook centralisé pour les gestionnaires d'équipement
-  const equipmentHandlers = useEquipmentHandlers()
+  const equipmentHandlers = useEquipmentHandlersChimie()
   
   // Utilisation des hooks personnalisés pour les fonctionnalités spécifiques
   const filters = useEquipmentFilters(equipmentHandlers.materiel)
@@ -217,7 +217,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
 
     try {
       // Vérifier l'utilisation dans l'inventaire
-      const checkResponse = await fetch('/api/equipment-types/check-usage', {
+      const checkResponse = await fetch('/api/chimie/equipment-types/check-usage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categoryId })
@@ -234,7 +234,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         inventoryUsage: usageData.inventoryUsage || 0,
         onConfirm: async (deleteItems?: boolean) => {
           try {
-            const response = await fetch('/api/equipment-types', {
+            const response = await fetch('/api/chimie/equipment-types', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
@@ -281,7 +281,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
     if (!editingCategoryName.trim() || !editingCategoryId) return
 
     try {
-      const response = await fetch('/api/equipment-types/category', {
+      const response = await fetch('/api/chimie/equipment-types/category', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -364,7 +364,7 @@ const handleRemoveCustomFieldFromEditingItem = (fieldName: string) => {
         ownerId: session?.user?.id // Ajouter l'ID du créateur
       }
 
-      const response = await fetch('/api/equipment-types', {
+      const response = await fetch('/api/chimie/equipment-types', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

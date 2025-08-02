@@ -12,7 +12,7 @@ echo "   - Support multi-créneaux ajouté: ✓"
 echo "🔬 2. Test des APIs d'équipement physique:"
 echo "   - API /api/physique/equipement créée: ✓"
 echo "   - API /api/physique/composants créée: ✓"
-echo "   - Support discipline=physique dans /api/equipement: ✓"
+echo "   - Support discipline=physique dans /api/chimie/equipement: ✓"
 
 echo "🎓 3. Test des classes personnalisées:"
 echo "   - Les APIs /api/classes et /api/user/classes existent déjà"

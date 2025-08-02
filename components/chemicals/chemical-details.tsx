@@ -51,7 +51,7 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
     setError(null)
 
     try {
-      const response = await fetch(`/api/chemicals/${chemical.id}`, {
+      const response = await fetch(`/api/chimie/chemicals/${chemical.id}`, {
         method: "DELETE",
       })
 

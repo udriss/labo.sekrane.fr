@@ -24,7 +24,7 @@ interface AuditOptions {
   skipNotifications?: boolean;
 }
 
-// Helper pour créer un message de notification amélioré
+// Helper pour créer un message de notification amélioré avec HTML
 function createEnhancedNotificationMessage(
   triggeredBy: AuditUser,
   actionType: string,
@@ -34,13 +34,20 @@ function createEnhancedNotificationMessage(
 ): { messageToDisplay: string; log_message: string } {
   const logMessage = `Action ${actionType} effectuée sur ${entityType || 'élément'} dans le module ${module}`;
   
-  // Messages personnalisés selon le module et l'action
+  // Messages personnalisés selon le module et l'action avec HTML
   let displayMessage = logMessage; // Fallback par défaut
   
   if (module === 'CHEMICALS') {
     displayMessage = createChemicalNotificationMessage(triggeredBy, actionType, details);
   } else if (module === 'EQUIPMENT') {
     displayMessage = createEquipmentNotificationMessage(triggeredBy, actionType, details);
+  } else {
+    // Message générique avec HTML
+    const userName = triggeredBy.name || triggeredBy.email || 'Utilisateur';
+    const actionText = actionType === 'CREATE' ? 'a ajouté' : 
+                      actionType === 'UPDATE' ? 'a modifié' : 
+                      actionType === 'DELETE' ? 'a supprimé' : 'a traité';
+    displayMessage = `<strong style="color: #1976d2;">${userName}</strong> ${actionText} un élément dans <strong style="color: #2e7d32;">${module}</strong>`;
   }
   
   return {
@@ -55,13 +62,13 @@ function createChemicalNotificationMessage(
   actionType: string,
   details?: any
 ): string {
-  const userName = triggeredBy.name;
+  const userName = triggeredBy.name || triggeredBy.email || 'Utilisateur';
   
   if (actionType === 'CREATE') {
     const chemicalName = details?.chemicalName || 'un nouveau réactif';
     const quantity = details?.quantity || 'une quantité';
     const unit = details?.unit || '';
-    return `${userName} a ajouté ${chemicalName} (${quantity}${unit}) à l'inventaire`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a ajouté <strong style="color: #d32f2f;">${chemicalName}</strong> (${quantity}${unit}) à l'inventaire`;
   }
   
   if (actionType === 'UPDATE') {
@@ -72,7 +79,7 @@ function createChemicalNotificationMessage(
       const oldQuantity = details.before.quantity;
       const newQuantity = details.after.quantity;
       const unit = details?.after?.unit || details?.before?.unit || '';
-      return `${userName} a modifié la quantité de ${chemicalName} : ${oldQuantity}${unit} → ${newQuantity}${unit}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié la quantité de <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${oldQuantity}${unit} → ${newQuantity}${unit}</span>`;
     }
     
     // Changement de localisation (salle et/ou localisation précise)
@@ -83,11 +90,11 @@ function createChemicalNotificationMessage(
       const newLocation = details?.after?.location || '';
       
       if (oldRoom !== newRoom && oldLocation !== newLocation) {
-        return `${userName} a déplacé ${chemicalName} : ${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a déplacé <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}</span>`;
       } else if (oldRoom !== newRoom) {
-        return `${userName} a déplacé ${chemicalName} de ${oldRoom} vers ${newRoom}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a déplacé <strong style="color: #d32f2f;">${chemicalName}</strong> de <span style="color: #666;">${oldRoom} vers ${newRoom}</span>`;
       } else if (oldLocation !== newLocation) {
-        return `${userName} a changé la localisation de ${chemicalName} : ${oldLocation} → ${newLocation}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a changé la localisation de <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${oldLocation} → ${newLocation}</span>`;
       }
     }
     
@@ -95,7 +102,7 @@ function createChemicalNotificationMessage(
     if (details?.expirationUpdate && details?.before?.expirationDate !== details?.after?.expirationDate) {
       const oldDate = details?.before?.expirationDate ? new Date(details.before.expirationDate).toLocaleDateString('fr-FR') : 'aucune';
       const newDate = details?.after?.expirationDate ? new Date(details.after.expirationDate).toLocaleDateString('fr-FR') : 'aucune';
-      return `${userName} a modifié la date d'expiration de ${chemicalName} : ${oldDate} → ${newDate}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié la date d'expiration de <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${oldDate} → ${newDate}</span>`;
     }
     
     // Changement de statut
@@ -111,32 +118,32 @@ function createChemicalNotificationMessage(
         'OPENED': 'Ouvert',
         'QUARANTINE': 'Quarantaine'
       };
-      return `${userName} a changé le statut de ${chemicalName} : ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a changé le statut de <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}</span>`;
     }
     
     // Changement de fournisseur
     if (details?.supplierUpdate && details?.before?.supplierName !== details?.after?.supplierName) {
       const oldSupplier = details?.before?.supplierName || 'Aucun fournisseur';
       const newSupplier = details?.after?.supplierName || 'Aucun fournisseur';
-      return `${userName} a changé le fournisseur de ${chemicalName} : ${oldSupplier} → ${newSupplier}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a changé le fournisseur de <strong style="color: #d32f2f;">${chemicalName}</strong> : <span style="color: #666;">${oldSupplier} → ${newSupplier}</span>`;
     }
     
     // Mise à jour générale
     const fieldsUpdated = details?.fields || [];
     if (fieldsUpdated.length > 0) {
       const fieldNames = fieldsUpdated.join(', ');
-      return `${userName} a modifié ${chemicalName} (${fieldNames})`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié <strong style="color: #d32f2f;">${chemicalName}</strong> <span style="color: #666;">(${fieldNames})</span>`;
     }
     
-    return `${userName} a modifié les informations de ${chemicalName}`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a modifié les informations de <strong style="color: #d32f2f;">${chemicalName}</strong>`;
   }
   
   if (actionType === 'DELETE') {
     const chemicalName = details?.chemicalName || 'un réactif';
-    return `${userName} a supprimé ${chemicalName} de l'inventaire`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a supprimé <strong style="color: #d32f2f;">${chemicalName}</strong> de l'inventaire`;
   }
   
-  return `${userName} a effectué une action sur un réactif chimique`;
+  return `<strong style="color: #1976d2;">${userName}</strong> a effectué une action sur un réactif chimique`;
 }
 
 // Messages spécifiques pour l'équipement
@@ -145,12 +152,12 @@ function createEquipmentNotificationMessage(
   actionType: string,
   details?: any
 ): string {
-  const userName = triggeredBy.name;
+  const userName = triggeredBy.name || triggeredBy.email || 'Utilisateur';
 
   if (actionType === 'CREATE') {
     const equipmentName = details?.equipmentName || 'un nouvel équipement';
     const quantity = details?.quantity || 'une quantité';
-    return `${userName} a ajouté ${equipmentName} (${quantity} unité${quantity > 1 ? 's' : ''}) à l'inventaire`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a ajouté <strong style="color: #2e7d32;">${equipmentName}</strong> (${quantity} unité${quantity > 1 ? 's' : ''}) à l'inventaire`;
   }
   
   if (actionType === 'UPDATE') {
@@ -160,7 +167,7 @@ function createEquipmentNotificationMessage(
     if (details?.quantityUpdate && details?.before?.quantity !== undefined && details?.after?.quantity !== undefined) {
       const oldQuantity = details.before.quantity;
       const newQuantity = details.after.quantity;
-      return `${userName} a modifié la quantité de ${equipmentName} : ${oldQuantity} → ${newQuantity}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié la quantité de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldQuantity} → ${newQuantity}</span>`;
     }
     
     // Changement de localisation (salle et/ou localisation précise)
@@ -171,11 +178,11 @@ function createEquipmentNotificationMessage(
       const newLocation = details?.after?.location || '';
       
       if (oldRoom !== newRoom && oldLocation !== newLocation) {
-        return `${userName} a déplacé ${equipmentName} : ${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a déplacé <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldRoom}${oldLocation ? ` → ${oldLocation}` : ''} vers ${newRoom}${newLocation ? ` → ${newLocation}` : ''}</span>`;
       } else if (oldRoom !== newRoom) {
-        return `${userName} a déplacé ${equipmentName} de ${oldRoom} vers ${newRoom}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a déplacé <strong style="color: #2e7d32;">${equipmentName}</strong> de <span style="color: #666;">${oldRoom} vers ${newRoom}</span>`;
       } else if (oldLocation !== newLocation) {
-        return `${userName} a changé la localisation de ${equipmentName} : ${oldLocation} → ${newLocation}`;
+        return `<strong style="color: #1976d2;">${userName}</strong> a changé la localisation de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldLocation} → ${newLocation}</span>`;
       }
     }
     
@@ -190,51 +197,51 @@ function createEquipmentNotificationMessage(
         'OUT_OF_ORDER': 'Hors service',
         'RESERVED': 'Réservé'
       };
-      return `${userName} a changé le statut de ${equipmentName} : ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a changé le statut de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${statusLabels[oldStatus] || oldStatus} → ${statusLabels[newStatus] || newStatus}</span>`;
     }
     
     // Changement de date d'achat
     if (details?.purchaseDateUpdate && details?.before?.purchase_date !== details?.after?.purchase_date) {
       const oldDate = details?.before?.purchase_date ? new Date(details.before.purchase_date).toLocaleDateString('fr-FR') : 'aucune';
       const newDate = details?.after?.purchase_date ? new Date(details.after.purchase_date).toLocaleDateString('fr-FR') : 'aucune';
-      return `${userName} a modifié la date d'achat de ${equipmentName} : ${oldDate} → ${newDate}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié la date d'achat de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldDate} → ${newDate}</span>`;
     }
     
     // Changement de modèle ou numéro de série
     if (details?.modelUpdate && details?.before?.model !== details?.after?.model) {
       const oldModel = details?.before?.model || 'Non spécifié';
       const newModel = details?.after?.model || 'Non spécifié';
-      return `${userName} a modifié le modèle de ${equipmentName} : ${oldModel} → ${newModel}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié le modèle de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldModel} → ${newModel}</span>`;
     }
     
     if (details?.serialUpdate && details?.before?.serial_number !== details?.after?.serial_number) {
       const oldSerial = details?.before?.serial_number || 'Non spécifié';
       const newSerial = details?.after?.serial_number || 'Non spécifié';
-      return `${userName} a modifié le numéro de série de ${equipmentName} : ${oldSerial} → ${newSerial}`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié le numéro de série de <strong style="color: #2e7d32;">${equipmentName}</strong> : <span style="color: #666;">${oldSerial} → ${newSerial}</span>`;
     }
     
     // Mise à jour générale
     const fieldsUpdated = details?.fields || [];
     if (fieldsUpdated.length > 0) {
       const fieldNames = fieldsUpdated.join(', ');
-      return `${userName} a modifié ${equipmentName} (${fieldNames})`;
+      return `<strong style="color: #1976d2;">${userName}</strong> a modifié <strong style="color: #2e7d32;">${equipmentName}</strong> <span style="color: #666;">(${fieldNames})</span>`;
     }
     
-    return `${userName} a modifié les informations de ${equipmentName}`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a modifié les informations de <strong style="color: #2e7d32;">${equipmentName}</strong>`;
   }
   
   if (actionType === 'DELETE') {
     const equipmentName = details?.equipmentName || 'un équipement';
-    return `${userName} a supprimé ${equipmentName} de l'inventaire`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a supprimé <strong style="color: #2e7d32;">${equipmentName}</strong> de l'inventaire`;
   }
   
   if (actionType === 'POST') {
     console.log("#############################details: ", util.inspect(details, { depth: null, colors: true }));
     const equipmentName = details?.equipmentName || 'un équipement';
-    return `${userName} a ajouté ${equipmentName} (${details?.quantity || 1} unité${details?.quantity > 1 ? 's' : ''}) à l'inventaire`;
+    return `<strong style="color: #1976d2;">${userName}</strong> a ajouté <strong style="color: #2e7d32;">${equipmentName}</strong> (${details?.quantity || 1} unité${details?.quantity > 1 ? 's' : ''}) à l'inventaire`;
   }
 
-  return `${userName} a effectué une action sur un équipement`;
+  return `<strong style="color: #1976d2;">${userName}</strong> a effectué une action sur un équipement`;
 }
 
 async function triggerNotifications(

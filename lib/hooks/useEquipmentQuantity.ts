@@ -15,7 +15,7 @@ export const useEquipmentQuantity = (fetchEquipment: () => Promise<void>) => {
     try {
       setUpdatingCards(prev => new Set([...prev, equipmentId]));
       
-      const response = await fetch(`/api/equipement/${equipmentId}`, {
+      const response = await fetch(`/api/chimie/equipement/${equipmentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

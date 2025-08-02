@@ -355,13 +355,12 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           ) : (
             <List sx={{ p: 0, maxHeight: 300, overflow: 'auto' }}>
               {notifications.slice(0, 10).map((notification) => (
-                <ListItem key={notification.id} disablePadding>
-                  <NotificationItem 
-                    notification={notification}
-                    onClick={() => handleNotificationClick(notification)}
-                    compact={true}
-                  />
-                </ListItem>
+                <NotificationItem 
+                  key={notification.id}
+                  notification={notification}
+                  onClick={() => handleNotificationClick(notification)}
+                  compact={true}
+                />
               ))}
             </List>
           )}

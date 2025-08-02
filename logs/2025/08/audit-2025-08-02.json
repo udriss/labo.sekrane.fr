@@ -1,0 +1,783 @@
+[
+  {
+    "id": "ba6116aa-840b-40c2-81e6-fc2f83065cfd",
+    "timestamp": "2025-08-02T03:02:37.138Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_A2ZF1BSLZBW8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+        "query": {},
+        "body": {
+          "quantity": 357.3
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_A2ZF1BSLZBW8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": "357.300",
+            "unit": "g",
+            "minQuantity": null,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2631.600",
+            "createdAt": "2025-07-23T12:36:55.000Z",
+            "updatedAt": "2025-08-02T03:02:37.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_A2ZF1BSLZBW8",
+              "name": "Acide chlorhydrique",
+              "formula": "HCl",
+              "molfile": null,
+              "casNumber": "7647-01-0",
+              "barcode": null,
+              "quantity": "380.600",
+              "unit": "g",
+              "minQuantity": null,
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2631.600",
+              "createdAt": "2025-07-23T12:36:55.000Z",
+              "updatedAt": "2025-08-01T23:19:31.000Z"
+            },
+            "updateData": {
+              "quantity": 357.3
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 39,
+        "timestamp": "2025-08-02T03:02:37.137Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "380.600",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-08-01T23:19:31.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "357.300",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-08-02T03:02:37.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "357.300",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754103757098_oshnhy2yu",
+      "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+      "method": "PUT",
+      "duration": 39
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1f3b6b7e-6849-4b89-a461-6650681aa067",
+    "timestamp": "2025-08-02T03:14:27.097Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "CHEM_INV_A2ZF1BSLZBW8"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+        "query": {},
+        "body": {
+          "quantity": 192.5
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "CHEM_INV_A2ZF1BSLZBW8",
+            "name": "Acide chlorhydrique",
+            "formula": "HCl",
+            "molfile": null,
+            "casNumber": "7647-01-0",
+            "barcode": null,
+            "quantity": "192.500",
+            "unit": "g",
+            "minQuantity": null,
+            "concentration": null,
+            "purity": null,
+            "purchaseDate": null,
+            "expirationDate": null,
+            "openedDate": null,
+            "storage": null,
+            "room": null,
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": null,
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "2631.600",
+            "createdAt": "2025-07-23T12:36:55.000Z",
+            "updatedAt": "2025-08-02T03:14:27.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "CHEM_INV_A2ZF1BSLZBW8",
+              "name": "Acide chlorhydrique",
+              "formula": "HCl",
+              "molfile": null,
+              "casNumber": "7647-01-0",
+              "barcode": null,
+              "quantity": "357.300",
+              "unit": "g",
+              "minQuantity": null,
+              "concentration": null,
+              "purity": null,
+              "purchaseDate": null,
+              "expirationDate": null,
+              "openedDate": null,
+              "storage": null,
+              "room": null,
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": null,
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "2631.600",
+              "createdAt": "2025-07-23T12:36:55.000Z",
+              "updatedAt": "2025-08-02T03:02:37.000Z"
+            },
+            "updateData": {
+              "quantity": 192.5
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 39,
+        "timestamp": "2025-08-02T03:14:27.097Z"
+      },
+      "chemicalName": "Acide chlorhydrique",
+      "quantityUpdate": true,
+      "before": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "357.300",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-08-02T03:02:37.000Z"
+      },
+      "after": {
+        "id": "CHEM_INV_A2ZF1BSLZBW8",
+        "name": "Acide chlorhydrique",
+        "formula": "HCl",
+        "molfile": null,
+        "casNumber": "7647-01-0",
+        "barcode": null,
+        "quantity": "192.500",
+        "unit": "g",
+        "minQuantity": null,
+        "concentration": null,
+        "purity": null,
+        "purchaseDate": null,
+        "expirationDate": null,
+        "openedDate": null,
+        "storage": null,
+        "room": null,
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": null,
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "2631.600",
+        "createdAt": "2025-07-23T12:36:55.000Z",
+        "updatedAt": "2025-08-02T03:14:27.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "192.500",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754104467058_9txyz4piq",
+      "path": "/api/chemicals/CHEM_INV_A2ZF1BSLZBW8/",
+      "method": "PUT",
+      "duration": 39
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "4fdcaec9-5f8b-48d5-a9e9-e2dc049e9593",
+    "timestamp": "2025-08-02T04:35:39.552Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "entityId": "notebook"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/notebook/",
+        "query": {},
+        "body": {
+          "title": "Synthèse aspirine",
+          "content": "Test",
+          "sections": [
+            "seconde"
+          ],
+          "materials": [
+            "EQUIP_1754036485777_98jdo4qq4"
+          ],
+          "chemicals": [],
+          "estimatedDuration": 120,
+          "difficulty": "Moyen"
+        }
+      },
+      "response": {
+        "status": 500,
+        "statusText": "",
+        "data": {
+          "error": "Erreur serveur lors de la création"
+        }
+      },
+      "metadata": {
+        "duration": 197,
+        "timestamp": "2025-08-02T04:35:39.552Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754109339355_nhvbe438m",
+      "path": "/api/notebook/",
+      "method": "POST",
+      "duration": 197
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "0b58b9ff-7ea8-47ef-af42-2a509207300a",
+    "timestamp": "2025-08-02T05:17:26.294Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "module": "SYSTEM",
+      "entity": "notebook",
+      "entityId": "notebook"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/notebook/",
+        "query": {},
+        "body": {
+          "type": "entry",
+          "title": "",
+          "description": "",
+          "discipline": "physique",
+          "materials": [],
+          "chemicals": [],
+          "attachments": [],
+          "content": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "Le titre est requis"
+        }
+      },
+      "metadata": {
+        "duration": 8,
+        "timestamp": "2025-08-02T05:17:26.294Z"
+      },
+      "type": "entry",
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754111846286_vsv7ee0pm",
+      "path": "/api/notebook/",
+      "method": "POST",
+      "duration": 8
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "32e2784b-c117-4757-a2e4-45aca7510bdf",
+    "timestamp": "2025-08-02T05:18:47.094Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "module": "SYSTEM",
+      "entity": "notebook",
+      "entityId": "notebook"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/notebook/",
+        "query": {},
+        "body": {
+          "type": "entry",
+          "title": "TEST",
+          "description": "",
+          "discipline": "physique",
+          "materials": [],
+          "chemicals": [],
+          "attachments": [
+            {
+              "file": {},
+              "id": "file_1754111923643_34rhoczm7",
+              "uploadProgress": 100,
+              "uploadStatus": "completed",
+              "fileContent": "/uploads/calendar/1754111925102_6q6rc8_TEST_3.jpeg"
+            }
+          ],
+          "content": "<ol><li><p>aazaz</p></li><li><p><strong>zazaki</strong></p></li><li><p></p></li></ol><p><mark>zazaki</mark></p>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "success": true,
+          "message": "Entrée notebook créée avec succès",
+          "id": "fa037515-4362-4be3-8eda-9bdd775f7c13"
+        }
+      },
+      "metadata": {
+        "duration": 40,
+        "timestamp": "2025-08-02T05:18:47.094Z"
+      },
+      "type": "entry",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754111927054_cj1omgyem",
+      "path": "/api/notebook/",
+      "method": "POST",
+      "duration": 40
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "16e27db6-d81d-4247-b471-21697476ed24",
+    "timestamp": "2025-08-02T09:23:28.039Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "CREATE",
+      "module": "SYSTEM",
+      "entity": "notebook",
+      "entityId": "notebook"
+    },
+    "details": {
+      "request": {
+        "method": "POST",
+        "path": "/api/notebook/",
+        "query": {},
+        "body": {
+          "type": "entry",
+          "title": "Synthèse aspirine",
+          "description": "",
+          "discipline": "general",
+          "materials": [],
+          "chemicals": [],
+          "attachments": [],
+          "content": "<ul><li><p>Ajoute de <strong><mark>texte</mark></strong>.</p></li></ul><p></p>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "success": true,
+          "message": "Entrée notebook créée avec succès",
+          "id": "0e5af2d0-c105-4286-a873-8af8c0f5209f"
+        }
+      },
+      "metadata": {
+        "duration": 26,
+        "timestamp": "2025-08-02T09:23:28.039Z"
+      },
+      "type": "entry",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754126608013_36l8ilphy",
+      "path": "/api/notebook/",
+      "method": "POST",
+      "duration": 26
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "02d7aded-5055-4888-a124-e9e70665d819",
+    "timestamp": "2025-08-02T09:27:44.394Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE",
+      "module": "CHEMICALS",
+      "entity": "chemical",
+      "entityId": "cmdd5kp7c00071f0vz4lco20j"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/chemicals/cmdd5kp7c00071f0vz4lco20j/",
+        "query": {},
+        "body": {
+          "quantity": 497.7
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "message": "Chemical updated successfully",
+          "chemical": {
+            "id": "cmdd5kp7c00071f0vz4lco20j",
+            "name": "Hydroxyde de sodium",
+            "formula": "NaOH",
+            "molfile": null,
+            "casNumber": "1310-73-2",
+            "barcode": null,
+            "quantity": "497.700",
+            "unit": "g",
+            "minQuantity": "50.000",
+            "concentration": "99.000",
+            "purity": null,
+            "purchaseDate": "2024-02-09T23:00:00.000Z",
+            "expirationDate": "2027-02-09T23:00:00.000Z",
+            "openedDate": null,
+            "storage": "Armoire bases",
+            "room": "Labo 1",
+            "cabinet": null,
+            "shelf": null,
+            "hazardClass": "CORROSIVE",
+            "sdsFileUrl": null,
+            "supplierId": null,
+            "batchNumber": null,
+            "orderReference": null,
+            "status": "IN_STOCK",
+            "notes": null,
+            "quantityPrevision": "246.700",
+            "createdAt": "2025-07-21T11:40:04.000Z",
+            "updatedAt": "2025-08-02T09:27:44.000Z",
+            "supplierName": null,
+            "supplier": null
+          },
+          "_audit": {
+            "before": {
+              "id": "cmdd5kp7c00071f0vz4lco20j",
+              "name": "Hydroxyde de sodium",
+              "formula": "NaOH",
+              "molfile": null,
+              "casNumber": "1310-73-2",
+              "barcode": null,
+              "quantity": "250.000",
+              "unit": "g",
+              "minQuantity": "50.000",
+              "concentration": "99.000",
+              "purity": null,
+              "purchaseDate": "2024-02-09T23:00:00.000Z",
+              "expirationDate": "2027-02-09T23:00:00.000Z",
+              "openedDate": null,
+              "storage": "Armoire bases",
+              "room": "Labo 1",
+              "cabinet": null,
+              "shelf": null,
+              "hazardClass": "CORROSIVE",
+              "sdsFileUrl": null,
+              "supplierId": null,
+              "batchNumber": null,
+              "orderReference": null,
+              "status": "IN_STOCK",
+              "notes": null,
+              "quantityPrevision": "246.700",
+              "createdAt": "2025-07-21T11:40:04.000Z",
+              "updatedAt": "2025-07-21T11:40:04.000Z"
+            },
+            "updateData": {
+              "quantity": 497.7
+            }
+          }
+        }
+      },
+      "metadata": {
+        "duration": 24,
+        "timestamp": "2025-08-02T09:27:44.393Z"
+      },
+      "chemicalName": "Hydroxyde de sodium",
+      "quantityUpdate": true,
+      "before": {
+        "id": "cmdd5kp7c00071f0vz4lco20j",
+        "name": "Hydroxyde de sodium",
+        "formula": "NaOH",
+        "molfile": null,
+        "casNumber": "1310-73-2",
+        "barcode": null,
+        "quantity": "250.000",
+        "unit": "g",
+        "minQuantity": "50.000",
+        "concentration": "99.000",
+        "purity": null,
+        "purchaseDate": "2024-02-09T23:00:00.000Z",
+        "expirationDate": "2027-02-09T23:00:00.000Z",
+        "openedDate": null,
+        "storage": "Armoire bases",
+        "room": "Labo 1",
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": "CORROSIVE",
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "246.700",
+        "createdAt": "2025-07-21T11:40:04.000Z",
+        "updatedAt": "2025-07-21T11:40:04.000Z"
+      },
+      "after": {
+        "id": "cmdd5kp7c00071f0vz4lco20j",
+        "name": "Hydroxyde de sodium",
+        "formula": "NaOH",
+        "molfile": null,
+        "casNumber": "1310-73-2",
+        "barcode": null,
+        "quantity": "497.700",
+        "unit": "g",
+        "minQuantity": "50.000",
+        "concentration": "99.000",
+        "purity": null,
+        "purchaseDate": "2024-02-09T23:00:00.000Z",
+        "expirationDate": "2027-02-09T23:00:00.000Z",
+        "openedDate": null,
+        "storage": "Armoire bases",
+        "room": "Labo 1",
+        "cabinet": null,
+        "shelf": null,
+        "hazardClass": "CORROSIVE",
+        "sdsFileUrl": null,
+        "supplierId": null,
+        "batchNumber": null,
+        "orderReference": null,
+        "status": "IN_STOCK",
+        "notes": null,
+        "quantityPrevision": "246.700",
+        "createdAt": "2025-07-21T11:40:04.000Z",
+        "updatedAt": "2025-08-02T09:27:44.000Z",
+        "supplierName": null,
+        "supplier": null
+      },
+      "fields": [
+        "quantity"
+      ],
+      "quantity": "497.700",
+      "unit": "g",
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754126864369_jlxa6cmnc",
+      "path": "/api/chemicals/cmdd5kp7c00071f0vz4lco20j/",
+      "method": "PUT",
+      "duration": 24
+    },
+    "status": "SUCCESS"
+  }
+]

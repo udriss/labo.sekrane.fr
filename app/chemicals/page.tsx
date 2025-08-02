@@ -78,7 +78,7 @@ export default function ChemicalsPage() {
   const fetchChemicals = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/chemicals")
+      const response = await fetch("/api/chimie/chemicals")
       
       if (!response.ok) {
         throw new Error("Erreur lors du chargement des réactifs chimiques")

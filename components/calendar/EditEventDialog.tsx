@@ -40,6 +40,7 @@ interface EditEventDialogProps {
   customClasses: string[]
   setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
   saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
+  discipline?: 'chimie' | 'physique' // NOUVEAU: discipline pour les appels API
 }
 
 const EVENT_TYPES = {
@@ -61,7 +62,8 @@ export function EditEventDialog({
   customClasses,
   saveNewClass,
   setCustomClasses,
-  isMobile = false
+  isMobile = false,
+  discipline = 'chimie' // Valeur par défaut
 }: EditEventDialogProps) {
   const [loading, setLoading] = useState(false)
   const [showMultipleSlots, setShowMultipleSlots] = useState(false)
@@ -402,7 +404,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
     
     try {
       // Persister immédiatement le fichier dans l'événement
-      const response = await fetch(`/api/calendrier/add-file?id=${event.id}`, {
+      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+      const response = await fetch(`${apiEndpoint}/add-file?id=${event.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

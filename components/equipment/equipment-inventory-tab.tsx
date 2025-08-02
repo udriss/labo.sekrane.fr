@@ -101,7 +101,7 @@ export function EquipmentInventoryTab({
   useEffect(() => {
     const fetchEquipmentTypes = async () => {
       try {
-        const response = await fetch('/api/equipment-types')
+        const response = await fetch('/api/chimie/equipment-types')
         if (response.ok) {
           const data = await response.json()
           setEquipmentTypes(data.types || [])

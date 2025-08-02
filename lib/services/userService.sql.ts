@@ -20,31 +20,33 @@ export interface User {
 export class UserServiceSQL {
   // Trouver un utilisateur par email
     static async findByEmail(email: string): Promise<User | null> {
-    const [rows] = await query(
+    const rows = await query(
         'SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1',
         [email]
     );
     
-    // rows est déjà le premier élément après destructuration
-    if (!rows) return null;
-    return UserServiceSQL.deserialize(rows);
+    // Vérifier si on a des résultats
+    if (!rows || rows.length === 0) return null;
+    return UserServiceSQL.deserialize(rows[0]);
     }
 
   // Trouver un utilisateur par ID
   static async findById(id: string): Promise<User | null> {
-    const [rows] = await query(
+    const userId = parseInt(id, 10);
+    const rows = await query(
       'SELECT * FROM users WHERE id = ? LIMIT 1',
-      [id]
+      [userId]
     );
 
-    // rows est déjà le premier élément après destructuration
-    // Si la requête ne retourne rien, rows sera undefined
-    if (!rows) {
+    console.log('[findById] Utilisateur trouvé:', rows, "Résultat complet:", rows);
+
+    if (!rows || rows.length === 0) {
       return null;
     }
 
-    return UserServiceSQL.deserialize(rows);
+    return UserServiceSQL.deserialize(rows[0]); // Utiliser deserialize et prendre le premier élément
   }
+
 
   // Vérifier le mot de passe
   static async verifyPassword(email: string, password: string): Promise<User | null> {
@@ -94,14 +96,15 @@ export class UserServiceSQL {
         JSON.stringify(userData.customClasses || [])
       ]
     );
-    // Récupérer l'utilisateur créé
-    const [rows] = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [userData.email]);
     
-    if (!rows) {
+    // Récupérer l'utilisateur créé
+    const rows = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [userData.email]);
+    
+    if (!rows || rows.length === 0) {
       throw new Error('Erreur lors de la récupération de l\'utilisateur créé');
     }
     
-    return UserServiceSQL.deserialize(rows);
+    return UserServiceSQL.deserialize(rows[0]);
   }
 
   // Mettre à jour un utilisateur
@@ -132,8 +135,7 @@ export class UserServiceSQL {
 
   // Obtenir tous les utilisateurs actifs
   static async getAllActive(): Promise<User[]> {
-    const result = await query('SELECT * FROM users WHERE isActive = 1');
-    const rows = result[0]; // Le premier élément contient les résultats
+    const rows = await query('SELECT * FROM users WHERE isActive = 1');
     
     if (!Array.isArray(rows)) {
       return [];

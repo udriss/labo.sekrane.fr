@@ -34,8 +34,7 @@ interface UsersFile {
   users: UserData[];
 }
 
-export const GET = withAudit(
-  async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -61,17 +60,7 @@ export const GET = withAudit(
       { status: 500 }
     );
   }
-},
-  {
-    module: 'USERS',
-    entity: 'users-list',
-    action: 'READ',
-    customDetails: (req, response) => ({
-      usersCount: Array.isArray(response) ? response.length : 0,
-      action: 'list-all-users'
-    })
-  }
-);
+}
 
 export const POST = withAudit(
   async (request: NextRequest) => {

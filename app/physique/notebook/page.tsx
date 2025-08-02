@@ -37,6 +37,7 @@ export default function PhysicsNotebookPage() {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <NotebookList 
         key={refreshKey}
+        discipline="physique"
         onEdit={handleEdit}
         onAdd={handleAddNew}
       />
@@ -61,11 +62,13 @@ export default function PhysicsNotebookPage() {
         <DialogContent>
           {editingEntry ? (
         <NotebookForm
+          discipline="physique"
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />
           ) : (
         <NotebookFormAdvanced
+          discipline="physique"
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
         />

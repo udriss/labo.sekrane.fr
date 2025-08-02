@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       FROM notifications n
       LEFT JOIN notification_read_status nrs ON (n.id = nrs.notification_id AND nrs.user_id = ?)
       WHERE (n.user_id = ? OR JSON_SEARCH(n.target_roles, 'one', ?) IS NOT NULL)
+        AND (nrs.is_deleted IS NULL OR nrs.is_deleted = 0)
       ORDER BY n.created_at DESC
     `, [userId, userId, userId, userRole]);
     // possibilité de limiter les résultats
@@ -250,8 +251,8 @@ export async function PATCH(request: NextRequest) {
 
       // Insérer ou mettre à jour le statut de lecture
       await query(`
-        INSERT INTO notification_read_status (id, notification_id, user_id, is_read, read_at)
-        VALUES (UUID(), ?, ?, 1, NOW())
+        INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+        VALUES (?, ?, 1, NOW())
         ON DUPLICATE KEY UPDATE is_read = 1, read_at = NOW()
       `, [notificationId, userId]);
 
@@ -273,8 +274,8 @@ export async function PATCH(request: NextRequest) {
       // Créer les entrées de statut de lecture pour chaque notification
       for (const notif of notifications) {
         await query(`
-          INSERT INTO notification_read_status (id, notification_id, user_id, is_read, read_at)
-          VALUES (UUID(), ?, ?, 1, NOW())
+          INSERT INTO notification_read_status (notification_id, user_id, is_read, read_at)
+          VALUES (?, ?, 1, NOW())
           ON DUPLICATE KEY UPDATE is_read = 1, read_at = NOW()
         `, [notif.id, userId]);
       }
@@ -282,6 +283,43 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ 
         success: true,
         message: 'Toutes les notifications ont été marquées comme lues' 
+      });
+
+    } else if (action === 'delete') {
+      // Marquer une notification comme supprimée pour cet utilisateur
+      await query(`
+        INSERT INTO notification_read_status (notification_id, user_id, is_deleted, read_at)
+        VALUES (?, ?, 1, NOW())
+        ON DUPLICATE KEY UPDATE is_deleted = 1
+      `, [notificationId, userId]);
+
+      return NextResponse.json({ 
+        success: true,
+        message: 'Notification supprimée' 
+      });
+
+    } else if (action === 'deleteAll') {
+      // Marquer toutes les notifications comme supprimées pour cet utilisateur
+      const userRole = (session.user as any).role;
+      
+      // Obtenir toutes les notifications accessibles à cet utilisateur
+      const notifications = await query(`
+        SELECT id FROM notifications 
+        WHERE user_id = ? OR JSON_SEARCH(target_roles, 'one', ?) IS NOT NULL
+      `, [userId, userRole]);
+
+      // Créer les entrées de statut de suppression pour chaque notification
+      for (const notif of notifications) {
+        await query(`
+          INSERT INTO notification_read_status (notification_id, user_id, is_deleted)
+          VALUES (?, ?, 1)
+          ON DUPLICATE KEY UPDATE is_deleted = 1
+        `, [notif.id, userId]);
+      }
+
+      return NextResponse.json({ 
+        success: true,
+        message: 'Toutes les notifications ont été supprimées' 
       });
     }
 

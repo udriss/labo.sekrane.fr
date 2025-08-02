@@ -1,18 +1,18 @@
-import { useEquipmentData } from '@/lib/hooks/useEquipmentData';
+import { useEquipmentDataChimie } from '@/lib/hooks/useEquipmentDataChimie';
 import { useEquipmentForm } from '@/lib/hooks/useEquipmentForm';
 import { useEquipmentDialogs } from '@/lib/hooks/useEquipmentDialogs';
 import { useEquipmentQuantity } from '@/lib/hooks/useEquipmentQuantity';
-import { equipmentService } from '@/lib/services/equipmentService';
+import { equipmentServiceChimie } from '@/lib/services/equipmentServiceChimie';
 
-export const useEquipmentHandlers = () => {
-  const equipmentData = useEquipmentData();
+export const useEquipmentHandlersChimie = () => {
+  const equipmentData = useEquipmentDataChimie();
   const form = useEquipmentForm();
   const dialogs = useEquipmentDialogs();
   const quantity = useEquipmentQuantity(equipmentData.fetchEquipment);
 
   const handleSubmit = async () => {
     try {
-      const newEquipment = await equipmentService.submitEquipment(
+      const newEquipment = await equipmentServiceChimie.submitEquipment(
         form.formData,
         form.selectedCategory,
         form.selectedItem,
@@ -43,7 +43,7 @@ export const useEquipmentHandlers = () => {
 
   const handleSaveEdit = async () => {
     try {
-      await equipmentService.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment);
+      await equipmentServiceChimie.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment);
       
       await equipmentData.fetchEquipment();
       dialogs.setOpenEditDialog(false);
@@ -65,7 +65,7 @@ export const useEquipmentHandlers = () => {
       dialogs.setDeletingItems(prev => new Set([...prev, dialogs.equipmentToDelete.id]));
       dialogs.setDeleteDialog(false);
 
-      await equipmentService.deleteEquipment(dialogs.equipmentToDelete.id);
+      await equipmentServiceChimie.deleteEquipment(dialogs.equipmentToDelete.id);
       
       setTimeout(async () => {
         await equipmentData.fetchEquipment();
@@ -97,7 +97,7 @@ export const useEquipmentHandlers = () => {
     }
 
     try {
-      await equipmentService.createCustomCategory(dialogs.newCategoryName);
+      await equipmentServiceChimie.createCustomCategory(dialogs.newCategoryName);
       
       await equipmentData.loadEquipmentTypes();
       dialogs.setCustomCategories(prev => [...prev, { name: dialogs.newCategoryName }]);
@@ -122,7 +122,7 @@ export const useEquipmentHandlers = () => {
     }
 
     try {
-      await equipmentService.saveCustomEquipment(dialogs.customEquipmentData);
+      await equipmentServiceChimie.saveCustomEquipment(dialogs.customEquipmentData);
       
       await equipmentData.loadEquipmentTypes();
       
@@ -143,7 +143,7 @@ export const useEquipmentHandlers = () => {
     if (!dialogs.selectedManagementItem || !dialogs.selectedManagementCategory) return;
 
     try {
-      const result = await equipmentService.saveEditedItem(
+      const result = await equipmentServiceChimie.saveEditedItem(
         dialogs.selectedManagementCategory,
         dialogs.selectedManagementItem,
         dialogs.editingItemData

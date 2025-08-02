@@ -15,21 +15,26 @@ import { SECTION_LEVELS } from "@/lib/constants/education-levels"
 interface NotebookEntry {
   id: string
   title: string
-  content: string
+  content?: string
+  description?: string
   sections?: string[]
   materials?: any[]
   chemicals?: any[]
   estimatedDuration?: number
   difficulty?: string
   createdAt: string
+  updatedAt?: string
+  protocols?: any[]
+  status?: string
 }
 
 interface NotebookListProps {
+  discipline?: 'chimie' | 'physique' | 'general'
   onEdit: (entry: NotebookEntry) => void
   onAdd: () => void
 }
 
-export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
+export function NotebookList({ discipline = 'general', onEdit, onAdd }: NotebookListProps) {
   const [entries, setEntries] = useState<NotebookEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +43,10 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
   const loadEntries = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/notebook")
+      const url = discipline !== 'general' 
+        ? `/api/notebook?discipline=${discipline}` 
+        : "/api/notebook"
+      const response = await fetch(url)
       if (!response.ok) throw new Error("Erreur lors du chargement")
       const data = await response.json()
       setEntries(data.notebooks || [])
@@ -58,45 +66,39 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
     
     try {
       const response = await fetch(`/api/notebook?id=${id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error("Erreur lors de la suppression")
-      
-      setEntries(prev => prev.filter(entry => entry.id !== id))
+      if (response.ok) {
+        await loadEntries()
+      } else {
+        setError("Erreur lors de la suppression")
+      }
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Erreur lors de la suppression")
+      setError("Erreur lors de la suppression")
     }
   }
 
-  // Organiser les entrées par sections
   const organizeEntriesBySection = () => {
     const organized: { [key: string]: NotebookEntry[] } = {}
     
-    SECTION_LEVELS.forEach(level => {
-      organized[level.id] = []
-    })
-    
-    // Ajouter une catégorie pour les TPs sans section
-    organized['sans-section'] = []
-
     entries.forEach(entry => {
       if (entry.sections && entry.sections.length > 0) {
-        entry.sections.forEach(sectionId => {
-          if (organized[sectionId]) {
-            organized[sectionId].push(entry)
-          }
+        entry.sections.forEach(section => {
+          if (!organized[section]) organized[section] = []
+          organized[section].push(entry)
         })
       } else {
+        if (!organized['sans-section']) organized['sans-section'] = []
         organized['sans-section'].push(entry)
       }
     })
-
+    
     return organized
   }
 
   const getDifficultyColor = (difficulty?: string) => {
-    switch (difficulty) {
-      case 'Facile': return 'success'
-      case 'Moyen': return 'warning'
-      case 'Difficile': return 'error'
+    switch (difficulty?.toLowerCase()) {
+      case 'facile': return 'success'
+      case 'moyen': return 'warning'
+      case 'difficile': return 'error'
       default: return 'default'
     }
   }
@@ -107,6 +109,11 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
     return remainingMinutes > 0 ? `${hours}h${remainingMinutes}` : `${hours}h`
+  }
+
+  // Helper function to get content safely
+  const getEntryContent = (entry: NotebookEntry) => {
+    return entry.content || entry.description || ''
   }
 
   if (loading) return <Typography>Chargement...</Typography>
@@ -159,28 +166,31 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
                 </AccordionSummary>
                 <AccordionDetails>
                   {sectionEntries.length === 0 ? (
-                    <Paper sx={{ p: 3, textAlign: "center" }}>
-                      <Typography color="text.secondary">
-                        Aucun TP pour cette section
-                      </Typography>
-                    </Paper>
+                    <Typography color="text.secondary">Aucun TP pour cette section</Typography>
                   ) : (
-                    <Box display="flex" flexWrap="wrap" gap={2}>
-                      {sectionEntries.map((entry) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                      {sectionEntries.map(entry => (
                         <Card key={entry.id} sx={{ minWidth: 300, maxWidth: 400 }}>
                           <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                              {entry.title}
-                            </Typography>
-                            
-                            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                                {entry.title}
+                              </Typography>
                               {entry.difficulty && (
                                 <Chip 
                                   label={entry.difficulty}
                                   size="small"
-                                  color={getDifficultyColor(entry.difficulty) as any}
+                                  color={getDifficultyColor(entry.difficulty)}
                                 />
                               )}
+                            </Stack>
+
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {getEntryContent(entry).substring(0, 120)}
+                              {getEntryContent(entry).length > 120 && "..."}
+                            </Typography>
+
+                            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                               {entry.estimatedDuration && (
                                 <Chip 
                                   icon={<Timer />}
@@ -191,12 +201,7 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
                               )}
                             </Stack>
 
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                              {entry.content.substring(0, 120)}
-                              {entry.content.length > 120 && "..."}
-                            </Typography>
-
-                            {(entry.materials?.length || entry.chemicals?.length) && (
+                            {(entry.materials || entry.chemicals) && (
                               <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                                 {entry.materials && entry.materials.length > 0 && (
                                   <Chip 
@@ -253,18 +258,18 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
                 </Stack>
               </AccordionSummary>
               <AccordionDetails>
-                <Box display="flex" flexWrap="wrap" gap={2}>
-                  {organizedEntries['sans-section'].map((entry) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {organizedEntries['sans-section'].map(entry => (
                     <Card key={entry.id} sx={{ minWidth: 300, maxWidth: 400 }}>
                       <CardContent>
-                        <Typography variant="h6" gutterBottom>
+                        <Typography variant="h6" component="div" sx={{ mb: 2 }}>
                           {entry.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                          {entry.content.substring(0, 120)}
-                          {entry.content.length > 120 && "..."}
+                        <Typography variant="body2" color="text.secondary">
+                          {getEntryContent(entry).substring(0, 120)}
+                          {getEntryContent(entry).length > 120 && "..."}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                           Créé le {new Date(entry.createdAt).toLocaleDateString()}
                         </Typography>
                       </CardContent>
@@ -287,61 +292,56 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
 
       {activeTab === 1 && (
         <Box>
-          {/* Vue chronologique classique */}
-          {entries.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: "center" }}>
-              <Typography color="text.secondary">
-                Aucune entrée dans le carnet
-              </Typography>
-            </Paper>
-          ) : (
-            <Stack spacing={2}>
-              {entries.map((entry) => (
-                <Paper key={entry.id} sx={{ p: 3 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box flex={1}>
-                      <Typography variant="h6" gutterBottom>
-                        {entry.title}
-                      </Typography>
-                      
-                      {entry.sections && entry.sections.length > 0 && (
-                        <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                          {entry.sections.map(sectionId => {
-                            const section = SECTION_LEVELS.find(l => l.id === sectionId)
-                            return section ? (
-                              <Chip 
-                                key={sectionId}
-                                label={section.label}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                              />
-                            ) : null
-                          })}
-                        </Stack>
-                      )}
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {new Date(entry.createdAt).toLocaleDateString()}
-                      </Typography>
-                      <Typography variant="body1">
-                        {entry.content.substring(0, 200)}
-                        {entry.content.length > 200 && "..."}
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      <IconButton onClick={() => onEdit(entry)} color="primary">
-                        <Edit />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(entry.id)} color="error">
-                        <Delete />
-                      </IconButton>
-                    </Stack>
+          {/* Vue chronologique */}
+          <Stack spacing={2}>
+            {entries.map(entry => (
+              <Paper key={entry.id} sx={{ p: 3 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                  <Typography variant="h6">{entry.title}</Typography>
+                  <Stack direction="row" spacing={1}>
+                    {entry.difficulty && (
+                      <Chip 
+                        label={entry.difficulty}
+                        size="small"
+                        color={getDifficultyColor(entry.difficulty)}
+                      />
+                    )}
+                    <IconButton onClick={() => onEdit(entry)} color="primary" size="small">
+                      <Edit />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(entry.id)} color="error" size="small">
+                      <Delete />
+                    </IconButton>
                   </Stack>
-                </Paper>
-              ))}
-            </Stack>
-          )}
+                </Stack>
+                
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {getEntryContent(entry).substring(0, 200)}
+                  {getEntryContent(entry).length > 200 && "..."}
+                </Typography>
+                
+                <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                  {entry.sections?.map(section => {
+                    const sectionInfo = SECTION_LEVELS.find(s => s.id === section)
+                    return (
+                      <Chip 
+                        key={section}
+                        label={sectionInfo?.label || section}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    )
+                  })}
+                </Stack>
+                
+                <Typography variant="caption" color="text.secondary">
+                  Créé le {new Date(entry.createdAt).toLocaleDateString()} • 
+                  Modifié le {new Date(entry.updatedAt || entry.createdAt).toLocaleDateString()}
+                </Typography>
+              </Paper>
+            ))}
+          </Stack>
         </Box>
       )}
 
@@ -349,42 +349,53 @@ export function NotebookList({ onEdit, onAdd }: NotebookListProps) {
         <Box>
           {/* Statistiques */}
           <Stack spacing={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Statistiques générales
-                </Typography>
-                <Stack direction="row" spacing={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" color="primary">
-                      {entries.length}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      TPs total
-                    </Typography>
-                  </Box>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Statistiques générales</Typography>
+              <Stack direction="row" spacing={4}>
+                <Box>
+                  <Typography variant="h3" color="primary">{entries.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">Total TPs</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h3" color="success.main">
+                    {entries.filter(e => e.status === 'COMPLETED').length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">Terminés</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h3" color="warning.main">
+                    {entries.filter(e => e.status === 'IN_PROGRESS').length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">En cours</Typography>
+                </Box>
+              </Stack>
+            </Paper>
+
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Répartition par section</Typography>
+              <Stack spacing={2}>
+                {SECTION_LEVELS.map(level => {
+                  const count = organizedEntries[level.id]?.length || 0
+                  const percentage = entries.length > 0 ? (count / entries.length * 100).toFixed(1) : 0
                   
-                  {SECTION_LEVELS.map(level => {
-                    const count = organizedEntries[level.id]?.length || 0
-                    return (
-                      <Box key={level.id} textAlign="center">
-                        <Typography variant="h4" color="secondary">
-                          {count}
-                        </Typography>
+                  return (
+                    <Stack key={level.id} direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography>{level.label}</Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
                         <Typography variant="body2" color="text.secondary">
-                          {level.label}
+                          {count} TPs ({percentage}%)
                         </Typography>
-                      </Box>
-                    )
-                  })}
-                </Stack>
-              </CardContent>
-            </Card>
+                        <Chip label={count} size="small" />
+                      </Stack>
+                    </Stack>
+                  )
+                })}
+              </Stack>
+            </Paper>
           </Stack>
         </Box>
       )}
 
-      {/* FAB pour ajout rapide */}
       <Fab
         color="primary"
         aria-label="add"

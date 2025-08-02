@@ -76,7 +76,9 @@ export async function query<T = any[]>(sql: string, params?: any[]): Promise<T> 
     try {
       let results;
       if (params && params.length > 0) {
-        [results] = await connection.execute(sql, params);
+        // Convertir undefined en null pour éviter les erreurs MySQL
+        const cleanParams = params.map(param => param === undefined ? null : param);
+        [results] = await connection.execute(sql, cleanParams);
       } else {
         // Utiliser query() au lieu d'execute() quand il n'y a pas de paramètres
         [results] = await connection.query(sql);

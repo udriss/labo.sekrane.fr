@@ -13,8 +13,8 @@ interface ExtendedNextRequest extends NextRequest {
 // Helper to extract module from path
 function getModuleFromPath(pathname: string): AuditAction['module'] {
   if (pathname.includes('/api/utilisateurs') || pathname.includes('/api/user')) return 'USERS';
-  if (pathname.includes('/api/chemicals')) return 'CHEMICALS';
-  if (pathname.includes('/api/equipement') || pathname.includes('/api/equipment')) return 'EQUIPMENT';
+  if (pathname.includes('/api/chimie/chemicals')) return 'CHEMICALS';
+  if (pathname.includes('/api/chimie/equipement') || pathname.includes('/api/equipment')) return 'EQUIPMENT';
   if (pathname.includes('/api/rooms') || pathname.includes('/api/salles')) return 'ROOMS';
   if (pathname.includes('/api/calendrier')) return 'CALENDAR';
   if (pathname.includes('/api/orders')) return 'ORDERS';

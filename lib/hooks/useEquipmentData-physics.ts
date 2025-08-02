@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EquipmentType } from '@/types/equipment';
 
-export const useEquipmentData = () => {
+export const useEquipmentDataPhysics = () => {
   const [materiel, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

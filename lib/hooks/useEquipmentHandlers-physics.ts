@@ -5,7 +5,7 @@ import { useEquipmentDialogs } from '@/lib/hooks/useEquipmentDialogs';
 import { useEquipmentQuantity } from '@/lib/hooks/useEquipmentQuantity-physics';
 import { physicsEquipmentService } from '@/lib/services/equipmentService-physics';
 
-export const useEquipmentHandlers = () => {
+export const useEquipmentHandlersPhysics = () => {
   const equipmentData = useEquipmentData();
   const form = useEquipmentForm();
   const dialogs = useEquipmentDialogs();

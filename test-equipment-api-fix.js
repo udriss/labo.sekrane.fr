@@ -1,4 +1,4 @@
-// Test script pour vérifier la correction de l'API /api/equipement
+// Test script pour vérifier la correction de l'API /api/chimie/equipement
 import mysql from 'mysql2/promise';
 
 async function testEquipmentAPIFix() {

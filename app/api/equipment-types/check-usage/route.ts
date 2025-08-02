@@ -1,4 +1,4 @@
-// app/api/equipment-types/check-usage/route.ts
+// app/api/chimie/equipment-types/check-usage/route.ts
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'

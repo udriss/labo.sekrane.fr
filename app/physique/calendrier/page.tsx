@@ -271,7 +271,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
 const handleConfirmModification = async (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => {
   try {
     // Pour l'instant, on utilise l'API générique
-    const response = await fetch(`/api/calendrier/confirm-modification?eventId=${event.id}`, {
+    const response = await fetch(`/api/calendrier/physique/confirm-modification?eventId=${event.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -304,7 +304,7 @@ const handleConfirmModification = async (event: CalendarEvent, modificationId: s
 // Handler pour approuver les changements de créneaux
 const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
   try {
-    const response = await fetch('/api/calendrier/approve-timeslots', {
+    const response = await fetch('/api/calendrier/physique/approve-timeslots', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
 // Handler pour rejeter les changements de créneaux
 const handleRejectTimeSlotChanges = async (event: CalendarEvent) => {
   try {
-    const response = await fetch('/api/calendrier/reject-timeslots', {
+    const response = await fetch('/api/calendrier/physique/reject-timeslots', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -575,6 +575,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     canValidateEvent={canValidateEvent()}
     isMobile={isMobile}
     isTablet={isTablet}
+    discipline="physique"
   />
 </TabPanel>
 
@@ -594,6 +595,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     isCreator={isCreator}
     currentUserId={session?.user?.id || session?.user?.email}
     isMobile={isMobile}
+    discipline="physique" 
   />
 </TabPanel>
 

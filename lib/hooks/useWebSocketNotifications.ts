@@ -296,13 +296,56 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
     }
   }, [userId]);
 
-  const clearNotification = useCallback((notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  }, []);
+  const clearNotification = useCallback(async (notificationId: string) => {
+    if (!userId) return;
 
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          notificationId,
+          userId
+        }),
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      } else {
+        console.error('Erreur lors de la suppression de la notification');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la notification:', error);
+    }
+  }, [userId]);
+
+  const clearNotifications = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'deleteAll',
+          userId
+        }),
+      });
+
+      if (response.ok) {
+        setNotifications([]);
+      } else {
+        console.error('Erreur lors de la suppression de toutes les notifications');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de toutes les notifications:', error);
+    }
+  }, [userId]);
 
   const sendMessage = useCallback((message: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
