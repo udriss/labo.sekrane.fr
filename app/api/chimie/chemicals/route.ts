@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
 
     // Calculer les statistiques
     const stats = calculateChemicalStats(chemicalsWithPrevision)
-    console.log('Statistiques des réactifs chimiques:', stats)
-    console.log('Réactifs chimiques récupérés:', chemicalsWithPrevision)
+    
+    
     return NextResponse.json({ 
       chemicals: chemicalsWithPrevision,
       stats

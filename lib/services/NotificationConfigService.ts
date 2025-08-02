@@ -533,14 +533,6 @@ export class NotificationConfigService {
   // ========== GESTION DES CONFIGURATIONS ==========
 
   async getAllConfigs(): Promise<NotificationConfig[]> {
-    console.log('Fetching all notification configs');
-    console.log(
-        'host:', process.env.DB_HOST || 'localhost',
-        'user:', process.env.DB_USER,
-        'password:', process.env.DB_PASSWORD,
-        'database:', process.env.DB_NAME,
-        'charset:', 'utf8mb4',
-    );
 
     const connection = await this.getConnection();
     const [rows] = await connection.execute(`
@@ -578,7 +570,7 @@ export class NotificationConfigService {
   }
 
   async getConfigById(id: string): Promise<NotificationConfig | null> {
-    console.log(`Fetching notification config by ID: ${id}`);
+    
     const connection = await this.getConnection();
     const [rows] = await connection.execute(`
       SELECT 

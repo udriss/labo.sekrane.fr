@@ -54,11 +54,6 @@ export class UserServiceSQL {
     
     return null;
     }
-    console.log('[verifyPassword] Tentative connexion:', {
-      email,
-      passwordRecu: password,
-      hashStocke: user.password
-    });
     const isValid = await bcrypt.compare(password, user.password);
     
     if (!isValid) return null;

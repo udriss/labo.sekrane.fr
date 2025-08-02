@@ -10,14 +10,14 @@ import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Début de la migration des classes...');
+    
     
     // Lire le fichier JSON
     const classesFile = path.join(process.cwd(), 'data', 'classes.json');
     const jsonData = JSON.parse(await fs.readFile(classesFile, 'utf-8'));
     
-    console.log(`📊 Classes prédéfinies trouvées: ${jsonData.predefinedClasses?.length || 0}`);
-    console.log(`📊 Classes personnalisées trouvées: ${jsonData.customClasses?.length || 0}`);
+    
+    
     
     // Migrer vers SQL
     await ClassServiceSQL.migrateFromJSON(jsonData);
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const backupFile = `${classesFile}.backup.${Date.now()}`;
     await fs.copyFile(classesFile, backupFile);
     
-    console.log('✅ Migration terminée avec succès!');
+    
     
     return NextResponse.json({
       success: true,

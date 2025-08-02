@@ -1,7 +1,7 @@
 // app/physique/calendrier/page.tsx
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Container, Box, Typography, Alert, Paper, Tabs, Tab, Chip, useMediaQuery, useTheme } from "@mui/material"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
@@ -77,20 +77,19 @@ export default function PhysiqueCalendrierPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Hooks personnalisés pour la physique
-  const calendarData = usePhysicsCalendarData()
-  const calendarEvents = usePhysicsCalendarEvents(calendarData)
+  const { events, loading, error, loadEvents, addEvent, updateEvent, removeEvent, setError } = usePhysicsCalendarData()
+  const calendarEvents = usePhysicsCalendarEvents({ addEvent, updateEvent, removeEvent, setError })
+
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceDataByDiscipline({ discipline: 'physique' })
   
-  // Utilisation directe des données du hook physique
-  const { events, loading, error } = calendarData
-  
-  const fetchEvents = async () => {
+  // Fonction de chargement des événements
+  const fetchEvents = useCallback(async () => {
     try {
-      await calendarData.loadEvents()
+      await loadEvents()
     } catch (error) {
       console.error('Erreur lors du rechargement des événements physique:', error)
     }
-  }
+  }, [loadEvents])
 
   // Fonction spécialisée pour récupérer les événements physique depuis l'API
   const fetchPhysicsEvents = async () => {
@@ -254,16 +253,52 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
       return handleMoveDate(updatedEvent, timeSlots, reason, newState);
     }
 
-    const result = await calendarEvents.changeEventState(updatedEvent.id, newState);
+    // Mettre à jour l'état localement en attendant la confirmation de l'API
+    updateEvent({ ...updatedEvent, state: newState });
 
     // Mettre à jour l'événement sélectionné si c'est celui qui a été modifié
     if (selectedEvent?.id === updatedEvent.id) {
-      setSelectedEvent(result);
+      setSelectedEvent({ ...updatedEvent, state: newState });
+    }
+
+    // Envoyer la requête à l'API pour enregistrer le changement d'état
+    const response = await fetch(`/api/calendrier/physique/state-change?id=${updatedEvent.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state: newState, // Utiliser 'state' comme dans la page chimie
+        reason: reason || '',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const updatedEventFromServer = data.updatedEvent;
+
+    // Si la modification est en attente, afficher un message à l'utilisateur
+    if (data.isPending) {
+      // ajouter un toast ou un message ici
+    }
+
+    // Mettre à jour l'événement avec les données du serveur
+    updateEvent(updatedEventFromServer);
+
+    if (selectedEvent?.id === updatedEvent.id) {
+      setSelectedEvent(updatedEventFromServer);
     }
 
   } catch (error) {
     console.error('Erreur lors du changement d\'état:', error);
-    alert('Erreur lors du changement d\'état de l\'événement');
+    // Rétablir l'état précédent en cas d'erreur
+    updateEvent(updatedEvent);
+    if (selectedEvent?.id === updatedEvent.id) {
+      setSelectedEvent(updatedEvent);
+    }
   }
 };
 

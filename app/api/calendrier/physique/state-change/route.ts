@@ -136,7 +136,10 @@ export const PUT = withAudit(
       // Mettre à jour l'état de l'événement
       const updatedEvent = await updatePhysicsEvent(eventId, updateData);
 
-      return NextResponse.json(updatedEvent);
+      return NextResponse.json({
+        updatedEvent: updatedEvent,
+        message: 'État mis à jour avec succès'
+      });
 
     } catch (error) {
       console.error('Erreur lors du changement d\'état de l\'événement physique:', error);

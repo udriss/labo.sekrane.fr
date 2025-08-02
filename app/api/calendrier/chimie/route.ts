@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         type: dbEvent.type.toUpperCase() === 'TP' ? 'TP' : 
               dbEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
               dbEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
-        state: 'VALIDATED',
+        state: (dbEvent as any).state || 'PENDING', // Utiliser le vrai state de la base de données
         timeSlots: activeTimeSlots, // Seuls les créneaux actifs sont retournés
         actuelTimeSlots: activeActuelTimeSlots, // Seuls les créneaux actifs sont retournés
         class: dbEvent.class_name,

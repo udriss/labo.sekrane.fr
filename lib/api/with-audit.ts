@@ -236,7 +236,7 @@ function createEquipmentNotificationMessage(
   }
   
   if (actionType === 'POST') {
-    console.log("#############################details: ", util.inspect(details, { depth: null, colors: true }));
+    
     const equipmentName = details?.equipmentName || 'un équipement';
     return `<strong style="color: #1976d2;">${userName}</strong> a ajouté <strong style="color: #2e7d32;">${equipmentName}</strong> (${details?.quantity || 1} unité${details?.quantity > 1 ? 's' : ''}) à l'inventaire`;
   }

@@ -1091,5 +1091,861 @@
       "duration": 39
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "d041ef43-c2e6-421f-a14a-48eba2232472",
+    "timestamp": "2025-08-02T20:02:43.770Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "VALIDATED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 17,
+        "timestamp": "2025-08-02T20:02:43.769Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754164963752_1fktbsp1w",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 17
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3126ef84-46b0-45a6-bb88-6ab3720a5152",
+    "timestamp": "2025-08-02T20:23:37.446Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 27,
+        "timestamp": "2025-08-02T20:23:37.445Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754166217418_2waqeci7s",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 27
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "1ad3c013-ec90-47e2-8c58-8b3acde8d8e7",
+    "timestamp": "2025-08-02T20:24:21.889Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 7,
+        "timestamp": "2025-08-02T20:24:21.889Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754166261882_n9tpgoqf3",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 7
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "8e543099-d3f0-4f7e-bc24-35c59e53a1e5",
+    "timestamp": "2025-08-02T20:24:41.403Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 10,
+        "timestamp": "2025-08-02T20:24:41.403Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754166281393_600log4zv",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 10
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a670525b-5b5c-4959-98d4-74c2562eda99",
+    "timestamp": "2025-08-02T20:27:30.537Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+          "title": "Administrateur",
+          "start_date": "2025-08-02T06:00:00.000Z",
+          "end_date": "2025-08-02T09:00:00.000Z",
+          "description": "",
+          "type": "tp",
+          "status": "in_progress",
+          "state": "CANCELLED",
+          "room": "",
+          "teacher": "Administrateur",
+          "class_name": "MaClasse2",
+          "participants": [],
+          "equipment_used": [],
+          "chemicals_used": [
+            "PHYS_CONS_007"
+          ],
+          "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+          "color": "#9c27b0",
+          "created_by": "1",
+          "created_at": "2025-08-02T18:57:28.000Z",
+          "updated_at": "2025-08-02T16:27:30.000Z"
+        }
+      },
+      "metadata": {
+        "duration": 38,
+        "timestamp": "2025-08-02T20:27:30.537Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754166450499_jvss00fno",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 38
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "ad2d288d-a7b2-4c10-8fdf-d993d71319c0",
+    "timestamp": "2025-08-02T20:32:46.526Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+          "title": "Administrateur",
+          "start_date": "2025-08-02T06:00:00.000Z",
+          "end_date": "2025-08-02T09:00:00.000Z",
+          "description": "",
+          "type": "tp",
+          "status": "in_progress",
+          "state": "MOVED",
+          "room": "",
+          "teacher": "Administrateur",
+          "class_name": "MaClasse2",
+          "participants": [],
+          "equipment_used": [],
+          "chemicals_used": [
+            "PHYS_CONS_007"
+          ],
+          "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+          "color": "#9c27b0",
+          "created_by": "1",
+          "created_at": "2025-08-02T18:57:28.000Z",
+          "updated_at": "2025-08-02T16:32:46.000Z"
+        }
+      },
+      "metadata": {
+        "duration": 19,
+        "timestamp": "2025-08-02T20:32:46.526Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+      "requestId": "api_1754166766507_jobg7lqan",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 19
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "76470352-4fd6-428d-9532-208eceac0bdf",
+    "timestamp": "2025-08-02T20:35:46.221Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+            "title": "Administrateur",
+            "start_date": "2025-08-02T06:00:00.000Z",
+            "end_date": "2025-08-02T09:00:00.000Z",
+            "description": "",
+            "type": "tp",
+            "status": "in_progress",
+            "state": "CANCELLED",
+            "room": "",
+            "teacher": "Administrateur",
+            "class_name": "MaClasse2",
+            "participants": [],
+            "equipment_used": [],
+            "chemicals_used": [
+              "PHYS_CONS_007"
+            ],
+            "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+            "color": "#9c27b0",
+            "created_by": "1",
+            "created_at": "2025-08-02T18:57:28.000Z",
+            "updated_at": "2025-08-02T16:35:46.000Z"
+          },
+          "message": "État mis à jour avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 44,
+        "timestamp": "2025-08-02T20:35:46.221Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754166946177_4n5uwp2mx",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 44
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "37dc000d-3d5d-4894-bf46-62d272fa3817",
+    "timestamp": "2025-08-02T20:40:12.065Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+            "title": "Administrateur",
+            "start_date": "2025-08-02T06:00:00.000Z",
+            "end_date": "2025-08-02T09:00:00.000Z",
+            "description": "",
+            "type": "tp",
+            "status": "in_progress",
+            "state": "MOVED",
+            "room": "",
+            "teacher": "Administrateur",
+            "class_name": "MaClasse2",
+            "participants": [],
+            "equipment_used": [],
+            "chemicals_used": [
+              "PHYS_CONS_007"
+            ],
+            "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+            "color": "#9c27b0",
+            "created_by": "1",
+            "created_at": "2025-08-02T18:57:28.000Z",
+            "updated_at": "2025-08-02T16:40:12.000Z"
+          },
+          "message": "État mis à jour avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 33,
+        "timestamp": "2025-08-02T20:40:12.064Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754167212031_8hzwl5qzz",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 33
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "acedf2ce-0be4-43af-8529-8903f1d524aa",
+    "timestamp": "2025-08-02T21:01:28.773Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "IN_PROGRESS",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+            "title": "Administrateur",
+            "start_date": "2025-08-02T06:00:00.000Z",
+            "end_date": "2025-08-02T09:00:00.000Z",
+            "description": "",
+            "type": "tp",
+            "status": "in_progress",
+            "state": "IN_PROGRESS",
+            "room": "",
+            "teacher": "Administrateur",
+            "class_name": "MaClasse2",
+            "participants": [],
+            "equipment_used": [],
+            "chemicals_used": [
+              "PHYS_CONS_007"
+            ],
+            "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+            "color": "#9c27b0",
+            "created_by": "1",
+            "created_at": "2025-08-02T18:57:28.000Z",
+            "updated_at": "2025-08-02T17:01:28.000Z"
+          },
+          "message": "État mis à jour avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 41,
+        "timestamp": "2025-08-02T21:01:28.772Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754168488731_nqemzjj31",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 41
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "49ec69a0-ae72-477f-b705-78a1df31c315",
+    "timestamp": "2025-08-02T21:35:45.090Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+            "title": "Administrateur",
+            "start_date": "2025-08-02T06:00:00.000Z",
+            "end_date": "2025-08-02T09:00:00.000Z",
+            "description": "",
+            "type": "tp",
+            "status": "in_progress",
+            "state": "MOVED",
+            "room": "",
+            "teacher": "Administrateur",
+            "class_name": "MaClasse2",
+            "participants": [],
+            "equipment_used": [],
+            "chemicals_used": [
+              "PHYS_CONS_007"
+            ],
+            "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+            "color": "#9c27b0",
+            "created_by": "1",
+            "created_at": "2025-08-02T18:57:28.000Z",
+            "updated_at": "2025-08-02T17:35:45.000Z"
+          },
+          "message": "État mis à jour avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 40,
+        "timestamp": "2025-08-02T21:35:45.089Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754170545049_ces761hci",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 40
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "b3ccfa06-d1f2-477c-95ae-a069d91652ed",
+    "timestamp": "2025-08-02T21:56:47.993Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "newState": "CANCELLED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 200,
+        "statusText": "",
+        "data": {
+          "updatedEvent": {
+            "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a",
+            "title": "Administrateur",
+            "start_date": "2025-08-02T06:00:00.000Z",
+            "end_date": "2025-08-02T09:00:00.000Z",
+            "description": "",
+            "type": "tp",
+            "status": "in_progress",
+            "state": "CANCELLED",
+            "room": "",
+            "teacher": "Administrateur",
+            "class_name": "MaClasse2",
+            "participants": [],
+            "equipment_used": [],
+            "chemicals_used": [
+              "PHYS_CONS_007"
+            ],
+            "notes": "{\"timeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}],\"actuelTimeSlots\":[{\"id\":\"1754161048739-0\",\"startDate\":\"2025-08-02T08:00:00Z\",\"endDate\":\"2025-08-02T11:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]},{\"id\":\"1754161048739-1\",\"startDate\":\"2025-08-02T10:00:00Z\",\"endDate\":\"2025-08-02T18:00:00Z\",\"status\":\"active\",\"createdBy\":\"1\",\"modifiedBy\":[{\"userId\":\"1\",\"date\":\"2025-08-02T18:57:28.739Z\",\"action\":\"created\"}]}]}",
+            "color": "#9c27b0",
+            "created_by": "1",
+            "created_at": "2025-08-02T18:57:28.000Z",
+            "updated_at": "2025-08-02T17:56:47.000Z"
+          },
+          "message": "État mis à jour avec succès"
+        }
+      },
+      "metadata": {
+        "duration": 23,
+        "timestamp": "2025-08-02T21:56:47.993Z"
+      },
+      "status": "SUCCESS"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754171807970_62adijhj6",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 23
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "3130f7f0-dafe-446f-a485-053710412998",
+    "timestamp": "2025-08-02T22:05:54.096Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "02111286-70e7-473a-b7e2-388826524d10"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/chimie/state-change/",
+        "query": {
+          "id": "02111286-70e7-473a-b7e2-388826524d10"
+        },
+        "body": {
+          "state": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 25,
+        "timestamp": "2025-08-02T22:05:54.096Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754172354071_yvyaopoh4",
+      "path": "/api/calendrier/chimie/state-change/",
+      "method": "PUT",
+      "duration": 25
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "11dd9870-bb7f-4d30-902e-4d1b8a2ead80",
+    "timestamp": "2025-08-02T22:06:15.625Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "MOVE_EVENT",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "02111286-70e7-473a-b7e2-388826524d10"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/chimie/move-event/",
+        "query": {
+          "id": "02111286-70e7-473a-b7e2-388826524d10"
+        },
+        "body": {
+          "state": "PENDING",
+          "eventId": "02111286-70e7-473a-b7e2-388826524d10",
+          "timeSlots": [
+            {
+              "id": "1754172343607-0",
+              "date": "2025-08-03",
+              "startTime": "09:00",
+              "endTime": "11:00",
+              "userIDAdding": "1",
+              "createdBy": "1",
+              "modifiedBy": [
+                {
+                  "userId": "1",
+                  "date": "2025-08-02T22:05:43.607Z",
+                  "action": "created"
+                }
+              ],
+              "referentActuelTimeID": "1754172343607-0"
+            },
+            {
+              "id": "TS_1754172361153_8oxd13n",
+              "date": "2025-08-03",
+              "startTime": "18:00",
+              "endTime": "20:00",
+              "userIDAdding": "INDISPONIBLE",
+              "createdBy": "",
+              "modifiedBy": [
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-08-02T22:06:01.153Z",
+                  "action": "created"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-08-02T22:06:03.513Z",
+                  "action": "modified"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-08-02T22:06:08.945Z",
+                  "action": "modified"
+                },
+                {
+                  "userId": "INDISPONIBLE",
+                  "date": "2025-08-02T22:06:13.380Z",
+                  "action": "modified"
+                }
+              ],
+              "referentActuelTimeID": "1754172343607-1"
+            }
+          ],
+          "reason": "",
+          "isOwnerModification": true
+        }
+      },
+      "response": {
+        "status": 500,
+        "statusText": "",
+        "data": {
+          "error": "Erreur lors du déplacement de l'événement"
+        }
+      },
+      "metadata": {
+        "duration": 209,
+        "timestamp": "2025-08-02T22:06:15.625Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754172375416_e86xu4c05",
+      "path": "/api/calendrier/chimie/move-event/",
+      "method": "PUT",
+      "duration": 209
+    },
+    "status": "SUCCESS"
   }
 ]

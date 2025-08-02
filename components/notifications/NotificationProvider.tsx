@@ -59,7 +59,7 @@ export function NotificationProvider({
 }: NotificationProviderProps) {
   
   const handleNotification = React.useCallback((notification: WebSocketNotification) => {
-    console.log('📨 [NotificationProvider] Nouvelle notification WebSocket:', notification);
+    
     
     if (showToasts) {
       // Extraire le message pour l'affichage
@@ -94,7 +94,7 @@ export function NotificationProvider({
   const webSocketHook = useWebSocketNotifications({
     onNotification: handleNotification,
     onConnected: () => {
-      console.log('✅ [NotificationProvider] WebSocket connecté');
+      
       if (showToasts) {
         toast.success('🔔 Connecté aux notifications en temps réel', {
           position: toastPosition as any,
@@ -112,7 +112,7 @@ export function NotificationProvider({
       }
     },
     onReconnect: () => {
-      console.log('🔄 [NotificationProvider] Tentative de reconnexion...');
+      
       if (showToasts) {
         toast('🔄 Reconnexion aux notifications...', {
           position: toastPosition as any,

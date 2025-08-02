@@ -37,7 +37,7 @@ export default function TestWebSocketPage() {
       });
 
       const result = await response.json();
-      console.log('📤 Test notification envoyée:', result);
+      
     } catch (error) {
       console.error('❌ Erreur envoi test:', error);
     }

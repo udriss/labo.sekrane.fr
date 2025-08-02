@@ -168,7 +168,7 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('✅ [WebSocket] Connection established');
+        
         setIsConnected(true);
         setIsLoading(false);
         reconnectAttemptsRef.current = 0;
@@ -202,7 +202,7 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
       };
 
       ws.onclose = (event) => {
-        console.log(`🔌 [WebSocket] Connection closed: ${event.code}`);
+        
         setIsConnected(false);
         setIsLoading(false);
         wsRef.current = null;
@@ -210,7 +210,7 @@ export function useWebSocketNotifications(options: UseWebSocketNotificationsOpti
         if (event.code !== 1000 && autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(30000, reconnectDelay * Math.pow(2, reconnectAttemptsRef.current));
-          console.log(`🔄 [WebSocket] Reconnect attempt ${reconnectAttemptsRef.current} in ${delay}ms`);
+          
           reconnectTimeoutRef.current = setTimeout(() => connect(), delay);
         }
       };

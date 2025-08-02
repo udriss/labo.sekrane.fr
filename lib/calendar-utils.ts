@@ -79,6 +79,7 @@ export async function getChemistryEvents(startDate?: string, endDate?: string): 
 
       return {
         ...row,
+        state: row.state || 'PENDING', // Mappage explicite avec fallback
         participants: row.participants ? JSON.parse(row.participants) : [],
         equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
         chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : [],
@@ -142,6 +143,7 @@ export async function getPhysicsEvents(startDate?: string, endDate?: string): Pr
 
       return {
         ...row,
+        state: row.state || 'PENDING', // Mappage explicite avec fallback
         participants: row.participants ? JSON.parse(row.participants) : [],
         equipment_used: row.equipment_used ? JSON.parse(row.equipment_used) : [],
         chemicals_used: row.chemicals_used ? JSON.parse(row.chemicals_used) : [],
@@ -162,6 +164,7 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
     const eventData = {
       id,
       ...event,
+      state: 'PENDING', // État initial pour tous les nouveaux événements
       participants: JSON.stringify(event.participants || []),
       equipment_used: JSON.stringify(event.equipment_used || []),
       chemicals_used: JSON.stringify(event.chemicals_used || [])
@@ -169,14 +172,14 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
     
     const query = `
       INSERT INTO calendar_chimie 
-      (id, title, start_date, end_date, description, type, status, room, teacher, class_name, 
+      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_name, 
        participants, equipment_used, chemicals_used, notes, color, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     
     await pool.execute(query, [
       eventData.id, eventData.title, eventData.start_date, eventData.end_date,
-      eventData.description, eventData.type, eventData.status, eventData.room,
+      eventData.description, eventData.type, eventData.status, eventData.state, eventData.room,
       eventData.teacher, eventData.class_name, eventData.participants,
       eventData.equipment_used, eventData.chemicals_used, eventData.notes,
       eventData.color, eventData.created_by
@@ -188,6 +191,7 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
     
     return {
       ...createdEvent,
+      state: createdEvent.state || 'PENDING', // Mappage explicite du state
       participants: createdEvent.participants ? JSON.parse(createdEvent.participants) : [],
       equipment_used: createdEvent.equipment_used ? JSON.parse(createdEvent.equipment_used) : [],
       chemicals_used: createdEvent.chemicals_used ? JSON.parse(createdEvent.chemicals_used) : []
@@ -205,6 +209,7 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
     const eventData = {
       id,
       ...event,
+      state: 'PENDING', // État initial pour tous les nouveaux événements
       participants: JSON.stringify(event.participants || []),
       equipment_used: JSON.stringify(event.equipment_used || []),
       chemicals_used: JSON.stringify(event.chemicals_used || [])
@@ -212,14 +217,14 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
     
     const query = `
       INSERT INTO calendar_physique 
-      (id, title, start_date, end_date, description, type, status, room, teacher, class_name, 
+      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_name, 
        participants, equipment_used, chemicals_used, notes, color, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     
     await pool.execute(query, [
       eventData.id, eventData.title, eventData.start_date, eventData.end_date,
-      eventData.description, eventData.type, eventData.status, eventData.room,
+      eventData.description, eventData.type, eventData.status, eventData.state, eventData.room,
       eventData.teacher, eventData.class_name, eventData.participants,
       eventData.equipment_used, eventData.chemicals_used, eventData.notes,
       eventData.color, eventData.created_by
@@ -231,6 +236,7 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
     
     return {
       ...createdEvent,
+      state: createdEvent.state || 'PENDING', // Mappage explicite du state
       participants: createdEvent.participants ? JSON.parse(createdEvent.participants) : [],
       equipment_used: createdEvent.equipment_used ? JSON.parse(createdEvent.equipment_used) : [],
       chemicals_used: createdEvent.chemicals_used ? JSON.parse(createdEvent.chemicals_used) : []
@@ -266,7 +272,12 @@ export async function updateChemistryEvent(id: string, updates: Partial<Calendar
     }
     
     // Construire la requête de mise à jour dynamiquement
-    const fields = Object.keys(updateData).filter(key => updateData[key as keyof typeof updateData] !== undefined)
+    // Exclure les champs qui ne sont pas des colonnes de base de données
+    const excludedFields = ['timeSlots', 'actuelTimeSlots'];
+    const fields = Object.keys(updateData).filter(key => 
+      updateData[key as keyof typeof updateData] !== undefined && 
+      !excludedFields.includes(key)
+    )
     const setClause = fields.map(field => `${field} = ?`).join(', ')
     const values = fields.map(field => updateData[field as keyof typeof updateData])
     
@@ -314,7 +325,12 @@ export async function updatePhysicsEvent(id: string, updates: Partial<CalendarEv
     }
     
     // Construire la requête de mise à jour dynamiquement
-    const fields = Object.keys(updateData).filter(key => updateData[key as keyof typeof updateData] !== undefined)
+    // Exclure les champs qui ne sont pas des colonnes de base de données
+    const excludedFields = ['timeSlots', 'actuelTimeSlots'];
+    const fields = Object.keys(updateData).filter(key => 
+      updateData[key as keyof typeof updateData] !== undefined && 
+      !excludedFields.includes(key)
+    )
     const setClause = fields.map(field => `${field} = ?`).join(', ')
     const values = fields.map(field => updateData[field as keyof typeof updateData])
     

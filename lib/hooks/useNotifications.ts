@@ -157,7 +157,7 @@ export function useNotificationWebSocket(onNewNotification?: (notification: Noti
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-          console.log('WebSocket connecté pour les notifications');
+          
           setConnected(true);
           setError(null);
         };
@@ -174,12 +174,12 @@ export function useNotificationWebSocket(onNewNotification?: (notification: Noti
         };
 
         ws.onclose = () => {
-          console.log('WebSocket fermé');
+          
           setConnected(false);
           
           // Tentative de reconnexion après 5 secondes
           reconnectTimeout = setTimeout(() => {
-            console.log('Tentative de reconnexion WebSocket...');
+            
             connect();
           }, 5000);
         };

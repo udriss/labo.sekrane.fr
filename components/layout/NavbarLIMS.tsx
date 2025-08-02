@@ -166,7 +166,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   // Charger les notifications depuis la base de données au démarrage
   useEffect(() => {
     if (session?.user?.id) {
-      console.log('🔔 [NavbarLIMS] Loading database notifications');
+      
       loadDatabaseNotifications();
     }
   }, [session?.user?.id, loadDatabaseNotifications]);
@@ -176,7 +176,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   const handleNotificationsOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorElNotifications(event.currentTarget);
   const handleNotificationsClose = () => setAnchorElNotifications(null);
 
-  console.log('process.env.NODE_ENV:', process.env.NODE_ENV);
+  
   const handleSignOut = async () => {
     handleUserMenuClose();
     disconnect();

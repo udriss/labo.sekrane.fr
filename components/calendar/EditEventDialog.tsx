@@ -130,6 +130,10 @@ export function EditEventDialog({
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [loadingChemicals, setLoadingChemicals] = useState(false);
   
+  // Room management state
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  
   const { data: session } = useSession();
   const theme = useTheme()
   
@@ -283,6 +287,20 @@ export function EditEventDialog({
 
   const loadDisciplineData = async () => {
     try {
+      // Charger les salles
+      setLoadingRooms(true);
+      try {
+        const roomsResponse = await fetch('/api/rooms');
+        if (roomsResponse.ok) {
+          const roomsData = await roomsResponse.json();
+          setRooms(roomsData.rooms || []);
+        }
+      } catch (error) {
+        console.warn('Erreur lors du chargement des salles:', error);
+        setRooms([]);
+      }
+      setLoadingRooms(false);
+
       // Charger les matériaux/équipements
       setLoadingMaterials(true);
       let materialsEndpoint = discipline === 'physique' ? '/api/physique/equipement' : '/api/chimie/equipement';
@@ -796,6 +814,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   const isMultiDay = formData.startDate && formData.endDate && 
     formData.startDate.getDate() !== formData.endDate.getDate()
 
+  console.log('FormData dans /components/calendar/EditEventDialog.tsx:', formData)
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
     <Dialog
@@ -1267,10 +1287,11 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
     />
   )}
   renderOption={(props, option) => {
+    const { key, ...otherProps } = props;
     const isCustom = customClasses.includes(option)
     
     return (
-      <li {...props}>
+      <li key={key} {...otherProps}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
           <School fontSize="small" color={isCustom ? "secondary" : "action"} />
           <Box sx={{ flexGrow: 1 }}>
@@ -1308,11 +1329,54 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   groupBy={(option) => customClasses.includes(option) ? "Mes classes personnalisées" : "Classes prédéfinies"}
 />
 
-              <TextField
-                fullWidth
-                label="Salle"
+              <Autocomplete
+                freeSolo
+                options={rooms.map(room => room.name)}
+                loading={loadingRooms}
                 value={formData.room}
-                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                onChange={(event, newValue) => {
+                  setFormData({ ...formData, room: newValue || '' });
+                }}
+                onInputChange={(event, newInputValue) => {
+                  setFormData({ ...formData, room: newInputValue });
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    label="Salle"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingRooms ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderOption={(props, option) => {
+                  const { key, ...otherProps } = props;
+                  const roomData = rooms.find(room => room.name === option);
+                  
+                  return (
+                    <li key={key} {...otherProps}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography variant="body2">
+                            {option}
+                          </Typography>
+                          {roomData?.description && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                              {roomData.description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </li>
+                  );
+                }}
               />
             </>
           )}
@@ -1513,12 +1577,6 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   }}
                   groupBy={(option) => {
                     const category = option.categoryName || option.typeName || 'Sans catégorie';
-                    console.log('GroupBy pour matériel (EditDialog):', { 
-                      name: option.itemName || option.name, 
-                      categoryName: option.categoryName, 
-                      typeName: option.typeName,
-                      category 
-                    });
                     return category;
                   }}
                   renderGroup={(params) => (
@@ -1866,12 +1924,6 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   groupBy={discipline === 'physique' 
                     ? ((option) => {
                         const category = option.categoryName || option.typeName || 'Sans catégorie';
-                        console.log('GroupBy pour composants physique (EditDialog):', { 
-                          name: option.name, 
-                          categoryName: option.categoryName, 
-                          typeName: option.typeName,
-                          category 
-                        });
                         return category;
                       })
                     : undefined

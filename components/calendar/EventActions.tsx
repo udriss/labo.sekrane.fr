@@ -2,7 +2,7 @@
 
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Button, IconButton, Tooltip, Stack, Grid, Menu, MenuItem, ListItemIcon, ListItemText,
   Dialog, DialogTitle, DialogContent, DialogActions, Typography, TextField, Box,
@@ -101,7 +101,8 @@ const EventActions: React.FC<EventActionsProps> = ({
     open: boolean
     action: 'cancel' | 'move' | 'validate' | 'in-progress' | null
     step: 'confirmation' | 'timeSlots'
-  }>({ open: false, action: null, step: 'confirmation' })
+    shouldStayOpen?: boolean // NOUVEAU: empêche la fermeture automatique
+  }>({ open: false, action: null, step: 'confirmation', shouldStayOpen: false })
   
   const [validationReason, setValidationReason] = useState('')
   const [stateChangeCompleted, setStateChangeCompleted] = useState(false)
@@ -121,6 +122,43 @@ const EventActions: React.FC<EventActionsProps> = ({
     slotStates: {}
   })
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
+
+  // Protection contre la fermeture automatique du dialogue
+  // quand l'événement se met à jour suite à un changement d'état
+  useEffect(() => {
+    // Debug: Log quand l'événement change
+    if (unifiedDialog.open) {
+      console.log('EventActions: Event changed while dialog is open', {
+        eventId: event.id,
+        eventState: event.state,
+        dialogOpen: unifiedDialog.open,
+        dialogAction: unifiedDialog.action,
+        shouldStayOpen: unifiedDialog.shouldStayOpen
+      });
+    }
+    
+    // Si le dialogue est ouvert et protégé, ne pas le fermer automatiquement
+    if (unifiedDialog.open && unifiedDialog.shouldStayOpen) {
+      // Le dialogue reste ouvert même si l'événement change
+      return;
+    }
+  }, [event.state, event.id, unifiedDialog]); // Surveiller les changements d'état de l'événement
+
+  // Protection spécifique pour s'assurer que le dialogue reste ouvert
+  // après un changement d'état quand l'utilisateur pourrait vouloir proposer des créneaux
+  useEffect(() => {
+    if (stateChangeCompleted && unifiedDialog.open && unifiedDialog.shouldStayOpen) {
+      console.log('EventActions: State change completed, keeping dialog open', {
+        action: unifiedDialog.action,
+        step: unifiedDialog.step
+      });
+      
+      // S'assurer que le dialogue reste ouvert après la completion du changement d'état
+      if ((unifiedDialog.action === 'cancel' || unifiedDialog.action === 'move') && unifiedDialog.step === 'confirmation') {
+        // Le dialogue doit rester ouvert pour permettre à l'utilisateur de proposer des créneaux
+      }
+    }
+  }, [stateChangeCompleted, unifiedDialog]);
 
   // Gestion des créneaux horaires avec traçabilité
   const addTimeSlot = () => {
@@ -296,21 +334,47 @@ const EventActions: React.FC<EventActionsProps> = ({
 
 
   // Gestion des actions de changement d'état
-  const handleStateChange = (newState: EventState, reason?: string) => {
+  const handleStateChange = useCallback((newState: EventState, reason?: string) => {
     if (onStateChange) {
+      // Ne pas fermer le dialogue immédiatement, laisser l'utilisateur choisir
       onStateChange(event, newState, reason)
       setStateChangeCompleted(true)
+      // NE PAS fermer le dialogue ici - laisser l'utilisateur décider
+      // s'il veut proposer des créneaux ou terminer
     }
-  }
+  }, [onStateChange, event]);
 
-  const openUnifiedDialog = (action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
-    setUnifiedDialog({ open: true, action, step: 'confirmation' });
+  const openUnifiedDialog = useCallback((action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
+    // Fermer le menu si ouvert
+    if (setAnchorEl) {
+      setAnchorEl(null);
+    }
+    
+    setUnifiedDialog({ open: true, action, step: 'confirmation', shouldStayOpen: true });
     setStateChangeCompleted(false);
     // Initialiser avec les créneaux actuels si on va gérer les créneaux
     if (action === 'move' || action === 'validate') {
       initializeWithCurrentSlots();
     }
-  }
+  }, [setAnchorEl]);
+
+  const handleFinishDialog = useCallback(() => {
+    setUnifiedDialog({ open: false, action: null, step: 'confirmation', shouldStayOpen: false })
+    setValidationReason('')
+    setStateChangeCompleted(false)
+    setFormData({ 
+      timeSlots: [{ 
+        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
+        date: '', 
+        startTime: '', 
+        endTime: '', 
+        userIDAdding: '', 
+        createdBy: '', 
+        modifiedBy: [] 
+      }],
+      slotStates: {}
+    })
+  }, []);
 
   const handleConfirmStateChange = () => {
     if (unifiedDialog.action) {
@@ -337,24 +401,6 @@ const EventActions: React.FC<EventActionsProps> = ({
 
   const handleProceedToTimeSlots = () => {
     setUnifiedDialog(prev => ({ ...prev, step: 'timeSlots' }))
-  }
-
-  const handleFinishDialog = () => {
-    setUnifiedDialog({ open: false, action: null, step: 'confirmation' })
-    setValidationReason('')
-    setStateChangeCompleted(false)
-    setFormData({ 
-      timeSlots: [{ 
-        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
-        date: '', 
-        startTime: '', 
-        endTime: '', 
-        userIDAdding: 'INDISPONIBLE',
-        createdBy: '',
-        modifiedBy: []
-      }],
-      slotStates: {}
-    })
   }
 
   const handleConfirmTimeSlots = () => {
@@ -521,7 +567,7 @@ const EventActions: React.FC<EventActionsProps> = ({
         </Tooltip>
         <Menu
           anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
+          open={Boolean(anchorEl) && !unifiedDialog.open} // Fermer le menu si le dialogue unifié est ouvert
           onClose={() => setAnchorEl && setAnchorEl(null)}
         >
           {menuItems}
@@ -554,12 +600,13 @@ const EventActions: React.FC<EventActionsProps> = ({
                   <StepLabel 
                     icon={stateChangeCompleted ? <CheckCircleOutline color="success" /> : <Schedule />}
                   >
-                    {unifiedDialog.action === 'cancel' ? 'Confirmer l\'annulation' : 
-                     unifiedDialog.action === 'move' ? 'Confirmer le déplacement' :
-                     unifiedDialog.action === 'validate' ? 'Confirmer la validation' :
-                     unifiedDialog.action === 'in-progress' ? 'Confirmer la mise en préparation' : 
-                     'Confirmer l\'action'
-                    }
+                    {unifiedDialog.action ? (
+                      unifiedDialog.action === 'cancel' ? 'Confirmer l\'annulation' : 
+                      unifiedDialog.action === 'move' ? 'Confirmer le déplacement' :
+                      unifiedDialog.action === 'validate' ? 'Confirmer la validation' :
+                      unifiedDialog.action === 'in-progress' ? 'Confirmer la mise en préparation' : 
+                      'Confirmer l\'action'
+                    ) : 'Chargement...'}
                   </StepLabel>
                   <StepContent>
                     <Stack spacing={2}>

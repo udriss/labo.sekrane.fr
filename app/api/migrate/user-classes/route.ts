@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé - admin requis" }, { status: 401 });
     }
 
-    console.log('🚀 Démarrage de la migration user-classes par:', session.user.email);
+    
 
     // Exécuter la migration
     await removeUserCustomClasses();
 
-    console.log('✅ Migration user-classes terminée avec succès');
+    
 
     return NextResponse.json({
       success: true,

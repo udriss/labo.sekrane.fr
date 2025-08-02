@@ -246,7 +246,7 @@ export function CreateTPDialog({
         }
         setDisciplineChemicals(consommablesData || []);
       }
-      console.log(`Données de la discipline chargées [[[${discipline}]]]:`, { consommablesData });
+      
       
       setLoadingChemicals(false);
     } catch (error) {
@@ -260,7 +260,7 @@ export function CreateTPDialog({
   };
 
   const tmp = discipline === 'physique' ? physicsInventoryData : disciplineChemicals;
-  console.log(`Données [[[[[[[[${discipline}]]]]]]]]:`, tmp);
+  
 
   // Correction du style pour RichTextEditor
   const richTextEditorStyles = {
@@ -1672,13 +1672,6 @@ const handleCreateCalendarEvent = async () => {
                 }}
                 groupBy={(option) => {
                   const category = option.categoryName || option.typeName || 'Sans catégorie';
-                  console.log('GroupBy pour matériel:', { 
-                    option: option,
-                    name: option.itemName || option.name, 
-                    categoryName: option.categoryName, 
-                    typeName: option.typeName,
-                    category 
-                  });
                   return category;
                 }}
                 renderGroup={(params) => (
@@ -2053,12 +2046,6 @@ const handleCreateCalendarEvent = async () => {
               groupBy={discipline === 'physique' 
                 ? ((option) => {
                     const category = option.categoryName || option.typeName || 'Sans catégorie';
-                    console.log('GroupBy pour composants physique:', { 
-                      name: option.name, 
-                      categoryName: option.categoryName, 
-                      typeName: option.typeName,
-                      category 
-                    });
                     return category;
                   })
                 : undefined

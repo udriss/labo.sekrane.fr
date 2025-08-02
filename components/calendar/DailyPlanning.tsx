@@ -415,6 +415,7 @@ const DailyPlanning: React.FC<DailyPlanningProps> = ({
     const slotsToUse = getActiveTimeSlots(event)
     const todaySlots = slotsToUse.filter(slot => slot && slot.startDate && isToday(new Date(slot.startDate)));
 
+
     return (
       <ListItem
         key={event.id}

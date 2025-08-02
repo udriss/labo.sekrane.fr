@@ -289,7 +289,7 @@ export async function GET(request: NextRequest) {
         } catch (dbError: any) {
           // Si la table physics_equipment n'existe pas, retourner une liste vide pour physique
           if (discipline === 'physique' && dbError.code === 'ER_NO_SUCH_TABLE') {
-            console.log('📋 Table physics_equipment non trouvée, retour de liste vide');
+            
             return NextResponse.json([]);
           } else {
             throw dbError;
@@ -334,7 +334,7 @@ export const POST = withAudit(
           const item = (itemCheck as any[])[0];
           equipmentTypeId = item.equipment_type_id;
           equipmentItemId = item.id;
-          console.log(`🔧 [equipement] ID fourni est un equipment_item_id: ${item.id} -> equipment_type_id: ${equipmentTypeId}`);
+          
         } else {
           // Vérifier si c'est un equipment_type_id direct
           const [typeRows] = await connection.execute(
@@ -343,7 +343,7 @@ export const POST = withAudit(
           );
 
           if ((typeRows as any[]).length === 0) {
-            console.log(`❌ Ni type ni item d'équipement trouvé pour ID: ${data.equipmentTypeId}`);
+            
             return NextResponse.json(
               { error: "Type ou item d'équipement non trouvé" },
               { status: 400 }
@@ -353,7 +353,7 @@ export const POST = withAudit(
           equipmentTypeId = data.equipmentTypeId;
           // Si equipmentItemId est fourni séparément dans les données
           equipmentItemId = data.equipmentItemId || null;
-          console.log(`🔧 [equipement] ID fourni est un equipmentTypeId: ${equipmentTypeId}, equipmentItemId: ${equipmentItemId}`);
+          
         }
 
         // Validation supplémentaire : si equipmentItemId est fourni, s'assurer qu'il correspond au type
@@ -364,7 +364,7 @@ export const POST = withAudit(
           );
 
           if ((validationRows as any[]).length === 0) {
-            console.log(`❌ equipment_item_id ${equipmentItemId} incompatible avec equipment_type_id ${equipmentTypeId}`);
+            
             return NextResponse.json(
               { error: "Item d'équipement incompatible avec le type" },
               { status: 400 }
@@ -427,7 +427,7 @@ export const POST = withAudit(
 
         const newEquipment = (newEquipmentRows as any[])[0];
 
-        console.log(`✅ [equipement] Équipement créé: ${equipmentId} - Type: ${equipmentTypeId}, Item: ${equipmentItemId}`);
+        
 
         return NextResponse.json({
           materiel: {

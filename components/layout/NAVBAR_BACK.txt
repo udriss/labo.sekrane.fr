@@ -307,7 +307,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
   // Fonction pour demander la permission des notifications push
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      console.log('Ce navigateur ne supporte pas les notifications');
+      
       return false;
     }
 
@@ -402,7 +402,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
             
             switch (message.type) {
               case 'connected':
-                console.log('[SSE] Connexion établie, récupération des données initiales...');
+                
                 // Récupérer les notifications et stats à la connexion
                 fetchNotifications();
                 break;
@@ -410,7 +410,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
               case 'notification':
                 if (message.data) {
                   const notificationData = message.data as ExtendedNotification;
-                  console.log('[SSE] Nouvelle notification reçue:', notificationData);
+                  
                   
                   // Animer l'icône de notification
                   const icon = document.getElementById('notification-icon');
@@ -459,7 +459,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
                 break;
                 
               default:
-                console.log('[SSE] Message non géré:', message.type);
+                
             }
           } catch (error) {
             console.error('Error parsing SSE message:', error);
@@ -473,7 +473,7 @@ export default function NavbarLIMS({ onMenuClick }: NavbarLIMSProps) {
           // Tentative de reconnexion après 3 secondes
           setTimeout(() => {
             if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
-              console.log('[SSE] Tentative de reconnexion...');
+              
               connectSSE();
             }
           }, 3000);

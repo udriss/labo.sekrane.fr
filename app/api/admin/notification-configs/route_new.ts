@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[API] 📋 Récupération des configurations de notifications...');
+    
 
     const configs = await notificationConfigService.getAllConfigs();
     const stats = await notificationConfigService.getStats();
 
-    console.log(`[API] ✅ ${configs.length} configurations récupérées`);
+    
 
     return NextResponse.json({
       success: true,
@@ -72,14 +72,14 @@ export async function POST(request: NextRequest) {
 
     // Action de réinitialisation
     if (body.action === 'reset-defaults') {
-      console.log('[API] 🔄 Réinitialisation aux valeurs par défaut...');
+      
       
       await notificationConfigService.resetToDefaults();
       
       const configs = await notificationConfigService.getAllConfigs();
       const stats = await notificationConfigService.getStats();
 
-      console.log('[API] ✅ Réinitialisation terminée');
+      
 
       return NextResponse.json({
         success: true,
@@ -91,14 +91,14 @@ export async function POST(request: NextRequest) {
 
     // Action d'initialisation
     if (body.action === 'initialize') {
-      console.log('[API] 🚀 Initialisation des configurations par défaut...');
+      
       
       await notificationConfigService.initializeDefaultConfigs();
       
       const configs = await notificationConfigService.getAllConfigs();
       const stats = await notificationConfigService.getStats();
 
-      console.log('[API] ✅ Initialisation terminée');
+      
 
       return NextResponse.json({
         success: true,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[API] ➕ Création de la configuration: ${id}`);
+    
 
     const newConfig = await notificationConfigService.createConfig({
       id,
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       metadata
     });
 
-    console.log(`[API] ✅ Configuration créée: ${newConfig.id}`);
+    
 
     return NextResponse.json({
       success: true,
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`[API] ✏️ Mise à jour de la configuration: ${id}`);
+    
 
     const updatedConfig = await notificationConfigService.updateConfig(id, updates);
 
@@ -193,7 +193,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log(`[API] ✅ Configuration mise à jour: ${updatedConfig.id}`);
+    
 
     return NextResponse.json({
       success: true,
@@ -243,7 +243,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`[API] 🗑️ Suppression de la configuration: ${id}`);
+    
 
     const deleted = await notificationConfigService.deleteConfig(id);
 
@@ -254,7 +254,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`[API] ✅ Configuration supprimée: ${id}`);
+    
 
     return NextResponse.json({
       success: true,

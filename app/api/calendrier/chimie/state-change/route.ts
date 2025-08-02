@@ -70,7 +70,7 @@ export const PUT = withAudit(
       // Préparer les données de mise à jour
       const updateData: any = {
         state: newState,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString().slice(0, 19).replace('T', ' ') // Format MySQL
       };
 
       // Si des timeSlots sont fournis, les intégrer dans les notes
@@ -136,7 +136,10 @@ export const PUT = withAudit(
       // Mettre à jour l'état de l'événement
       const updatedEvent = await updateChemistryEvent(eventId, updateData);
 
-      return NextResponse.json(updatedEvent);
+      return NextResponse.json({
+        updatedEvent: updatedEvent,
+        message: 'État mis à jour avec succès'
+      });
 
     } catch (error) {
       console.error('Erreur lors du changement d\'état de l\'événement chimie:', error);

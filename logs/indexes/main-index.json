@@ -4,7 +4,8 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json",
       "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-01.json",
-      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json"
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json",
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
     ],
     "2": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
@@ -39,7 +40,8 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json",
       "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-01.json",
-      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json"
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json",
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
     ],
     "CHEMICALS": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
@@ -78,12 +80,14 @@
     "UPDATE_STATE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
-      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json"
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json",
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
     ],
     "MOVE_EVENT": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-29.json",
-      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json"
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json",
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
     ],
     "DELETE": [
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-28.json",
@@ -110,6 +114,6 @@
     "2025-07-30": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
     "2025-07-31": "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-31.json",
     "2025-08-01": "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json",
-    "2025-08-02": "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-02.json"
+    "2025-08-02": "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
   }
 }

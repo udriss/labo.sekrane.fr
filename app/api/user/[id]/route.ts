@@ -46,8 +46,6 @@ async function getPredefinedClasses(): Promise<string[]> {
   }
 }
 
-
-
 export const PUT = withAudit(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -142,10 +140,11 @@ export const PUT = withAudit(
 
 export async function GET(
   request: NextRequest, 
-  context: { params: Promise<{ userId: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await context.params;
+    const { id } = await context.params;
+    const userId = id;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });

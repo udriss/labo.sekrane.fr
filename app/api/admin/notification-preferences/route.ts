@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const role = searchParams.get('role');
 
-    console.log('[API] 📋 Récupération des préférences de notifications...');
+    
 
     let preferences;
     if (userId) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       preferences = await notificationConfigService.getAllPreferences();
     }
 
-    console.log(`[API] ✅ ${preferences.length} préférences récupérées`);
+    
 
     return NextResponse.json({
       success: true,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Action de réinitialisation aux valeurs par défaut
     if (body.action === 'reset-defaults') {
-      console.log('[API] 🔄 Réinitialisation des préférences aux valeurs par défaut...');
+      
       
       // Réinitialiser d'abord les configurations
       await notificationConfigService.resetToDefaults();
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       
       const preferences = await notificationConfigService.getAllPreferences();
 
-      console.log('[API] ✅ Réinitialisation terminée');
+      
 
       return NextResponse.json({
         success: true,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[API] 🚀 Initialisation des préférences pour l'utilisateur: ${userId} (${userRole})`);
+      
       
       // Récupérer toutes les configurations disponibles
       const configs = await notificationConfigService.getAllConfigs();
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[API] ✅ Préférences initialisées pour ${userId}`);
+      
 
       return NextResponse.json({
         success: true,
@@ -186,7 +186,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      console.log(`[API] ✏️ Mise à jour des préférences pour l'utilisateur: ${userId}`);
+      
 
       for (const update of updates) {
         const { module, actionType, enabled, customSettings } = update;
@@ -206,7 +206,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      console.log(`[API] ✅ ${updates.length} préférences mises à jour pour ${userId}`);
+      
 
       return NextResponse.json({
         success: true,
@@ -226,7 +226,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      console.log(`[API] ✏️ Mise à jour des préférences par rôle: ${role}`);
+      
 
       // Pour la mise à jour par rôle, nous devons mettre à jour toutes les préférences existantes
       // ou créer un système de préférences par défaut de rôle
@@ -261,7 +261,7 @@ export async function PUT(request: NextRequest) {
         updatedCount++;
       }
 
-      console.log(`[API] ✅ ${updatedCount} préférences mises à jour pour le rôle ${role}`);
+      
 
       return NextResponse.json({
         success: true,
@@ -317,12 +317,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`[API] 🗑️ Suppression des préférences pour l'utilisateur: ${userId}`);
+    
 
     // TODO: Implémenter la suppression dans NotificationConfigService
     // const deleted = await notificationConfigService.deleteUserPreferences(userId);
 
-    console.log(`[API] ✅ Préférences supprimées pour ${userId}`);
+    
 
     return NextResponse.json({
       success: true,
