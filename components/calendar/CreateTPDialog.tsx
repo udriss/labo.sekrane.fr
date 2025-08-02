@@ -86,7 +86,7 @@ export function CreateTPDialog({
   // États pour les données spécifiques à chaque discipline
   const [disciplineMaterials, setDisciplineMaterials] = useState<any[]>([]);
   const [disciplineChemicals, setDisciplineChemicals] = useState<any[]>([]);
-  const [disciplineConsommables, setDisciplineConsommables] = useState<any[]>([]);
+  const [physicsConsommables, setPhysicsConsommables] = useState<any[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [loadingChemicals, setLoadingChemicals] = useState(false);
 
@@ -194,7 +194,8 @@ export function CreateTPDialog({
           console.warn('API composants physique non disponible');
           consommablesData = [];
         }
-        setDisciplineConsommables(consommablesData || []);
+        console.log('Données de la physique chargées:', consommablesData);
+        setPhysicsConsommables(consommablesData || []);
       } else {
         // Pour la chimie, utiliser l'API standard
         const chemicalsResponse = await fetch('/api/chimie/chemicals');
@@ -212,7 +213,7 @@ export function CreateTPDialog({
       console.error('Erreur lors du chargement des données:', error);
       setDisciplineMaterials([]);
       setDisciplineChemicals([]);
-      setDisciplineConsommables([]);
+      setPhysicsConsommables([]);
       setLoadingMaterials(false);
       setLoadingChemicals(false);
     }
@@ -1737,7 +1738,7 @@ const handleCreateCalendarEvent = async () => {
             {/* Autocomplete pour sélectionner les réactifs chimiques ou composants physique */}
             <Autocomplete
               options={discipline === 'physique' 
-                ? (Array.isArray(disciplineConsommables) ? disciplineConsommables : [])
+                ? (Array.isArray(physicsConsommables) ? physicsConsommables : [])
                 : (Array.isArray(disciplineChemicals) ? disciplineChemicals : [])
               }
               loading={loadingChemicals}
@@ -1795,7 +1796,7 @@ const handleCreateCalendarEvent = async () => {
                           {((discipline === 'physique' && consommableInputValue) || (discipline !== 'physique' && chemicalInputValue)) &&
                           ((discipline === 'physique' && consommableInputValue.trim()) || (discipline !== 'physique' && chemicalInputValue.trim())) && 
                           !(discipline === 'physique' 
-                            ? disciplineConsommables.some(c => c.name?.toLowerCase() === consommableInputValue.trim().toLowerCase())
+                            ? physicsConsommables.some(c => c.name?.toLowerCase() === consommableInputValue.trim().toLowerCase())
                             : disciplineChemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase())
                           ) && (
                             <InputAdornment position="end">

@@ -1,4 +1,4 @@
-// app/api/physique/consumables/route.ts
+// app/api/physique/consommables/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { withConnection } from "@/lib/db";

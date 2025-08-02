@@ -81,7 +81,7 @@ export default function PhysicsConsumableAddTab({ onConsumableAdded }: PhysicsCo
     const loadData = async () => {
       try {
         const [typesRes, roomsRes] = await Promise.all([
-          fetch('/api/physique/consumable-types'),
+          fetch('/api/physique/consommables-types'),
           fetch('/api/rooms')
         ])
 
@@ -121,7 +121,7 @@ export default function PhysicsConsumableAddTab({ onConsumableAdded }: PhysicsCo
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/physique/consumables', {
+      const response = await fetch('/api/physique/consommables', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

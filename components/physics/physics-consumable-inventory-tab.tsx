@@ -77,7 +77,7 @@ export default function PhysicsConsumableInventoryTab({ onStatsUpdate }: Physics
       if (searchTerm) params.append('search', searchTerm)
       if (statusFilter) params.append('status', statusFilter)
       
-      const response = await fetch(`/api/physique/consumables?${params}`)
+      const response = await fetch(`/api/physique/consommables?${params}`)
       const data = await response.json()
 
       if (response.ok) {

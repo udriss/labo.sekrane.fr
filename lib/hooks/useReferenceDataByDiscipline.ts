@@ -20,7 +20,7 @@ export function useReferenceDataByDiscipline({ discipline }: UseReferenceDataByD
       
       const requests = [
         fetch(`/api/${discipline}/equipement`),
-        discipline === 'chimie' ? fetch('/api/chimie/chemicals') : fetch('/api/physique/consumables'),
+        discipline === 'chimie' ? fetch('/api/chimie/chemicals') : fetch('/api/physique/consommables'),
         fetch('/api/classes')
       ]
 
