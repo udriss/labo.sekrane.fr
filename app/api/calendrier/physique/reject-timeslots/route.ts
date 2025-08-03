@@ -1,15 +1,16 @@
 // app/api/calendrier/physique/reject-timeslots/route.ts
+// API pour rejeter des créneaux horaires (TimeSlots) - Version Physique
 
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getPhysicsEventById, updatePhysicsEvent } from '@/lib/calendar-utils'
-import { synchronizeActuelTimeSlots } from '@/lib/calendar-slot-utils'
-import type { TimeSlot, CalendarEvent } from '@/types/calendar'
+import { 
+  getPhysicsEventByIdWithTimeSlots, 
+  updatePhysicsEventWithTimeSlots 
+} from '@/lib/calendar-utils-timeslots'
 
-// POST - Rejeter plusieurs TimeSlots pour un événement de physique
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -18,16 +19,24 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { eventId, timeSlotIds, reason } = body
+    const { eventId, timeslotIds, rejectionReason } = body
 
-    if (!eventId || !timeSlotIds || !Array.isArray(timeSlotIds)) {
+    if (!eventId || !timeslotIds || !Array.isArray(timeslotIds)) {
       return NextResponse.json(
-        { error: 'ID de l\'événement et array d\'IDs de TimeSlots requis' },
+        { error: 'ID d\'événement et liste des créneaux requis' },
         { status: 400 }
       )
     }
 
-    const existingEvent = await getPhysicsEventById(eventId)
+    if (!rejectionReason || rejectionReason.trim() === '') {
+      return NextResponse.json(
+        { error: 'Raison du rejet requise' },
+        { status: 400 }
+      )
+    }
+
+    // Récupérer l'événement existant
+    const existingEvent = await getPhysicsEventByIdWithTimeSlots(eventId)
     if (!existingEvent) {
       return NextResponse.json(
         { error: 'Événement non trouvé' },
@@ -35,48 +44,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (existingEvent.created_by !== session.user.id) {
+    // Vérifier que l'utilisateur est le créateur de l'événement (seul le créateur peut rejeter)
+    if (existingEvent.created_by !== session.user.id && 
+        existingEvent.created_by !== session.user.email) {
       return NextResponse.json(
-        { error: 'Seul le créateur de l\'événement peut rejeter les TimeSlots' },
+        { error: 'Seul le créateur de l\'événement peut rejeter les créneaux' },
         { status: 403 }
       )
     }
 
-    let timeSlots: TimeSlot[] = []
-    let actuelTimeSlots: TimeSlot[] = []
-    
-    try {
-      const parsedNotes = JSON.parse(existingEvent.notes || '{}')
-      timeSlots = parsedNotes.timeSlots || []
-      actuelTimeSlots = parsedNotes.actuelTimeSlots || []
-    } catch {
-      return NextResponse.json(
-        { error: 'Structure TimeSlots invalide dans les notes' },
-        { status: 400 }
-      )
-    }
+    // Traiter les TimeSlots pour rejet
+    const currentTimeSlots = existingEvent.timeSlots || []
+    const currentActuelTimeSlots = existingEvent.actuelTimeSlots || []
 
-    const timeSlotsToReject = timeSlots.filter(slot => timeSlotIds.includes(slot.id))
-    if (timeSlotsToReject.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucun TimeSlot trouvé pour les IDs fournis' },
-        { status: 404 }
-      )
-    }
-
-    const changeDate = new Date().toISOString()
-
-    const updatedTimeSlots = timeSlots.map(slot => {
-      if (timeSlotIds.includes(slot.id)) {
+    // Marquer les créneaux comme rejetés (supprimés/invalides)
+    const updatedTimeSlots = currentTimeSlots.map(slot => {
+      if (timeslotIds.includes(slot.id)) {
         return {
           ...slot,
-          status: 'deleted' as const,
+          status: 'invalid' as const,
           modifiedBy: [
             ...(slot.modifiedBy || []),
             {
               userId: session.user.id,
-              date: changeDate,
-              action: 'deleted' as const
+              date: new Date().toISOString(),
+              action: 'rejected' as const,
+              note: rejectionReason
             }
           ]
         }
@@ -84,50 +77,60 @@ export async function POST(request: NextRequest) {
       return slot
     })
 
-    const synchronizedActuelTimeSlots = synchronizeActuelTimeSlots(
-      { timeSlots: updatedTimeSlots } as CalendarEvent,
-      updatedTimeSlots
+    // Retirer les créneaux rejetés des créneaux actuels
+    const updatedActuelTimeSlots = currentActuelTimeSlots.filter(slot => 
+      !timeslotIds.includes(slot.id)
     )
 
-    const updates = {
-      notes: JSON.stringify({
-        timeSlots: updatedTimeSlots,
-        actuelTimeSlots: synchronizedActuelTimeSlots,
-        originalRemarks: JSON.parse(existingEvent.notes || '{}').originalRemarks || '',
-        rejectionReason: reason || 'Aucune raison fournie'
-      })
+    // Mettre à jour les dates principales basées sur les créneaux actuels restants
+    const activeSlots = updatedActuelTimeSlots.filter(slot => slot.status === 'active')
+    const updateData: any = {
+      timeSlots: updatedTimeSlots,
+      actuelTimeSlots: updatedActuelTimeSlots
     }
 
-    const updatedEvent = await updatePhysicsEvent(eventId, updates)
+    if (activeSlots.length > 0) {
+      const sortedSlots = activeSlots.sort((a, b) => 
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      )
+      updateData.start_date = sortedSlots[0].startDate
+      updateData.end_date = sortedSlots[sortedSlots.length - 1].endDate
+    } else {
+      // Si plus aucun créneau actif, marquer l'événement comme annulé
+      updateData.state = 'CANCELLED'
+      updateData.stateChangeReason = `Tous les créneaux ont été rejetés: ${rejectionReason}`
+      updateData.lastStateChange = {
+        from: existingEvent.state || 'VALIDATED',
+        to: 'CANCELLED',
+        date: new Date().toISOString(),
+        userId: session.user.id,
+        reason: 'Rejet de tous les créneaux'
+      }
+    }
 
-    const rejectedSlots = timeSlotsToReject.map(slot => ({
-      ...slot,
-      status: 'deleted' as const,
-      modifiedBy: [
-        ...(slot.modifiedBy || []),
-        {
-          userId: session.user.id,
-          date: changeDate,
-          action: 'deleted' as const
-        }
-      ]
-    }))
+    // Effectuer la mise à jour
+    const updatedEvent = await updatePhysicsEventWithTimeSlots(eventId, updateData)
+
+    const rejectedSlots = timeslotIds.length
 
     return NextResponse.json({
       success: true,
-      message: `${timeSlotIds.length} TimeSlot(s) rejeté(s) avec succès`,
-      rejectedTimeSlots: rejectedSlots,
+      message: `${rejectedSlots} créneau(x) rejeté(s)`,
+      rejectedSlots: rejectedSlots,
+      remainingActiveSlots: updatedActuelTimeSlots.length,
+      eventCancelled: updateData.state === 'CANCELLED',
       event: {
-        ...updatedEvent,
-        timeSlots: updatedTimeSlots,
-        actuelTimeSlots: synchronizedActuelTimeSlots
+        id: updatedEvent.id,
+        state: updatedEvent.state,
+        timeSlots: updatedEvent.timeSlots,
+        actuelTimeSlots: updatedEvent.actuelTimeSlots
       }
     })
 
   } catch (error) {
-    console.error('Erreur lors du rejet des TimeSlots de physique:', error)
+    console.error('Erreur lors du rejet des créneaux physique:', error)
     return NextResponse.json(
-      { error: 'Erreur lors du rejet des TimeSlots' },
+      { error: 'Erreur lors du rejet des créneaux' },
       { status: 500 }
     )
   }

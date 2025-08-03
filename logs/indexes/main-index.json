@@ -23,7 +23,8 @@
       "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json"
     ],
     "anonymous": [
-      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json"
+      "/var/www/labo.sekrane.fr/logs/2025/07/audit-2025-07-30.json",
+      "/var/www/labo.sekrane.fr/logs/2025/08/audit-2025-08-03.json"
     ]
   },
   "modules": {

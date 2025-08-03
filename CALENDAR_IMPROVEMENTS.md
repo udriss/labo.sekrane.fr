@@ -1,6 +1,5 @@
-# Améliorations de la gestion des créneaux horaires
+# Améliorations de la gestion des créneaux horaires dans /var/www/labo.sekrane.fr/app/chimie/calendrier/page.tsx
 
-## Résumé des améliorations implémentées
 
 ### 1. Statut "invalid" pour les anciens créneaux ✅
 
@@ -52,7 +51,6 @@ La fonction a été simplifiée et utilise maintenant :
 2. Correspondance par ID si identique
 3. Retourne `null` si aucune correspondance (plus de matching heuristique)
 
-## Actions restantes à effectuer
 
 ### Composants React à mettre à jour :
 
@@ -82,7 +80,7 @@ La fonction a été simplifiée et utilise maintenant :
    // Filtrer les créneaux avec getActiveTimeSlots(event.timeSlots)
    ```
 
-### Routes API à finaliser :
+### Routes API à produire :
 
 1. **approve-timeslots/route.ts** :
    - Ajouter commentaire sur l'exclusion des créneaux invalid

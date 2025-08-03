@@ -38,10 +38,7 @@ import {
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { UserRole } from "@/types/global";
 import { SiMoleculer } from "react-icons/si";
-import { useSession } from 'next-auth/react'
-import StateChangeHandler from '@/components/calendar/StateChangeHandler'
-import EventActions from '@/components/calendar/EventActions'
-import { getActiveTimeSlots } from '@/lib/calendar-utils-client';
+import { getActiveTimeSlots, hasPendingChanges } from '@/lib/calendar-slot-utils'
 
 
 interface DocumentFile {
@@ -62,7 +59,8 @@ interface TimeSlotFormData {
   modifiedBy: Array<{
     userId: string
     date: string
-    action: 'created' | 'modified' | 'deleted'
+    action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected'
+    note?: string
   }>
 }
 
@@ -657,7 +655,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
 
   const calculateDuration = () => {
     if (!event) return 0
-    const activeSlots = getActiveTimeSlots(event);
+    const activeSlots = getActiveTimeSlots(event.timeSlots || []);
     const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
 
     const startDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
@@ -818,7 +816,7 @@ useEffect(() => {
 
   const documents = getDocuments()
 
-  const activeSlots = getActiveTimeSlots(event);
+  const activeSlots = getActiveTimeSlots(event.timeSlots || []);
   const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
   const eventDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
   const eventStartTime = firstSlot ? new Date(firstSlot.startDate) : new Date();
@@ -1776,7 +1774,6 @@ useEffect(() => {
       </DialogContent>
       
         <DialogActions>
-            {/* Actions EventActions en haut pour tous */}
 <Box sx={{ 
   display: 'flex',
   flexDirection: isTablet || isMobile ? 'column' : 'row',

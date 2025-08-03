@@ -5,7 +5,8 @@ SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 
--- Ajouter le champ state pour gérer les états d'événements (PENDING, VALIDATED, CANCELLED, etc.)
+-- Ajouter le champ state pour gérer les états d'événements (seulement s'il n'existe pas)
+-- Note: MySQL ne supporte pas IF NOT EXISTS pour ADD COLUMN, donc on ignore les erreurs
 ALTER TABLE `calendar_chimie` 
 ADD COLUMN `state` enum('PENDING','VALIDATED','CANCELLED','MOVED','IN_PROGRESS') COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' AFTER `status`;
 
@@ -16,42 +17,58 @@ ADD COLUMN `state` enum('PENDING','VALIDATED','CANCELLED','MOVED','IN_PROGRESS')
 ALTER TABLE `calendar_chimie` ADD KEY `idx_state` (`state`);
 ALTER TABLE `calendar_physique` ADD KEY `idx_state` (`state`);
 
--- Le champ notes existant sera utilisé pour stocker la structure JSON des TimeSlots
--- Structure attendue dans notes:
--- {
---   "timeSlots": [
---     {
---       "id": "TS_timestamp_random",
---       "startDate": "2025-08-02T14:00:00.000Z",
---       "endDate": "2025-08-02T16:00:00.000Z",
---       "status": "active|invalid|deleted",
---       "createdBy": "user_id",
---       "modifiedBy": [
---         {
---           "userId": "user_id",
---           "date": "2025-08-02T12:00:00.000Z",
---           "action": "created|modified|deleted"
---         }
---       ],
---       "referentActuelTimeID": "reference_to_actual_slot_id"
---     }
---   ],
---   "actuelTimeSlots": [
---     {
---       "id": "original_slot_id",
---       "startDate": "2025-08-02T14:00:00.000Z",
---       "endDate": "2025-08-02T16:00:00.000Z",
---       "status": "active",
---       "createdBy": "user_id"
---     }
---   ],
---   "originalRemarks": "text_remarks"
--- }
+-- Ajouter les nouveaux champs timeSlots et actuelTimeSlots comme colonnes JSON séparées
+ALTER TABLE `calendar_chimie` 
+ADD COLUMN `timeSlots` JSON NULL AFTER `state`,
+ADD COLUMN `actuelTimeSlots` JSON NULL AFTER `timeSlots`;
+
+ALTER TABLE `calendar_physique` 
+ADD COLUMN `timeSlots` JSON NULL AFTER `state`,
+ADD COLUMN `actuelTimeSlots` JSON NULL AFTER `timeSlots`;
+
+-- Structure JSON pour timeSlots:
+-- [
+--   {
+--     "id": "TS_timestamp_random",
+--     "startDate": "2025-08-02T14:00:00.000Z",
+--     "endDate": "2025-08-02T16:00:00.000Z",
+--     "status": "active|invalid|deleted",
+--     "createdBy": "user_id",
+--     "modifiedBy": [
+--       {
+--         "userId": "user_id",
+--         "date": "2025-08-02T12:00:00.000Z",
+--         "action": "created|modified|deleted"
+--       }
+--     ],
+--     "referentActuelTimeID": "reference_to_actual_slot_id"
+--   }
+-- ]
+
+-- Structure JSON pour actuelTimeSlots:
+-- [
+--   {
+--     "id": "original_slot_id",
+--     "startDate": "2025-08-02T14:00:00.000Z",
+--     "endDate": "2025-08-02T16:00:00.000Z",
+--     "status": "active",
+--     "createdBy": "user_id"
+--   }
+-- ]
+
+-- Ajouter également un champ pour stocker les métadonnées d'état
+ALTER TABLE `calendar_chimie` 
+ADD COLUMN `stateChangeReason` TEXT NULL AFTER `actuelTimeSlots`,
+ADD COLUMN `lastStateChange` JSON NULL AFTER `stateChangeReason`;
+
+ALTER TABLE `calendar_physique` 
+ADD COLUMN `stateChangeReason` TEXT NULL AFTER `actuelTimeSlots`,
+ADD COLUMN `lastStateChange` JSON NULL AFTER `stateChangeReason`;
 
 -- Migration des données existantes : initialiser les TimeSlots pour les événements existants
 UPDATE `calendar_chimie` 
-SET `notes` = JSON_OBJECT(
-    'timeSlots', JSON_ARRAY(
+SET 
+    `timeSlots` = JSON_ARRAY(
         JSON_OBJECT(
             'id', CONCAT('TS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
             'startDate', DATE_FORMAT(`start_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
@@ -67,22 +84,27 @@ SET `notes` = JSON_OBJECT(
             )
         )
     ),
-    'actuelTimeSlots', JSON_ARRAY(
+    `actuelTimeSlots` = JSON_ARRAY(
         JSON_OBJECT(
-            'id', CONCAT('TS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
+            'id', CONCAT('ATS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
             'startDate', DATE_FORMAT(`start_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
             'endDate', DATE_FORMAT(`end_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
             'status', 'active',
             'createdBy', COALESCE(`created_by`, 'system')
         )
     ),
-    'originalRemarks', COALESCE(`notes`, '')
-)
-WHERE `notes` IS NULL OR `notes` = '' OR NOT JSON_VALID(`notes`) OR JSON_EXTRACT(`notes`, '$.timeSlots') IS NULL;
+    `lastStateChange` = JSON_OBJECT(
+        'from', 'VALIDATED',
+        'to', 'VALIDATED',
+        'date', DATE_FORMAT(COALESCE(`created_at`, NOW()), '%Y-%m-%dT%H:%i:%s.000Z'),
+        'userId', COALESCE(`created_by`, 'system'),
+        'reason', 'Migration automatique'
+    )
+WHERE `timeSlots` IS NULL;
 
 UPDATE `calendar_physique` 
-SET `notes` = JSON_OBJECT(
-    'timeSlots', JSON_ARRAY(
+SET 
+    `timeSlots` = JSON_ARRAY(
         JSON_OBJECT(
             'id', CONCAT('TS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
             'startDate', DATE_FORMAT(`start_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
@@ -98,20 +120,25 @@ SET `notes` = JSON_OBJECT(
             )
         )
     ),
-    'actuelTimeSlots', JSON_ARRAY(
+    `actuelTimeSlots` = JSON_ARRAY(
         JSON_OBJECT(
-            'id', CONCAT('TS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
+            'id', CONCAT('ATS_', UNIX_TIMESTAMP(NOW()), '_', SUBSTRING(MD5(RAND()), 1, 7)),
             'startDate', DATE_FORMAT(`start_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
             'endDate', DATE_FORMAT(`end_date`, '%Y-%m-%dT%H:%i:%s.000Z'),
             'status', 'active',
             'createdBy', COALESCE(`created_by`, 'system')
         )
     ),
-    'originalRemarks', COALESCE(`notes`, '')
-)
-WHERE `notes` IS NULL OR `notes` = '' OR NOT JSON_VALID(`notes`) OR JSON_EXTRACT(`notes`, '$.timeSlots') IS NULL;
+    `lastStateChange` = JSON_OBJECT(
+        'from', 'VALIDATED',
+        'to', 'VALIDATED',
+        'date', DATE_FORMAT(COALESCE(`created_at`, NOW()), '%Y-%m-%dT%H:%i:%s.000Z'),
+        'userId', COALESCE(`created_by`, 'system'),
+        'reason', 'Migration automatique'
+    )
+WHERE `timeSlots` IS NULL;
 
 SET foreign_key_checks = 1;
 
 -- Note: Les champs start_date et end_date existants sont conservés pour la compatibilité
--- mais les TimeSlots dans le champ notes sont désormais la source de vérité pour les horaires.
+-- mais les nouveaux champs timeSlots et actuelTimeSlots sont désormais la source de vérité pour les horaires.

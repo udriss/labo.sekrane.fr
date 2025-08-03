@@ -3,6 +3,8 @@ export type EventType = 'TP' | 'MAINTENANCE' | 'INVENTORY' | 'OTHER'
 
 export type EventState = 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED' | 'IN_PROGRESS'
 
+export type ValidationState = 'noPending' | 'ownerPending' | 'operatorPending'
+
 export interface StateChange {
   userId: string
   date: string
@@ -15,13 +17,15 @@ export interface TimeSlot {
   id: string;
   startDate: string;
   endDate: string;
-  status: 'active' | 'deleted' | 'invalid';
+  status: 'active' | 'deleted' | 'invalid' | 'rejected';
   createdBy?: string;  // Ajout du créateur
   modifiedBy?: Array<{
     userId: string;
     date: string;
-    action: 'created' | 'modified' | 'deleted' | 'invalidated';
+    action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected' | 'restored';
+    note?: string;  // Note optionnelle pour approval/rejection
   }>;  // Ajout de l'historique des modifications
+  actuelTimeSlotsReferent?: string; // NOUVEAU: ID du créneau actuel à remplacer (si proposition de remplacement)
   referentActuelTimeID?: string; // NOUVEAU: ID du créneau actuel référent pour les modifications
 }
 
@@ -57,6 +61,7 @@ export interface CalendarEvent {
   actuelTimeSlots?: TimeSlot[] // NOUVEAU: créneaux actuellement retenus après validation
   type: EventType
   state?: EventState
+  validationState?: ValidationState // NOUVEAU: qui doit valider (owner ou operator)
   stateChanger?: StateChange[]
   class?: string | null
   room?: string | null

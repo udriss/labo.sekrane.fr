@@ -16,9 +16,15 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = session.user.id || session.user.email;
-    const classes = await ClassServiceSQL.getClassesForUser(userId);
+    const classesResponse = await ClassServiceSQL.getClassesForUser(userId);
 
-    return NextResponse.json(classes);
+    // Combiner toutes les classes dans un seul tableau
+    const allClasses = [
+      ...classesResponse.predefinedClasses,
+      ...classesResponse.customClasses
+    ];
+
+    return NextResponse.json({ classes: allClasses });
   } catch (error) {
     console.error("Erreur lors de la récupération des classes:", error);
     return NextResponse.json(

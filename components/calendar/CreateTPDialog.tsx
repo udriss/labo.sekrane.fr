@@ -39,10 +39,10 @@ interface CreateTPDialogProps {
   onSuccess: () => void
   materials: any[]
   chemicals: any[]
-  userClasses: string[]
-  customClasses: string[]
-  setCustomClasses: React.Dispatch<React.SetStateAction<string[]>> 
-  saveNewClass: (className: string, type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
+  userClasses: { id: string, name: string }[]
+  customClasses: { id: string, name: string }[]
+  setCustomClasses: React.Dispatch<React.SetStateAction<{ id: string, name: string }[]>> 
+  saveNewClass: (classObj: string | (Partial<any> & { name: string }), type?: 'predefined' | 'custom' | 'auto') => Promise<{ success: boolean; error?: string; data?: any }>
   tpPresets: any[]
   eventToCopy?: CalendarEvent | null // NOUVEAU: événement à copier
   isMobile?: boolean
@@ -147,7 +147,7 @@ export function CreateTPDialog({
     description: '',
     date: '',
     timeSlots: [{ date: '', startTime: '', endTime: '' }] as { date: string; startTime: string; endTime: string }[],
-    classes: [] as string[],
+    classes: [] as any[],
     materials: [] as any[],
     chemicals: [] as any[],
     consommables: [] as any[]
@@ -156,6 +156,11 @@ export function CreateTPDialog({
   // Pre-fill form data when copying an event
   useEffect(() => {
     if (eventToCopy && open) {
+      // Trouver l'objet classe correspondant
+      const classObj = typeof eventToCopy.class === 'string' 
+        ? [...userClasses, ...customClasses].find(c => c.name === eventToCopy.class || c.id === eventToCopy.class)
+        : eventToCopy.class
+        
       setFormData({
         title: `Copie - ${eventToCopy.title}`,
         description: eventToCopy.description || '',
@@ -170,7 +175,7 @@ export function CreateTPDialog({
             endTime
           };
         }) || [{ date: '', startTime: '', endTime: '' }],
-        classes: eventToCopy.class ? [eventToCopy.class] : [],
+        classes: classObj ? [classObj] : [],
         materials: eventToCopy.materials || [],
         chemicals: eventToCopy.chemicals || [],
         consommables: discipline === 'physique' ? (eventToCopy.chemicals || []) : []
@@ -475,7 +480,7 @@ const handleCreateCalendarEvent = async () => {
       title: session?.user?.name || formData.title || 'Séance TP',
       description: formData.description,
       type: 'TP',
-      classes: formData.classes,
+      classes: formData.classes.map(c => c.id || c.name || c), // Utiliser l'ID de préférence, puis le nom
       // Envoyer l'objet complet pour les matériels
       materials: formData.materials.map((m) => ({
         id: m.id,
@@ -508,6 +513,7 @@ const handleCreateCalendarEvent = async () => {
       remarks: remarks,
       date: formData.timeSlots[0].date,
       timeSlots: formData.timeSlots.map(slot => ({
+        date: slot.date,
         startTime: slot.startTime,
         endTime: slot.endTime
       }))
@@ -1193,10 +1199,11 @@ const handleCreateCalendarEvent = async () => {
       freeSolo
       options={[
         // D'abord les classes personnalisées
-        ...customClasses.sort(),
+        ...customClasses,
         // Puis les classes prédéfinies
-        ...userClasses.filter(c => !customClasses.includes(c)).sort()
-      ].filter((value, index, self) => self.indexOf(value) === index)}
+        ...userClasses.filter(c => !customClasses.some(cc => cc.id === c.id))
+      ].filter((value, index, self) => self.findIndex(v => v.id === value.id) === index)}
+      getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
       value={formData.classes}
       onChange={async (_, newValue) => {
         // newValue est un tableau car c'est un Autocomplete multiple
@@ -1205,34 +1212,36 @@ const handleCreateCalendarEvent = async () => {
         // Mettre à jour le formulaire
         handleFormDataChange('classes', uniqueClasses)
         
-        // Identifier les nouvelles classes personnalisées
+        // Identifier les nouvelles classes personnalisées (chaînes de caractères saisies)
         const newCustom = uniqueClasses.filter(c => 
-          !userClasses.includes(c) && !customClasses.includes(c)
+          typeof c === 'string' && 
+          !userClasses.some(uc => uc.name === c) && 
+          !customClasses.some(cc => cc.name === c)
         )
         
         if (newCustom.length > 0) {
-          const successfulClasses: string[] = []
+          const successfulClasses: any[] = []
           const failedClasses: { name: string; error: string }[] = []
           
           // Traiter chaque nouvelle classe
           for (const newClass of newCustom) {
             try {
               // Sauvegarder la nouvelle classe
-              const result = await saveNewClass(newClass, 'custom')
+              const result = await saveNewClass(newClass as string, 'custom')
               
               if (result.success) {
-                successfulClasses.push(newClass)
+                successfulClasses.push({ id: result.data.id, name: newClass as string })
                 
               } else {
                 failedClasses.push({ 
-                  name: newClass, 
+                  name: newClass as string, 
                   error: result.error || 'Erreur inconnue' 
                 })
                 console.error(`Erreur lors de l'ajout de la classe "${newClass}":`, result.error)
               }
             } catch (error) {
               failedClasses.push({ 
-                name: newClass, 
+                name: newClass as string, 
                 error: 'Erreur réseau' 
               })
               console.error(`Erreur inattendue pour la classe "${newClass}":`, error)
@@ -1243,9 +1252,9 @@ const handleCreateCalendarEvent = async () => {
           if (successfulClasses.length > 0) {
             setCustomClasses(prev => {
               const updated = [...prev]
-              successfulClasses.forEach(className => {
-                if (!updated.includes(className)) {
-                  updated.push(className)
+              successfulClasses.forEach(classObj => {
+                if (!updated.some(c => c.id === classObj.id)) {
+                  updated.push(classObj)
                 }
               })
               return updated
@@ -1255,7 +1264,7 @@ const handleCreateCalendarEvent = async () => {
             setSnackbar({
               open: true,
               message: successfulClasses.length === 1 
-                ? `Classe "${successfulClasses[0]}" créée avec succès`
+                ? `Classe "${successfulClasses[0].name}" créée avec succès`
                 : `${successfulClasses.length} classes créées avec succès`,
               severity: 'success'
             })
@@ -1294,8 +1303,12 @@ const handleCreateCalendarEvent = async () => {
           label="Classes"
           placeholder="Choisir les classes ou en ajouter une nouvelle..."
           helperText={
-            customClasses.filter(c => formData.classes.includes(c)).length > 0
-              ? `${customClasses.filter(c => formData.classes.includes(c)).length} classe(s) personnalisée(s) sélectionnée(s)`
+            customClasses.filter(c => formData.classes.some(fc => 
+              typeof fc === 'string' ? fc === c.name : fc.id === c.id
+            )).length > 0
+              ? `${customClasses.filter(c => formData.classes.some(fc => 
+                  typeof fc === 'string' ? fc === c.name : fc.id === c.id
+                )).length} classe(s) personnalisée(s) sélectionnée(s)`
               : "Vous pouvez taper pour ajouter une nouvelle classe"
           }
           slotProps={{
@@ -1305,9 +1318,11 @@ const handleCreateCalendarEvent = async () => {
                 <>
                   {params.InputProps.endAdornment}
                   {classInputValue && classInputValue.trim() && 
-                   !userClasses.includes(classInputValue.trim()) && 
-                   !customClasses.includes(classInputValue.trim()) && 
-                   !formData.classes.includes(classInputValue.trim()) && (
+                   !userClasses.some(c => c.name === classInputValue.trim()) && 
+                   !customClasses.some(c => c.name === classInputValue.trim()) && 
+                   !formData.classes.some(fc => 
+                     typeof fc === 'string' ? fc === classInputValue.trim() : fc.name === classInputValue.trim()
+                   ) && (
                     <InputAdornment position="end" sx={{ mr: 3 }}>
                       <IconButton
                         size="small"
@@ -1319,16 +1334,18 @@ const handleCreateCalendarEvent = async () => {
                             const result = await saveNewClass(trimmedValue, 'custom')
                             
                             if (result.success) {
+                              const newClassObj = { id: result.data.id, name: trimmedValue }
+                              
                               // Ajouter la classe aux classes sélectionnées
                               handleFormDataChange('classes', [
                                 ...formData.classes,
-                                trimmedValue
+                                newClassObj
                               ]);
                               
                               // Ajouter aux classes personnalisées
                               setCustomClasses(prev => {
-                                if (!prev.includes(trimmedValue)) {
-                                  return [...prev, trimmedValue]
+                                if (!prev.some(c => c.id === newClassObj.id)) {
+                                  return [...prev, newClassObj]
                                 }
                                 return prev
                               });
@@ -1398,7 +1415,7 @@ const handleCreateCalendarEvent = async () => {
       )}
       renderOption={(props, option) => {
         const { key, ...other } = props
-        const isCustom = customClasses.includes(option)
+        const isCustom = customClasses.some(c => c.id === (typeof option === 'string' ? option : option.id))
         
         return (
           <li key={key} {...other}>
@@ -1406,11 +1423,11 @@ const handleCreateCalendarEvent = async () => {
               <School fontSize="small" color={isCustom ? "secondary" : "action"} />
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="body2">
-                  {option}
+                  {typeof option === 'string' ? option : option.name}
                 </Typography>
-                {isCustom && (
+                {isCustom && typeof option !== 'string' && (
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                    ID: USER_CLASS_{option.replace(/\s+/g, '_').toUpperCase()}
+                    ID : {option.id}
                   </Typography>
                 )}
               </Box>
@@ -1426,34 +1443,52 @@ const handleCreateCalendarEvent = async () => {
           </li>
         )
       }}
-      renderTags={(value: string[], getTagProps) =>
-        value.map((option: string, index: number) => (
-          <Chip
-            {...getTagProps({ index })}
-            key={option}
-            variant="outlined"
-            label={option}
-            size="small"
-            color={customClasses.includes(option) ? "secondary" : "primary"}
-            icon={<School fontSize="small" />}
-            sx={{ m: 0.5 }}
-          />
-        ))
+      renderTags={(value: (string | { id: string, name: string })[], getTagProps) =>
+        value.map((option: string | { id: string, name: string }, index: number) => {
+          const optionName = typeof option === 'string' ? option : option.name
+          const isCustom = customClasses.some(c => 
+            typeof option === 'string' ? c.name === option : c.id === option.id
+          )
+          return (
+            <Chip
+              {...getTagProps({ index })}
+              key={typeof option === 'string' ? option : option.id}
+              variant="outlined"
+              label={optionName}
+              size="small"
+              color={isCustom ? "secondary" : "primary"}
+              icon={<School fontSize="small" />}
+              sx={{ m: 0.5 }}
+            />
+          )
+        })
       }
       filterOptions={(options, state) => {
         const selectedClasses = formData.classes || []
-        const filtered = options.filter(option => 
-          !selectedClasses.includes(option) &&
-          option.toLowerCase().includes(state.inputValue.toLowerCase())
-        )
+        const filtered = options.filter(option => {
+          const optionName = typeof option === 'string' ? option : option.name
+          const isSelected = selectedClasses.some(selected => 
+            typeof selected === 'string' 
+              ? selected === optionName 
+              : selected.name === optionName || selected.id === (typeof option === 'string' ? option : option.id)
+          )
+          return !isSelected && optionName.toLowerCase().includes(state.inputValue.toLowerCase())
+        })
         
         return filtered
       }}
-      isOptionEqualToValue={(option, value) => 
-        option.toLowerCase() === value.toLowerCase()
-      }
+      isOptionEqualToValue={(option, value) => {
+        const optionName = typeof option === 'string' ? option : option.name
+        const valueName = typeof value === 'string' ? value : value.name
+        return optionName.toLowerCase() === valueName.toLowerCase()
+      }}
       noOptionsText={classInputValue ? "Aucune classe trouvée" : "Tapez pour rechercher"}
-      groupBy={(option) => customClasses.includes(option) ? "Mes classes personnalisées" : "Classes prédéfinies"}
+      groupBy={(option) => {
+        const isCustom = customClasses.some(c => 
+          typeof option === 'string' ? c.name === option : c.id === option.id
+        )
+        return isCustom ? "Mes classes personnalisées" : "Classes prédéfinies"
+      }}
     />
 
     {/* Afficher les classes sélectionnées si besoin */}

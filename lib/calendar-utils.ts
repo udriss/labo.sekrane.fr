@@ -88,7 +88,7 @@ export async function getChemistryEvents(startDate?: string, endDate?: string): 
       }
     })
   } catch (error) {
-    console.error('Error fetching chemistry events:', error)
+    console.error('Error fetching chimie events:', error)
     throw error
   }
 }
@@ -152,7 +152,7 @@ export async function getPhysicsEvents(startDate?: string, endDate?: string): Pr
       }
     })
   } catch (error) {
-    console.error('Error fetching physics events:', error)
+    console.error('Error fetching physique events:', error)
     throw error
   }
 }
@@ -197,7 +197,7 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
       chemicals_used: createdEvent.chemicals_used ? JSON.parse(createdEvent.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error creating chemistry event:', error)
+    console.error('Error creating chimie event:', error)
     throw error
   }
 }
@@ -242,7 +242,7 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
       chemicals_used: createdEvent.chemicals_used ? JSON.parse(createdEvent.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error creating physics event:', error)
+    console.error('Error creating physique event:', error)
     throw error
   }
 }
@@ -295,7 +295,7 @@ export async function updateChemistryEvent(id: string, updates: Partial<Calendar
       chemicals_used: updatedEvent.chemicals_used ? JSON.parse(updatedEvent.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error updating chemistry event:', error)
+    console.error('Error updating chimie event:', error)
     throw error
   }
 }
@@ -348,7 +348,7 @@ export async function updatePhysicsEvent(id: string, updates: Partial<CalendarEv
       chemicals_used: updatedEvent.chemicals_used ? JSON.parse(updatedEvent.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error updating physics event:', error)
+    console.error('Error updating physique event:', error)
     throw error
   }
 }
@@ -359,7 +359,7 @@ export async function deleteChemistryEvent(id: string): Promise<boolean> {
     const [result] = await pool.execute('DELETE FROM calendar_chimie WHERE id = ?', [id])
     return (result as any).affectedRows > 0
   } catch (error) {
-    console.error('Error deleting chemistry event:', error)
+    console.error('Error deleting chimie event:', error)
     throw error
   }
 }
@@ -370,7 +370,7 @@ export async function deletePhysicsEvent(id: string): Promise<boolean> {
     const [result] = await pool.execute('DELETE FROM calendar_physique WHERE id = ?', [id])
     return (result as any).affectedRows > 0
   } catch (error) {
-    console.error('Error deleting physics event:', error)
+    console.error('Error deleting physique event:', error)
     throw error
   }
 }
@@ -393,7 +393,7 @@ export async function getChemistryEventById(id: string): Promise<CalendarEvent |
       chemicals_used: event.chemicals_used ? JSON.parse(event.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error fetching chemistry event by ID:', error)
+    console.error('Error fetching chimie event by ID:', error)
     throw error
   }
 }
@@ -416,17 +416,17 @@ export async function getPhysicsEventById(id: string): Promise<CalendarEvent | n
       chemicals_used: event.chemicals_used ? JSON.parse(event.chemicals_used) : []
     }
   } catch (error) {
-    console.error('Error fetching physics event by ID:', error)
+    console.error('Error fetching physique event by ID:', error)
     throw error
   }
 }
 
 // Fonctions pour gérer les créneaux horaires (timeSlots) dans les notes JSON
-export async function addTimeSlotToEvent(eventId: string, timeSlot: TimeSlot, discipline: 'chemistry' | 'physics'): Promise<void> {
+export async function addTimeSlotToEvent(eventId: string, timeSlot: TimeSlot, discipline: 'chimie' | 'physique'): Promise<void> {
   try {
-    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
-    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
-    
+    const getEventById = discipline === 'chimie' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chimie' ? updateChemistryEvent : updatePhysicsEvent
+
     const event = await getEventById(eventId)
     if (!event) {
       throw new Error('Événement non trouvé')
@@ -459,10 +459,10 @@ export async function addTimeSlotToEvent(eventId: string, timeSlot: TimeSlot, di
   }
 }
 
-export async function updateTimeSlotInEvent(eventId: string, timeSlotId: string, updates: Partial<TimeSlot>, discipline: 'chemistry' | 'physics'): Promise<void> {
+export async function updateTimeSlotInEvent(eventId: string, timeSlotId: string, updates: Partial<TimeSlot>, discipline: 'chimie' | 'physique'): Promise<void> {
   try {
-    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
-    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
+    const getEventById = discipline === 'chimie' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chimie' ? updateChemistryEvent : updatePhysicsEvent
     
     const event = await getEventById(eventId)
     if (!event) {
@@ -505,10 +505,10 @@ export async function updateTimeSlotInEvent(eventId: string, timeSlotId: string,
   }
 }
 
-export async function updateEventTimeSlots(eventId: string, timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[], discipline: 'chemistry' | 'physics'): Promise<void> {
+export async function updateEventTimeSlots(eventId: string, timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[], discipline: 'chimie' | 'physique'): Promise<void> {
   try {
-    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
-    const updateEvent = discipline === 'chemistry' ? updateChemistryEvent : updatePhysicsEvent
+    const getEventById = discipline === 'chimie' ? getChemistryEventById : getPhysicsEventById
+    const updateEvent = discipline === 'chimie' ? updateChemistryEvent : updatePhysicsEvent
     
     const event = await getEventById(eventId)
     if (!event) {
@@ -528,9 +528,9 @@ export async function updateEventTimeSlots(eventId: string, timeSlots: TimeSlot[
   }
 }
 
-export async function getEventTimeSlots(eventId: string, discipline: 'chemistry' | 'physics'): Promise<{ timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[] }> {
+export async function getEventTimeSlots(eventId: string, discipline: 'chimie' | 'physique'): Promise<{ timeSlots: TimeSlot[], actuelTimeSlots: TimeSlot[] }> {
   try {
-    const getEventById = discipline === 'chemistry' ? getChemistryEventById : getPhysicsEventById
+    const getEventById = discipline === 'chimie' ? getChemistryEventById : getPhysicsEventById
     
     const event = await getEventById(eventId)
     if (!event) {

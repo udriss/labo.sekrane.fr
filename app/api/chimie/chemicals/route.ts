@@ -102,7 +102,14 @@ export async function GET(request: NextRequest) {
         ? chemical.quantityPrevision 
         : chemical.quantity,
       // Ajouter le nom du fournisseur pour compatibilité
-      supplier: chemical.supplierId ? { name: (chemical as any).supplierName } : null
+      supplier: chemical.supplierId ? { name: (chemical as any).supplierName } : null,
+      // Ajouter une catégorie basée sur la classe de danger pour le groupement
+      categoryName: chemical.hazardClass 
+        ? `Classe ${chemical.hazardClass}` 
+        : 'Sans classification',
+      typeName: chemical.hazardClass 
+        ? `Classe ${chemical.hazardClass}` 
+        : 'Sans classification'
     }))
 
     // Calculer les statistiques

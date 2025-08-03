@@ -303,6 +303,28 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
           '& ul, & ol': {
             paddingLeft: '1.5rem',
             margin: '0.5rem 0',
+            listStylePosition: 'outside',
+          },
+          '& li': {
+            marginBottom: '0.25rem',
+            fontSize: '1rem',
+            lineHeight: 1.6,
+            display: 'list-item',
+            listStylePosition: 'outside',
+          },
+          '& ul li': {
+            listStyleType: 'disc',
+            display: 'list-item',
+          },
+          '& ol li': {
+            listStyleType: 'decimal', 
+            display: 'list-item',
+          },
+          '& ul': {
+            listStyleType: 'disc',
+          },
+          '& ol': {
+            listStyleType: 'decimal',
           },
           '& blockquote': {
             borderLeft: '3px solid',

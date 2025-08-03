@@ -1,15 +1,16 @@
 // app/api/calendrier/physique/approve-timeslots/route.ts
+// API pour approuver des créneaux horaires (TimeSlots) - Version Physique
 
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getPhysicsEventById, updatePhysicsEvent } from '@/lib/calendar-utils'
-import { synchronizeActuelTimeSlots } from '@/lib/calendar-slot-utils'
-import type { TimeSlot, CalendarEvent } from '@/types/calendar'
+import { 
+  getPhysicsEventByIdWithTimeSlots, 
+  updatePhysicsEventWithTimeSlots 
+} from '@/lib/calendar-utils-timeslots'
 
-// POST - Approuver plusieurs TimeSlots pour un événement de physique
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -18,16 +19,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { eventId, timeSlotIds } = body
+    const { eventId, timeslotIds, approvalNote } = body
 
-    if (!eventId || !timeSlotIds || !Array.isArray(timeSlotIds)) {
+    if (!eventId || !timeslotIds || !Array.isArray(timeslotIds)) {
       return NextResponse.json(
-        { error: 'ID de l\'événement et array d\'IDs de TimeSlots requis' },
+        { error: 'ID d\'événement et liste des créneaux requis' },
         { status: 400 }
       )
     }
 
-    const existingEvent = await getPhysicsEventById(eventId)
+    // Récupérer l'événement existant
+    const existingEvent = await getPhysicsEventByIdWithTimeSlots(eventId)
     if (!existingEvent) {
       return NextResponse.json(
         { error: 'Événement non trouvé' },
@@ -35,39 +37,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (existingEvent.created_by !== session.user.id) {
+    // Vérifier que l'utilisateur est le créateur de l'événement (seul le créateur peut approuver)
+    if (existingEvent.created_by !== session.user.id && 
+        existingEvent.created_by !== session.user.email) {
       return NextResponse.json(
-        { error: 'Seul le créateur de l\'événement peut approuver les TimeSlots' },
+        { error: 'Seul le créateur de l\'événement peut approuver les créneaux' },
         { status: 403 }
       )
     }
 
-    let timeSlots: TimeSlot[] = []
-    let actuelTimeSlots: TimeSlot[] = []
-    
-    try {
-      const parsedNotes = JSON.parse(existingEvent.notes || '{}')
-      timeSlots = parsedNotes.timeSlots || []
-      actuelTimeSlots = parsedNotes.actuelTimeSlots || []
-    } catch {
-      return NextResponse.json(
-        { error: 'Structure TimeSlots invalide dans les notes' },
-        { status: 400 }
-      )
-    }
+    // Traiter les TimeSlots pour approbation
+    const currentTimeSlots = existingEvent.timeSlots || []
+    const currentActuelTimeSlots = existingEvent.actuelTimeSlots || []
 
-    const timeSlotsToApprove = timeSlots.filter(slot => timeSlotIds.includes(slot.id))
-    if (timeSlotsToApprove.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucun TimeSlot trouvé pour les IDs fournis' },
-        { status: 404 }
-      )
-    }
-
-    const changeDate = new Date().toISOString()
-
-    const updatedTimeSlots = timeSlots.map(slot => {
-      if (timeSlotIds.includes(slot.id)) {
+    // Marquer les créneaux comme approuvés et les ajouter aux créneaux actuels
+    const updatedTimeSlots = currentTimeSlots.map(slot => {
+      if (timeslotIds.includes(slot.id)) {
         return {
           ...slot,
           status: 'active' as const,
@@ -75,56 +60,62 @@ export async function POST(request: NextRequest) {
             ...(slot.modifiedBy || []),
             {
               userId: session.user.id,
-              date: changeDate,
-              action: 'modified' as const
-            }
-          ]
-        }
-      } else {
-        return {
-          ...slot,
-          status: 'invalid' as const,
-          modifiedBy: [
-            ...(slot.modifiedBy || []),
-            {
-              userId: session.user.id,
-              date: changeDate,
-              action: 'invalidated' as const
+              date: new Date().toISOString(),
+              action: 'approved' as const,
+              note: approvalNote
             }
           ]
         }
       }
+      return slot
     })
 
-    const synchronizedActuelTimeSlots = synchronizeActuelTimeSlots(
-      { timeSlots: updatedTimeSlots } as CalendarEvent,
-      updatedTimeSlots
+    // Ajouter les créneaux approuvés aux créneaux actuels s'ils n'y sont pas déjà
+    const approvedSlots = updatedTimeSlots.filter(slot => 
+      timeslotIds.includes(slot.id) && slot.status === 'active'
     )
 
-    const updates = {
-      notes: JSON.stringify({
-        timeSlots: updatedTimeSlots,
-        actuelTimeSlots: synchronizedActuelTimeSlots,
-        originalRemarks: JSON.parse(existingEvent.notes || '{}').originalRemarks || ''
-      })
+    const updatedActuelTimeSlots = [...currentActuelTimeSlots]
+    approvedSlots.forEach(approvedSlot => {
+      const existsInActuel = updatedActuelTimeSlots.find(actual => actual.id === approvedSlot.id)
+      if (!existsInActuel) {
+        updatedActuelTimeSlots.push(approvedSlot)
+      }
+    })
+
+    // Mettre à jour les dates principales si nécessaire
+    const activeSlots = updatedActuelTimeSlots.filter(slot => slot.status === 'active')
+    const updateData: any = {
+      timeSlots: updatedTimeSlots,
+      actuelTimeSlots: updatedActuelTimeSlots
     }
 
-    const updatedEvent = await updatePhysicsEvent(eventId, updates)
+    if (activeSlots.length > 0) {
+      const sortedSlots = activeSlots.sort((a, b) => 
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      )
+      updateData.start_date = sortedSlots[0].startDate
+      updateData.end_date = sortedSlots[sortedSlots.length - 1].endDate
+    }
+
+    // Effectuer la mise à jour
+    const updatedEvent = await updatePhysicsEventWithTimeSlots(eventId, updateData)
 
     return NextResponse.json({
       success: true,
-      message: `${timeSlotIds.length} TimeSlot(s) approuvé(s) avec succès`,
+      message: `${timeslotIds.length} créneau(x) approuvé(s)`,
+      approvedSlots: approvedSlots.length,
       event: {
-        ...updatedEvent,
-        timeSlots: updatedTimeSlots,
-        actuelTimeSlots: synchronizedActuelTimeSlots
+        id: updatedEvent.id,
+        timeSlots: updatedEvent.timeSlots,
+        actuelTimeSlots: updatedEvent.actuelTimeSlots
       }
     })
 
   } catch (error) {
-    console.error('Erreur lors de l\'approbation des TimeSlots de physique:', error)
+    console.error('Erreur lors de l\'approbation des créneaux physique:', error)
     return NextResponse.json(
-      { error: 'Erreur lors de l\'approbation des TimeSlots' },
+      { error: 'Erreur lors de l\'approbation des créneaux' },
       { status: 500 }
     )
   }

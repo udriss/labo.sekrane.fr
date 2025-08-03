@@ -1,222 +1,184 @@
-# TimeSlots Management System - Documentation Complète
+# Système TimeSlots Complet - Documentation
 
-## 📋 Vue d'ensemble
+## Vue d'ensemble
 
-Le système TimeSlots offre une gestion complète des créneaux horaires pour les événements de laboratoire avec :
-- Gestion des statuts : `active`, `invalid`, `deleted`
-- Approbation/rejet par le créateur d'événement
-- Synchronisation automatique entre créneaux proposés et actuels
-- Historique complet des modifications
-- Support pour chimie et physique
+Le système TimeSlots permet la gestion avancée des créneaux horaires avec support des propositions de déplacement et un système de validation propriétaire.
 
-## 🏗️ Architecture
+## Architecture
 
-### Structure des données
+### 1. Types de base
 
+#### TimeSlot Interface
 ```typescript
 interface TimeSlot {
-  id: string
-  startDate: string
-  endDate: string
-  userIDAdding: string
-  createdBy: string
-  status: 'active' | 'invalid' | 'deleted'
+  id: string;
+  startDate: string; // ISO string
+  endDate: string;   // ISO string
+  status: 'active' | 'deleted' | 'invalid' | 'rejected';
+  createdBy?: string;
   modifiedBy?: Array<{
-    userId: string
-    date: string
-    action: 'created' | 'modified' | 'deleted'
-  }>
-  referentActuelTimeID?: string | null
-}
-
-interface CalendarEvent {
-  timeSlots?: TimeSlot[]        // Créneaux proposés
-  actuelTimeSlots?: TimeSlot[]  // Créneaux actuels/validés
-  // ... autres propriétés
+    userId: string;
+    date: string;
+    action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected' | 'restored';
+    note?: string;
+  }>;
+  actuelTimeSlotsReferent?: string;
+  referentActuelTimeID?: string;
 }
 ```
 
-### Stockage
-- Les TimeSlots sont stockés dans le champ `notes` des événements sous format JSON
-- Structure : `{ timeSlots: [], actuelTimeSlots: [], originalRemarks: "" }`
-
-## 🔧 Utilitaires
-
-### `/lib/calendar-slot-utils.ts`
-**Fonction principale :** `synchronizeActuelTimeSlots(event, timeSlots)`
-- Synchronise les créneaux actuels avec les créneaux proposés validés
-- Maintient la cohérence entre `timeSlots` et `actuelTimeSlots`
-
-### `/lib/calendar-utils.ts`
-**Fonctions étendues :**
-- `getChemistryEvents()` - Parse automatiquement les TimeSlots depuis JSON
-- `getPhysicsEvents()` - Parse automatiquement les TimeSlots depuis JSON
-- Création automatique de structures TimeSlots si manquantes
-
-### `/lib/calendar-utils-client.ts`
-**Fonction :** `getActiveTimeSlots(event)`
-- Filtre les créneaux avec status 'active'
-- Utilisé côté client pour l'affichage
-
-## 🔌 APIs
-
-### Chimie
-
-#### Approbation
-- `POST /api/calendrier/chimie/approve-single-timeslot`
-  - Paramètres : `{ eventId, slotId }`
-  - Action : Approuve un créneau, invalide les conflits
-  
-- `POST /api/calendrier/chimie/approve-timeslots`
-  - Paramètres : `{ eventId, timeSlotIds[] }`
-  - Action : Approbation en lot
-
-#### Rejet
-- `POST /api/calendrier/chimie/reject-single-timeslot`
-  - Paramètres : `{ eventId, slotId }`
-  - Action : Marque le créneau comme 'deleted'
-  
-- `POST /api/calendrier/chimie/reject-timeslots`
-  - Paramètres : `{ eventId, timeSlotIds[], reason }`
-  - Action : Rejet en lot avec raison
-
-### Physique
-Les mêmes routes existent sous `/api/calendrier/physique/`
-
-## ⚛️ Composants React
-
-### `DailyPlanning.tsx`
-**Intégration TimeSlots :**
-- Affichage des créneaux en attente d'approbation
-- Boutons approve/reject pour le créateur
-- Gestion des états de chargement
-- Messages de succès/erreur
-
-**Props ajoutées :**
+#### CalendarEvent TimeSlots
 ```typescript
-onApproveTimeSlotChanges?: (event: CalendarEvent) => void
-onRejectTimeSlotChanges?: (event: CalendarEvent) => void
-discipline?: 'chimie' | 'physique'
+interface CalendarEvent {
+  // ... autres champs
+  timeSlots: TimeSlot[];          // Créneaux proposés/en cours
+  actuelTimeSlots?: TimeSlot[];   // Créneaux actuellement validés
+}
 ```
 
-### `EventActions.tsx`
-**Nouvelles actions :**
-- Détection automatique des changements en attente
-- Actions d'approbation/rejet groupées
-- Interface unifiée pour la gestion des modifications
+### 2. Logique de fonctionnement
 
-### `EventDetailsDialog.tsx`
-**Affichage détaillé :**
-- Timeline des modifications de créneaux
-- Comparaison proposé vs actuel
-- Historique complet des actions
+#### À la création d'un événement
+- `timeSlots = actuelTimeSlots` (identiques)
+- Le créateur est automatiquement propriétaire
 
-## 🚀 Workflow d'utilisation
+#### Proposition de déplacement
+- **Tout utilisateur** peut proposer de nouveaux créneaux
+- Les anciens créneaux actifs dans `timeSlots` sont marqués `status: 'deleted'`
+- Les nouveaux créneaux sont ajoutés avec `status: 'active'`
+- `actuelTimeSlots` reste **inchangé** (sauf si propriétaire)
 
-### 1. Proposition de modification
-```javascript
-// L'utilisateur modifie des créneaux
-// Les nouveaux créneaux sont ajoutés à timeSlots[]
-// Status automatique : 'active'
+#### Validation (propriétaire uniquement)
+- **Approuver** : `actuelTimeSlots = timeSlots.filter(slot => slot.status === 'active')`
+- **Rejeter** : Restaurer les `actuelTimeSlots` dans `timeSlots` avec `status: 'active'`
+
+## APIs
+
+### 1. API de déplacement : `/api/calendrier/move-event`
+
+#### POST - Proposer de nouveaux créneaux
+```typescript
+// Request
+{
+  eventId: string;
+  discipline: 'chimie' | 'physique';
+  newTimeSlots: Array<{
+    date: string;        // YYYY-MM-DD
+    startTime: string;   // HH:MM
+    endTime: string;     // HH:MM
+  }>;
+  reason?: string;
+}
+
+// Response
+{
+  success: boolean;
+  event: CalendarEvent;
+  isOwner: boolean;
+  message: string;
+}
 ```
 
-### 2. Approbation par le créateur
-```javascript
-// API Call
-fetch('/api/calendrier/chimie/approve-single-timeslot', {
-  method: 'POST',
-  body: JSON.stringify({ eventId, slotId })
-})
+#### PUT - Valider/Rejeter les créneaux proposés
+```typescript
+// Request (propriétaire uniquement)
+{
+  eventId: string;
+  discipline: 'chimie' | 'physique';
+  action: 'approve' | 'reject';
+  reason?: string;
+}
 
-// Résultat :
-// - Créneau approuvé ajouté à actuelTimeSlots[]
-// - Créneaux en conflit marqués 'invalid'
-// - Synchronisation automatique
+// Response
+{
+  success: boolean;
+  event: CalendarEvent;
+  action: string;
+  message: string;
+}
 ```
 
-### 3. Rejet par le créateur
-```javascript
-// API Call  
-fetch('/api/calendrier/chimie/reject-single-timeslot', {
-  method: 'POST',
-  body: JSON.stringify({ eventId, slotId })
-})
+### 2. APIs existantes améliorées
 
-// Résultat :
-// - Créneau marqué 'deleted'
-// - Historique des modifications mis à jour
+#### `/api/calendrier/chimie` et `/api/calendrier/physique`
+- **POST** : Création avec support TimeSlots complet
+- **PUT** : Mise à jour avec gestion des TimeSlots
+- **GET** : Récupération avec TimeSlots parsés
+
+## Composants UI
+
+### 1. TimeSlotProposalBadge
+Affiche les propositions de créneaux en attente :
+- Badge avec nombre de propositions
+- Dialog de comparaison actuel vs proposé  
+- Boutons Approuver/Rejeter (propriétaire uniquement)
+
+### 2. EditEventDialog amélioré
+- Détection automatique du propriétaire
+- Mode "proposition" pour non-propriétaires
+- Mode "modification directe" pour propriétaires
+- Utilisation de l'API appropriée selon le contexte
+
+### 3. DailyPlanning intégré
+- Affichage automatique des badges de proposition
+- Support des mises à jour en temps réel
+- Gestion de la discipline (chimie/physique)
+
+## Utilitaires
+
+### 1. `calendar-move-utils.ts`
+- `proposeEventMove()` : Proposer un déplacement
+- `handleTimeSlotProposal()` : Valider/rejeter
+- `isEventOwner()` : Vérifier la propriété
+- `hasPendingTimeSlotProposals()` : Détecter les propositions en attente
+- `getTimeSlotProposalSummary()` : Résumé des différences
+
+### 2. `useEventMove` Hook
+Hook React pour simplifier l'utilisation de l'API de déplacement :
+```typescript
+const { moveEvent, loading, error } = useEventMove();
 ```
 
-## 🔒 Sécurité
+## Workflow complet
 
-### Vérifications automatiques
-- **Authentification** : Session utilisateur requise
-- **Autorisation** : Seul le créateur peut approuver/rejeter
-- **Validation** : Vérification de l'existence des événements et créneaux
-- **Intégrité** : Synchronisation automatique après chaque modification
+### Scénario 1 : Propriétaire modifie ses créneaux
+1. EditEventDialog détecte que l'utilisateur est propriétaire
+2. Utilise l'API standard (`PUT /api/calendrier/{discipline}`)
+3. `timeSlots` et `actuelTimeSlots` sont synchronisés automatiquement
 
-### Gestion des erreurs
-- Codes de retour HTTP appropriés (401, 403, 404, 500)
-- Messages d'erreur localisés en français
-- Logging des erreurs pour le debug
+### Scénario 2 : Non-propriétaire propose un déplacement
+1. EditEventDialog détecte que seuls les créneaux changent
+2. Utilise l'API de déplacement (`POST /api/calendrier/move-event`)
+3. `timeSlots` est mis à jour, `actuelTimeSlots` reste inchangé
+4. TimeSlotProposalBadge s'affiche automatiquement
 
-## 📊 États et transitions
+### Scénario 3 : Propriétaire valide une proposition
+1. TimeSlotProposalBadge permet d'approuver/rejeter
+2. Utilise l'API de validation (`PUT /api/calendrier/move-event`)
+3. Selon l'action :
+   - **Approuver** : `actuelTimeSlots` synchronisé avec `timeSlots`
+   - **Rejeter** : `timeSlots` restauré avec `actuelTimeSlots`
 
-### États des TimeSlots
-```
-active ──┐
-         ├─→ deleted (rejet)
-         └─→ [ajouté à actuelTimeSlots] (approbation)
+## Avantages
 
-invalid ←─ (conflit lors d'approbation)
-```
+1. **Séparation claire** : Créneaux proposés vs validés
+2. **Traçabilité complète** : Historique dans `modifiedBy`
+3. **Permissions granulaires** : Proposer vs valider
+4. **UI intuitive** : Badges visuels et workflows clairs
+5. **API robuste** : Validation stricte des données
+6. **Compatibilité** : Fonctionne avec chimie et physique
 
-### Statuts d'événement
-- `PENDING` : Modifications en attente d'approbation
-- `VALIDATED` : Créneaux approuvés et actifs
-- `CANCELLED` : Événement annulé
+## Migration
 
-## 🧪 Testing
+Les événements existants sont automatiquement compatibles :
+- Si `actuelTimeSlots` est vide, il sera initialisé avec `timeSlots` actifs
+- Les anciens événements conservent leur comportement normal
+- Pas de rupture de compatibilité
 
-### Validation automatique
-Le script `test-timeslots-complete.cjs` vérifie :
-- ✅ 8/8 routes API créées et fonctionnelles
-- ✅ Utilitaires de synchronisation disponibles
-- ✅ Composants React intégrés
-- ✅ Compilation TypeScript sans erreurs
+## Tests recommandés
 
-### Tests manuels recommandés
-1. Créer un événement avec créneaux
-2. Modifier les créneaux depuis un autre utilisateur
-3. Approuver/rejeter depuis le créateur
-4. Vérifier la synchronisation des données
-
-## 🔮 Fonctionnalités avancées
-
-### Gestion des conflits
-- Détection automatique des créneaux conflictuels
-- Invalidation intelligente lors d'approbations
-- Conservation de l'historique même après invalidation
-
-### Références croisées
-- `referentActuelTimeID` : Lien entre créneaux proposés et actuels
-- Permet le suivi des modifications complexes
-- Facilite la réconciliation des données
-
-### Optimisations
-- Synchronisation en lot pour les gros volumes
-- Mise en cache côté client
-- Chargement optimiste des interfaces
-
----
-
-## 🎯 Système opérationnel et prêt pour la production
-
-Le système TimeSlots est maintenant **entièrement fonctionnel** avec :
-- 📡 **8 APIs complètes** (approve/reject pour chimie/physique)
-- 🔧 **Utilitaires robustes** de synchronisation
-- ⚛️ **Composants React intégrés** avec interface utilisateur
-- 🏗️ **Architecture extensible** pour futures améliorations
-- ✅ **Validation complète** sans erreurs de compilation
-
-Le système peut être utilisé immédiatement pour gérer les modifications de créneaux horaires dans l'application de laboratoire.
+1. **Création d'événement** : Vérifier `timeSlots = actuelTimeSlots`
+2. **Proposition de déplacement** : Vérifier que `actuelTimeSlots` ne change pas
+3. **Validation propriétaire** : Vérifier la synchronisation
+4. **Interface utilisateur** : Badges et dialogs fonctionnels
+5. **Permissions** : Non-propriétaires ne peuvent que proposer

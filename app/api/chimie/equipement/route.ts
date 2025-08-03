@@ -259,6 +259,8 @@ export async function GET(request: NextRequest) {
                 name: row.name,
                 itemName: row.item_name || row.name,
                 type: row.type_name,
+                categoryName: row.categoryName || row.type_name, // Ajout pour compatibilité avec groupBy
+                typeName: row.type_name, // Alias pour categoryName
                 typeSvg: row.type_svg,
                 itemSvg: row.item_svg,
                 availableVolumes: volumes,

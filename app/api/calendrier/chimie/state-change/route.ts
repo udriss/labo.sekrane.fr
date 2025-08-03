@@ -55,12 +55,13 @@ export const PUT = withAudit(
       }
 
       const body = await request.json();
-      const { newState, reason, timeSlots } = body;
+      const { state, reason } = body;
 
+      console.log("body dans /api/calendrier/",body)
       // Nouveaux états supportés par le système TimeSlots
       const validStates = ['PENDING', 'VALIDATED', 'CANCELLED', 'MOVED', 'IN_PROGRESS'];
       
-      if (!newState || !validStates.includes(newState)) {
+      if (!state || !validStates.includes(state)) {
         return NextResponse.json(
           { error: `État invalide. États valides: ${validStates.join(', ')}` },
           { status: 400 }
@@ -69,7 +70,7 @@ export const PUT = withAudit(
 
       // Préparer les données de mise à jour
       const updateData: any = {
-        state: newState,
+        state: state,
         updated_at: new Date().toISOString().slice(0, 19).replace('T', ' ') // Format MySQL
       };
 
@@ -87,7 +88,7 @@ export const PUT = withAudit(
           stateChangeReason: reason,
           lastStateChange: {
             from: (event as any).state || 'PENDING',
-            to: newState,
+            to: state,
             date: new Date().toISOString(),
             userId: userId,
             reason: reason

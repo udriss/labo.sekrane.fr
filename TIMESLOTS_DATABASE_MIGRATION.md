@@ -1,6 +1,5 @@
 # Migration Base de Données - Support TimeSlots
 
-## Résumé des Modifications
 
 Cette migration met à jour les tables de calendrier pour supporter le système TimeSlots complet avec gestion des états d'événements.
 
@@ -24,12 +23,11 @@ COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' AFTER `status`;
 ```sql
 -- Index pour optimiser les requêtes sur le state
 ALTER TABLE `calendar_chimie` ADD KEY `idx_state` (`state`);
-ALTER TABLE `calendar_physique` ADD KEY `idx_state` (`state`);
 ```
 
-### 3. Structure JSON dans le Champ `notes`
+### 3. Structure JSON dans le Champ `actuelTimeSlots` et `timeSlots`
 
-Le champ `notes` existant stocke maintenant une structure JSON complète :
+Ajouter de noveau champs `actuelTimeSlots` et `timeSlots` stockent maintenant une structure JSON complète :
 
 ```json
 {
@@ -79,8 +77,8 @@ La migration initialise automatiquement les TimeSlots pour tous les événements
 
 1. **Conversion des dates** : `start_date` et `end_date` → TimeSlots JSON
 2. **Création d'historique** : Attribution du créateur et date de création
-3. **Synchronisation** : `timeSlots` et `actuelTimeSlots` identiques initialement
-4. **Préservation** : Remarques existantes sauvegardées dans `originalRemarks`
+3. **Synchronisation** : `timeSlots` et `actuelTimeSlots` à ajouter dans la base de données. objets JSON
+4. **Préservation** : Remarques existantes sauvegardées dans `originalRemarks`  à ajouter dans la base de données
 
 ## États d'Événements
 
@@ -116,16 +114,13 @@ const validStates = ['PENDING', 'VALIDATED', 'CANCELLED', 'MOVED', 'IN_PROGRESS'
 const { newState, reason, timeSlots } = body
 ```
 
-### 2. Nouvelles APIs TimeSlots
+### 2. Nouvelles APIs TimeSlots pour Chimie
 
 - `POST /api/calendrier/chimie/approve-single-timeslot`
 - `POST /api/calendrier/chimie/approve-timeslots`
 - `POST /api/calendrier/chimie/reject-single-timeslot`
 - `POST /api/calendrier/chimie/reject-timeslots`
-- `POST /api/calendrier/physique/approve-single-timeslot`
-- `POST /api/calendrier/physique/approve-timeslots`
-- `POST /api/calendrier/physique/reject-single-timeslot`
-- `POST /api/calendrier/physique/reject-timeslots`
+
 
 ## Application de la Migration
 
@@ -142,70 +137,6 @@ mysqldump -h$DB_HOST -u$DB_USERNAME -p$DB_PASSWORD $DB_NAME > backup.sql
 # Application
 mysql -h$DB_HOST -u$DB_USERNAME -p$DB_PASSWORD $DB_NAME < sql/timeslots-migration.sql
 ```
-
-## Vérification Post-Migration
-
-### 1. Structure des Tables
-```sql
-DESCRIBE calendar_chimie;
-DESCRIBE calendar_physique;
-```
-
-### 2. Données TimeSlots
-```sql
--- Vérifier les TimeSlots JSON
-SELECT id, JSON_EXTRACT(notes, '$.timeSlots') as timeSlots 
-FROM calendar_chimie 
-WHERE JSON_VALID(notes) LIMIT 5;
-
--- Compter les événements migrés
-SELECT COUNT(*) as migrated_events 
-FROM calendar_chimie 
-WHERE JSON_EXTRACT(notes, '$.timeSlots') IS NOT NULL;
-```
-
-### 3. États d'Événements
-```sql
--- Distribution des états
-SELECT state, COUNT(*) as count 
-FROM calendar_chimie 
-GROUP BY state;
-```
-
-## Compatibilité Descendante
-
-### Champs Conservés
-- `start_date` et `end_date` : maintenus pour compatibilité
-- `status` : conservé pour les intégrations existantes
-- `notes` : étendu avec structure JSON
-
-### Fallback Automatique
-Si le JSON des TimeSlots est invalide ou manquant, le système crée automatiquement des TimeSlots depuis `start_date`/`end_date`.
-
-## Rollback (En cas de Problème)
-
-### 1. Suppression des Nouveaux Champs
-```sql
-ALTER TABLE calendar_chimie DROP COLUMN state;
-ALTER TABLE calendar_physique DROP COLUMN state;
-```
-
-### 2. Restauration des Notes
-```sql
--- Restaurer les remarques originales
-UPDATE calendar_chimie 
-SET notes = JSON_UNQUOTE(JSON_EXTRACT(notes, '$.originalRemarks'))
-WHERE JSON_VALID(notes) AND JSON_EXTRACT(notes, '$.originalRemarks') IS NOT NULL;
-```
-
-### 3. Restauration Complète
-```bash
-# Depuis la sauvegarde
-mysql -h$DB_HOST -u$DB_USERNAME -p$DB_PASSWORD $DB_NAME < backup_before_timeslots_YYYYMMDD_HHMMSS.sql
-```
-
-## Tests de Validation
-
 ### 1. Fonctionnalités TimeSlots
 - ✅ Approbation de créneaux uniques
 - ✅ Approbation par lot
@@ -229,7 +160,7 @@ mysql -h$DB_HOST -u$DB_USERNAME -p$DB_PASSWORD $DB_NAME < backup_before_timeslot
 
 ### Index Ajoutés
 - `idx_state` sur `calendar_chimie.state`
-- `idx_state` sur `calendar_physique.state`
+
 
 ### Optimisations JSON
 - Validation JSON automatique

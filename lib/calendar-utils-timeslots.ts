@@ -1,0 +1,597 @@
+
+// lib/calendar-utils-timeslots.ts
+// Nouvelles fonctions utilisant le système TimeSlots avec gestion d'état centralisée
+
+import pool from '@/lib/db'
+import { TimeSlot, CalendarEvent, EventState } from '@/types/calendar'
+import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { v4 as uuidv4 } from 'uuid'
+import { toZonedTime, format as formatTz } from 'date-fns-tz'
+
+// Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME avec timezone Paris
+function formatDateForMySQL(isoDateString: string): string {
+  try {
+    const date = new Date(isoDateString)
+    if (isNaN(date.getTime())) {
+      throw new Error('Date invalide')
+    }
+    
+    // Convertir vers le timezone Paris (Europe/Paris)
+    const parisTimeZone = 'Europe/Paris'
+    const parisDate = toZonedTime(date, parisTimeZone)
+    
+    // Format MySQL DATETIME: YYYY-MM-DD HH:MM:SS
+    return formatTz(parisDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: parisTimeZone })
+  } catch (error) {
+    console.error('Erreur lors du formatage de la date pour MySQL:', error, 'Date:', isoDateString)
+    // Retourner une date par défaut en cas d'erreur avec timezone Paris
+    const fallbackDate = toZonedTime(new Date(), 'Europe/Paris')
+    return formatTz(fallbackDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: 'Europe/Paris' })
+  }
+}
+
+// Fonction utilitaire pour parser le JSON de manière sécurisée
+function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultValue: T): T {
+  try {
+    if (!jsonString || jsonString === 'null' || jsonString === 'undefined') {
+      return defaultValue
+    }
+    
+    // Si c'est déjà un objet (pas une chaîne), le retourner directement
+    if (typeof jsonString === 'object') {
+      return jsonString as T
+    }
+    
+    // Vérifier si c'est "[object Object]" - corruption courante
+    if (jsonString === '[object Object]' || jsonString.includes('[object Object]')) {
+      console.warn('Detected corrupted JSON string "[object Object]", using default value')
+      return defaultValue
+    }
+    
+    // Si la chaîne commence par "[object Object]" ou contient cette chaîne, essayer de la nettoyer
+    if (typeof jsonString === 'string' && jsonString.includes('[object Object]')) {
+      console.warn('Detected corrupted JSON with [object Object], using default value')
+      return defaultValue
+    }
+    
+    return JSON.parse(jsonString) as T
+  } catch (error) {
+    console.warn('Erreur lors du parsing JSON:', error, 'String:', jsonString)
+    return defaultValue
+  }
+}
+
+// Types pour les événements de calendrier avec le nouveau système TimeSlots
+export interface CalendarEventWithTimeSlots {
+  id: string
+  title: string
+  start_date: string
+  end_date: string
+  description?: string
+  type: 'tp' | 'cours' | 'exam' | 'maintenance' | 'reservation' | 'other'
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  state?: 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED' | 'IN_PROGRESS'
+  room?: string
+  teacher?: string
+  class_name?: string
+  participants?: string[] // Will be stored as JSON
+  equipment_used?: string[] // Will be stored as JSON
+  chemicals_used?: string[] // Will be stored as JSON
+  notes?: string
+  color?: string
+  created_by?: string
+  created_at?: string
+  updated_at?: string
+  timeSlots?: TimeSlot[] // Array des TimeSlots proposés/modifiés
+  actuelTimeSlots?: TimeSlot[] // Array des TimeSlots actuels acceptés par l'owner
+  stateChangeReason?: string
+  lastStateChange?: {
+    from: string
+    to: string
+    date: string
+    userId: string
+    reason?: string
+  } | null
+  validationState?: 'noPending' | 'ownerPending' | 'operatorPending'
+}
+
+// Fonction pour obtenir tous les événements de chimie avec les nouveaux champs
+export async function getChemistryEventsWithTimeSlots(startDate?: string, endDate?: string): Promise<CalendarEventWithTimeSlots[]> {
+  try {
+    let query = 'SELECT * FROM calendar_chimie'
+    const params: any[] = []
+    
+    if (startDate && endDate) {
+      query += ' WHERE start_date >= ? AND end_date <= ?'
+      params.push(startDate, endDate)
+    } else if (startDate) {
+      query += ' WHERE start_date >= ?'
+      params.push(startDate)
+    } else if (endDate) {
+      query += ' WHERE end_date <= ?'
+      params.push(endDate)
+    }
+    
+    query += ' ORDER BY start_date ASC'
+    
+    const [rows] = await pool.execute(query, params)
+    
+    return (rows as any[]).map(row => {
+      // Parser les TimeSlots depuis les nouveaux champs JSON
+      let timeSlots: TimeSlot[] = []
+      let actuelTimeSlots: TimeSlot[] = []
+      let lastStateChange = null
+      
+      try {
+        // Utiliser les nouveaux champs timeSlots et actuelTimeSlots avec parsing sécurisé
+        timeSlots = parseJsonSafe(row.timeSlots, [])
+        actuelTimeSlots = parseJsonSafe(row.actuelTimeSlots, [])
+        lastStateChange = parseJsonSafe(row.lastStateChange, null)
+        
+        // Fallback vers l'ancien système si les nouveaux champs sont vides
+        if (timeSlots.length === 0 && actuelTimeSlots.length === 0 && row.notes) {
+          try {
+            const parsedNotes = parseJsonSafe(row.notes, {} as any)
+            if (parsedNotes.timeSlots) {
+              timeSlots = parsedNotes.timeSlots || []
+              actuelTimeSlots = parsedNotes.actuelTimeSlots || []
+            }
+          } catch (noteError) {
+            // Ignore l'erreur de parsing des notes
+          }
+        }
+        
+        // Si toujours vides, créer des timeSlots à partir de start_date/end_date
+        if (timeSlots.length === 0 && actuelTimeSlots.length === 0) {
+          const defaultSlot: TimeSlot = {
+            id: `${row.id}-default`,
+            startDate: row.start_date,
+            endDate: row.end_date,
+            status: 'active',
+            createdBy: row.created_by
+          }
+          timeSlots = [defaultSlot]
+          actuelTimeSlots = [defaultSlot]
+        }
+      } catch (error) {
+        console.error('Erreur parsing TimeSlots:', error)
+        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
+        const fallbackSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: new Date(row.start_date).toISOString(),
+          endDate: new Date(row.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: row.created_by || 'system',
+          modifiedBy: [{
+            userId: row.created_by || 'system',
+            date: row.created_at || new Date().toISOString(),
+            action: 'created' as const
+          }]
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
+      }
+
+      return {
+        id: row.id,
+        title: row.title,
+        start_date: row.start_date,
+        end_date: row.end_date,
+        description: row.description,
+        type: row.type,
+        status: row.status,
+        state: row.state || 'VALIDATED',
+        room: row.room,
+        teacher: row.teacher,
+        class_name: row.class_name,
+        participants: parseJsonSafe(row.participants, []),
+        equipment_used: parseJsonSafe(row.equipment_used, []),
+        chemicals_used: parseJsonSafe(row.chemicals_used, []),
+        notes: row.notes,
+        color: row.color,
+        created_by: row.created_by,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        timeSlots,
+        actuelTimeSlots,
+        stateChangeReason: row.stateChangeReason,
+        lastStateChange,
+        validationState: row.validationState
+      }
+    })
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération des événements de chimie:', error)
+    throw error
+  }
+}
+
+// Fonction pour créer un événement de chimie avec les nouveaux champs
+export async function createChemistryEventWithTimeSlots(eventData: Partial<CalendarEventWithTimeSlots>): Promise<CalendarEventWithTimeSlots> {
+  try {
+    const id = uuidv4()
+    
+    const query = `
+      INSERT INTO calendar_chimie (
+        id, title, start_date, end_date, description, type, status, state,
+        room, teacher, class_name, participants, equipment_used, chemicals_used,
+        notes, color, created_by, timeSlots, actuelTimeSlots, lastStateChange,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `
+    
+    const params = [
+      id,
+      eventData.title || '',
+      eventData.start_date ? formatDateForMySQL(eventData.start_date) : '',
+      eventData.end_date ? formatDateForMySQL(eventData.end_date) : '',
+      eventData.description || '',
+      eventData.type || 'other',
+      eventData.status || 'scheduled',
+      eventData.state || 'VALIDATED',
+      eventData.room || '',
+      eventData.teacher || '',
+      eventData.class_name || '',
+      JSON.stringify(eventData.participants || []),
+      JSON.stringify(eventData.equipment_used || []),
+      JSON.stringify(eventData.chemicals_used || []),
+      eventData.notes || '',
+      eventData.color || '#2196f3',
+      eventData.created_by || '',
+      JSON.stringify(eventData.timeSlots || []),
+      JSON.stringify(eventData.actuelTimeSlots || []),
+      JSON.stringify(eventData.lastStateChange || null)
+    ]
+    
+    await pool.execute(query, params)
+    
+    // Retourner l'événement créé
+    const [rows] = await pool.execute('SELECT * FROM calendar_chimie WHERE id = ?', [id])
+    const createdEvent = (rows as any[])[0]
+    
+    return {
+      ...createdEvent,
+      timeSlots: parseJsonSafe(createdEvent.timeSlots, []),
+      actuelTimeSlots: parseJsonSafe(createdEvent.actuelTimeSlots, []),
+      lastStateChange: parseJsonSafe(createdEvent.lastStateChange, null)
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'événement de chimie:', error)
+    throw error
+  }
+}
+
+// Fonction pour mettre à jour un événement de chimie avec les nouveaux champs
+export async function updateChemistryEventWithTimeSlots(
+  id: string, 
+  eventData: Partial<CalendarEventWithTimeSlots>
+): Promise<CalendarEventWithTimeSlots> {
+  try {
+    const updates: string[] = []
+    const params: any[] = []
+    
+    // Construire la requête de mise à jour dynamiquement
+    Object.entries(eventData).forEach(([key, value]) => {
+      if (key === 'id') return // Skip ID
+      
+      if (key === 'timeSlots' || key === 'actuelTimeSlots' || key === 'lastStateChange') {
+        // Champs JSON - traiter comme des objets
+        updates.push(`${key} = ?`)
+        params.push(JSON.stringify(value))
+      } else if (key === 'participants' || key === 'equipment_used' || key === 'chemicals_used') {
+        // Champs JSON
+        updates.push(`${key} = ?`)
+        params.push(JSON.stringify(value))
+      } else if (key === 'start_date' || key === 'end_date') {
+        // Formater les dates pour MySQL (exclure updated_at car traité séparément)
+        updates.push(`${key} = ?`)
+        params.push(value ? formatDateForMySQL(value as string) : value)
+      } else if (key === 'updated_at') {
+        // Traiter updated_at séparément
+        updates.push(`${key} = ?`)
+        params.push(value ? formatDateForMySQL(value as string) : value)
+      } else if (key === 'validationState') {
+        // Champ enum pour le statut de validation
+        updates.push(`${key} = ?`)
+        params.push(value)
+      } else {
+        // Autres champs texte/nombre
+        updates.push(`${key} = ?`)
+        params.push(value)
+      }
+    })
+    
+    if (updates.length === 0) {
+      throw new Error('Aucune mise à jour spécifiée')
+    }
+    
+    // Ajouter updated_at = NOW() seulement si pas déjà fourni dans eventData
+    if (!eventData.hasOwnProperty('updated_at')) {
+      updates.push('updated_at = NOW()')
+    }
+    
+    params.push(id)
+    
+    const query = `UPDATE calendar_chimie SET ${updates.join(', ')} WHERE id = ?`
+    
+    await pool.execute(query, params)
+    
+    // Retourner l'événement mis à jour
+    const [rows] = await pool.execute('SELECT * FROM calendar_chimie WHERE id = ?', [id])
+    const updatedEvent = (rows as any[])[0]
+    
+    if (!updatedEvent) {
+      throw new Error('Événement non trouvé après mise à jour')
+    }
+    
+    return {
+      ...updatedEvent,
+      timeSlots: parseJsonSafe(updatedEvent.timeSlots, []),
+      actuelTimeSlots: parseJsonSafe(updatedEvent.actuelTimeSlots, []),
+      lastStateChange: parseJsonSafe(updatedEvent.lastStateChange, null)
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'événement de chimie:', error)
+    throw error
+  }
+}
+
+// Fonction pour obtenir un événement de chimie par ID avec les nouveaux champs
+export async function getChemistryEventByIdWithTimeSlots(id: string): Promise<CalendarEventWithTimeSlots | null> {
+  try {
+    const [rows] = await pool.execute('SELECT * FROM calendar_chimie WHERE id = ?', [id])
+    const events = rows as any[]
+    
+    if (events.length === 0) {
+      return null
+    }
+    
+    const row = events[0]
+    
+    return {
+      ...row,
+      timeSlots: parseJsonSafe(row.timeSlots, []),
+      actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
+      lastStateChange: parseJsonSafe(row.lastStateChange, null),
+      participants: parseJsonSafe(row.participants, []),
+      equipment_used: parseJsonSafe(row.equipment_used, []),
+      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'événement de chimie:', error)
+    throw error
+  }
+}
+
+// ============================================================================
+// FONCTIONS PHYSIQUE - Équivalentes aux fonctions chimie pour table calendar_physique
+// ============================================================================
+
+// Fonction pour obtenir tous les événements de physique avec les nouveaux champs
+export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?: string): Promise<CalendarEventWithTimeSlots[]> {
+  try {
+    let query = 'SELECT * FROM calendar_physique'
+    const params: any[] = []
+    
+    if (startDate && endDate) {
+      query += ' WHERE start_date >= ? AND end_date <= ?'
+      params.push(startDate, endDate)
+    }
+    
+    query += ' ORDER BY start_date ASC'
+    
+    const [rows] = await pool.execute(query, params)
+    
+    return (rows as any[]).map(row => ({
+      id: row.id,
+      title: row.title,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      description: row.description,
+      type: row.type,
+      status: row.status,
+      state: row.state,
+      room: row.room,
+      teacher: row.teacher,
+      class_name: row.class_name,
+      notes: row.notes,
+      color: row.color,
+      created_by: row.created_by,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      stateChangeReason: row.stateChangeReason,
+      
+      // Parser les champs JSON en toute sécurité
+      timeSlots: parseJsonSafe(row.timeSlots, []),
+      actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
+      lastStateChange: parseJsonSafe(row.lastStateChange, null),
+      participants: parseJsonSafe(row.participants, []),
+      equipment_used: parseJsonSafe(row.equipment_used, []),
+      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+    }))
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération des événements de physique avec TimeSlots:', error)
+    throw error
+  }
+}
+
+// Fonction pour créer un événement de physique avec le système TimeSlots
+export async function createPhysicsEventWithTimeSlots(eventData: Partial<CalendarEventWithTimeSlots>): Promise<CalendarEventWithTimeSlots> {
+  try {
+    // Générer un ID unique pour l'événement
+    const eventId = uuidv4()
+    
+    // Préparer les données avec les valeurs par défaut
+    const finalEventData = {
+      id: eventId,
+      title: eventData.title || '',
+      start_date: eventData.start_date ? formatDateForMySQL(eventData.start_date) : formatDateForMySQL(new Date().toISOString()),
+      end_date: eventData.end_date ? formatDateForMySQL(eventData.end_date) : formatDateForMySQL(new Date().toISOString()),
+      description: eventData.description || '',
+      type: eventData.type || 'other',
+      status: eventData.status || 'scheduled',
+      state: eventData.state || 'VALIDATED',
+      room: eventData.room || '',
+      teacher: eventData.teacher || '',
+      class_name: eventData.class_name || '',
+      notes: eventData.notes || '',
+      color: eventData.color || '#2196f3',
+      created_by: eventData.created_by || '',
+      stateChangeReason: eventData.stateChangeReason || '',
+      
+      // Sérialiser les champs JSON
+      participants: JSON.stringify(eventData.participants || []),
+      equipment_used: JSON.stringify(eventData.equipment_used || []),
+      chemicals_used: JSON.stringify(eventData.chemicals_used || []),
+      timeSlots: JSON.stringify(eventData.timeSlots || []),
+      actuelTimeSlots: JSON.stringify(eventData.actuelTimeSlots || []),
+      lastStateChange: JSON.stringify(eventData.lastStateChange || null)
+    }
+    
+    // Construire la requête d'insertion
+    const fields = Object.keys(finalEventData)
+    const placeholders = fields.map(() => '?').join(', ')
+    const query = `
+      INSERT INTO calendar_physique (${fields.join(', ')})
+      VALUES (${placeholders})
+    `
+    
+    const values = Object.values(finalEventData)
+    
+    await pool.execute(query, values)
+    
+    // Retourner l'événement créé avec les données parsées
+    return {
+      ...finalEventData,
+      participants: eventData.participants || [],
+      equipment_used: eventData.equipment_used || [],
+      chemicals_used: eventData.chemicals_used || [],
+      timeSlots: eventData.timeSlots || [],
+      actuelTimeSlots: eventData.actuelTimeSlots || [],
+      lastStateChange: eventData.lastStateChange || undefined
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'événement de physique avec TimeSlots:', error)
+    throw error
+  }
+}
+
+// Fonction pour mettre à jour un événement de physique avec le système TimeSlots
+export async function updatePhysicsEventWithTimeSlots(id: string, updateData: Partial<CalendarEventWithTimeSlots>): Promise<CalendarEventWithTimeSlots> {
+  try {
+    // Préparer les données de mise à jour
+    const updateFields: string[] = []
+    const updateValues: any[] = []
+    
+    // Champs simples
+    const simpleFields = ['title', 'start_date', 'end_date', 'description', 'type', 'status', 'state', 'room', 'teacher', 'class_name', 'notes', 'color', 'stateChangeReason', 'validationState']
+    
+    simpleFields.forEach(field => {
+      if (updateData[field as keyof CalendarEventWithTimeSlots] !== undefined) {
+        updateFields.push(`${field} = ?`)
+        
+        // Formater les dates pour MySQL
+        if (field === 'start_date' || field === 'end_date') {
+          const dateValue = updateData[field as keyof CalendarEventWithTimeSlots] as string
+          updateValues.push(dateValue ? formatDateForMySQL(dateValue) : dateValue)
+        } else {
+          updateValues.push(updateData[field as keyof CalendarEventWithTimeSlots])
+        }
+      }
+    })
+    
+    // Gérer updated_at séparément s'il est fourni
+    if (updateData.updated_at !== undefined) {
+      updateFields.push('updated_at = ?')
+      updateValues.push(formatDateForMySQL(updateData.updated_at as string))
+    }
+    
+    // Champs JSON
+    const jsonFields = ['participants', 'equipment_used', 'chemicals_used', 'timeSlots', 'actuelTimeSlots', 'lastStateChange']
+    
+    jsonFields.forEach(field => {
+      if (updateData[field as keyof CalendarEventWithTimeSlots] !== undefined) {
+        updateFields.push(`${field} = ?`)
+        updateValues.push(JSON.stringify(updateData[field as keyof CalendarEventWithTimeSlots]))
+      }
+    })
+    
+    // Ajouter updated_at = NOW() seulement si pas déjà fourni
+    if (updateData.updated_at === undefined) {
+      updateFields.push('updated_at = NOW()')
+    }
+    
+    if (updateFields.length === 0) {
+      throw new Error('Aucune donnée à mettre à jour')
+    }
+    
+    // Construire et exécuter la requête de mise à jour
+    const query = `
+      UPDATE calendar_physique 
+      SET ${updateFields.join(', ')}
+      WHERE id = ?
+    `
+    
+    updateValues.push(id)
+    
+    await pool.execute(query, updateValues)
+    
+    // Récupérer et retourner l'événement mis à jour
+    return await getPhysicsEventByIdWithTimeSlots(id)
+    
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'événement de physique avec TimeSlots:', error)
+    throw error
+  }
+}
+
+// Fonction pour récupérer un événement de physique par ID avec le système TimeSlots
+export async function getPhysicsEventByIdWithTimeSlots(id: string): Promise<CalendarEventWithTimeSlots> {
+  try {
+    const query = 'SELECT * FROM calendar_physique WHERE id = ?'
+    const [rows] = await pool.execute(query, [id])
+    
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error('Événement de physique non trouvé')
+    }
+    
+    const row = (rows as any[])[0]
+    
+    return {
+      id: row.id,
+      title: row.title,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      description: row.description,
+      type: row.type,
+      status: row.status,
+      state: row.state,
+      room: row.room,
+      teacher: row.teacher,
+      class_name: row.class_name,
+      notes: row.notes,
+      color: row.color,
+      created_by: row.created_by,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      stateChangeReason: row.stateChangeReason,
+      
+      // Parser les champs JSON en toute sécurité
+      timeSlots: parseJsonSafe(row.timeSlots, []),
+      actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
+      lastStateChange: parseJsonSafe(row.lastStateChange, null),
+      participants: parseJsonSafe(row.participants, []),
+      equipment_used: parseJsonSafe(row.equipment_used, []),
+      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'événement de physique:', error)
+    throw error
+  }
+}

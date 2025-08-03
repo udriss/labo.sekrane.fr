@@ -2,31 +2,31 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-export function useReferenceData() {
+interface UseReferenceDataOptions {
+  discipline?: 'chimie' | 'physique'
+}
+
+export function useReferenceData(options?: UseReferenceDataOptions) {
   const { data: session } = useSession()
   const [materials, setMaterials] = useState<any[]>([])
   const [chemicals, setChemicals] = useState<any[]>([])
-  const [userClasses, setUserClasses] = useState<string[]>([])
-  const [customClasses, setCustomClasses] = useState<string[]>([])
+  const [userClasses, setUserClasses] = useState<any[]>([])
+  const [customClasses, setCustomClasses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadReferenceData = async () => {
     try {
       setLoading(true)
       
+      const discipline = options?.discipline || 'chimie'
       const requests = [
-        fetch('/api/chimie/equipement'),
-        fetch('/api/chimie/chemicals'),
+        fetch(`/api/${discipline}/equipement`),
+        fetch(`/api/${discipline}/chemicals`),
         fetch('/api/classes')
       ]
 
-      // Si l'utilisateur n'est pas admin, charger aussi ses classes personnalisées
-      if (session?.user && session.user.role !== 'ADMIN') {
-        requests.push(fetch('/api/user/classes'))
-      }
-
       const responses = await Promise.all(requests)
-      const [materialsRes, chemicalsRes, classesRes, userClassesRes] = responses
+      const [materialsRes, chemicalsRes, classesRes] = responses
 
       // Gestion des équipements
       if (materialsRes.ok) {
@@ -46,35 +46,33 @@ export function useReferenceData() {
         setChemicals([])
       }
 
-      // Gestion des classes
+      // Gestion des classes - une seule API
       if (classesRes.ok) {
         const classesData = await classesRes.json()
+        const allClasses = classesData.classes || []
         
-        const predefinedClassNames = (classesData.predefinedClasses || [])
-          .map((classItem: any) => classItem.name)
+        // Séparer les classes prédéfinies et custom
+        const predefinedClasses = allClasses.filter((c: any) => c.type === 'predefined')
+        const allCustomClasses = allClasses.filter((c: any) => c.type === 'custom')
         
-        let customClassNames: string[] = []
-        
-        if (session?.user?.role === 'ADMIN') {
-          // Pour les admins, prendre les classes custom depuis l'API classes
-          customClassNames = (classesData.customClasses || [])
-            .map((classItem: any) => classItem.name)
-        } else if (userClassesRes && userClassesRes.ok) {
-          // Pour les utilisateurs non-admin, prendre leurs propres classes custom
-          const userClassesData = await userClassesRes.json()
-          customClassNames = (userClassesData.customClasses || [])
-            .map((classItem: any) => classItem.name)
+        // Classes custom qui appartiennent à l'utilisateur
+        let userCustomClasses: any[] = []
+        if (session?.user?.id) {
+          userCustomClasses = allCustomClasses.filter((c: any) => 
+            c.user_id === session.user.id || c.user_email === session.user.email
+          )
         }
         
-        setUserClasses([...predefinedClassNames, ...customClassNames])
-        setCustomClasses(customClassNames)
+          // Convertir en objets { id, name } pour compatibilité avec les composants
+          const predefinedClassObjs = predefinedClasses.map((c: any) => ({ id: c.id, name: c.name }))
+          const userCustomClassObjs = userCustomClasses.map((c: any) => ({ id: c.id, name: c.name }))
+        
+        // Combiner toutes les classes disponibles pour l'utilisateur
+          setUserClasses([...predefinedClassObjs, ...userCustomClassObjs])
+          setCustomClasses(userCustomClassObjs)
       } else {
         console.error('Erreur lors du chargement des classes')
-        const defaultClasses = [
-          '201', '202', '203', '204', '205', '206', 
-          '1ère ES', '1ère STI2D', 'Tle STI2D', 'Tle ES'
-        ]
-        setUserClasses(defaultClasses)
+        setUserClasses([])
         setCustomClasses([])
       }
     } catch (error) {
@@ -82,9 +80,20 @@ export function useReferenceData() {
       
       setMaterials([])
       setChemicals([])
+      // Classes système prédéfinies par défaut - format objet pour compatibilité
       setUserClasses([
-        '201', '202', '203', '204', '205', '206', 
-        '1ère ES', '1ère STI2D', 'Tle STI2D', 'Tle ES'
+        { id: 'c201', name: '201' },
+        { id: 'c202', name: '202' },
+        { id: 'c203', name: '203' },
+        { id: 'c204', name: '204' },
+        { id: 'c205', name: '205' },
+        { id: 'c206', name: '206' },
+        { id: 'c1es', name: '1ère ES' },
+        { id: 'ctes', name: 'Terminale ES' },
+        { id: 'c1sti2d', name: '1ère STI2D' },
+        { id: 'ctsti2d', name: 'Terminale STI2D' },
+        { id: 'cprepa1', name: 'Prépa 1ère année' },
+        { id: 'cprepa2', name: 'Prépa 2e année' },
       ])
       setCustomClasses([])
     } finally {
@@ -94,15 +103,18 @@ export function useReferenceData() {
 
   /**
    * Sauvegarde une nouvelle classe
-   * @param className - Le nom de la classe à créer
+   * @param classObj - L'objet classe avec au minimum { name: string } ou className string pour compatibilité
    * @param type - Le type de classe ('predefined' | 'custom' | 'auto')
    * @returns Object avec success et éventuellement error
    */
   const saveNewClass = async (
-    className: string, 
+    classObj: string | (Partial<any> & { name: string }),
     type: 'predefined' | 'custom' | 'auto' = 'auto'
   ): Promise<{ success: boolean; error?: string; data?: any }> => {
     try {
+      // Support pour les deux formats : string ou objet
+      const className = typeof classObj === 'string' ? classObj : classObj.name
+      
       // Validation du nom de classe
       if (!className || !className.trim()) {
         return { 
@@ -111,8 +123,8 @@ export function useReferenceData() {
         }
       }
 
-      // Vérifier si la classe existe déjà localement
-      if (userClasses.includes(className.trim())) {
+      // Vérifier si la classe existe déjà localement (par nom)
+      if (userClasses.some(c => c === className.trim())) {
         return { 
           success: false, 
           error: 'Cette classe existe déjà' 
@@ -138,7 +150,8 @@ export function useReferenceData() {
         },
         body: JSON.stringify({
           name: className.trim(),
-          type: type
+          type: type,
+          ...(typeof classObj === 'object' ? classObj : {})
         })
       })
 
@@ -146,7 +159,7 @@ export function useReferenceData() {
         const result = await response.json()
         const newClass = result.data
         
-        // Mettre à jour la liste locale
+        // Mettre à jour la liste locale avec le nom de la classe
         setUserClasses(prev => [...prev, newClass.name])
         
         // Si c'est une classe custom, l'ajouter aussi à customClasses
@@ -198,7 +211,7 @@ export function useReferenceData() {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       // Vérifier que c'est bien une classe personnalisée
-      if (!customClasses.includes(className)) {
+      if (!customClasses.some(c => c === className)) {
         return { 
           success: false, 
           error: 'Cette classe n\'est pas une classe personnalisée' 
@@ -264,3 +277,6 @@ export function useReferenceData() {
     loading
   }
 }
+
+// Alias pour la compatibilité
+export const useReferenceDataByDiscipline = useReferenceData

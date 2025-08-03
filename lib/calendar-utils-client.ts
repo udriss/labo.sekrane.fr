@@ -6,6 +6,11 @@ import { TimeSlot, CalendarEvent } from '@/types/calendar'
 // Selon les nouvelles exigences : afficher uniquement les propositions des nouveaux créneaux
 // Si pas de nouveaux créneaux proposés, afficher les actuelTimeSlots
 export function getActiveTimeSlots(event: CalendarEvent): TimeSlot[] {
+  // Vérifier que l'événement existe et est valide
+  if (!event || typeof event !== 'object') {
+    return [];
+  }
+  
   if (!event.timeSlots || !Array.isArray(event.timeSlots)) {
     // Pour la rétrocompatibilité, si l'événement n'a pas de timeSlots
     // mais a encore startDate/endDate (pendant la migration)
@@ -22,6 +27,11 @@ export function getActiveTimeSlots(event: CalendarEvent): TimeSlot[] {
   
   // Obtenir les nouveaux créneaux proposés (status 'active' dans timeSlots)
   const proposedSlots = event.timeSlots.filter(slot => slot.status === 'active');
+  
+  // Pour les événements annulés, toujours afficher les actuelTimeSlots
+  if (event.state === 'CANCELLED') {
+    return event.actuelTimeSlots || [];
+  }
   
   // Si il y a des créneaux proposés, les afficher uniquement
   if (proposedSlots.length > 0) {
@@ -44,6 +54,41 @@ export function getProposedTimeSlots(event: CalendarEvent): TimeSlot[] {
 // Fonction pour obtenir les créneaux actuels validés
 export function getActuelTimeSlots(event: CalendarEvent): TimeSlot[] {
   return event.actuelTimeSlots || [];
+}
+
+// Fonction pour obtenir les créneaux à afficher dans le planning quotidien
+// Priorité : actuelTimeSlots (créneaux confirmés) > timeSlots (propositions) > legacy dates
+export function getDisplayTimeSlots(event: CalendarEvent): TimeSlot[] {
+  // Vérifier que l'événement existe et est valide
+  if (!event || typeof event !== 'object') {
+    return [];
+  }
+  
+  // 1. Prioriser les actuelTimeSlots s'ils existent (créneaux confirmés et en vigueur)
+  if (event.actuelTimeSlots && Array.isArray(event.actuelTimeSlots) && event.actuelTimeSlots.length > 0) {
+    return event.actuelTimeSlots;
+  }
+  
+  // 2. Sinon, utiliser les timeSlots proposés (status 'active')
+  if (event.timeSlots && Array.isArray(event.timeSlots)) {
+    const proposedSlots = event.timeSlots.filter(slot => slot.status === 'active');
+    if (proposedSlots.length > 0) {
+      return proposedSlots;
+    }
+  }
+  
+  // 3. Pour la rétrocompatibilité, si l'événement n'a pas de timeSlots
+  // mais a encore startDate/endDate (pendant la migration)
+  if ((event as any).startDate && (event as any).endDate) {
+    return [{
+      id: 'legacy-slot',
+      startDate: (event as any).startDate,
+      endDate: (event as any).endDate,
+      status: 'active'
+    }];
+  }
+  
+  return [];
 }
 
 // Fonction pour afficher un événement dans le calendrier (pour FullCalendar)
