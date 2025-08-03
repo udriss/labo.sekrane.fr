@@ -28,7 +28,7 @@ export const usePhysicsCalendarData = () => {
       }
       
       const physicsEvents = await response.json()
-      
+      console.log('Loaded physics events:', physicsEvents)
       setEvents(physicsEvents)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des événements de physique')

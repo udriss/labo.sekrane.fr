@@ -31,6 +31,7 @@ import { FloatingActionButtons } from '@/components/calendar/FloatingActionButto
 import { EditEventDialog } from '@/components/calendar/EditEventDialog'
 
 import { CalendarEvent } from '@/types/calendar'
+import { useCalendarData } from '@/lib//hooks/useCalendarData'
 import { usePhysicsCalendarData } from '@/lib/hooks/usePhysicsCalendarData'
 import { usePhysicsCalendarEvents } from '@/lib/hooks/usePhysicsCalendarEvents'
 import { useReferenceDataByDiscipline } from '@/lib/hooks/useReferenceDataByDiscipline'
@@ -48,7 +49,7 @@ interface TimeSlotUpdate {
   timeSlot: Partial<TimeSlot> & { id?: string };
 }
   
-export default function PhysiqueCalendrierPage() {
+export default function CalendarPage() {
   const { data: session, status } = useSession()
   
   // États principaux
@@ -76,35 +77,10 @@ export default function PhysiqueCalendrierPage() {
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'))
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  // Hooks personnalisés pour la physique
-  const { events, loading, error, loadEvents, addEvent, updateEvent, removeEvent, setError } = usePhysicsCalendarData()
-  const calendarEvents = usePhysicsCalendarEvents({ addEvent, updateEvent, removeEvent, setError })
-
+  // Hooks personnalisés
+  const { events, loading, error, loadEvents: fetchEvents, addEvent, updateEvent, removeEvent, setError } = usePhysicsCalendarData()
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceDataByDiscipline({ discipline: 'physique' })
-  
-  // Fonction de chargement des événements
-  const fetchEvents = useCallback(async () => {
-    try {
-      await loadEvents()
-    } catch (error) {
-      console.error('Erreur lors du rechargement des événements physique:', error)
-    }
-  }, [loadEvents])
-
-  // Fonction spécialisée pour récupérer les événements physique depuis l'API
-  const fetchPhysicsEvents = async () => {
-    try {
-      const response = await fetch('/api/calendrier/physique/')
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-      const physicsEvents = await response.json()
-      return physicsEvents
-    } catch (error) {
-      console.error('Erreur lors de la récupération des événements physique:', error)
-      return []
-    }
-  }
+  const { tpPresets } = useCalendarData()
 
   // Fonction pour déterminer si l'utilisateur est le créateur d'un événement
   const isCreator = (event: CalendarEvent): boolean => {
@@ -115,7 +91,7 @@ export default function PhysiqueCalendrierPage() {
   const getStoredTabValue = (): number => {
     try {
       if (typeof window !== 'undefined') {
-        const savedTab = localStorage.getItem('physicsCalendarTabValue')
+        const savedTab = localStorage.getItem('calendarTabValue')
         if (savedTab !== null) {
           const parsedValue = parseInt(savedTab, 10)
           if (!isNaN(parsedValue) && Object.values(TAB_INDICES).includes(parsedValue)) {
@@ -132,7 +108,7 @@ export default function PhysiqueCalendrierPage() {
   const saveTabValue = (value: number): void => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.setItem('physicsCalendarTabValue', value.toString())
+        localStorage.setItem('calendarTabValue', value.toString())
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde dans localStorage:', error)
@@ -144,7 +120,7 @@ export default function PhysiqueCalendrierPage() {
     saveTabValue(newValue)
   }
 
-  // Récupération du rôle utilisateur et chargement initial des événements
+  // Récupération du rôle utilisateur
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
@@ -172,13 +148,6 @@ export default function PhysiqueCalendrierPage() {
     
     fetchUserRole()
   }, [session, status])
-
-  // Chargement initial des événements physique
-  useEffect(() => {
-    if (session && userRole) {
-      fetchEvents()
-    }
-  }, [session, userRole])
 
   // Handler pour ouvrir les détails d'un événement
   const handleEventClick = (event: CalendarEvent) => {
@@ -220,23 +189,52 @@ export default function PhysiqueCalendrierPage() {
     setEventToCopy(null)
   }
 
+
 // Handler pour gérer la proposition de nouveaux créneaux
+// Si jamais une logique de correspondance de créneaux est nécessaire ici, utiliser referentActuelTimeID
 const handleMoveDate = async (event: CalendarEvent, timeSlots: any[], reason?: string, state?: EventState) => {
   try {
     // Déterminer l'état final : si c'est le créateur, passer à PENDING
     const finalState = isCreator(event) ? 'PENDING' : (state || 'MOVED');
 
-    const updatedEvent = await calendarEvents.moveEvent(event.id, timeSlots[0]?.startDate, timeSlots[0]?.endDate);
+    // Si jamais il faut faire correspondre les créneaux proposés aux créneaux actuels ici, utiliser referentActuelTimeID
+    // (Actuellement, la logique de correspondance est gérée côté composants et API)
+
+    const response = await fetch(`/api/calendrier/physique/move-event?id=${event.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state: finalState,
+        eventId: event.id,
+        timeSlots,
+        reason: reason || '',
+        isOwnerModification: isCreator(event), // Nouveau: indiquer si c'est le propriétaire
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const updatedEventFromServer = data.updatedEvent;
 
     // Message différent selon si c'est le propriétaire ou non
     if (isCreator(event)) {
       alert('Vos modifications ont été enregistrées. L\'événement est maintenant en attente de validation.');
-    } else {
+    } else if (data.isPending) {
       alert('Votre demande de modification a été envoyée au créateur de l\'événement pour validation.');
+    } else {
+      
     }
 
+    // Mettre à jour l'événement avec les données du serveur
+    updateEvent(updatedEventFromServer);
+
     if (selectedEvent?.id === event.id) {
-      setSelectedEvent(updatedEvent);
+      setSelectedEvent(updatedEventFromServer);
     }
 
   } catch (error) {
@@ -268,7 +266,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        state: newState, // Utiliser 'state' comme dans la page chimie
+        state: newState,
         reason: reason || '',
       }),
     });
@@ -279,6 +277,7 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
 
     const data = await response.json();
     const updatedEventFromServer = data.updatedEvent;
+
 
     // Si la modification est en attente, afficher un message à l'utilisateur
     if (data.isPending) {
@@ -302,10 +301,11 @@ const handleStateChange = async (updatedEvent: CalendarEvent, newState: EventSta
   }
 };
 
+
+
 // Handler pour gérer la confirmation/rejet des modifications par le créateur
 const handleConfirmModification = async (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => {
   try {
-    // Pour l'instant, on utilise l'API générique
     const response = await fetch(`/api/calendrier/physique/confirm-modification?eventId=${event.id}`, {
       method: 'PUT',
       headers: {
@@ -324,8 +324,8 @@ const handleConfirmModification = async (event: CalendarEvent, modificationId: s
     const data = await response.json();
     const updatedEventFromServer = data.updatedEvent;
 
-    // Recharger les événements
-    await fetchEvents();
+    // Mettre à jour l'événement avec les données du serveur
+    updateEvent(updatedEventFromServer);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEventFromServer);
@@ -356,12 +356,14 @@ const handleApproveTimeSlotChanges = async (event: CalendarEvent) => {
     const data = await response.json();
     const updatedEvent = data.event;
 
-    // Recharger les événements
-    await fetchEvents();
+    // Mettre à jour l'événement avec les données du serveur
+    updateEvent(updatedEvent);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEvent);
     }
+
+    
 
   } catch (error) {
     console.error('Erreur lors de l\'approbation des créneaux:', error);
@@ -388,8 +390,8 @@ const handleRejectTimeSlotChanges = async (event: CalendarEvent) => {
     const data = await response.json();
     const updatedEvent = data.event;
 
-    // Recharger les événements
-    await fetchEvents();
+    // Mettre à jour l'événement avec les données du serveur
+    updateEvent(updatedEvent);
 
     if (selectedEvent?.id === event.id) {
       setSelectedEvent(updatedEvent);
@@ -405,8 +407,35 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
   if (!eventToEdit) return;
   
   try {
-    await calendarEvents.updateEvent(eventToEdit.id, updatedEvent);
+    // Extraire timeSlots séparément pour éviter la confusion
+    const { timeSlots, ...eventDataWithoutSlots } = updatedEvent;
     
+    // Utiliser les timeSlots mis à jour s'ils existent, sinon garder les anciens
+    const finalTimeSlots = timeSlots || eventToEdit.timeSlots || [];
+    
+    
+
+    const response = await fetch(`/api/calendrier/physique/?id=${eventToEdit.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...eventDataWithoutSlots,
+        timeSlots: finalTimeSlots // Envoyer directement tous les timeSlots
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Erreur serveur:', errorData);
+      throw new Error('Erreur lors de la modification');
+    }
+
+    const result = await response.json();
+    
+
+
     // Rafraîchir la liste des événements
     await fetchEvents();
     
@@ -427,7 +456,16 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     }
 
     try {
-      await calendarEvents.deleteEvent(event.id);
+      const response = await fetch(`/api/calendrier/physique/?id=${event.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression')
+      }
+
+      // Rafraîchir la liste des événements
+      await fetchEvents()
       
       // Fermer le dialogue de détails si ouvert
       setDetailsOpen(false)
@@ -457,11 +495,15 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <Typography>Chargement du calendrier physique...</Typography>
+          <Typography>Chargement du calendrier...</Typography>
         </Box>
       </Container>
     )
   }
+
+
+  console.log('Evénements chargés:', events)
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} 
@@ -477,24 +519,11 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           }}
           >
         <Box sx={{ width: '100%', maxWidth: '100%', mb: 3 }}>
-          {/* En-tête spécialisé pour la physique */}
-          <Box display="flex" alignItems="center" gap={2} mb={4}>
-            <Science sx={{ fontSize: 40, color: 'secondary.main' }} />
-            <Box>
-              <Typography variant="h3" component="h1" fontWeight="bold">
-                Calendrier Physique
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Gestion des événements et TP de physique
-              </Typography>
-            </Box>
-          </Box>
-          
-          <CalendarHeader 
-            userRole={userRole}
-            onCreateTP={handleCreateTPEvent}
-            onCreateLaborantin={handleCreateLaborantinEvent}
-          />
+        <CalendarHeader 
+          userRole={userRole}
+          onCreateTP={handleCreateTPEvent}
+          onCreateLaborantin={handleCreateLaborantinEvent}
+        />
         </Box>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -575,6 +604,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
             </Tabs>
           </Box>
 
+
 <TabPanel value={tabValue} index={TAB_INDICES.CALENDAR}>
   {isMobile || isTablet ? (
     <DailyCalendarView
@@ -630,7 +660,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     isCreator={isCreator}
     currentUserId={session?.user?.id || session?.user?.email}
     isMobile={isMobile}
-    discipline="physique" 
+    discipline="physique"
   />
 </TabPanel>
 
@@ -651,6 +681,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           currentUserId={session?.user?.id || session?.user?.email}
           isMobile={isMobile}
           isTablet={isTablet}
+          discipline="physique"
         />
 
         <EditEventDialog
@@ -669,6 +700,7 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           customClasses={customClasses}
           setCustomClasses={setCustomClasses}
           saveNewClass={saveNewClass}
+          discipline="physique"
         />
 
         <CreateTPDialog
@@ -681,10 +713,10 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           customClasses={customClasses}
           setCustomClasses={setCustomClasses}
           saveNewClass={saveNewClass}
-          tpPresets={[]} // Les presets TP physique seront ajoutés plus tard
+          tpPresets={tpPresets}
           eventToCopy={eventToCopy}
           isMobile={isMobile}
-          discipline="physique" // Nouveau prop pour spécifier la discipline
+          discipline="physique"
         />
 
         <CreateLaborantinEventDialog
@@ -693,7 +725,6 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
           onSuccess={fetchEvents}
           materials={materials}
           isMobile={isMobile}
-          discipline="physique" // Nouveau prop pour spécifier la discipline
         />
 
         <FloatingActionButtons

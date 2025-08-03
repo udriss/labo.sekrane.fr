@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
       // Parser les TimeSlots depuis les notes JSON
       let timeSlots: TimeSlot[] = []
       let actuelTimeSlots: TimeSlot[] = []
-      
+      let equipmentUsedArr: any[] = [];
+      let chemicalsUsedArr: any[] = [];
       try {
         const parsedNotes = JSON.parse(dbEvent.notes || '{}')
         timeSlots = parsedNotes.timeSlots || []
@@ -40,6 +41,24 @@ export async function GET(request: NextRequest) {
         }
         timeSlots = [fallbackSlot]
         actuelTimeSlots = [fallbackSlot]
+      }
+      try {
+        equipmentUsedArr = typeof dbEvent.equipment_used === 'string'
+          ? JSON.parse(dbEvent.equipment_used)
+          : Array.isArray(dbEvent.equipment_used)
+            ? dbEvent.equipment_used
+            : [];
+      } catch {
+        equipmentUsedArr = [];
+      }
+      try {
+        chemicalsUsedArr = typeof dbEvent.chemicals_used === 'string'
+          ? JSON.parse(dbEvent.chemicals_used)
+          : Array.isArray(dbEvent.chemicals_used)
+            ? dbEvent.chemicals_used
+            : [];
+      } catch {
+        chemicalsUsedArr = [];
       }
 
       // Filtrer seulement les slots actifs
@@ -58,8 +77,8 @@ export async function GET(request: NextRequest) {
         actuelTimeSlots: activeActuelTimeSlots,
         class: dbEvent.class_name,
         room: dbEvent.room,
-        materials: dbEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
-        chemicals: dbEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
+        materials: equipmentUsedArr.map((id: any) => ({ id, name: id })) || [],
+        chemicals: chemicalsUsedArr.map((id: any) => ({ id, name: id })) || [],
         remarks: dbEvent.notes,
         createdBy: dbEvent.created_by,
         createdAt: dbEvent.created_at || new Date().toISOString(),
@@ -339,6 +358,27 @@ export async function PUT(request: NextRequest) {
     const updatedEvent = await updatePhysicsEvent(id, updates)
 
     // Convertir en format CalendarEvent pour la réponse
+    let equipmentUsedArr: any[] = [];
+    let chemicalsUsedArr: any[] = [];
+    try {
+      equipmentUsedArr = typeof updatedEvent.equipment_used === 'string'
+        ? JSON.parse(updatedEvent.equipment_used)
+        : Array.isArray(updatedEvent.equipment_used)
+          ? updatedEvent.equipment_used
+          : [];
+    } catch {
+      equipmentUsedArr = [];
+    }
+    try {
+      chemicalsUsedArr = typeof updatedEvent.chemicals_used === 'string'
+        ? JSON.parse(updatedEvent.chemicals_used)
+        : Array.isArray(updatedEvent.chemicals_used)
+          ? updatedEvent.chemicals_used
+          : [];
+    } catch {
+      chemicalsUsedArr = [];
+    }
+
     const responseEvent = {
       id: updatedEvent.id,
       title: updatedEvent.title,
@@ -351,8 +391,8 @@ export async function PUT(request: NextRequest) {
       actuelTimeSlots: actuelTimeSlots,
       class: updatedEvent.class_name,
       room: updatedEvent.room,
-      materials: updatedEvent.equipment_used?.map((id: any) => ({ id, name: id })) || [],
-      chemicals: updatedEvent.chemicals_used?.map((id: any) => ({ id, name: id })) || [],
+      materials: equipmentUsedArr.map((id: any) => ({ id, name: id })) || [],
+      chemicals: chemicalsUsedArr.map((id: any) => ({ id, name: id })) || [],
       remarks: remarks || '',
       createdBy: updatedEvent.created_by,
       createdAt: updatedEvent.created_at,

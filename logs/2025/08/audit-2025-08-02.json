@@ -1947,5 +1947,202 @@
       "duration": 209
     },
     "status": "SUCCESS"
+  },
+  {
+    "id": "328a3301-5192-4b4b-83dd-40266ffa2cb3",
+    "timestamp": "2025-08-02T23:54:48.779Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 34,
+        "timestamp": "2025-08-02T23:54:48.778Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754178888744_0z07mtzmt",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 34
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "98422730-5023-4dee-8846-8617590ee908",
+    "timestamp": "2025-08-02T23:55:00.781Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "MOVE_EVENT",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/move-event/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {}
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "Nouvelles dates requises (via timeSlots ou newStartDate/newEndDate)"
+        }
+      },
+      "metadata": {
+        "duration": 12,
+        "timestamp": "2025-08-02T23:55:00.780Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754178900768_aqcuy4egk",
+      "path": "/api/calendrier/physique/move-event/",
+      "method": "PUT",
+      "duration": 12
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "a83f58bc-c136-4ab1-b236-d735e0569547",
+    "timestamp": "2025-08-02T23:57:43.274Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 5,
+        "timestamp": "2025-08-02T23:57:43.274Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754179063269_lsjcltk58",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 5
+    },
+    "status": "SUCCESS"
+  },
+  {
+    "id": "78e83e9d-aca2-495a-a0d7-0b413531aea8",
+    "timestamp": "2025-08-02T23:59:22.739Z",
+    "user": {
+      "id": "1",
+      "email": "admin@labo.fr",
+      "name": "Administrateur",
+      "role": "ADMIN"
+    },
+    "action": {
+      "type": "UPDATE_STATE",
+      "module": "CALENDAR",
+      "entity": "EVENT",
+      "entityId": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+    },
+    "details": {
+      "request": {
+        "method": "PUT",
+        "path": "/api/calendrier/physique/state-change/",
+        "query": {
+          "id": "27c10af2-ddc5-4931-8fd7-87d14ab6645a"
+        },
+        "body": {
+          "state": "MOVED",
+          "reason": ""
+        }
+      },
+      "response": {
+        "status": 400,
+        "statusText": "",
+        "data": {
+          "error": "État invalide. États valides: PENDING, VALIDATED, CANCELLED, MOVED, IN_PROGRESS"
+        }
+      },
+      "metadata": {
+        "duration": 20,
+        "timestamp": "2025-08-02T23:59:22.739Z"
+      },
+      "status": "ERROR"
+    },
+    "context": {
+      "ip": "::ffff:127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "requestId": "api_1754179162719_8z4cyhxl4",
+      "path": "/api/calendrier/physique/state-change/",
+      "method": "PUT",
+      "duration": 20
+    },
+    "status": "SUCCESS"
   }
 ]

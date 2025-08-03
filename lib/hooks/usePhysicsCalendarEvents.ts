@@ -65,7 +65,7 @@ export const usePhysicsCalendarEvents = (calendarData: UsePhysicsCalendarEventsP
           room: updates.room,
           class: updates.class,
           materials: updates.materials,
-          chemicals: updates.chemicals,
+          consommables: updates.consommables,
           remarks: updates.remarks
         })
       })
