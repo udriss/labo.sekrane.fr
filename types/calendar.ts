@@ -63,7 +63,7 @@ export interface CalendarEvent {
   state?: EventState
   validationState?: ValidationState // NOUVEAU: qui doit valider (owner ou operator)
   stateChanger?: StateChange[]
-  class?: string | null
+  class_data?: { id: string; name: string; type: 'predefined' | 'custom' | 'auto' }[] // NOUVEAU: liste des classes
   room?: string | null
   location?: string | null
   materials?: (string | {

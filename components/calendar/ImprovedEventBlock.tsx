@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import {
   Card, CardContent, Typography, Stack, Chip, Box, Collapse, IconButton,
   Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  Tooltip, Paper
+  Tooltip, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material'
 import {
   ExpandMore, ExpandLess, Person, LocationOn, Schedule, CalendarToday,
@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material'
 import { CalendarEvent, EventState, TimeSlot } from '@/types/calendar'
 import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import { useSession } from 'next-auth/react'
 import ImprovedTimeSlotActions from './ImprovedTimeSlotActions'
 import ValidationSlotActions from './ValidationSlotActions'
@@ -49,7 +50,11 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   const [validationActionsOpen, setValidationActionsOpen] = useState(false)
 
   const displaySlots = getDisplayTimeSlots(event)
-
+  
+  // Normaliser les données de classe pour l'affichage
+  const normalizedClassData = normalizeClassField(event.class_data)
+  const className = getClassNameFromClassData(normalizedClassData)
+console.log('Normalisation des données de classe:', normalizedClassData, 'Nom de la classe:', className)
   // Déterminer le rôle de l'utilisateur par rapport à cet événement
   const isOwner = session?.user && (
     event.createdBy === session.user.id || 
@@ -211,6 +216,10 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
     }
   }
 
+
+  
+
+
   return (
     <>
       <Card variant="outlined" sx={{ mb: 2 }}>
@@ -285,7 +294,7 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                 <Stack spacing={1.5}>
                   {/* Classe et Salle */}
                   <Stack direction={isMobile ? 'column' : 'row'} spacing={1.5}>
-                    {event.class && (
+                    {normalizedClassData && (
                       <Paper
                         elevation={0}
                         sx={{
@@ -303,7 +312,7 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                       >
                         <Group fontSize="small" color="primary" />
                         <Typography variant="body2" fontWeight="medium">
-                          {event.class}
+                          {className}
                         </Typography>
                       </Paper>
                     )}
@@ -357,7 +366,7 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                       </Paper>
                     )}
                     
-                    {event.chemicals && event.chemicals.length > 0 && (
+                    {discipline === 'chimie' && event.chemicals && event.chemicals.length > 0 && (
                       <Paper
                         elevation={0}
                         sx={{
@@ -375,11 +384,115 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                       >
                         <Science fontSize="small" color="success" />
                         <Typography variant="body2" fontWeight="medium">
-                          {event.chemicals.length} {discipline === 'physique' ? 'consommable' : 'réactif'}{event.chemicals.length > 1 ? 's' : ''}
+                          {event.chemicals.length} réactif{event.chemicals.length > 1 ? 's' : ''}
+                        </Typography>
+                      </Paper>
+                    )}
+                    {discipline === 'physique' && event.consommables && event.consommables.length > 0 && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          background: 'rgba(76, 175, 80, 0.1)',
+                          backdropFilter: 'blur(5px)',
+                          border: '1px solid rgba(76, 175, 80, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          flex: 1
+                        }}
+                      >
+                        <Science fontSize="small" color="success" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.consommables.length} consommable{event.consommables.length > 1 ? 's' : ''}
                         </Typography>
                       </Paper>
                     )}
                   </Stack>
+                  {/* Table combinée pour Matériel et Réactifs chimiques */}
+                  <TableContainer 
+                    sx={{ mt: 2,
+                      maxWidth: 600,
+                      margin: '0 auto',
+                    }}>
+                    <Table size="small" sx={{ minWidth: 300 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell 
+                            sx={{ 
+                              fontWeight: 'bold',
+                              borderBottom: '2px solid',
+                              borderColor: 'primary.main',
+                              color: 'primary.main'
+                            }}
+                          >
+                            Type / Nom
+                          </TableCell>
+                          <TableCell 
+                            align="right"
+                            sx={{ 
+                              fontWeight: 'bold',
+                              borderBottom: '2px solid',
+                              borderColor: 'primary.main',
+                              color: 'primary.main'
+                            }}
+                          >
+                            Quantité
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {/* Section Matériel */}
+                        {event.materials && event.materials.length > 0 && (
+                          <>
+                            <TableRow>
+                              <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
+                                Matériel
+                              </TableCell>
+                            </TableRow>
+                            {event.materials.map((material, index) => (
+                              <TableRow key={`material-${index}`}>
+                                <TableCell>
+                                  {typeof material === 'object' ? material.name || material.itemName : material}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {typeof material === 'object' && material.quantity ? `${material.quantity} ${material.unit || ''}`.trim() : 'N/A'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Section Réactifs chimiques */}
+                        {event.chemicals && event.chemicals.length > 0 && (
+                          <>
+                            <TableRow>
+                              <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
+                                Réactifs Chimiques
+                              </TableCell>
+                            </TableRow>
+                            {event.chemicals.map((chemical, index) => (
+                              <TableRow key={`chemical-${index}`}>
+                                <TableCell>
+                                  <Typography variant="body2">{chemical.name}</Typography>
+                                  {chemical.formula && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {chemical.formula}
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {chemical.requestedQuantity || chemical.quantity} {chemical.unit}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
                   {/* Documents */}
                   {event.files && event.files.length > 0 && (
@@ -632,9 +745,9 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                   </Stack>
                 )}
                 
-                {event.class && (
+                {normalizedClassData && (
                   <Typography variant="body2">
-                    Classe : {event.class}
+                    Classe : {className}
                   </Typography>
                 )}
               </Stack>
@@ -654,6 +767,92 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                   )
                 })}
               </Box>
+
+              {/* Table combinée pour Matériel et Réactifs chimiques */}
+              {((event.materials && event.materials.length > 0) || 
+                (discipline === 'chimie' && event.chemicals && event.chemicals.length > 0)) && (
+                <TableContainer 
+                  sx={{ mt: 2,
+                    maxWidth: 600,
+                    margin: '16px auto 0 auto',
+                  }}>
+                  <Table size="small" sx={{ minWidth: 300 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            borderBottom: '2px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.main'
+                          }}
+                        >
+                          Type / Nom
+                        </TableCell>
+                        <TableCell 
+                          align="right"
+                          sx={{ 
+                            fontWeight: 'bold',
+                            borderBottom: '2px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.main'
+                          }}
+                        >
+                          Quantité
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {/* Section Matériel */}
+                      {event.materials && event.materials.length > 0 && (
+                        <>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
+                              Matériel
+                            </TableCell>
+                          </TableRow>
+                          {event.materials.map((material, index) => (
+                            <TableRow key={`material-${index}`}>
+                              <TableCell>
+                                {typeof material === 'object' ? material.name || material.itemName : material}
+                              </TableCell>
+                              <TableCell align="right">
+                                {typeof material === 'object' && material.quantity ? `${material.quantity} ${material.unit || ''}`.trim() : 'N/A'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      )}
+
+                      {/* Section Réactifs chimiques */}
+                      {discipline === 'chimie' && event.chemicals && event.chemicals.length > 0 && (
+                        <>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
+                              Réactifs Chimiques
+                            </TableCell>
+                          </TableRow>
+                          {event.chemicals.map((chemical, index) => (
+                            <TableRow key={`chemical-${index}`}>
+                              <TableCell>
+                                <Typography variant="body2">{chemical.name}</Typography>
+                                {chemical.formula && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {chemical.formula}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                {chemical.requestedQuantity || chemical.quantity} {chemical.unit}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Collapse>
           </Stack>
         </CardContent>

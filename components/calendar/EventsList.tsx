@@ -24,6 +24,7 @@ import {
 // Importer les types depuis le fichier partagé
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 
 interface EventsListProps {
   events: CalendarEvent[]
@@ -176,9 +177,12 @@ const EventsList: React.FC<EventsListProps> = ({
 
   // Filtrage des événements
   const filteredEvents = events.filter(event => {
+    const normalizedClassData = normalizeClassField(event.class_data)
+    const className = getClassNameFromClassData(normalizedClassData)
+    
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.class?.toLowerCase().includes(searchTerm.toLowerCase())
+                         className.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesType = filterType === 'all' || event.type === filterType
     const matchesState = filterState === 'all' || event.state === filterState
@@ -464,16 +468,20 @@ const renderEventItem = (event: CalendarEvent) => {
                 />
               </Grid>
               
-              {event.class && (
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Chip 
-                    label={event.class} 
-                    size="small" 
-                    variant="outlined"
-                    sx={{ height: 24, width: '100%', textTransform: 'uppercase' }}
-                  />
-                </Grid>
-              )}
+              {(() => {
+                const normalizedClassData = normalizeClassField(event.class_data)
+                const className = getClassNameFromClassData(normalizedClassData)
+                return className && (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Chip 
+                      label={className} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ height: 24, width: '100%', textTransform: 'uppercase' }}
+                    />
+                  </Grid>
+                )
+              })()}
               
               {stateInfo && (
                 <Grid size={{ xs: 12, sm: 6 }}>

@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material'
 import { CalendarEvent, EventType } from '@/types/calendar'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 
 
 interface WeeklyViewProps {
@@ -491,11 +492,15 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                     <Typography variant="caption">
                       {format(event.visualStartDate, 'HH:mm')} - {format(event.visualEndDate, 'HH:mm')}
                     </Typography>
-                    {event.class && (
-                      <Typography variant="caption" display="block">
-                        Classe: {event.class}
-                      </Typography>
-                    )}
+                    {(() => {
+                      const normalizedClassData = normalizeClassField(event.class_data)
+                      const className = getClassNameFromClassData(normalizedClassData)
+                      return className && (
+                        <Typography variant="caption" display="block">
+                          Classe: {className}
+                        </Typography>
+                      )
+                    })()}
                     {event.state && (
                       <Typography variant="caption" display="block">
                         État: {
@@ -650,18 +655,22 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                             {event.endsAfterSchedule && ' ↓'}
                           </Typography>
                         )}
-                        {height > 60 && event.class && event.totalColumns === 1 && (
-                          <Chip 
-                            label={event.class} 
-                            size="small" 
-                            sx={{ 
-                              height: 16,
-                              fontSize: '0.65rem',
-                              bgcolor: 'rgba(255,255,255,0.2)',
-                              color: 'white'
-                            }}
-                          />
-                        )}
+                        {(() => {
+                          const normalizedClassData = normalizeClassField(event.class_data)
+                          const className = getClassNameFromClassData(normalizedClassData)
+                          return height > 60 && className && event.totalColumns === 1 && (
+                            <Chip 
+                              label={className} 
+                              size="small" 
+                              sx={{ 
+                                height: 16,
+                                fontSize: '0.65rem',
+                                bgcolor: 'rgba(255,255,255,0.2)',
+                                color: 'white'
+                              }}
+                            />
+                          )
+                        })()}
                       </Stack>
                     </CardContent>
                   
@@ -754,18 +763,22 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({
                         {event.endsAfterSchedule && ' ↓'}
                       </Typography>
                     )}
-                    {height > 60 && event.class && event.totalColumns === 1 && (
-                      <Chip 
-                        label={event.class} 
-                        size="small" 
-                        sx={{ 
-                          height: 16,
-                          fontSize: '0.65rem',
-                          bgcolor: 'rgba(255,255,255,0.2)',
-                          color: 'white'
-                        }}
-                      />
-                    )}
+                    {(() => {
+                      const normalizedClassData = normalizeClassField(event.class_data)
+                      const className = getClassNameFromClassData(normalizedClassData)
+                      return height > 60 && className && event.totalColumns === 1 && (
+                        <Chip 
+                          label={className} 
+                          size="small" 
+                          sx={{ 
+                            height: 16,
+                            fontSize: '0.65rem',
+                            bgcolor: 'rgba(255,255,255,0.2)',
+                            color: 'white'
+                          }}
+                        />
+                      )
+                    })()}
                   </Stack>
                   </CardContent>
                 </Card>

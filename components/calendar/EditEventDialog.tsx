@@ -21,6 +21,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent, EventType } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
+import { normalizeClassField } from '@/lib/class-data-utils'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { useSession } from 'next-auth/react'
@@ -119,7 +120,7 @@ export function EditEventDialog({
     endDate: null as Date | null,
     startTime: '',
     endTime: '',
-    class: '',
+    class_data: [] as { id: string, name: string, type: 'predefined' | 'custom' | 'auto' }[],
     room: '',
     materials: [] as any[],
     chemicals: [] as any[],
@@ -183,6 +184,10 @@ export function EditEventDialog({
         return { ...chem, requestedQuantity: 1 }
       }) || []
 
+      // Normaliser les données de classe
+      const normalizedClassData = normalizeClassField(event.class_data)
+      const classDataArray = normalizedClassData ? [normalizedClassData] : []
+
       // Initialiser avec le premier créneau
       setFormData({
         title: event.title || '',
@@ -193,7 +198,7 @@ export function EditEventDialog({
         endDate: endDate,
         startTime: format(startDate, 'HH:mm'),
         endTime: format(endDate, 'HH:mm'),
-        class: event.class || '',
+        class_data: classDataArray,
         room: event.room || '',
         materials: materialsWithQuantities,
         chemicals: chemicalsWithQuantities,
@@ -544,7 +549,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       formData.title === originalEvent.title &&
       formData.description === originalEvent.description &&
       formData.type === originalEvent.type &&
-      formData.class === originalEvent.class &&
+      formData.class_data === originalEvent.class_data &&
       formData.room === originalEvent.room &&
       formData.location === originalEvent.location &&
       JSON.stringify(formData.chemicals) === JSON.stringify(originalEvent.chemicals || []) &&
@@ -618,7 +623,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
         description: formData.description,
         state: formData.state,
         type: formData.type,
-        class: formData.class,
+        class_data: formData.class_data,
         room: formData.room,
         location: formData.location,
         materials: formData.materials.map(mat => ({
@@ -790,7 +795,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       endDate: null,
       startTime: '',
       endTime: '',
-      class: '',
+      class_data: [] as { id: string, name: string, type: 'predefined' | 'custom' | 'auto' }[],
       room: '',
       materials: [],
       chemicals: [],
@@ -811,9 +816,6 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   const isMultiDay = formData.startDate && formData.endDate && 
     formData.startDate.getDate() !== formData.endDate.getDate()
 
-  console.log({'FormData dans /components/calendar/EditEventDialog.tsx:': formData.materials,
-    'customClasses':customClasses})
-
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
@@ -832,7 +834,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6">
-            Modifier l'événement
+            Modifier l'événement TEST
           </Typography>
           <IconButton onClick={handleClose} size="small">
             <Close />
@@ -1139,116 +1141,121 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
           {/* Classe et salle */}
           {formData.type === 'TP' && (
             <>
-              <Autocomplete
-                freeSolo
-                options={[
-                  // D'abord les classes personnalisées
-                  ...customClasses,
-                  // Puis les classes prédéfinies
-                  ...userClasses.filter(c => !customClasses.some(cc => cc.id === c.id))
-                ].filter((value, index, self) => self.findIndex(v => v.id === value.id) === index)}
-                getOptionLabel={option => typeof option === 'string' ? option : option.name}
-                value={userClasses.find(c => c.name === formData.class) || customClasses.find(c => c.name === formData.class) || formData.class}
-                onChange={async (_, newValue) => {
-                  if (!newValue) {
-                    setFormData({ ...formData, class: '' });
-                    return;
-                  }
-                  const className = typeof newValue === 'string' ? newValue : newValue.name;
-                  setFormData({ ...formData, class: className });
-                  // Vérifier si c'est une nouvelle classe personnalisée
-                  if (!userClasses.some(c => c.name === className) && !customClasses.some(c => c.name === className)) {
-                    try {
-                      const result = await saveNewClass(className, 'custom');
-                      if (result.success) {
-                        setCustomClasses(prev => {
-                          if (!prev.some(c => c.name === className)) {
-                            return [...prev, { id: result.data.id, name: className }];
-                          }
-                          return prev;
-                        });
-                        setSnackbar({
-                          open: true,
-                          message: `Classe "${className}" ajoutée avec succès`,
-                          severity: 'success'
-                        });
-                      } else {
-                        setSnackbar({
-                          open: true,
-                          message: result.error || 'Erreur lors de l\'ajout de la classe',
-                          severity: 'error'
-                        });
-                      }
-                    } catch (error) {
-                      console.error('Erreur inattendue:', error);
-                    }
-                  }
-                }}
-                inputValue={classInputValue || ''}
-                onInputChange={(event, newInputValue) => {
-                  setClassInputValue(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Classe"
-                    placeholder="Sélectionnez ou saisissez une classe..."
-                    helperText={
-                      formData.class && !userClasses.some(c => c.name === formData.class) && customClasses.some(c => c.name === formData.class)
-                        ? "Classe personnalisée"
-                        : null
-                    }
-                  />
-                )}
-                renderOption={(props, option) => {
-                  const { key, ...otherProps } = props;
-                  const isCustom = customClasses.some(c => c.id === (typeof option === 'string' ? option : option.id));
-                  return (
-                    <li key={key} {...otherProps}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                        <School fontSize="small" color={isCustom ? "secondary" : "action"} />
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography variant="body2">
-                            {typeof option === 'string' ? option : option.name}
-                          </Typography>
-                          {isCustom && typeof option !== 'string' && (
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                              ID: {option.id}
-                            </Typography>
-                          )}
-                        </Box>
-                        {isCustom && (
-                          <Chip 
-                            label="Personnalisée" 
-                            size="small" 
-                            color="secondary" 
-                            sx={{ height: 20 }}
-                          />
-                        )}
-                      </Box>
-                    </li>
-                  )
-                }}
-                filterOptions={(options, state) => {
-                  const input = state.inputValue.toLowerCase();
-                  return options.filter(option => {
-                    const name = typeof option === 'string' ? option : option.name;
-                    return name.toLowerCase().includes(input);
-                  });
-                }}
-                isOptionEqualToValue={(option, value) => {
-                  if (typeof option === 'string' || typeof value === 'string') {
-                    return option === value;
-                  }
-                  return option.id === value.id || option.name === value.name;
-                }}
-                groupBy={option => {
-                  const isCustom = customClasses.some(c => 
-                    typeof option === 'string' ? c.name === option : c.id === option.id
-                  );
-                  return isCustom ? "Mes classes personnalisées" : "Classes prédéfinies";
-                }}
-              />
+<Autocomplete
+  freeSolo
+  options={[
+    // D'abord les classes personnalisées
+    ...customClasses,
+    // Puis les classes prédéfinies
+    ...userClasses.filter(c => !customClasses.some(cc => cc.id === c.id))
+  ].filter((value, index, self) => self.findIndex(v => v.id === value.id) === index)}
+  getOptionLabel={option => typeof option === 'string' ? option : option.name}
+  value={
+    typeof formData.class_data === 'string'
+      ? null
+      : userClasses.find(c => c.id === formData.class_data[0]?.id) ||
+        customClasses.find(c => c.id === formData.class_data[0]?.id) ||
+        null
+  }
+  onChange={async (_, newValue) => {
+    if (!newValue) {
+      setFormData({ ...formData, class_data: [] });
+      return;
+    }
+
+    const selectedClass =
+      typeof newValue === 'string'
+        ? { id: `custom_${Date.now()}`, name: newValue }
+        : newValue;
+
+    setFormData({ ...formData, class_data: [{ ...selectedClass, type: 'custom' }] });
+
+    // Vérifier si c'est une nouvelle classe personnalisée
+    if (
+      typeof newValue === 'string' ||
+      (!userClasses.some(c => c.id === selectedClass.id) &&
+        !customClasses.some(c => c.id === selectedClass.id))
+    ) {
+      try {
+        const result = await saveNewClass(selectedClass.name, 'custom');
+        if (result.success) {
+          setCustomClasses(prev => [
+            ...prev,
+            { id: result.data.id, name: selectedClass.name }
+          ]);
+          setSnackbar({
+            open: true,
+            message: `Classe "${selectedClass.name}" ajoutée avec succès`,
+            severity: 'success'
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: result.error || 'Erreur lors de l\'ajout de la classe',
+            severity: 'error'
+          });
+        }
+      } catch (error) {
+        console.error('Erreur inattendue:', error);
+      }
+    }
+  }}
+  inputValue={classInputValue || ''}
+  onInputChange={(event, newInputValue) => {
+    setClassInputValue(newInputValue);
+  }}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Classe"
+      placeholder="Sélectionnez ou saisissez une classe..."
+      helperText={
+        formData.class_data &&
+        !userClasses.some(c => c.id === formData.class_data[0]?.id) &&
+        customClasses.some(c => c.id === formData.class_data[0]?.id)
+          ? "Classe personnalisée"
+          : null
+      }
+    />
+  )}
+  renderOption={(props, option) => {
+    const { key, ...otherProps } = props;
+    const isCustom = customClasses.some(c => c.id === option.id);
+    return (
+      <li key={key} {...otherProps}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          <School fontSize="small" color={isCustom ? "secondary" : "action"} />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="body2">
+              {option.name}
+            </Typography>
+            {isCustom && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                ID: {option.id}
+              </Typography>
+            )}
+          </Box>
+          {isCustom && (
+            <Chip 
+              label="Personnalisée" 
+              size="small" 
+              color="secondary" 
+              sx={{ height: 20 }}
+            />
+          )}
+        </Box>
+      </li>
+    );
+  }}
+  filterOptions={(options, state) => {
+    const input = state.inputValue.toLowerCase();
+    return options.filter(option => {
+      const name = option.name.toLowerCase();
+      return name.includes(input);
+    });
+  }}
+  isOptionEqualToValue={(option, value) => option.id === value?.id}
+/>
 
               <Autocomplete
                 freeSolo
@@ -1263,18 +1270,20 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 }}
                 renderInput={(params) => (
                   <TextField
-                    {...params}
-                    fullWidth
-                    label="Salle"
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingRooms ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
+                  {...params}
+                  fullWidth
+                  label="Salle"
+                  slotProps={{
+                    input: {
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                      {loadingRooms ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                      </>
+                    ),
+                    }
+                  }}
                   />
                 )}
                 renderOption={(props, option) => {
@@ -1388,64 +1397,66 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                           }
                         }
                       }}
-                      InputProps={{
+                      slotProps={{
+                        input: {
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {params.InputProps.endAdornment}
-                            {materialInputValue && materialInputValue.trim() && (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => {
-                                    const trimmedValue = materialInputValue.trim()
-                                    if (!formData.materials.some(m => 
-                                      (m.itemName || m.name) === trimmedValue
-                                    )) {
-                                      const customMaterial = {
-                                        id: `custom_${Date.now()}`,
-                                        itemName: trimmedValue,
-                                        name: trimmedValue,
-                                        isCustom: true,
-                                        quantity: 1
-                                      }
-                                      
-                                      setFormData({ 
-                                        ...formData, 
-                                        materials: [
-                                          ...formData.materials,
-                                          customMaterial
-                                        ]
-                                      })
-                                      setMaterialInputValue('')
-                                      ;(document.activeElement as HTMLElement)?.blur()
-                                    }
-                                  }}
-                                  edge="end"
-                                  sx={{ 
-                                    mr: -1,
-                                    "&:hover": {
-                                      color: 'success.main',
-                                      borderColor: 'primary.main',
-                                      borderRadius: '0%',
-                                    } 
-                                  }}
-                                >
-                                  <AddIcon />
-                                  <Typography variant="body2" color="text.secondary">
-                                    Ajouter "{materialInputValue}"
-                                  </Typography>
-                                </IconButton>
-                              </InputAdornment>
-                            )}
+                          {params.InputProps.endAdornment}
+                          {materialInputValue && materialInputValue.trim() && (
+                            <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                              const trimmedValue = materialInputValue.trim()
+                              if (!formData.materials.some(m => 
+                                (m.itemName || m.name) === trimmedValue
+                              )) {
+                                const customMaterial = {
+                                id: `custom_${Date.now()}`,
+                                itemName: trimmedValue,
+                                name: trimmedValue,
+                                isCustom: true,
+                                quantity: 1
+                                }
+                                
+                                setFormData({ 
+                                ...formData, 
+                                materials: [
+                                  ...formData.materials,
+                                  customMaterial
+                                ]
+                                })
+                                setMaterialInputValue('')
+                                ;(document.activeElement as HTMLElement)?.blur()
+                              }
+                              }}
+                              edge="end"
+                              sx={{ 
+                              mr: -1,
+                              "&:hover": {
+                                color: 'success.main',
+                                borderColor: 'primary.main',
+                                borderRadius: '0%',
+                              } 
+                              }}
+                            >
+                              <AddIcon />
+                              <Typography variant="body2" color="text.secondary">
+                              Ajouter "{materialInputValue}"
+                              </Typography>
+                            </IconButton>
+                            </InputAdornment>
+                          )}
                           </>
                         ),
+                        }
                       }}
-                    />
-                  )}
-                  isOptionEqualToValue={(option, value) => 
-                    (option.itemName || option.name) === (value.itemName || value.name)
-                  }
+                      />
+                    )}
+                    isOptionEqualToValue={(option, value) => 
+                      (option.itemName || option.name) === (value.itemName || value.name)
+                    }
                   // Grouper par catégorie et filtrer
                   filterOptions={(options, state) => {
                     // Obtenir les noms déjà sélectionnés

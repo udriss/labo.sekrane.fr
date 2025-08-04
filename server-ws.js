@@ -166,32 +166,42 @@ app.prepare().then(async () => {
     console.log(`🌐 Environment: ${dev ? 'development' : 'production'}`);
   });
 
-  // Gestion propre de l'arrêt
-  process.on('SIGTERM', () => {
-    console.log('🔌 SIGTERM received, closing WebSocket connections...');
+  // Gestion propre de l'arrêt (idempotente)
+  let isShuttingDown = false;
+  
+  function shutdown(signal) {
+    if (isShuttingDown) {
+      console.log(`🔌 ${signal} received but already shutting down...`);
+      return;
+    }
+    isShuttingDown = true;
+    console.log(`🔌 ${signal} received, closing WebSocket connections...`);
+    
+    // Nettoyer tous les intervalles heartbeat
     wsConnections.forEach((connection, userId) => {
       if (connection.socket.readyState === connection.socket.OPEN) {
         connection.socket.close();
       }
     });
     wsConnections.clear();
-    server.close(() => {
-      console.log('✅ Server closed');
-      process.exit(0);
+    
+    // Fermer le serveur WebSocket
+    wss.close(() => {
+      console.log('🔌 WebSocket server closed');
+      // Fermer le serveur HTTP
+      server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+      });
     });
-  });
+    
+    // Force exit after 5 seconds if graceful shutdown fails
+    setTimeout(() => {
+      console.log('🚨 Force exit after timeout');
+      process.exit(1);
+    }, 5000);
+  }
 
-  process.on('SIGINT', () => {
-    console.log('🔌 SIGINT received, closing WebSocket connections...');
-    wsConnections.forEach((connection, userId) => {
-      if (connection.socket.readyState === connection.socket.OPEN) {
-        connection.socket.close();
-      }
-    });
-    wsConnections.clear();
-    server.close(() => {
-      console.log('✅ Server closed');
-      process.exit(0);
-    });
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 });

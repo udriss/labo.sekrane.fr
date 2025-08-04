@@ -13,6 +13,11 @@ import {
 } from '@/lib/calendar-utils-timeslots'
 import { TimeSlot } from '@/types/calendar'
 import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { 
+  normalizeClassField,
+  getClassNameFromClassData,
+  type ClassData 
+} from '@/lib/class-data-utils'
 
 // Fonction utilitaire pour parser le JSON de manière sécurisée
 function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultValue: T): T {
@@ -211,7 +216,8 @@ export async function POST(request: NextRequest) {
       state: updatedEvent.state,
       timeSlots: updatedEvent.timeSlots,
       actuelTimeSlots: updatedEvent.actuelTimeSlots,
-      class: updatedEvent.class_name,
+      class: getClassNameFromClassData(normalizeClassField(updatedEvent.class_data)),
+      classData: normalizeClassField(updatedEvent.class_data),
       room: updatedEvent.room,
       materials: parseJsonSafe(updatedEvent.equipment_used, []).map((id: any) => ({ id, name: id })),
       chemicals: parseJsonSafe(updatedEvent.chemicals_used, []).map((id: any) => ({ id, name: id })),
@@ -396,6 +402,7 @@ export async function PUT(request: NextRequest) {
     })
 
     // Retourner le format attendu par le frontend
+    // Retourner le format attendu par le frontend
     const responseEvent = {
       id: updatedEvent.id,
       title: updatedEvent.title,
@@ -406,7 +413,8 @@ export async function PUT(request: NextRequest) {
       state: updatedEvent.state,
       timeSlots: updatedEvent.timeSlots,
       actuelTimeSlots: updatedEvent.actuelTimeSlots,
-      class: updatedEvent.class_name,
+      class: getClassNameFromClassData(normalizeClassField(updatedEvent.class_data)),
+      classData: normalizeClassField(updatedEvent.class_data),
       room: updatedEvent.room,
       materials: parseJsonSafe(updatedEvent.equipment_used, []).map((id: any) => ({ id, name: id })),
       chemicals: parseJsonSafe(updatedEvent.chemicals_used, []).map((id: any) => ({ id, name: id })),
@@ -434,3 +442,4 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+

@@ -1,11 +1,13 @@
-// app/api/calendrier/chimie/route.ts// API mise à jour pour le système TimeSlots completexport const runtime = 'nodejs';
+// app/api/calendrier/chimie/route.ts
+// API mise à jour pour le système TimeSlots complete
+export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth';
 import { 
-  getChemistryEventsWithTimeSlots, 
-  createChemistryEventWithTimeSlots, 
+  getChemistryEventsWithTimeSlots,
+  createChemistryEventWithTimeSlots,
   updateChemistryEventWithTimeSlots,
   getChemistryEventByIdWithTimeSlots,
   processTimeSlots
@@ -13,6 +15,13 @@ import {
 import { deleteChemistryEvent } from '@/lib/calendar-utils'
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
 import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { 
+  parseClassDataSafe,
+  getClassNameFromClassData,
+  normalizeClassField,
+  createClassDataFromString,
+  type ClassData 
+} from '@/lib/class-data-utils'
 
 // Fonction utilitaire pour parser le JSON de manière sécurisée
 function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultValue: T): T {
@@ -48,6 +57,9 @@ export async function GET(request: NextRequest) {
       // Les données sont déjà parsées dans getChemistryEventsWithTimeSlots
       const timeSlots = dbEvent.timeSlots || []
       const actuelTimeSlots = dbEvent.actuelTimeSlots || []
+      
+      // Normaliser les données de classe (support legacy + nouveau format)
+      const classData = normalizeClassField(dbEvent.class_data)
 
       return {
         id: dbEvent.id,
@@ -59,7 +71,8 @@ export async function GET(request: NextRequest) {
         state: dbEvent.state || 'VALIDATED',
         timeSlots: timeSlots,
         actuelTimeSlots: actuelTimeSlots,
-        class: dbEvent.class_name,
+        class: getClassNameFromClassData(classData), // Pour compatibilité legacy
+        class_data: classData, // Nouveau champ
         room: dbEvent.room,
         materials: parseJsonSafe(dbEvent.equipment_used, []).map((item: any) => {
           if (typeof item === 'string') {
@@ -98,7 +111,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-
     console.log('Récupération des événements de chimie:', convertedEvents.length, 'événements trouvés')
     return NextResponse.json(convertedEvents)
 
@@ -111,7 +123,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Créer un événement de chimie avec support TimeSlots complet
+// POST - Créer un événement de chimie avec support TimeSlots complete
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -127,6 +139,7 @@ export async function POST(request: NextRequest) {
       type,
       room,
       class: className,
+      classData: inputClassData,
       classes,
       materials,
       equipment,
@@ -150,7 +163,8 @@ export async function POST(request: NextRequest) {
 
     // Vérifier que chaque timeSlot a bien startTime et endTime
     const validSlots = timeSlots.filter((slot: any) => slot.startTime && slot.endTime)
-    console.log('Création d\'événement avec les créneaux:', body)
+    console.log('Nouveau événement avec les créneaux:', body)
+
     if (validSlots.length === 0) {
       return NextResponse.json(
         { error: 'Chaque créneau doit avoir une date de début et de fin valide' },
@@ -172,11 +186,8 @@ export async function POST(request: NextRequest) {
       }
       
       // Construire les dates ISO complètes - s'assurer que c'est bien formaté
-      const startDate = `${slotDate}T${startTime}:00.000Z`
-      const endDate = `${slotDate}T${endTime}:00.000Z`
-      
-      // Log pour debug
-      console.log('Création TimeSlot:', { slotDate, startTime, endTime, startDate, endDate })
+      const startDate = `${slotDate}T${startTime}:00`
+      const endDate = `${slotDate}T${endTime}:00`
       
       return {
         id: generateTimeSlotId(),
@@ -206,6 +217,14 @@ export async function POST(request: NextRequest) {
         { error: 'Erreur lors de la génération des créneaux horaires' },
         { status: 400 }
       )
+    }
+
+    // Normaliser les données de classe (priorité au nouveau format)
+    let normalizedClassData: ClassData | null = null;
+    
+    if (inputClassData && typeof inputClassData === 'object') {
+      // Nouveau format fourni directement
+      normalizedClassData = inputClassData as ClassData;
     }
 
     // Créer l'événement avec les nouveaux champs
@@ -240,7 +259,7 @@ export async function POST(request: NextRequest) {
       state: 'PENDING' as const,
       room: room || '',
       teacher: session.user.name || '',
-      class_name: className || classes?.[0] || '',
+      class_data: normalizedClassData, // Nouveau champ
       participants: [],
       equipment_used: reducedMaterials,
       chemicals_used: reducedChemicals,
@@ -259,9 +278,11 @@ export async function POST(request: NextRequest) {
     }
 
     const createdEvent = await createChemistryEventWithTimeSlots(eventData)
-    console.log('Événement créé:', createdEvent)
+    console.log('Événement nouveau:', createdEvent)
 
     // Retourner le format attendu par le frontend
+    const responseClassData = normalizeClassField(createdEvent.class_data)
+    
     const responseEvent = {
       id: createdEvent.id,
       title: createdEvent.title,
@@ -272,7 +293,8 @@ export async function POST(request: NextRequest) {
       state: createdEvent.state,
       timeSlots: createdEvent.timeSlots,
       actuelTimeSlots: createdEvent.actuelTimeSlots,
-      class: createdEvent.class_name,
+      class: getClassNameFromClassData(responseClassData), // Pour compatibilité legacy
+      classData: responseClassData, // Nouveau champ
       room: createdEvent.room,
       materials: parseJsonSafe(createdEvent.equipment_used, []).map((item: any) => {
         if (typeof item === 'string') {
@@ -319,7 +341,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Mettre à jour un événement de chimie avec support TimeSlots complet
+// PUT - Mettre à jour un événement de chimie avec support TimeSlots complete
 export async function PUT(request: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) {
@@ -329,15 +351,15 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
     const { 
-      id, 
-      title, 
-      description, 
-      timeSlots, 
-      type, 
-      room, 
-      class: className, 
-      materials, 
-      chemicals, 
+      id,
+      title,
+      description,
+      timeSlots,
+      type,
+      room,
+      class_data: inputClassData, 
+      materials,
+      chemicals,
       remarks,
       state,
       stateChangeReason 
@@ -361,17 +383,17 @@ export async function PUT(request: NextRequest) {
 
     // Préparer les données de mise à jour
     const updateData: any = {}
-
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
     if (type !== undefined) updateData.type = type.toLowerCase()
     if (room !== undefined) updateData.room = room
-    if (className !== undefined) updateData.class_name = className
     if (remarks !== undefined) updateData.notes = remarks
     if (state !== undefined) {
       updateData.state = state === 'VALIDATED' ? 'PENDING' : state
     }
-    console.log('Mise à jour de l\'événement avec les données:', body)  
+    if (inputClassData !== undefined) updateData.class_data = parseClassDataSafe(inputClassData)
+    
+    
     if (stateChangeReason !== undefined) updateData.stateChangeReason = stateChangeReason
 
     // Gestion des matériaux et produits chimiques avec réduction des données
@@ -389,6 +411,7 @@ export async function PUT(request: NextRequest) {
       }))
       updateData.equipment_used = reducedMaterials
     }
+
     if (chemicals !== undefined) {
       // Réduire les données des chimiques pour ne garder que les champs essentiels
       const reducedChemicals = chemicals.map((chemical: any) => ({
@@ -435,7 +458,7 @@ export async function PUT(request: NextRequest) {
 
     // Gestion du validationState lors des modifications
     // Si quelqu'un modifie l'événement, mettre validationState à 'operatorPending'
-    if (timeSlots !== undefined || materials !== undefined || chemicals !== undefined || 
+    if (timeSlots !== undefined || materials !== undefined || chemicals !== undefined ||
         title !== undefined || description !== undefined || room !== undefined) {
       updateData.validationState = 'operatorPending'
       // Si l'événement n'est pas déjà PENDING, le mettre en PENDING
@@ -444,10 +467,13 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    console.log('Données mises à jour dans /api/calendrier/chimie/route.ts:', updateData)
     // Effectuer la mise à jour
     const updatedEvent = await updateChemistryEventWithTimeSlots(id, updateData)
 
     // Retourner le format attendu par le frontend
+    const responseClassData = normalizeClassField(updatedEvent.class_data)
+    
     const responseEvent = {
       id: updatedEvent.id,
       title: updatedEvent.title,
@@ -458,7 +484,8 @@ export async function PUT(request: NextRequest) {
       state: updatedEvent.state,
       timeSlots: updatedEvent.timeSlots,
       actuelTimeSlots: updatedEvent.actuelTimeSlots,
-      class: updatedEvent.class_name,
+      class: getClassNameFromClassData(responseClassData), // Pour compatibilité legacy
+      classData: responseClassData, // Nouveau champ
       room: updatedEvent.room,
       materials: parseJsonSafe(updatedEvent.equipment_used, []).map((item: any) => {
         if (typeof item === 'string') {
@@ -495,10 +522,11 @@ export async function PUT(request: NextRequest) {
       lastStateChange: updatedEvent.lastStateChange
     }
 
+    console.log('Mise à jour événement chimie:', responseEvent)
     return NextResponse.json(responseEvent)
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de l\'événement:', error)
+    console.error('Erreur lors de la mise à jour de événement:', error)
     return NextResponse.json(
       { error: 'Erreur lors de la mise à jour de l\'événement' },
       { status: 500 }
@@ -534,7 +562,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Vérifier les permissions (seul le créateur ou un admin peut supprimer)
-    if (existingEvent.created_by !== session.user.id && 
+    if (existingEvent.created_by !== session.user.id &&
         existingEvent.created_by !== session.user.email) {
       // TODO: Ajouter vérification du rôle admin si nécessaire
       return NextResponse.json(

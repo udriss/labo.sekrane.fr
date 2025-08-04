@@ -9,6 +9,7 @@ import {
 import { format, addDays, subDays, isSameDay, startOfDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent } from '@/types/calendar'
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 
 interface DailyCalendarViewProps {
   currentDate: Date
@@ -223,12 +224,16 @@ export default function DailyCalendarView({
                             </Typography>
                           )}
                           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                            {event.class && (
-                              <Chip 
-                                label={event.class} 
-                                size="small"
-                              />
-                            )}
+                            {(() => {
+                              const normalizedClassData = normalizeClassField(event.class_data)
+                              const className = getClassNameFromClassData(normalizedClassData)
+                              return className && (
+                                <Chip 
+                                  label={className} 
+                                  size="small"
+                                />
+                              )
+                            })()}
                             {event.location && (
                               <Chip 
                                 label={event.location} 

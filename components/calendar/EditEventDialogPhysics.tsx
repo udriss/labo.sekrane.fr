@@ -21,6 +21,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent, EventType, PhysicsConsumable } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
+import { normalizeClassField } from '@/lib/class-data-utils'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { useSession } from 'next-auth/react'
@@ -153,7 +154,7 @@ export default function EditEventDialogPhysics({
     endDate: null as Date | null,
     startTime: '',
     endTime: '',
-    class: '',
+    class_data: null as { id: string, name: string, type: 'predefined' | 'custom' | 'auto' } | null,
     room: '',
     materials: [] as any[],
     consommables: [] as any[],
@@ -221,6 +222,9 @@ export default function EditEventDialogPhysics({
         return { ...cons, requestedQuantity: 1 }
       }) || []
 
+      // Normaliser les données de classe
+      const normalizedClassData = normalizeClassField(event.class_data)
+
       // Initialiser avec le premier créneau
       setFormData({
         title: event.title || '',
@@ -231,7 +235,7 @@ export default function EditEventDialogPhysics({
         endDate: endDate,
         startTime: format(startDate, 'HH:mm'),
         endTime: format(endDate, 'HH:mm'),
-        class: event.class || '',
+        class_data: normalizedClassData,
         room: event.room || '',
         materials: materialsWithQuantities,
         consommables: consommablesWithQuantities,
@@ -600,7 +604,10 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       formData.title === originalEvent.title &&
       formData.description === originalEvent.description &&
       formData.type === originalEvent.type &&
-      formData.class === originalEvent.class &&
+      (formData.class_data === null || 
+        !originalEvent.class_data || 
+        (formData.class_data && Array.isArray(originalEvent.class_data) && originalEvent.class_data.length > 0 && 
+          formData.class_data.id === originalEvent.class_data[0].id)) &&
       formData.room === originalEvent.room &&
       formData.location === originalEvent.location &&
       JSON.stringify(formData.consommables) === JSON.stringify(originalEvent.consommables || []) &&
@@ -674,7 +681,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
         description: formData.description,
         state: formData.state,
         type: formData.type,
-        class: formData.class,
+        class_data: formData.class_data ? [formData.class_data] : [],  // Convertir en tableau pour respecter le type CalendarEvent
         room: formData.room,
         location: formData.location,
         materials: formData.materials.map((mat: any) => ({
@@ -846,7 +853,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       endDate: null,
       startTime: '',
       endTime: '',
-      class: '',
+      class_data: null,
       room: '',
       materials: [],
       consommables: [],
@@ -1199,40 +1206,67 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   ...userClasses.filter(c => !customClasses.some(cc => cc.id === c.id))
                 ].filter((value, index, self) => self.findIndex(v => v.id === value.id) === index)}
                 getOptionLabel={option => typeof option === 'string' ? option : option.name}
-                value={userClasses.find(c => c.name === formData.class) || customClasses.find(c => c.name === formData.class) || formData.class}
+                value={formData.class_data}
                 onChange={async (_, newValue) => {
                   if (!newValue) {
-                    setFormData({ ...formData, class: '' });
+                    setFormData({ ...formData, class_data: null });
                     return;
                   }
-                  const className = typeof newValue === 'string' ? newValue : newValue.name;
-                  setFormData({ ...formData, class: className });
-                  // Vérifier si c'est une nouvelle classe personnalisée
-                  if (!userClasses.some(c => c.name === className) && !customClasses.some(c => c.name === className)) {
-                    try {
-                      const result = await saveNewClass(className, 'custom');
-                      if (result.success) {
-                        setCustomClasses(prev => {
-                          if (!prev.some(c => c.name === className)) {
-                            return [...prev, { id: result.data.id, name: className }];
-                          }
-                          return prev;
-                        });
-                        setSnackbar({
-                          open: true,
-                          message: `Classe "${className}" ajoutée avec succès`,
-                          severity: 'success'
-                        });
-                      } else {
-                        setSnackbar({
-                          open: true,
-                          message: result.error || 'Erreur lors de l\'ajout de la classe',
-                          severity: 'error'
-                        });
+                  
+                  // Si c'est une chaîne de caractères (nouvelle saisie)
+                  if (typeof newValue === 'string') {
+                    const className = newValue.trim();
+                    // Vérifier si c'est une nouvelle classe personnalisée
+                    if (className && !userClasses.some(c => c.name === className) && !customClasses.some(c => c.name === className)) {
+                      try {
+                        const result = await saveNewClass(className, 'custom');
+                        if (result.success) {
+                          const newClass = { id: result.data.id, name: className, type: 'custom' as const };
+                          setCustomClasses(prev => {
+                            if (!prev.some(c => c.id === newClass.id)) {
+                              return [...prev, { id: newClass.id, name: newClass.name }];
+                            }
+                            return prev;
+                          });
+                          
+                          // Mettre à jour formData avec l'objet classe complet
+                          setFormData({ ...formData, class_data: newClass });
+                          
+                          setSnackbar({
+                            open: true,
+                            message: `Classe "${className}" ajoutée avec succès`,
+                            severity: 'success'
+                          });
+                        } else {
+                          setSnackbar({
+                            open: true,
+                            message: result.error || 'Erreur lors de l\'ajout de la classe',
+                            severity: 'error'
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Erreur inattendue:', error);
                       }
-                    } catch (error) {
-                      console.error('Erreur inattendue:', error);
+                    } else {
+                      // Si la classe existe déjà, utiliser l'objet existant
+                      const existingClass = userClasses.find(c => c.name === className) || 
+                                           customClasses.find(c => c.name === className);
+                      if (existingClass) {
+                        setFormData({ ...formData, class_data: { ...existingClass, type: 'predefined' as const } });
+                      } else {
+                        // Création d'un objet temporaire si aucune correspondance
+                        setFormData({ ...formData, class_data: { id: `temp-${className}`, name: className, type: 'auto' as const } });
+                      }
                     }
+                  } else {
+                    // Si c'est déjà un objet classe, s'assurer qu'il a un type
+                    const type: 'predefined' | 'custom' = customClasses.some(c => c.id === newValue.id) ? 'custom' : 'predefined';
+                    const classWithType = { 
+                      id: newValue.id, 
+                      name: newValue.name, 
+                      type: type
+                    };
+                    setFormData({ ...formData, class_data: classWithType });
                   }
                 }}
                 inputValue={classInputValue || ''}
@@ -1245,7 +1279,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     label="Classe"
                     placeholder="Sélectionnez ou saisissez une classe..."
                     helperText={
-                      formData.class && !userClasses.some(c => c.name === formData.class) && customClasses.some(c => c.name === formData.class)
+                      formData.class_data && 
+                      !userClasses.some(c => formData.class_data && c.name === formData.class_data.name) && 
+                      customClasses.some(c => formData.class_data && c.name === formData.class_data.name)
                         ? "Classe personnalisée"
                         : null
                     }
@@ -1291,7 +1327,11 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   if (typeof option === 'string' || typeof value === 'string') {
                     return option === value;
                   }
-                  return option.id === value.id || option.name === value.name;
+                  // Si l'un des deux est null, ils ne sont pas égaux
+                  if (!option || !value) return false;
+                  
+                  // Comparer par ID d'abord
+                  return option.id === value.id
                 }}
                 groupBy={option => {
                   const isCustom = customClasses.some(c => 

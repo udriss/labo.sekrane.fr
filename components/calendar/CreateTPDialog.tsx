@@ -158,10 +158,11 @@ export function CreateTPDialog({
   useEffect(() => {
     if (eventToCopy && open) {
       // Trouver l'objet classe correspondant
-      const classObj = typeof eventToCopy.class === 'string' 
-        ? [...userClasses, ...customClasses].find(c => c.name === eventToCopy.class || c.id === eventToCopy.class)
-        : eventToCopy.class
-        
+      const classDataItem = eventToCopy.class_data?.[0];
+      const classObj = classDataItem && typeof classDataItem === 'object' && 'name' in classDataItem
+        ? [...userClasses, ...customClasses].find(c => c.name === classDataItem.name || c.id === classDataItem.id)
+        : classDataItem;
+
       setFormData({
         title: `Copie - ${eventToCopy.title}`,
         description: eventToCopy.description || '',

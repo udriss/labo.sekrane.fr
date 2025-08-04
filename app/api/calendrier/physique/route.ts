@@ -1,4 +1,6 @@
-// app/api/calendrier/physique/route.ts// API mise à jour pour le système TimeSlots completexport const runtime = 'nodejs';
+// app/api/calendrier/physique/route.ts
+// API mise à jour pour le système TimeSlots complet
+export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
@@ -13,6 +15,13 @@ import {
 import { deletePhysicsEvent } from '@/lib/calendar-utils'
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
 import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { 
+  parseClassDataSafe, 
+  getClassNameFromClassData, 
+  normalizeClassField,
+  createClassDataFromString,
+  type ClassData 
+} from '@/lib/class-data-utils'
 
 // Fonction utilitaire pour parser le JSON de manière sécurisée
 function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultValue: T): T {
@@ -48,6 +57,10 @@ export async function GET(request: NextRequest) {
       // Les données sont déjà parsées dans getPhysicsEventsWithTimeSlots
       const timeSlots = dbEvent.timeSlots || []
       const actuelTimeSlots = dbEvent.actuelTimeSlots || []
+      
+      // Normaliser les données de classe (support legacy + nouveau format)
+      const classData = normalizeClassField(dbEvent.class_data)
+      console.log('Récupération des événements de physique:', classData)
 
       return {
         id: dbEvent.id,
@@ -59,7 +72,8 @@ export async function GET(request: NextRequest) {
         state: dbEvent.state || 'VALIDATED',
         timeSlots: timeSlots,
         actuelTimeSlots: actuelTimeSlots,
-        class: dbEvent.class_name,
+        class: getClassNameFromClassData(classData), // Pour compatibilité legacy
+        class_data: classData, // Nouveau champ
         room: dbEvent.room,
         materials: parseJsonSafe(dbEvent.equipment_used, []).map((item: any) => {
           if (typeof item === 'string') {
@@ -125,6 +139,7 @@ export async function POST(request: NextRequest) {
       type,
       room,
       class: className,
+      classData: inputClassData,
       classes,
       materials,
       equipment,
@@ -148,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     // Vérifier que chaque timeSlot a bien startTime et endTime
     const validSlots = timeSlots.filter((slot: any) => slot.startTime && slot.endTime)
-    console.log('Création d\'événement physique avec les créneaux:', body)
+    console.log('Ajout événement physique avec les créneaux:', body)
     if (validSlots.length === 0) {
       return NextResponse.json(
         { error: 'Chaque créneau doit avoir une date de début et de fin valide' },
@@ -170,11 +185,11 @@ export async function POST(request: NextRequest) {
       }
       
       // Construire les dates ISO complètes - s'assurer que c'est bien formaté
-      const startDate = `${slotDate}T${startTime}:00.000Z`
-      const endDate = `${slotDate}T${endTime}:00.000Z`
+      const startDate = `${slotDate}T${startTime}:00`
+      const endDate = `${slotDate}T${endTime}:00`
       
       // Log pour debug
-      console.log('Création TimeSlot physique:', { slotDate, startTime, endTime, startDate, endDate })
+      console.log('Ajout TimeSlot physique:', { slotDate, startTime, endTime, startDate, endDate })
       
       return {
         id: generateTimeSlotId(),
@@ -207,6 +222,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    // Normaliser les données de classe (priorité au nouveau format)
+    let normalizedClassData: ClassData | null = null;
+    
+    if (inputClassData && typeof inputClassData === 'object') {
+      // Nouveau format fourni directement
+      normalizedClassData = inputClassData as ClassData;
+    } 
     
     // Créer l'événement avec les nouveaux champs
     // Réduire les données avant de les sauvegarder
@@ -241,7 +264,7 @@ export async function POST(request: NextRequest) {
       state: 'PENDING' as const,
       room: room || '',
       teacher: session.user.name || '',
-      class_name: className || classes?.[0] || '',
+      class_data: normalizedClassData, // Nouveau champ
       participants: [],
       equipment_used: reducedMaterials,
       consommables_used: reducedConsommables,
@@ -262,6 +285,8 @@ export async function POST(request: NextRequest) {
     const createdEvent = await createPhysicsEventWithTimeSlots(eventData)
 
     // Retourner le format attendu par le frontend
+    const responseClassData = normalizeClassField(createdEvent.class_data)
+
     const responseEvent = {
       id: createdEvent.id,
       title: createdEvent.title,
@@ -272,7 +297,8 @@ export async function POST(request: NextRequest) {
       state: createdEvent.state,
       timeSlots: createdEvent.timeSlots,
       actuelTimeSlots: createdEvent.actuelTimeSlots,
-      class: createdEvent.class_name,
+      class: getClassNameFromClassData(responseClassData), // Pour compatibilité legacy
+      classData: responseClassData, // Nouveau champ
       room: createdEvent.room,
       materials: parseJsonSafe(createdEvent.equipment_used, []).map((item: any) => {
         if (typeof item === 'string') {
@@ -335,7 +361,7 @@ export async function PUT(request: NextRequest) {
       timeSlots, 
       type, 
       room, 
-      class: className, 
+      class_data: inputClassData, 
       materials, 
       consommables, 
       remarks,
@@ -343,7 +369,6 @@ export async function PUT(request: NextRequest) {
       stateChangeReason 
     } = body
 
-    console.log('Mise à jour de l\'événement physique:', body)
 
     if (!id) {
       return NextResponse.json(
@@ -368,9 +393,9 @@ export async function PUT(request: NextRequest) {
     if (description !== undefined) updateData.description = description
     if (type !== undefined) updateData.type = type.toLowerCase()
     if (room !== undefined) updateData.room = room
-    if (className !== undefined) updateData.class_name = className
     if (remarks !== undefined) updateData.notes = remarks
     if (state !== undefined) updateData.state = state
+    if (inputClassData !== undefined) updateData.class_data = parseClassDataSafe(inputClassData)
     if (stateChangeReason !== undefined) updateData.stateChangeReason = stateChangeReason
 
     // Gestion des matériaux et produits chimiques avec réduction des données
@@ -449,6 +474,9 @@ export async function PUT(request: NextRequest) {
     const updatedEvent = await updatePhysicsEventWithTimeSlots(id, updateData)
 
     // Retourner le format attendu par le frontend
+    const responseClassData = normalizeClassField(updatedEvent.class_data)
+    console.log('responseClassData physique mis à jour:', responseClassData)
+
     const responseEvent = {
       id: updatedEvent.id,
       title: updatedEvent.title,
@@ -459,7 +487,8 @@ export async function PUT(request: NextRequest) {
       state: updatedEvent.state,
       timeSlots: updatedEvent.timeSlots,
       actuelTimeSlots: updatedEvent.actuelTimeSlots,
-      class: updatedEvent.class_name,
+      class: getClassNameFromClassData(responseClassData), // Pour compatibilité legacy
+      classData: responseClassData, // Nouveau champ
       room: updatedEvent.room,
       materials: parseJsonSafe(updatedEvent.equipment_used, []).map((item: any) => {
         if (typeof item === 'string') {

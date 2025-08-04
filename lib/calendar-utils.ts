@@ -16,7 +16,11 @@ export interface CalendarEvent {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
   room?: string
   teacher?: string
-  class_name?: string
+  class_data?: {
+    id: string
+    name: string
+    type: 'predefined' | 'custom' | 'auto'
+  } | null
   participants?: string[] // Will be stored as JSON
   equipment_used?: string[] // Will be stored as JSON
   chemicals_used?: string[] // Will be stored as JSON
@@ -172,7 +176,7 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
     
     const query = `
       INSERT INTO calendar_chimie 
-      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_name, 
+      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_data, 
        participants, equipment_used, chemicals_used, notes, color, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
@@ -180,7 +184,7 @@ export async function createChemistryEvent(event: Omit<CalendarEvent, 'id' | 'cr
     await pool.execute(query, [
       eventData.id, eventData.title, eventData.start_date, eventData.end_date,
       eventData.description, eventData.type, eventData.status, eventData.state, eventData.room,
-      eventData.teacher, eventData.class_name, eventData.participants,
+      eventData.teacher, eventData.class_data, eventData.participants,
       eventData.equipment_used, eventData.chemicals_used, eventData.notes,
       eventData.color, eventData.created_by
     ])
@@ -217,7 +221,7 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
     
     const query = `
       INSERT INTO calendar_physique 
-      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_name, 
+      (id, title, start_date, end_date, description, type, status, state, room, teacher, class_data, 
        participants, equipment_used, chemicals_used, notes, color, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
@@ -225,7 +229,7 @@ export async function createPhysicsEvent(event: Omit<CalendarEvent, 'id' | 'crea
     await pool.execute(query, [
       eventData.id, eventData.title, eventData.start_date, eventData.end_date,
       eventData.description, eventData.type, eventData.status, eventData.state, eventData.room,
-      eventData.teacher, eventData.class_name, eventData.participants,
+      eventData.teacher, eventData.class_data, eventData.participants,
       eventData.equipment_used, eventData.chemicals_used, eventData.notes,
       eventData.color, eventData.created_by
     ])

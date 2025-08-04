@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material'
 import { CalendarEvent, EventType, EventState, Chemical } from '@/types/calendar'
 import { UserRole } from "@/types/global";
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import { SiMoleculer } from "react-icons/si";
 import { getActiveTimeSlots, hasPendingChanges } from '@/lib/calendar-slot-utils'
 
@@ -427,6 +428,10 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
   // États pour gérer le chargement des boutons de timeslot
   const [loadingTimeslotActions, setLoadingTimeslotActions] = useState<Record<string, 'approve' | 'reject' | null>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // Normaliser les données de classe pour l'affichage
+  const normalizedClassData = normalizeClassField(event?.class_data)
+  const className = getClassNameFromClassData(normalizedClassData)
 
   
   const [unifiedDialog, setUnifiedDialog] = useState<{
@@ -1139,17 +1144,17 @@ useEffect(() => {
           </Grid>
 
           {/* Informations de localisation */}
-          {(event.class || event.room) && (
+          {(normalizedClassData || event.room) && (
             <>
 
               <Grid container spacing={2}>
-                {event.class && (
+                {normalizedClassData && (
                   <Grid size = {{ xs: 12, sm: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Classe
                     </Typography>
                     <Typography variant="body1">
-                      <School sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.class}
+                      <School sx={{ fontSize: 16, color: 'text.secondary' }} /> {className}
                     </Typography>
                   </Grid>
                 )}

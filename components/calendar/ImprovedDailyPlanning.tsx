@@ -10,6 +10,7 @@ import {
 import { Search, Event } from '@mui/icons-material'
 import { CalendarEvent } from '@/types/calendar'
 import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import ImprovedEventBlock from './ImprovedEventBlock'
 import { isSameDay } from 'date-fns'
 
@@ -55,13 +56,16 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
     let filtered = dayEvents
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
-      filtered = dayEvents.filter(event => 
-        event.title.toLowerCase().includes(query) ||
-        event.description?.toLowerCase().includes(query) ||
-        event.class?.toLowerCase().includes(query) ||
-        event.room?.toLowerCase().includes(query) ||
-        event.createdBy?.toLowerCase().includes(query)
-      )
+      filtered = dayEvents.filter(event => {
+        const normalizedClassData = normalizeClassField(event.class_data)
+        const className = getClassNameFromClassData(normalizedClassData)
+        
+        return event.title.toLowerCase().includes(query) ||
+               event.description?.toLowerCase().includes(query) ||
+               className.toLowerCase().includes(query) ||
+               event.room?.toLowerCase().includes(query) ||
+               event.createdBy?.toLowerCase().includes(query)
+      })
     }
     
     // Trier par heure de début du premier créneau
@@ -104,6 +108,7 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
   const stats = getStatsByState()
   const needsActionCount = stats.PENDING + stats.MOVED
 
+  console.log('Statistiques des événements de physique:', events)
 
   return (
     <Box sx={{ p: 2 }}>
