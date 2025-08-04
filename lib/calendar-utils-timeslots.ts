@@ -61,6 +61,41 @@ function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultVa
   }
 }
 
+// Fonction utilitaire pour transformer les matériaux/équipements
+function transformMaterials(rawData: any[]): any[] {
+  return rawData.map((item: any) => {
+    if (typeof item === 'string') {
+      return { id: item, name: item };
+    }
+    return {
+      id: item.id || item,
+      name: item.name || item.itemName || (typeof item === 'string' ? item : 'Matériel'),
+      itemName: item.itemName || item.name,
+      quantity: item.quantity || 1,
+      volume: item.volume,
+      isCustom: item.isCustom || false
+    };
+  });
+}
+
+// Fonction utilitaire pour transformer les produits chimiques/consommables
+function transformChemicals(rawData: any[], discipline = 'chimie'): any[] {
+  return rawData.map((item: any) => {
+    if (typeof item === 'string') {
+      return { id: item, name: item };
+    }
+    return {
+      id: item.id || item,
+      name: item.name || (typeof item === 'string' ? item : (discipline === 'physique' ? 'Consommable' : 'Réactif')),
+      requestedQuantity: item.requestedQuantity || 1,
+      quantity: item.quantity,
+      unit: item.unit,
+      isCustom: item.isCustom || false,
+      ...(discipline === 'chimie' ? { formula: item.formula } : {})
+    };
+  });
+}
+
 // Types pour les événements de calendrier avec le nouveau système TimeSlots
 export interface CalendarEventWithTimeSlots {
   id: string
@@ -77,6 +112,7 @@ export interface CalendarEventWithTimeSlots {
   participants?: string[] // Will be stored as JSON
   equipment_used?: string[] // Will be stored as JSON
   chemicals_used?: string[] // Will be stored as JSON
+  consommables_used?: string[] // Will be stored as JSON
   notes?: string
   color?: string
   created_by?: string
@@ -185,8 +221,8 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         teacher: row.teacher,
         class_name: row.class_name,
         participants: parseJsonSafe(row.participants, []),
-        equipment_used: parseJsonSafe(row.equipment_used, []),
-        chemicals_used: parseJsonSafe(row.chemicals_used, []),
+        equipment_used: transformMaterials(parseJsonSafe(row.equipment_used, [])),
+        chemicals_used: transformChemicals(parseJsonSafe(row.chemicals_used, []), 'chimie'),
         notes: row.notes,
         color: row.color,
         created_by: row.created_by,
@@ -356,8 +392,8 @@ export async function getChemistryEventByIdWithTimeSlots(id: string): Promise<Ca
       actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
       lastStateChange: parseJsonSafe(row.lastStateChange, null),
       participants: parseJsonSafe(row.participants, []),
-      equipment_used: parseJsonSafe(row.equipment_used, []),
-      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+      equipment_used: transformMaterials(parseJsonSafe(row.equipment_used, [])),
+      chemicals_used: transformChemicals(parseJsonSafe(row.chemicals_used, []), 'chimie')
     }
     
   } catch (error) {
@@ -409,8 +445,8 @@ export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?
       actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
       lastStateChange: parseJsonSafe(row.lastStateChange, null),
       participants: parseJsonSafe(row.participants, []),
-      equipment_used: parseJsonSafe(row.equipment_used, []),
-      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+      equipment_used: transformMaterials(parseJsonSafe(row.equipment_used, [])),
+      consommables_used: transformChemicals(parseJsonSafe(row.consommables_used, []), 'physique')
     }))
     
   } catch (error) {
@@ -446,7 +482,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
       // Sérialiser les champs JSON
       participants: JSON.stringify(eventData.participants || []),
       equipment_used: JSON.stringify(eventData.equipment_used || []),
-      chemicals_used: JSON.stringify(eventData.chemicals_used || []),
+      consommables_used: JSON.stringify(eventData.consommables_used || []),
       timeSlots: JSON.stringify(eventData.timeSlots || []),
       actuelTimeSlots: JSON.stringify(eventData.actuelTimeSlots || []),
       lastStateChange: JSON.stringify(eventData.lastStateChange || null)
@@ -469,7 +505,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
       ...finalEventData,
       participants: eventData.participants || [],
       equipment_used: eventData.equipment_used || [],
-      chemicals_used: eventData.chemicals_used || [],
+      consommables_used: eventData.consommables_used || [],
       timeSlots: eventData.timeSlots || [],
       actuelTimeSlots: eventData.actuelTimeSlots || [],
       lastStateChange: eventData.lastStateChange || undefined
@@ -512,7 +548,7 @@ export async function updatePhysicsEventWithTimeSlots(id: string, updateData: Pa
     }
     
     // Champs JSON
-    const jsonFields = ['participants', 'equipment_used', 'chemicals_used', 'timeSlots', 'actuelTimeSlots', 'lastStateChange']
+    const jsonFields = ['participants', 'equipment_used', 'consommables_used', 'timeSlots', 'actuelTimeSlots', 'lastStateChange']
     
     jsonFields.forEach(field => {
       if (updateData[field as keyof CalendarEventWithTimeSlots] !== undefined) {
@@ -586,12 +622,70 @@ export async function getPhysicsEventByIdWithTimeSlots(id: string): Promise<Cale
       actuelTimeSlots: parseJsonSafe(row.actuelTimeSlots, []),
       lastStateChange: parseJsonSafe(row.lastStateChange, null),
       participants: parseJsonSafe(row.participants, []),
-      equipment_used: parseJsonSafe(row.equipment_used, []),
-      chemicals_used: parseJsonSafe(row.chemicals_used, [])
+      equipment_used: transformMaterials(parseJsonSafe(row.equipment_used, [])),
+      consommables_used: transformChemicals(parseJsonSafe(row.consommables_used, []), 'physique')
     }
     
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'événement de physique:', error)
     throw error
   }
+}
+
+// Fonction utilitaire pour comparer deux TimeSlots et déterminer s'ils ont été modifiés
+export function hasTimeSlotChanged(originalSlot: any, newSlot: any): boolean {
+  if (!originalSlot || !newSlot) return true
+  
+  // Comparer les propriétés importantes (exclure id et modifiedBy)
+  const fieldsToCompare = ['startDate', 'endDate', 'status', 'room', 'notes']
+  
+  for (const field of fieldsToCompare) {
+    if (originalSlot[field] !== newSlot[field]) {
+      return true
+    }
+  }
+  
+  return false
+}
+
+// Fonction utilitaire pour traiter les TimeSlots en évitant les entrées modifiedBy inutiles
+export function processTimeSlots(newTimeSlots: any[], originalTimeSlots: any[], userId: string): any[] {
+  return newTimeSlots.map((slot: any) => {
+    // Trouver le slot original correspondant (par ID)
+    const originalSlot = originalTimeSlots.find((orig: any) => orig.id === slot.id)
+    
+    // Si c'est un nouveau slot (pas dans les originaux), ne pas ajouter d'entrée "modified"
+    if (!originalSlot) {
+      return {
+        ...slot,
+        id: slot.id || generateTimeSlotId()
+        // Pas d'entrée modifiedBy pour les nouveaux slots - ils auront "created" par ailleurs
+      }
+    }
+    
+    // Vérifier si le slot a réellement changé
+    const hasChanged = hasTimeSlotChanged(originalSlot, slot)
+    
+    if (hasChanged) {
+      // Seulement si modifié, ajouter l'entrée modifiedBy
+      return {
+        ...slot,
+        id: slot.id || generateTimeSlotId(),
+        modifiedBy: [
+          ...(slot.modifiedBy || []),
+          {
+            userId,
+            date: new Date().toISOString(),
+            action: 'modified' as const
+          }
+        ]
+      }
+    } else {
+      // Si pas modifié, retourner le slot tel quel (sans ajouter d'entrée modifiedBy)
+      return {
+        ...slot,
+        id: slot.id || generateTimeSlotId()
+      }
+    }
+  })
 }

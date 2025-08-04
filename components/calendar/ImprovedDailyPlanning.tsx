@@ -18,6 +18,7 @@ interface ImprovedDailyPlanningProps {
   selectedDate?: Date
   canOperate: boolean
   onEventUpdate?: (updatedEvent: CalendarEvent) => void
+  onEventClick?: (event: CalendarEvent) => void // NOUVEAU: pour ouvrir les détails
   discipline?: 'chimie' | 'physique'
   onEdit?: (event: CalendarEvent) => void
   onEventCopy?: (event: CalendarEvent) => void
@@ -29,6 +30,7 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
   selectedDate = new Date(),
   canOperate,
   onEventUpdate,
+  onEventClick, // NOUVEAU: pour ouvrir les détails
   discipline = 'chimie',
   onEdit,
   onEventCopy,
@@ -102,8 +104,7 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
   const stats = getStatsByState()
   const needsActionCount = stats.PENDING + stats.MOVED
 
-  console.log('events by IMPROVE', events)
-  
+
   return (
     <Box sx={{ p: 2 }}>
       {/* En-tête avec date et statistiques */}
@@ -158,12 +159,14 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
           placeholder="Rechercher par titre, description, classe, salle ou professeur..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
+          slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+          <Search />
+            </InputAdornment>
+          ),
+        },
           }}
           size="small"
         />
@@ -196,6 +199,7 @@ const ImprovedDailyPlanning: React.FC<ImprovedDailyPlanningProps> = ({
               canOperate={canOperate}
               isMobile={isMobile}
               onEventUpdate={onEventUpdate}
+              onEventClick={onEventClick} // NOUVEAU: passer la prop
               discipline={discipline}
               onEdit={onEdit}
               onEventCopy={onEventCopy}

@@ -1,4 +1,4 @@
-// components/calendar/EditEventDialog.tsx
+// components/calendar/EditEventDialogPhysics.tsx
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
@@ -19,7 +19,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { fr } from 'date-fns/locale'
-import { CalendarEvent, EventType } from '@/types/calendar'
+import { CalendarEvent, EventType, PhysicsConsumable } from '@/types/calendar'
 import { format, isSameDay } from 'date-fns'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
@@ -29,13 +29,14 @@ import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { TimeSlot } from '@/types/calendar'
 import { useEventMove } from '@/lib/hooks/useEventMove'
 import { isEventOwner } from '@/lib/calendar-move-utils'
-interface EditEventDialogProps {
+
+interface EditEventDialogPhysicsProps {
   open: boolean
   event: CalendarEvent | null
   onClose: () => void
   onSave: (updatedEvent: Partial<CalendarEvent>) => Promise<void>
   materials: any[]
-  chemicals: any[]
+  consommables: any[]
   classes: string[]
   isMobile?: boolean
   userClasses: { id: string, name: string }[]
@@ -51,38 +52,72 @@ const EVENT_TYPES = {
   OTHER: { label: "Autre", icon: <EventAvailable /> }
 }
 
-export function EditEventDialog({
+export default function EditEventDialogPhysics({
   open,
   event,
+  consommables,
   onClose,
   onSave,
   materials,
-  chemicals,
   classes,
   userClasses,
   customClasses,
   saveNewClass,
   setCustomClasses,
-  isMobile = false
-}: EditEventDialogProps) {
+  isMobile = false,
+}: EditEventDialogPhysicsProps) {
   const [loading, setLoading] = useState(false)
   const [showMultipleSlots, setShowMultipleSlots] = useState(false)
   const [files, setFiles] = useState<any[]>([])
   const [remarks, setRemarks] = useState('')
   const [materialInputValue, setMaterialInputValue] = useState('')
-  const [chemicalInputValue, setChemicalInputValue] = useState('')
-  const [chemicalsWithForecast, setChemicalsWithForecast] = useState<any[]>([])
+  const [consommableInputValue, setConsommableInputValue] = useState('')
+  const [consommablesWithForecast, setConsommablesWithForecast] = useState<any[]>([])
   const [tooltipStates, setTooltipStates] = useState<{[key: string]: {actual: boolean, prevision: boolean, after: boolean}}>({})
   const [classInputValue, setClassInputValue] = useState<string>('');
   // Ajouter un état pour suivre les uploads
   const [hasUploadingFiles, setHasUploadingFiles] = useState(false)
   const [uploadErrors, setUploadErrors] = useState<string[]>([])
-  const [showCustomChemicalInfo, setShowCustomChemicalInfo] = useState(false)
+  const [showCustomConsommableInfo, setShowCustomConsommableInfo] = useState(false)
   const [animatingSlot, setAnimatingSlot] = useState<number | null>(null)
 
-  // États pour les données spécifiques à la chimie
+  // États pour les données spécifiques à la physique
   const [disciplineMaterials, setDisciplineMaterials] = useState<any[]>([]);
-  const [disciplineChemicals, setDisciplineChemicals] = useState<any[]>([]);
+
+  interface PhysicsConsumable {
+    id: string;
+    name: string;
+    physics_consumable_type_id: string;
+    physics_consumable_item_id: string;
+    barcode: string | null;
+    batchNumber: string | null;
+    brand: string | null;
+    createdAt: string;
+    expirationDate: string | null;
+    item_description: string;
+    item_name: string;
+    location: string;
+    minQuantity: string;
+    model: string | null;
+    notes: string | null;
+    orderReference: string | null;
+    purchaseDate: string | null;
+    quantity: string;
+    room: string;
+    specifications: string | null;
+    status: string;
+    storage: string | null;
+    supplierId: string | null;
+    supplier_name: string | null;
+    type_color: string;
+    type_name: string;
+    unit: string;
+    updatedAt: string;
+  }
+
+  const [disciplineConsommables, setDisciplineConsommables] = useState<{
+    consumables: PhysicsConsumable[];
+  } | null>(null);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [loadingChemicals, setLoadingChemicals] = useState(false);
   
@@ -99,7 +134,6 @@ export function EditEventDialog({
     date: Date | null;
     startTime: string;
     endTime: string;
-    status?: 'active' | 'deleted' | 'cancelled';
     isExisting?: boolean;
     createdBy?: string;
     modifiedBy?: Array<{
@@ -122,20 +156,20 @@ export function EditEventDialog({
     class: '',
     room: '',
     materials: [] as any[],
-    chemicals: [] as any[],
+    consommables: [] as any[],
     location: ''
   })
 
   // Hook pour gérer les déplacements d'événements
   const { moveEvent, loading: moveLoading, error: moveError } = useEventMove()
 
-  // useEffect pour détecter la présence de réactifs custom
+  // useEffect pour détecter la présence de consommables custom
   useEffect(() => {
-    const hasCustomChemicals = formData.chemicals.some(c => c.isCustom)
-    if (hasCustomChemicals) {
-      setShowCustomChemicalInfo(true)
+    const hasCustomConsommables = formData.consommables.some((c: any) => c.isCustom)
+    if (hasCustomConsommables) {
+      setShowCustomConsommableInfo(true)
     }
-  }, [formData.chemicals])
+  }, [formData.consommables])
 
   // Surveiller l'état des uploads
   useEffect(() => {
@@ -171,16 +205,20 @@ export function EditEventDialog({
         return { ...mat, quantity: 1 }
       }) || []
 
-      // Préparer les réactifs chimiques avec quantités (reste inchangé)
-      const chemicalsWithQuantities = event.chemicals?.map((chem: any) => {
-        if (typeof chem === 'object' && chem.requestedQuantity) {
-          return chem
+      // Préparer les consommables physiques avec quantités
+      const consommablesWithQuantities = event.consommables?.map((cons: any) => {
+        if (typeof cons === 'object' && cons.requestedQuantity) {
+          return cons
         }
-        const foundChemical = chemicals.find(c => c.id === chem)
-        if (foundChemical) {
-          return { ...foundChemical, requestedQuantity: 1 }
+        const foundConsommable = disciplineConsommables && Array.isArray(disciplineConsommables) 
+          ? disciplineConsommables.find((c: any) => c.id === cons.id)
+          : disciplineConsommables && Array.isArray(disciplineConsommables.consumables)
+            ? disciplineConsommables.consumables.find((c: any) => c.id === cons.id)
+            : undefined;
+        if (foundConsommable) {
+          return { ...foundConsommable, requestedQuantity: 1 }
         }
-        return { ...chem, requestedQuantity: 1 }
+        return { ...cons, requestedQuantity: 1 }
       }) || []
 
       // Initialiser avec le premier créneau
@@ -196,7 +234,7 @@ export function EditEventDialog({
         class: event.class || '',
         room: event.room || '',
         materials: materialsWithQuantities,
-        chemicals: chemicalsWithQuantities,
+        consommables: consommablesWithQuantities,
         location: event.location || ''
       })
 
@@ -218,7 +256,6 @@ export function EditEventDialog({
         date: new Date(slot.startDate),
         startTime: format(new Date(slot.startDate), 'HH:mm'),
         endTime: format(new Date(slot.endDate), 'HH:mm'),
-        status: (slot.status || 'active') as 'active' | 'deleted' | 'cancelled',
         isExisting: true,
         createdBy: slot.createdBy,
         modifiedBy: slot.modifiedBy || [] // Conservation complète de l'historique
@@ -229,7 +266,7 @@ export function EditEventDialog({
       // Activer le mode multi-créneaux si plus d'un créneau
       setShowMultipleSlots(activeSlots.length > 1)
     }
-  }, [event, materials, chemicals])
+  }, [event, materials, consommables, disciplineConsommables])
 
 
   const [snackbar, setSnackbar] = useState<{
@@ -242,14 +279,14 @@ export function EditEventDialog({
     severity: 'info'
   });
 
-  // Charger les données spécifiques à la chimie
+  // Charger les données spécifiques à la physique
   useEffect(() => {
     if (open) {
-      loadChemistryData();
+      loadPhysicsData();
     }
   }, [open]);
 
-  const loadChemistryData = async () => {
+  const loadPhysicsData = async () => {
     try {
       // Charger les salles
       setLoadingRooms(true);
@@ -265,41 +302,38 @@ export function EditEventDialog({
       }
       setLoadingRooms(false);
 
-      // Charger les matériaux de chimie
+      // Charger les équipements de physique
       setLoadingMaterials(true);
-      let materialsData = [];
-      
       try {
-        const response = await fetch('/api/chimie/equipement');
+        const response = await fetch('/api/physique/equipement');
         if (response.ok) {
-          materialsData = await response.json();
+          const materialsData = await response.json();
+          setDisciplineMaterials(materialsData || []);
         }
       } catch (error) {
-        console.warn('API équipements chimie indisponible');
+        console.warn('API /api/physique/equipement indisponible');
+        setDisciplineMaterials([]);
       }
-
-      
-      setDisciplineMaterials(materialsData || []);
       setLoadingMaterials(false);
 
-      // Charger les produits chimiques
+      // Charger les consommables de physique
       setLoadingChemicals(true);
       try {
-        const chemicalsResponse = await fetch('/api/chimie/chemicals');
-        if (chemicalsResponse.ok) {
-          const chemicalsData = await chemicalsResponse.json();
-          setDisciplineChemicals(chemicalsData.chemicals || []);
+        const response = await fetch('/api/physique/consommables');
+        if (response.ok) {
+          const data = await response.json();
+          setDisciplineConsommables(data.consumables || []);
         }
       } catch (error) {
-        console.warn('API produits chimiques indisponible');
-        setDisciplineChemicals([]);
+        console.warn('API consommables physique non disponible');
+        setDisciplineConsommables({ consumables: [] });
       }
       setLoadingChemicals(false);
 
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error('Erreur lors du chargement des données physique:', error);
       setDisciplineMaterials([]);
-      setDisciplineChemicals([]);
+      setDisciplineConsommables({ consumables: [] });
       setLoadingMaterials(false);
       setLoadingChemicals(false);
     }
@@ -314,7 +348,24 @@ export function EditEventDialog({
     slot.startTime = slot.endTime
     slot.endTime = temp
     
-    // Plus d'ajout automatique d'entrée modifiedBy - c'est l'API qui s'en charge maintenant
+    // Ajouter une entrée de modification avec traçabilité complète
+    if (slot.modifiedBy) {
+      slot.modifiedBy = [
+        ...slot.modifiedBy,
+        {
+          userId: session?.user?.id || 'INDISPONIBLE',
+          date: new Date().toISOString(),
+          action: 'modified' as const
+        }
+      ]
+    } else {
+      // Initialiser modifiedBy pour les nouveaux slots
+      slot.modifiedBy = [{
+        userId: session?.user?.id || 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }]
+    }
     
     setTimeSlots(updatedSlots)
     
@@ -335,7 +386,6 @@ export function EditEventDialog({
       date: formData.startDate,
       startTime: formData.startTime || '08:00',
       endTime: formData.endTime || '10:00',
-      status: 'active' as const,
       isExisting: false,
       createdBy: session?.user?.id || 'INDISPONIBLE',
       modifiedBy: [{
@@ -348,21 +398,9 @@ export function EditEventDialog({
   }
 
   const removeTimeSlot = (index: number) => {
-    const activeSlots = timeSlots.filter(slot => slot.status !== 'deleted');
-    if (activeSlots.length > 1) {
-      const newTimeSlots = [...timeSlots]
-      const slotToRemove = newTimeSlots[index]
-      
-      // Si c'est un slot existant (pas créé dans cette session), le marquer comme supprimé
-      if (slotToRemove.isExisting) {
-        slotToRemove.status = 'deleted'
-        // Ne pas supprimer du tableau, juste marquer comme supprimé
-        setTimeSlots(newTimeSlots)
-      } else {
-        // Si c'est un nouveau slot créé dans cette session, on peut le supprimer complètement
-        const filteredSlots = timeSlots.filter((_, i) => i !== index)
-        setTimeSlots(filteredSlots)
-      }
+    if (timeSlots.length > 1) {
+      const newTimeSlots = timeSlots.filter((_, i) => i !== index)
+      setTimeSlots(newTimeSlots)
     }
   }
 
@@ -376,7 +414,24 @@ export function EditEventDialog({
       slot[field] = value
     }
     
-    // Plus d'ajout automatique d'entrée modifiedBy - c'est l'API qui s'en charge maintenant
+    // Ajouter une entrée de modification avec traçabilité complète
+    if (slot.modifiedBy) {
+      slot.modifiedBy = [
+        ...slot.modifiedBy,
+        {
+          userId: session?.user?.id || 'INDISPONIBLE',
+          date: new Date().toISOString(),
+          action: 'modified' as const
+        }
+      ]
+    } else {
+      // Initialiser modifiedBy pour les nouveaux slots
+      slot.modifiedBy = [{
+        userId: session?.user?.id || 'INDISPONIBLE',
+        date: new Date().toISOString(),
+        action: 'modified' as const
+      }]
+    }
     
     setTimeSlots(newTimeSlots)
 
@@ -463,8 +518,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
     
     try {
-      // Persister immédiatement le fichier dans l'événement (chimie)
-      const response = await fetch(`/api/calendrier/chimie/add-file?id=${event.id}`, {
+      // Persister immédiatement le fichier dans l'événement
+      const apiEndpoint = '/api/calendrier/physique'
+      const response = await fetch(`${apiEndpoint}/add-file?id=${event.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -547,7 +603,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       formData.class === originalEvent.class &&
       formData.room === originalEvent.room &&
       formData.location === originalEvent.location &&
-      JSON.stringify(formData.chemicals) === JSON.stringify(originalEvent.chemicals || []) &&
+      JSON.stringify(formData.consommables) === JSON.stringify(originalEvent.consommables || []) &&
       JSON.stringify(formData.materials) === JSON.stringify(originalEvent.materials || [])
       // TODO: vérifier les fichiers si nécessaire
     )
@@ -578,9 +634,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
         const result = await moveEvent(
           originalEvent.id,
-          'chimie',
+          'physique',
           newTimeSlots,
-          'Proposition de déplacement via EditEventDialog'
+          'Proposition de déplacement via EditEventDialogPhysics'
         )
 
         if (result.success) {
@@ -621,14 +677,14 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
         class: formData.class,
         room: formData.room,
         location: formData.location,
-        materials: formData.materials.map(mat => ({
+        materials: formData.materials.map((mat: any) => ({
           ...mat,
           quantity: mat.quantity || 1
         })),
-        // Spécifique à la chimie
-        chemicals: formData.chemicals.map(chem => ({
-          ...chem,
-          requestedQuantity: chem.requestedQuantity || 1
+        // Pour la physique, utiliser consommables
+        consommables: formData.consommables.map((cons: any) => ({
+          ...cons,
+          requestedQuantity: cons.requestedQuantity || null
         })),
         files: files.map(f => f.existingFile || f.file).filter(Boolean),
         remarks: remarks,
@@ -793,14 +849,14 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       class: '',
       room: '',
       materials: [],
-      chemicals: [],
+      consommables: [],
       location: ''
     })
     setTimeSlots([])
     setShowMultipleSlots(false)
     setFiles([])
     setRemarks('')
-    setChemicalsWithForecast([])
+    setConsommablesWithForecast([])
     setUploadErrors([])
     setSnackbar({ open: false, message: '', severity: 'info' })
     onClose()
@@ -811,7 +867,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
   const isMultiDay = formData.startDate && formData.endDate && 
     formData.startDate.getDate() !== formData.endDate.getDate()
 
-  console.log({'FormData dans /components/calendar/EditEventDialog.tsx:': formData.materials,
+  console.log({'[[[[[[[[FormData]]]]]]]]': disciplineConsommables,
     'customClasses':customClasses})
 
 
@@ -832,7 +888,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6">
-            Modifier l'événement
+            Modifier l'événement (Physique)
           </Typography>
           <IconButton onClick={handleClose} size="small">
             <Close />
@@ -930,11 +986,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
               </Box>
             </Alert>
 
-              {timeSlots.map((slot, index) => {
-                // Ne pas afficher les slots supprimés
-                if (slot.status === 'deleted') return null;
-                
-                return (
+              {timeSlots.map((slot, index) => (
                 <Box 
                   key={index} 
                   mb={2}
@@ -1098,13 +1150,12 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     )}
                   </Box>
                 </Box>
-                );
-              }).filter(Boolean)}
+              ))}
 
-              {timeSlots.filter(slot => slot.status !== 'deleted').length > 1 && (
+              {timeSlots.length > 1 && (
                 <Alert severity="warning" sx={{ mt: 2 }}>
                   <Typography variant="body2">
-                    Attention : La modification créera {timeSlots.filter(slot => slot.status !== 'deleted').length - 1} événements supplémentaires.
+                    Attention : La modification créera {timeSlots.length - 1} événements supplémentaires.
                   </Typography>
                 </Alert>
               )}
@@ -1317,7 +1368,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             <>
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Matériel nécessaire
+                  Équipement de physique
                 </Typography>
                 
                 {/* Autocomplete pour ajouter du matériel */}
@@ -1329,8 +1380,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     if (typeof option === 'string') {
                       return option;
                     }
-                    // Pour la chimie, l'objet a `itemName` et `volume`
-                    return `${option.itemName || option.name || ''} ${option.volume ? `(${option.volume})` : ''}`.trim();
+                    // Pour la physique, l'objet a `name` et `type`
+                    return `${option.name || ''} ${option.type ? `(${option.type})` : ''}`.trim();
                   }}
                   value={null}
                   inputValue={materialInputValue || ''}
@@ -1361,8 +1412,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ajouter du matériel"
-                      placeholder="Rechercher ou créer..."
+                      label="Ajouter un équipement"
+                      placeholder="Rechercher des équipements physiques..."
                       helperText={loadingMaterials ? 'Chargement...' : undefined}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && materialInputValue && materialInputValue.trim()) {
@@ -1608,48 +1659,46 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             </>
           )}
 
-          {/* Réactifs chimiques avec gestion des quantités */}
+          {/* Consommable avec gestion des quantités */}
           {formData.type === 'TP' && (
             <>
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Réactifs chimiques
+                  Composants et accessoires
                 </Typography>
                 
 
                 {/* Autocomplete pour ajouter des réactifs chimiques */}
                 <Autocomplete
-                  options={Array.isArray(disciplineChemicals) ? disciplineChemicals : []}
+                  options={Array.isArray(disciplineConsommables?.consumables) ? disciplineConsommables?.consumables : []}
                   loading={loadingChemicals}
                   getOptionLabel={(option) => {
                     if (typeof option === 'string') return option;
-                    // Pour la chimie, affichage avec stock
-                    const forecast = option.forecastQuantity !== undefined ? option.forecastQuantity : option.quantity;
-                    return `${option.name || 'Réactif chimique'} - Stock: ${option.quantity || 0}${option.unit || ''} (Prévu: ${forecast}${option.unit || ''})`;
+                    // Pour la physique, affichage simple du nom
+                    return option.name || 'Composant physique';
                   }}
-                  
                   value={null}
-                  inputValue={chemicalInputValue || ''}
+                  inputValue={consommableInputValue || ''}
                   onInputChange={(event, newInputValue) => {
-                    setChemicalInputValue(newInputValue);
+                    setConsommableInputValue(newInputValue);
                   }}
                   onChange={(_, newValue) => {
-                    if (newValue && !formData.chemicals.some((c) => c.id === newValue.id)) {
+                    if (newValue && !formData.consommables.some((c) => c.id === newValue.id)) {
                       setFormData({ 
                         ...formData, 
-                        chemicals: [
-                          ...formData.chemicals,
+                        consommables: [
+                          ...formData.consommables,
                           { ...newValue, requestedQuantity: 1 }
                         ]
                       })
-                      setChemicalInputValue('')
+                      setConsommableInputValue('')
                     }
                   }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Ajouter un réactif chimique"
-                      placeholder="Rechercher et sélectionner..."
+                      label="Ajouter un composant"
+                      placeholder="Rechercher des composants physiques..."
                       helperText={loadingChemicals ? 'Chargement...' : undefined}
                       slotProps={{
                         input: {
@@ -1657,44 +1706,45 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                           endAdornment: (
                             <>
                               {params.InputProps.endAdornment}
-                              {chemicalInputValue && chemicalInputValue.trim() && 
-                              !disciplineChemicals.some(c => c.name?.toLowerCase() === chemicalInputValue.trim().toLowerCase()) && (
+                              {consommableInputValue &&
+                              consommableInputValue.trim() && 
+                              !(disciplineConsommables?.consumables.some(c => c.name?.toLowerCase() === consommableInputValue.trim().toLowerCase())) && (
                                 <InputAdornment position="end">
                                   <IconButton
                                     size="small"
                                     onClick={() => {
-                                      const trimmedValue = chemicalInputValue.trim();
+                                      const trimmedValue = consommableInputValue.trim();
                                       
-                                      // Créer un réactif personnalisé
+                                      // Créer un composant personnalisé
                                       const customItem = {
-                                        id: `CHEM_${Date.now()}_CUSTOM`,
+                                        id: `COMP_${Date.now()}_CUSTOM`,
                                         name: trimmedValue,
-                                        quantity: 0,
-                                        unit: 'g', // Unité par défaut
+                                        quantity: 1,
+                                        unit: 'unité', // Unité par défaut
                                         requestedQuantity: 1,
                                         isCustom: true,
                                       };
                                       
                                       // Ajouter l'élément personnalisé à la liste
-                                      if (!formData.chemicals.some(c => c.name === trimmedValue)) {
+                                      if (!formData.consommables.some(c => c.name === trimmedValue)) {
                                         setFormData({ 
                                           ...formData, 
-                                          chemicals: [
-                                            ...formData.chemicals,
+                                          consommables: [
+                                            ...formData.consommables,
                                             customItem
                                           ]
                                         });
                                         
                                         // Réinitialiser l'input
-                                        setChemicalInputValue('');
+                                        setConsommableInputValue('');
                                         
                                         // Retirer le focus
                                         (document.activeElement as HTMLElement)?.blur();
                                         
-                                        // Afficher une notification
+                                        // Afficher une notification si showSnackbar existe
                                         setSnackbar({
                                           open: true,
-                                          message: `Réactif personnalisé "${trimmedValue}" ajouté`,
+                                          message: `Composant personnalisé "${trimmedValue}" ajouté`,
                                           severity: 'info'
                                         });
                                       }
@@ -1720,7 +1770,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                                       color="text.secondary"
                                       sx={{ ml: 0.5, mr: 0.5 }}
                                     >
-                                      Ajouter "{chemicalInputValue}"
+                                      Ajouter "{consommableInputValue}"
                                     </Typography>
                                   </IconButton>
                                 </InputAdornment>
@@ -1738,7 +1788,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                         key={key} 
                         {...other} 
                         style={{ 
-                          paddingLeft: 16
+                          paddingLeft: '16px'
                         }}
                       >
                         <Box sx={{ width: '100%' }}>
@@ -1752,15 +1802,6 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                             <Typography variant="caption" color="text.secondary">
                               Stock actuel : {option.quantity || 0}{option.unit || ''}
                             </Typography>
-                            {option.forecastQuantity !== undefined && (
-                              <Typography 
-                                variant="caption" 
-                                color={option.forecastQuantity < (option.minQuantity || 0) ? 'error' : 'text.secondary'}
-                              >
-                                Stock prévu : {option.forecastQuantity?.toFixed(1)}{option.unit || ''}
-                                {option.totalRequested > 0 && ` (-${option.totalRequested}${option.unit || ''})`}
-                              </Typography>
-                            )}
                           </Box>
                         </Box>
                       </li>
@@ -1768,7 +1809,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   filterOptions={(options, state) => {
-                    const selectedIds = formData.chemicals.map(c => c.id);
+                    const selectedIds = formData.consommables.map(c => c.id);
                       
                     const availableOptions = options.filter(option => 
                       !selectedIds.includes(option.id)
@@ -1792,8 +1833,17 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                       });
                     }
                     
-                    // Trier par nom
+                    // Trier par catégorie puis par nom
                     uniqueOptions.sort((a, b) => {
+                      const categoryA = a.type_name || 'Sans catégorie';
+                      const categoryB = b.type_name || 'Sans catégorie';
+                      
+                      // D'abord par catégorie
+                      if (categoryA !== categoryB) {
+                        return categoryA.localeCompare(categoryB);
+                      }
+                      
+                      // Puis par nom dans la même catégorie
                       const nameA = a.name || '';
                       const nameB = b.name || '';
                       return nameA.localeCompare(nameB);
@@ -1801,33 +1851,54 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     
                     return uniqueOptions;
                   }}
-                  // Pas de groupement pour la chimie
-                  groupBy={undefined}
-                  renderGroup={undefined}
-                  noOptionsText={chemicalInputValue ? 
-                    "Aucun réactif trouvé" : 
+                  // Grouper par catégorie seulement pour la physique
+                  groupBy={(option) => {
+                    const category = option.type_name || 'Sans catégorie';
+                    return category;
+                  }}
+                  renderGroup={(params) => (
+                    <li key={params.key}>
+                      <Typography
+                        component="div"
+                        variant="caption"
+                        sx={{
+                          bgcolor: 'rgba(76, 175, 80, 0.1)', // Vert clair
+                          color: 'success.main',
+                          fontWeight: 'bold',
+                          px: 2,
+                          py: 1,
+                          borderRadius: 1,
+                          m: 1,
+                          mb: 0
+                        }}
+                      >
+                        {params.group}
+                      </Typography>
+                      <ul style={{ padding: 0, margin: 0 }}>{params.children}</ul>
+                    </li>
+                  )}
+                  noOptionsText={consommableInputValue ?
+                    "Aucun composant trouvé" :
                     "Tapez pour rechercher"
                   }
                 />
 
 
-{/* Liste des réactifs chimiques sélectionnés avec quantités */}
-{formData.chemicals.length > 0 && (
+{/* Liste des consommables sélectionnés avec quantités */}
+{formData.consommables.length > 0 && (
   <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-    {formData.chemicals.map((chemical, index) => {
-      // Créer une clé unique pour ce chemical
-      const tooltipKey = `formChemical-${chemical.id || index}`
+    {formData.consommables.map((consommable, index) => {
+      // Créer une clé unique pour ce consommable
+      const tooltipKey = `formConsommable-${consommable.id || index}`
       const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
       
-      // Vérifier si c'est un réactif personnalisé
-      const isCustomChemical = chemical.isCustom || chemical.id?.endsWith('_CUSTOM')
+      // Vérifier si c'est un consommable personnalisé
+      const isCustomConsommable = consommable.isCustom || consommable.id?.endsWith('_CUSTOM')
       
-      // Utiliser quantityPrevision si disponible, sinon quantity
-      const availableStock = isCustomChemical ? Infinity : (chemical.quantityPrevision !== undefined 
-        ? chemical.quantityPrevision 
-        : (chemical.quantity || 0))
+      // Utiliser quantity ou quantityPrevision si disponible
+      const availableStock = isCustomConsommable ? Infinity : (consommable.quantity || 0)
       
-      const stockAfterRequest = isCustomChemical ? null : (availableStock - (chemical.requestedQuantity || 0))
+      const stockAfterRequest = isCustomConsommable ? null : (availableStock - (consommable.requestedQuantity || 0))
       
       const handleTooltipToggle = (type: 'actual' | 'prevision' | 'after') => {
         setTooltipStates(prev => ({
@@ -1841,24 +1912,24 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       
       return (
         <Box
-          key={chemical.id || index}
+          key={consommable.id || index}
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: 2,
             p: 1.5,
             border: '1px solid',
-            borderColor: isCustomChemical ? 'secondary.main' : 'divider',
+            borderColor: isCustomConsommable ? 'secondary.main' : 'divider',
             borderRadius: 1,
-            backgroundColor: isCustomChemical ? alpha(theme.palette.secondary.main, 0.05) : 'background.paper'
+            backgroundColor: isCustomConsommable ? alpha(theme.palette.secondary.main, 0.05) : 'background.paper'
           }}
         >
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <Typography variant="body2">
-                {chemical.name || 'Réactif chimique'}
+                {consommable.name || 'Consommable physique'}
               </Typography>
-              {isCustomChemical && (
+              {isCustomConsommable && (
                 <Chip 
                   label="Personnalisé" 
                   size="small" 
@@ -1870,7 +1941,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
             </Box>
             
             {/* Affichage différent pour les réactifs personnalisés */}
-            {isCustomChemical ? (
+            {isCustomConsommable ? (
               <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 Réactif non référencé dans l'inventaire
               </Typography>
@@ -1879,7 +1950,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 {/* Stock actuel */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Stock actuel : {chemical.quantity || 0}{chemical.unit || ''}
+                    Stock actuel : {consommable.quantity || 0}{consommable.unit || ''}
                   </Typography>
                   <ClickAwayListener onClickAway={() => {
                     if (tooltipOpen.actual) handleTooltipToggle('actual')
@@ -1917,10 +1988,10 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 </Box>
 
                 {/* Stock prévisionnel */}
-                {chemical.quantityPrevision !== undefined && chemical.quantityPrevision !== chemical.quantity && (
+                {consommable.quantityPrevision !== undefined && consommable.quantityPrevision !== consommable.quantity && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Typography variant="caption" color="warning.main">
-                      Stock prévisionnel : {typeof chemical.quantityPrevision === 'number' ? chemical.quantityPrevision.toFixed(1) : chemical.quantityPrevision}{chemical.unit || ''}
+                      Stock prévisionnel : {typeof consommable.quantityPrevision === 'number' ? consommable.quantityPrevision.toFixed(1) : consommable.quantityPrevision}{consommable.unit || ''}
                     </Typography>
                     <ClickAwayListener onClickAway={() => {
                       if (tooltipOpen.prevision) handleTooltipToggle('prevision')
@@ -1961,9 +2032,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography 
                     variant="caption" 
-                    color={stockAfterRequest !== null && stockAfterRequest < 0 ? 'error' : stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 'success.main'}
+                    color={stockAfterRequest !== null && stockAfterRequest < 0 ? 'error' : stockAfterRequest !== null && stockAfterRequest < (consommable.minQuantity || 0) ? 'warning.main' : 'success.main'}
                   >
-                    Après ce TP : {stockAfterRequest !== null && typeof stockAfterRequest === 'number' ? stockAfterRequest.toFixed(1) : 'N/A'}{chemical.unit || ''}
+                    Après ce TP : {stockAfterRequest !== null && typeof stockAfterRequest === 'number' ? stockAfterRequest.toFixed(1) : 'N/A'}{consommable.unit || ''}
                   </Typography>
                   <ClickAwayListener onClickAway={() => {
                     if (tooltipOpen.after) handleTooltipToggle('after')
@@ -1973,7 +2044,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                         title={
                           stockAfterRequest !== null && stockAfterRequest < 0 
                             ? "Stock insuffisant ! La quantité demandée dépasse le stock disponible"
-                            : stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0)
+                            : stockAfterRequest !== null && stockAfterRequest < (consommable.minQuantity || 0)
                             ? "Attention : le stock passera sous le seuil minimum recommandé"
                             : "Stock restant après validation de ce TP"
                         }
@@ -2001,7 +2072,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                             sx={{ 
                               fontSize: 14,
                               color: stockAfterRequest !== null && stockAfterRequest < 0 ? 'error.main' : 
-                                    stockAfterRequest !== null && stockAfterRequest < (chemical.minQuantity || 0) ? 'warning.main' : 
+                                    stockAfterRequest !== null && stockAfterRequest < (consommable.minQuantity || 0) ? 'warning.main' : 
                                     'success.main'
                             }} 
                           />
@@ -2016,28 +2087,28 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
           </Box>
 
           <TextField
-            label={`Quantité (${chemical.unit || 'unité'})`}
+            label={`Quantité (${consommable.unit || 'unité'})`}
             type="number"
-            value={chemical.requestedQuantity || 1}
+            value={consommable.requestedQuantity || 1}
             onChange={(e) => {
               const newQuantity = parseFloat(e.target.value) || 1
-              const updatedChemicals = [...formData.chemicals]
-              updatedChemicals[index] = { ...chemical, requestedQuantity: newQuantity }
-              setFormData({ ...formData, chemicals: updatedChemicals })
+              const updatedConsommables = [...formData.consommables]
+              updatedConsommables[index] = { ...consommable, requestedQuantity: newQuantity }
+              setFormData({ ...formData, consommables: updatedConsommables })
             }}
             slotProps={{
               htmlInput: {
-                min: 0.1,
-                step: 0.1,
+                min: 0,
+                step: 1,
                 // Pas de limite max pour les réactifs personnalisés
-                ...(isCustomChemical ? {} : {})
+                ...(isCustomConsommable ? {} : {  })
               }
             }}
             sx={{ width: 130 }}
             size="small"
-            error={!isCustomChemical && chemical.requestedQuantity > availableStock}
+            error={!isCustomConsommable && consommable.requestedQuantity > availableStock}
             helperText={
-              !isCustomChemical && chemical.requestedQuantity > availableStock
+              !isCustomConsommable && consommable.requestedQuantity > availableStock
               ? 'Stock insuffisant' 
               : ''
             }
@@ -2045,8 +2116,8 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
           <IconButton
             onClick={() => {
-              const updatedChemicals = formData.chemicals.filter((_, i) => i !== index)
-              setFormData({ ...formData, chemicals: updatedChemicals })
+              const updatedConsommables = formData.consommables.filter((_, i) => i !== index)
+              setFormData({ ...formData, consommables: updatedConsommables })
             }}
             color="error"
             size="small"
@@ -2060,11 +2131,11 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 )}
               </Box>
               {/* INDICATEUR VISUEL ICI - Avertissement stock faible */}
-{formData.chemicals
-  .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
+{formData.consommables
+  .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les consommables custom
   .some(c => {
-    const availableStock = c.quantityPrevision !== undefined 
-      ? c.quantityPrevision 
+    const availableStock = c.quantity !== undefined 
+      ? c.quantity 
       : (c.quantity || 0)
     const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
     return stockAfterRequest < (c.minQuantity || 0)
@@ -2074,14 +2145,14 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       Attention : Stock faible
     </Typography>
     <Typography variant="body2">
-      Certains réactifs chimiques seront en dessous de leur stock minimum après ce TP.
+      Certains consommables seront en dessous de leur stock minimum après ce TP.
     </Typography>
-    {/* Détails des réactifs concernés */}
+    {/* Détails des consommables concernés */}
     <Box sx={{ mt: 1 }}>
-      {formData.chemicals
-        .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les réactifs custom
+      {formData.consommables
+        .filter(c => !(c.isCustom || c.id?.endsWith('_CUSTOM')))// Exclure les consommables custom
         .filter(c => {
-          const availableStock = c.quantityPrevision !== undefined 
+          const availableStock = c.quantity !== undefined 
             ? c.quantityPrevision 
             : (c.quantity || 0)
           const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
@@ -2105,14 +2176,14 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
 {/* Snackbar pour informer de la présence de réactifs custom */}
 <Snackbar
-  open={showCustomChemicalInfo}
+  open={showCustomConsommableInfo}
   autoHideDuration={6000}
-  onClose={() => setShowCustomChemicalInfo(false)}
+  onClose={() => setShowCustomConsommableInfo(false)}
   anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
 >
-  <Alert 
-    onClose={() => setShowCustomChemicalInfo(false)} 
-    severity="info" 
+  <Alert
+    onClose={() => setShowCustomConsommableInfo(false)}
+    severity="info"
     sx={{ width: '100%',  }}
   >
     <Typography variant="body2" fontWeight="bold">
@@ -2120,12 +2191,12 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
     </Typography>
     <Typography variant="body2">
       {(() => {
-        const customChemicals = formData.chemicals.filter(c => c.isCustom)
-        const count = customChemicals.length
+        const customConsommables = formData.consommables.filter(c => c.isCustom)
+        const count = customConsommables.length
         if (count === 1) {
-          return `Le réactif "${customChemicals[0].name}" est une demande personnalisée qui sera traitée manuellement.`
+          return `Le consommable "${customConsommables[0].name}" est une demande personnalisée qui sera traitée manuellement.`
         } else {
-          return `${count} réactifs sont des demandes personnalisées qui seront traitées manuellement.`
+          return `${count} consommables sont des demandes personnalisées qui seront traitées manuellement.`
         }
       })()}
     </Typography>

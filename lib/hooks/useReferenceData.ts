@@ -10,6 +10,7 @@ export function useReferenceData(options?: UseReferenceDataOptions) {
   const { data: session } = useSession()
   const [materials, setMaterials] = useState<any[]>([])
   const [chemicals, setChemicals] = useState<any[]>([])
+  const [consommables, setConsommables] = useState<any[]>([])
   const [userClasses, setUserClasses] = useState<any[]>([])
   const [customClasses, setCustomClasses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -19,9 +20,13 @@ export function useReferenceData(options?: UseReferenceDataOptions) {
       setLoading(true)
       
       const discipline = options?.discipline || 'chimie'
+      
+      // Construire les requêtes selon la discipline
       const requests = [
         fetch(`/api/${discipline}/equipement`),
-        fetch(`/api/${discipline}/chemicals`),
+        discipline === 'physique' 
+          ? fetch(`/api/physique/consommables`)
+          : fetch(`/api/chimie/chemicals`),
         fetch('/api/classes')
       ]
 
@@ -37,13 +42,23 @@ export function useReferenceData(options?: UseReferenceDataOptions) {
         setMaterials([])
       }
 
-      // Gestion des réactifs chimiques
+      // Gestion des réactifs chimiques ou consommables
       if (chemicalsRes.ok) {
         const chemicalsData = await chemicalsRes.json()
-        setChemicals(chemicalsData.chemicals || [])
+        if (discipline === 'physique') {
+          setConsommables(chemicalsData.consommables || [])
+          setChemicals([]) // Reset chemicals pour physique
+        } else {
+          setChemicals(chemicalsData.chemicals || [])
+          setConsommables([]) // Reset consommables pour chimie
+        }
       } else {
-        console.error('Erreur lors du chargement des réactifs chimiques')
-        setChemicals([])
+        console.error(`Erreur lors du chargement des ${discipline === 'physique' ? 'consommables' : 'réactifs chimiques'}`)
+        if (discipline === 'physique') {
+          setConsommables([])
+        } else {
+          setChemicals([])
+        }
       }
 
       // Gestion des classes - une seule API
@@ -80,20 +95,21 @@ export function useReferenceData(options?: UseReferenceDataOptions) {
       
       setMaterials([])
       setChemicals([])
-      // Classes système prédéfinies par défaut - format objet pour compatibilité
+      setConsommables([])
+      // Classes système prédéfinies par défaut
       setUserClasses([
-        { id: 'c201', name: '201' },
-        { id: 'c202', name: '202' },
-        { id: 'c203', name: '203' },
-        { id: 'c204', name: '204' },
-        { id: 'c205', name: '205' },
-        { id: 'c206', name: '206' },
-        { id: 'c1es', name: '1ère ES' },
-        { id: 'ctes', name: 'Terminale ES' },
-        { id: 'c1sti2d', name: '1ère STI2D' },
-        { id: 'ctsti2d', name: 'Terminale STI2D' },
-        { id: 'cprepa1', name: 'Prépa 1ère année' },
-        { id: 'cprepa2', name: 'Prépa 2e année' },
+        '201',
+        '202', 
+        '203',
+        '204',
+        '205',
+        '206',
+        '1ère ES',
+        'Terminale ES',
+        '1ère STI2D',
+        'Terminale STI2D',
+        'Prépa 1ère année',
+        'Prépa 2e année',
       ])
       setCustomClasses([])
     } finally {
@@ -268,6 +284,7 @@ export function useReferenceData(options?: UseReferenceDataOptions) {
   return { 
     materials, 
     chemicals, 
+    consommables,
     userClasses, 
     customClasses, 
     setCustomClasses, 

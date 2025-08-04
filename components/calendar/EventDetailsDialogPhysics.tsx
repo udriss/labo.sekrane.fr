@@ -35,7 +35,7 @@ import {
   HourglassEmpty, CalendarToday, AccessTime, Room, School, HourglassTop,
   InfoOutlined, SwapHoriz, CheckCircle, Cancel, ManageHistory
 } from '@mui/icons-material'
-import { CalendarEvent, EventType, EventState, Chemical } from '@/types/calendar'
+import { CalendarEvent, EventType, EventState, Chemical, PhysicsConsumable } from '@/types/calendar'
 import { UserRole } from "@/types/global";
 import { SiMoleculer } from "react-icons/si";
 import { getActiveTimeSlots, hasPendingChanges } from '@/lib/calendar-slot-utils'
@@ -64,7 +64,7 @@ interface TimeSlotFormData {
   }>
 }
 
-interface EventDetailsDialogProps {
+interface EventDetailsDialogPhysicsProps {
   open: boolean
   event: CalendarEvent | null
   onClose: () => void
@@ -396,7 +396,7 @@ const DocumentCard: React.FC<{
   )
 }
 
-const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({ 
+const EventDetailsDialogPhysics: React.FC<EventDetailsDialogPhysicsProps> = ({ 
   open, 
   event, 
   onClose,
@@ -501,7 +501,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'approve' }))
     
     try {
-      const apiEndpoint = '/api/calendrier/chimie'
+      const apiEndpoint = '/api/calendrier/physique'
       const response = await fetch(`${apiEndpoint}/approve-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -540,7 +540,7 @@ const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({
     setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'reject' }))
     
     try {
-      const apiEndpoint = '/api/calendrier/chimie'
+      const apiEndpoint = '/api/calendrier/physique'
       const response = await fetch(`${apiEndpoint}/reject-single-timeslot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -907,7 +907,7 @@ useEffect(() => {
           {/* Informations temporelles avec modifications en attente intégrées */}
           <Grid container spacing={2}>
             {/* Modifications en attente - affichage en haut si owner ET des changements valides */}
-            {event.createdBy === currentUserId && hasPendingChanges(event) && (
+            {event.createdBy === currentUserId && hasPendingChanges(event) && 1 !== 1 && (
               <Grid size={{ xs: 12 }}>
                 <MuiAlert 
                   severity="warning" 
@@ -1049,7 +1049,7 @@ useEffect(() => {
                     startIcon={<CheckCircle />}
                     onClick={async () => {
                       try {
-                        const apiEndpoint = '/api/calendrier/chimie'
+                        const apiEndpoint = '/api/calendrier/physique'
                         const response = await fetch(`${apiEndpoint}/approve-timeslots`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1076,7 +1076,7 @@ useEffect(() => {
                     startIcon={<Cancel />}
                     onClick={async () => {
                       try {
-                        const apiEndpoint = '/api/calendrier/chimie'
+                        const apiEndpoint = '/api/calendrier/physique'
                         const response = await fetch(`${apiEndpoint}/reject-timeslots`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1169,7 +1169,7 @@ useEffect(() => {
 
 {/* Matériel et réactifs */}
 {((event.materials && event.materials.length > 0) || 
-  (event.chemicals && event.chemicals.length > 0)) && (
+  (event.consommables && event.consommables.length > 0)) && (
   <>
     <Divider />
     <Box>
@@ -1218,6 +1218,8 @@ useEffect(() => {
               </TableRow>
             </TableHead>
             <TableBody>
+
+
               {/* Section Matériel */}
               {event.materials && event.materials.length > 0 && (
                 <>
@@ -1239,26 +1241,21 @@ useEffect(() => {
                 </>
               )}
 
-              {/* Section Réactifs chimiques */}
-              {event.chemicals && event.chemicals.length > 0 && (
+              {/* Section Consommables */}
+              {event.consommables && event.consommables.length > 0 && (
                 <>
                   <TableRow>
                     <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
-                      Réactifs Chimiques
+                      Composants et accessoires
                     </TableCell>
                   </TableRow>
-                  {event.chemicals.map((chemical, index) => (
-                    <TableRow key={`chemical-${index}`}>
+                  {event.consommables.map((consommable, index) => (
+                    <TableRow key={`consommable-${index}`}>
                       <TableCell>
-                        <Typography variant="body2">{chemical.name}</Typography>
-                        {chemical.formula && (
-                          <Typography variant="caption" color="text.secondary">
-                            {chemical.formula}
-                          </Typography>
-                        )}
+                        <Typography variant="body2">{consommable.name}</Typography>
                       </TableCell>
                       <TableCell align="right">
-                        {chemical.requestedQuantity || chemical.quantity} {chemical.unit}
+                        {consommable.requestedQuantity} {consommable.unit || 'pièces'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1268,38 +1265,6 @@ useEffect(() => {
           </Table>
         </TableContainer>
       </Box>
-        {/* Alert pour les réactifs personnalisés */}
-        {(event.chemicals?.some(c => typeof c === 'object' && c.isCustom)) && (
-          <MuiAlert
-            severity="info" 
-            sx={{
-              mt: 2,
-              width: 'auto',
-              maxWidth: 600,
-              margin: '16px auto 0'
-            }}
-            icon={<InfoOutlined />}
-          >
-            {(() => {
-              const customItems = (event.chemicals || []).filter(c => typeof c === 'object' && c.isCustom);
-              const customNames = customItems.map(c => typeof c === 'object' ? c.name : '').filter(Boolean);
-
-              if (customNames.length === 1) {
-                return (
-                  <>
-                    Le réactif <strong>{customNames[0]}</strong> est une demande personnalisée et n'est pas dans l'inventaire.
-                  </>
-                );
-              } else {
-                return (
-                  <>
-                    Les réactifs suivants sont des demandes personnalisées : <strong>{customNames.join(', ')}</strong>.
-                  </>
-                );
-              }
-            })()}
-          </MuiAlert>
-        )}
     </Box>
   </>
 )}
@@ -1798,4 +1763,4 @@ useEffect(() => {
   )
 }
 
-export default EventDetailsDialog
+export default EventDetailsDialogPhysics

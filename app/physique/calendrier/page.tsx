@@ -14,8 +14,9 @@ import { ViewWeek, ListAlt, CalendarToday, Science } from '@mui/icons-material'
 import {
   WeeklyView,
   EventsList,
-  EventDetailsDialog,
-  DailyCalendarView 
+  EditEventDialogPhysics,
+  DailyCalendarView ,
+  EventDetailsDialogPhysics,
 } from '@/components/calendar'
 import { EventState, EventType, TimeSlot } from '@/types/calendar'
 
@@ -56,7 +57,11 @@ export default function PhysiqueCalendrierPage() {
   const [userRole, setUserRole] = useState<UserRole>('TEACHER')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-  const [currentDate, setCurrentDate] = useState(new Date())
+  // Initialise à la date du jour (sans l'heure)
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  })
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
   
@@ -94,7 +99,7 @@ export default function PhysiqueCalendrierPage() {
     setError
   } = useCalendarTimeSlots('physique')
   
-  const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData({ discipline: 'chimie' })
+  const { materials, consommables, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData({ discipline: 'physique' })
   
   // Note: tpPresets sera intégré dans le nouveau système plus tard
   const [tpPresets, setTpPresets] = useState([])
@@ -560,6 +565,7 @@ export default function PhysiqueCalendrierPage() {
     selectedDate={currentDate}
     canOperate={canValidateEvent()}
     onEventUpdate={handleEventUpdate}
+    onEventClick={handleEventClick} // NOUVEAU: pour ouvrir les détails
     discipline="physique"
     onEdit={handleEventEdit}
     onEventCopy={handleEventCopy}
@@ -569,7 +575,8 @@ export default function PhysiqueCalendrierPage() {
 
         </Paper>
 
-        <EventDetailsDialog
+
+        <EventDetailsDialogPhysics
           open={detailsOpen}
           event={selectedEvent}
           onClose={() => setDetailsOpen(false)}
@@ -586,7 +593,7 @@ export default function PhysiqueCalendrierPage() {
           isTablet={isTablet}
         />
 
-        <EditEventDialog
+        <EditEventDialogPhysics
           open={editDialogOpen}
           event={eventToEdit}
           onClose={() => {
@@ -595,14 +602,13 @@ export default function PhysiqueCalendrierPage() {
           }}
           onSave={handleSaveEdit}
           materials={materials}
-          chemicals={chemicals}
+          consommables={consommables}
           classes={[...userClasses, ...customClasses]}
           isMobile={isMobile}
           userClasses={userClasses}
           customClasses={customClasses}
           setCustomClasses={setCustomClasses}
           saveNewClass={saveNewClass}
-          discipline="physique" // Nouveau prop pour spécifier la discipline
         />
 
         <CreateTPDialog
@@ -610,7 +616,7 @@ export default function PhysiqueCalendrierPage() {
           onClose={handleCreateDialogClose}
           onSuccess={loadEvents}
           materials={materials}
-          chemicals={chemicals}
+          chemicals={consommables}
           userClasses={userClasses}
           customClasses={customClasses}
           setCustomClasses={setCustomClasses}

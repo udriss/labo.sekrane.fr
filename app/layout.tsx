@@ -23,6 +23,7 @@ import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
 
 import { Toaster } from 'react-hot-toast';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
+import { AppSettingsContext, useAppSettings } from '@/lib/hooks/useAppSettings';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,24 +37,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Context pour les paramètres de l'application
-interface AppSettingsContextType {
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-}
-
-const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
 const DRAWER_WIDTH = 280;
-
-export function useAppSettings() {
-  const context = useContext(AppSettingsContext);
-  if (!context) {
-    throw new Error('useAppSettings must be used within AppSettingsProvider');
-  }
-  return context;
-}
 
 // Configuration du thème Material-UI
 const createAppTheme = (mode: 'light' | 'dark') => {

@@ -41,6 +41,7 @@ interface PhysicsConsumable {
   brand?: string
   model?: string
   expirationDate?: string
+  requestedQuantity?: number // NOUVEAU: pour les quantités demandées
 }
 
 interface PhysicsConsumableInventoryTabProps {

@@ -17,7 +17,7 @@ import {
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useAppSettings } from '@/app/layout';
+import { useAppSettings } from '@/lib/hooks/useAppSettings';
 import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
 import type { WebSocketNotification } from '@/types/notifications';
 import NotificationItem from '@/components/notifications/NotificationItem';

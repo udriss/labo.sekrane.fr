@@ -151,4 +151,6 @@ export interface PhysicsConsumable {
   notes?: string | null
   createdAt?: string | null
   updatedAt?: string | null
+  requestedQuantity?: number | null // NOUVEAU: pour les quantités demandées
+  isCustom?: boolean | null // NOUVEAU: pour indiquer si l'élément est personnalisé
 }

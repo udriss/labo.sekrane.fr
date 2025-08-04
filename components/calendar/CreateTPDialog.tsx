@@ -86,6 +86,7 @@ interface CreateTPDialogProps {
     categoryName: string; 
     unit: string;
     updatedAt: string;
+    requestedQuantity?: number; // NOUVEAU: pour les quantités demandées
   }
 
 export function CreateTPDialog({
@@ -1536,9 +1537,7 @@ const handleCreateCalendarEvent = async () => {
               {/* Autocomplete pour sélectionner le matériel */}
               <Autocomplete
                 freeSolo // Permet d'entrer du texte libre
-                options={discipline === 'physique' ? 
-                  Array.isArray(disciplineMaterials) ? disciplineMaterials : []
-                : Array.isArray(disciplineChemicals) ? disciplineChemicals : []}
+                options={Array.isArray(disciplineMaterials) ? disciplineMaterials : []}
                 loading={loadingMaterials}
                 getOptionLabel={(option) => {
                   if (typeof option === 'string') return option;
@@ -2323,7 +2322,7 @@ const handleCreateCalendarEvent = async () => {
                               step: discipline === 'physique' ? 1 : 0.1,
                               // Pas de max pour les réactifs custom ou pour la physique (on permet de dépasser le stock)
                               ...(!(chemical.isCustom || chemical.id?.endsWith('_CUSTOM')) && 
-                                  discipline !== 'physique' && { max: availableStock })
+                                  discipline !== 'physique' && {})
                             }
                           }}
                           sx={{ width: 150 }}

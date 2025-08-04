@@ -6,11 +6,13 @@
 import React, { useState } from 'react'
 import {
   Card, CardContent, Typography, Stack, Chip, Box, Collapse, IconButton,
-  Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions
+  Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions,
+  Tooltip, Paper
 } from '@mui/material'
 import {
   ExpandMore, ExpandLess, Person, LocationOn, Schedule, CalendarToday,
-  CheckCircle, Cancel, SwapHoriz, Gavel, Edit, Handyman, ContentCopy
+  CheckCircle, Cancel, SwapHoriz, Gavel, Edit, Handyman, ContentCopy,
+  Visibility, AttachFile, Room, Science, Group, Build
 } from '@mui/icons-material'
 import { CalendarEvent, EventState, TimeSlot } from '@/types/calendar'
 import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
@@ -23,6 +25,7 @@ interface ImprovedEventBlockProps {
   canOperate: boolean
   isMobile?: boolean
   onEventUpdate?: (updatedEvent: CalendarEvent) => void
+  onEventClick?: (event: CalendarEvent) => void // NOUVEAU: pour ouvrir les détails
   discipline?: 'chimie' | 'physique'
   onEdit?: (event: CalendarEvent) => void
   onEventCopy?: (event: CalendarEvent) => void
@@ -34,6 +37,7 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   canOperate,
   isMobile = false,
   onEventUpdate,
+  onEventClick, // NOUVEAU: fonction pour ouvrir les détails
   discipline = 'chimie',
   onEdit,
   onEventCopy,
@@ -60,16 +64,6 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   const showOperatorValidationInterface = canOperate && event.state === 'PENDING' && event.validationState === 'operatorPending'
   const showOperatorInterface = isOperator && event.state !== 'PENDING'
   const showOwnerInterface = isOwner
-  console.log({
-    'event;': event,
-    'isOwner': isOwner,
-    'isOperator': isOperator,
-    'showValidationInterface': showValidationInterface,
-    'showOperatorValidationInterface': showOperatorValidationInterface,
-    'showOperatorInterface': showOperatorInterface,
-    'showOwnerInterface': showOwnerInterface
-  })
-
 
   const getEventStateColor = (state: EventState) => {
     switch (state) {
@@ -240,12 +234,221 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
                 </Stack>
               </Box>
               
-              <IconButton
-                onClick={() => setExpanded(!expanded)}
-                size="small"
-              >
-                {expanded ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
+              <Stack direction="row" spacing={0.5}>
+                {/* Bouton pour voir les détails */}
+                {onEventClick && (
+                  <Tooltip title="Voir les détails">
+                    <IconButton
+                      onClick={() => onEventClick(event)}
+                      size="small"
+                      color="primary"
+                    >
+                      <Visibility fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                <IconButton
+                  onClick={() => setExpanded(!expanded)}
+                  size="small"
+                >
+                  {expanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </Stack>
+            </Box>
+
+            {/* Section moderne avec informations importantes */}
+            <Box 
+              sx={{ 
+                position: 'relative',
+                borderRadius: 2,
+                overflow: 'hidden',
+                mb: 2
+              }}
+            >
+              {/* Fond avec effet blur et transparence */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(156, 39, 176, 0.08) 100%)',
+                  backdropFilter: 'blur(10px)',
+                  zIndex: 0
+                }}
+              />
+              
+              {/* Contenu */}
+              <Box sx={{ position: 'relative', zIndex: 1, p: 2 }}>
+                <Stack spacing={1.5}>
+                  {/* Classe et Salle */}
+                  <Stack direction={isMobile ? 'column' : 'row'} spacing={1.5}>
+                    {event.class && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          background: 'rgba(25, 118, 210, 0.1)',
+                          backdropFilter: 'blur(5px)',
+                          border: '1px solid rgba(25, 118, 210, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          flex: 1
+                        }}
+                      >
+                        <Group fontSize="small" color="primary" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.class}
+                        </Typography>
+                      </Paper>
+                    )}
+                    
+                    {(event.room || event.location) && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          background: 'rgba(156, 39, 176, 0.1)',
+                          backdropFilter: 'blur(5px)',
+                          border: '1px solid rgba(156, 39, 176, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          flex: 1
+                        }}
+                      >
+                        <Room fontSize="small" color="secondary" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.room || event.location}
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Stack>
+
+                  {/* Matériels et Réactifs/Consommables */}
+                  <Stack direction={isMobile ? 'column' : 'row'} spacing={1.5}>
+                    {event.materials && event.materials.length > 0 && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          background: 'rgba(255, 152, 0, 0.1)',
+                          backdropFilter: 'blur(5px)',
+                          border: '1px solid rgba(255, 152, 0, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          flex: 1
+                        }}
+                      >
+                        <Build fontSize="small" sx={{ color: 'orange' }} />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.materials.length} matériel{event.materials.length > 1 ? 's' : ''}
+                        </Typography>
+                      </Paper>
+                    )}
+                    
+                    {event.chemicals && event.chemicals.length > 0 && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          background: 'rgba(76, 175, 80, 0.1)',
+                          backdropFilter: 'blur(5px)',
+                          border: '1px solid rgba(76, 175, 80, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          flex: 1
+                        }}
+                      >
+                        <Science fontSize="small" color="success" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.chemicals.length} {discipline === 'physique' ? 'consommable' : 'réactif'}{event.chemicals.length > 1 ? 's' : ''}
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Stack>
+
+                  {/* Documents */}
+                  {event.files && event.files.length > 0 && (
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: 2,
+                        background: 'rgba(103, 58, 183, 0.1)',
+                        backdropFilter: 'blur(5px)',
+                        border: '1px solid rgba(103, 58, 183, 0.2)'
+                      }}
+                    >
+                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 0.5 }}>
+                        <AttachFile fontSize="small" color="secondary" />
+                        <Typography variant="body2" fontWeight="medium">
+                          {event.files.length} document{event.files.length > 1 ? 's' : ''}
+                        </Typography>
+                      </Stack>
+                      
+                      <Stack spacing={0.3}>
+                        {event.files.map((file, index) => {
+                          // Construire l'URL de manière sûre
+                          const fileUrl = file?.fileUrl
+                          const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
+                          const href = fileUrl 
+                            ? (fileUrl.startsWith('/uploads/') 
+                                ? `${apiEndpoint}/files?path=${encodeURIComponent(fileUrl)}`
+                                : fileUrl)
+                            : '#'
+                          
+                          return (
+                            <Typography
+                              key={index}
+                              component="a"
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="caption"
+                              sx={{
+                                color: fileUrl ? 'primary.main' : 'text.disabled',
+                                textDecoration: 'none',
+                                '&:hover': {
+                                  textDecoration: fileUrl ? 'underline' : 'none'
+                                },
+                                cursor: fileUrl ? 'pointer' : 'default',
+                                display: 'block',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '100%'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (!fileUrl) {
+                                  e.preventDefault()
+                                }
+                              }}
+                            >
+                              • {file?.fileName || 'Document sans nom'}
+                            </Typography>
+                          )
+                        })}
+                      </Stack>
+                    </Paper>
+                  )}
+                </Stack>
+              </Box>
             </Box>
 
             {/* Résumé des créneaux (toujours visible) */}

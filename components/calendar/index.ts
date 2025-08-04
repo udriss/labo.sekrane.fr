@@ -3,6 +3,8 @@ export { default as WeeklyView } from './WeeklyView'
 export { default as EventsList } from './EventsList'
 export { default as EventDetailsDialog } from './EventDetailsDialog'
 export { default as DailyCalendarView } from './DailyCalendarView'
+export { default as EditEventDialogPhysics } from './EditEventDialogPhysics'
+export { default as EventDetailsDialogPhysics } from './EventDetailsDialogPhysics'
 
 // components/calendar/
 // ├── index.ts                   # Export centralisé

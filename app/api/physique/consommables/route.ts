@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
           pct.color as type_color,
           pci.name as item_name,
           pci.description as item_description,
+          pci.is_custom as itemIsCustom,
           s.name as supplier_name
         FROM physics_consumables pc
         LEFT JOIN physics_consumable_types pct ON pc.physics_consumable_type_id = pct.id
@@ -58,6 +59,13 @@ export async function GET(request: NextRequest) {
 
       const [rows] = await connection.execute(query, params);
 
+      // Traiter les résultats pour ajouter isCustom et requestedQuantity
+      const processedRows = (rows as any[]).map(row => ({
+        ...row,
+        isCustom: row.isCustom || row.itemIsCustom || false,
+        requestedQuantity: row.requestedQuantity || null
+      }));
+
       // Statistiques
       const [statsRows] = await connection.execute(`
         SELECT 
@@ -72,9 +80,9 @@ export async function GET(request: NextRequest) {
       
       
       return NextResponse.json({
-        consumables: rows,
+        consumables: processedRows,
         stats: (statsRows as any[])[0],
-        total: (rows as any[]).length
+        total: processedRows.length
       });
     });
   } catch (error) {

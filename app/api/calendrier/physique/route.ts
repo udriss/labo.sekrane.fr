@@ -1,4 +1,4 @@
-// app/api/calendrier/chimie/route.ts// API mise à jour pour le système TimeSlots completexport const runtime = 'nodejs';
+// app/api/calendrier/physique/route.ts// API mise à jour pour le système TimeSlots completexport const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
@@ -7,7 +7,8 @@ import {
   getPhysicsEventsWithTimeSlots, 
   createPhysicsEventWithTimeSlots, 
   updatePhysicsEventWithTimeSlots,
-  getPhysicsEventByIdWithTimeSlots
+  getPhysicsEventByIdWithTimeSlots,
+  processTimeSlots
 } from '@/lib/calendar-utils-timeslots'
 import { deletePhysicsEvent } from '@/lib/calendar-utils'
 import { TimeSlot, CalendarEvent } from '@/types/calendar'
@@ -60,8 +61,33 @@ export async function GET(request: NextRequest) {
         actuelTimeSlots: actuelTimeSlots,
         class: dbEvent.class_name,
         room: dbEvent.room,
-        materials: parseJsonSafe(dbEvent.equipment_used, []).map((id: any) => ({ id, name: id })),
-        chemicals: parseJsonSafe(dbEvent.chemicals_used, []).map((id: any) => ({ id, name: id })),
+        materials: parseJsonSafe(dbEvent.equipment_used, []).map((item: any) => {
+          if (typeof item === 'string') {
+            return { id: item, name: item };
+          }
+          return {
+            id: item.id || item,
+            name: item.name || item.itemName || (typeof item === 'string' ? item : 'Matériel'),
+            itemName: item.itemName || item.name,
+            quantity: item.quantity || null,
+            requestedQuantity: item.requestedQuantity || null,
+            volume: item.volume,
+            isCustom: item.isCustom || false
+          };
+        }),
+        consommables: parseJsonSafe(dbEvent.consommables_used, []).map((item: any) => {
+          if (typeof item === 'string') {
+            return { id: item, name: item };
+          }
+          return {
+            id: item.id || item,
+            name: item.name || (typeof item === 'string' ? item : 'Consommable'),
+            requestedQuantity: item.requestedQuantity || null,
+            quantity: item.quantity || null,
+            unit: item.unit,
+            isCustom: item.isCustom || false
+          };
+        }),
         remarks: dbEvent.notes,
         createdBy: dbEvent.created_by,
         createdAt: dbEvent.created_at,
@@ -71,6 +97,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('Récupération des événements de physique:', convertedEvents.length, 'événements trouvés')
     return NextResponse.json(convertedEvents)
 
   } catch (error) {
@@ -101,7 +128,7 @@ export async function POST(request: NextRequest) {
       classes,
       materials,
       equipment,
-      chemicals,
+      consommables,
       remarks
     } = body
 
@@ -182,6 +209,28 @@ export async function POST(request: NextRequest) {
     }
     
     // Créer l'événement avec les nouveaux champs
+    // Réduire les données avant de les sauvegarder
+    const reducedMaterials = (materials || equipment || []).map((material: any) => ({
+      id: material.id,
+      name: material.name || material.itemName,
+      itemName: material.itemName || material.name,
+      type: material.type,
+      categoryName: material.categoryName,
+      room: material.room,
+      status: material.status,
+      quantity: material.quantity || null,
+      requestedQuantity: material.requestedQuantity || null
+    }))
+
+    const reducedConsommables = (consommables || []).map((consommable: any) => ({
+      id: consommable.id,
+      name: consommable.name,
+      quantity: consommable.quantity || null,
+      unit: consommable.unit,
+      requestedQuantity: consommable.requestedQuantity || null,
+      isCustom: consommable.isCustom || false
+    }))
+
     const eventData = {
       title,
       start_date: firstSlot.startDate,
@@ -194,12 +243,8 @@ export async function POST(request: NextRequest) {
       teacher: session.user.name || '',
       class_name: className || classes?.[0] || '',
       participants: [],
-      equipment_used: (materials || equipment || []).map((m: any) => 
-        typeof m === 'string' ? m : m.id || m.name || ''
-      ),
-      chemicals_used: (chemicals || []).map((c: any) => 
-        typeof c === 'string' ? c : c.id || c.name || ''
-      ),
+      equipment_used: reducedMaterials,
+      consommables_used: reducedConsommables,
       notes: remarks || description || '',
       color: '#2196f3',
       created_by: session.user.id,
@@ -229,8 +274,33 @@ export async function POST(request: NextRequest) {
       actuelTimeSlots: createdEvent.actuelTimeSlots,
       class: createdEvent.class_name,
       room: createdEvent.room,
-      materials: parseJsonSafe(createdEvent.equipment_used, []).map((id: any) => ({ id, name: id })),
-      chemicals: parseJsonSafe(createdEvent.chemicals_used, []).map((id: any) => ({ id, name: id })),
+      materials: parseJsonSafe(createdEvent.equipment_used, []).map((item: any) => {
+        if (typeof item === 'string') {
+          return { id: item, name: item };
+        }
+        return {
+          id: item.id || item,
+          name: item.name || item.itemName || (typeof item === 'string' ? item : 'Matériel'),
+          itemName: item.itemName || item.name,
+          quantity: item.quantity || null,
+          requestedQuantity: item.requestedQuantity || null,
+          volume: item.volume,
+          isCustom: item.isCustom || false
+        };
+      }),
+      consommables: parseJsonSafe(createdEvent.consommables_used, []).map((item: any) => {
+        if (typeof item === 'string') {
+          return { id: item, name: item };
+        }
+        return {
+          id: item.id || item,
+          name: item.name || (typeof item === 'string' ? item : 'Consommable'),
+          requestedQuantity: item.requestedQuantity || null,
+          quantity: item.quantity || null,
+          unit: item.unit,
+          isCustom: item.isCustom || false
+        };
+      }),
       remarks: createdEvent.notes,
       createdBy: createdEvent.created_by,
       createdAt: createdEvent.created_at,
@@ -267,11 +337,13 @@ export async function PUT(request: NextRequest) {
       room, 
       class: className, 
       materials, 
-      chemicals, 
+      consommables, 
       remarks,
       state,
       stateChangeReason 
     } = body
+
+    console.log('Mise à jour de l\'événement physique:', body)
 
     if (!id) {
       return NextResponse.json(
@@ -301,32 +373,40 @@ export async function PUT(request: NextRequest) {
     if (state !== undefined) updateData.state = state
     if (stateChangeReason !== undefined) updateData.stateChangeReason = stateChangeReason
 
-    // Gestion des matériaux et produits chimiques
+    // Gestion des matériaux et produits chimiques avec réduction des données
     if (materials !== undefined) {
-      updateData.equipment_used = materials.map((m: any) => 
-        typeof m === 'string' ? m : m.id || m.name || ''
-      )
+      // Réduire les données des matériaux pour ne garder que les champs essentiels
+      const reducedMaterials = materials.map((material: any) => ({
+        id: material.id,
+        name: material.name || material.itemName,
+        itemName: material.itemName || material.name,
+        type: material.type,
+        categoryName: material.categoryName,
+        room: material.room,
+        status: material.status,
+        quantity: material.quantity || null,
+        requestedQuantity: material.requestedQuantity || null
+      }))
+      updateData.equipment_used = reducedMaterials
     }
-    if (chemicals !== undefined) {
-      updateData.chemicals_used = chemicals.map((c: any) => 
-        typeof c === 'string' ? c : c.id || c.name || ''
-      )
+    const consommablesData = consommables
+    if (consommablesData !== undefined) {
+      // Réduire les données des consommables pour ne garder que les champs essentiels
+      const reducedConsommables = consommablesData.map((consommable: any) => ({
+        id: consommable.id,
+        name: consommable.name,
+        quantity: consommable.quantity || null,
+        unit: consommable.unit,
+        requestedQuantity: consommable.requestedQuantity || null,
+        isCustom: consommable.isCustom || false
+      }))
+      updateData.consommables_used = reducedConsommables
     }
 
     // Gestion des TimeSlots
     if (timeSlots !== undefined) {
-      const processedTimeSlots = timeSlots.map((slot: any) => ({
-        ...slot,
-        id: slot.id || generateTimeSlotId(),
-        modifiedBy: [
-          ...(slot.modifiedBy || []),
-          {
-            userId: session.user.id,
-            date: new Date().toISOString(),
-            action: 'modified' as const
-          }
-        ]
-      }))
+      // Utiliser la nouvelle fonction pour traiter les TimeSlots intelligemment
+      const processedTimeSlots = processTimeSlots(timeSlots, existingEvent.timeSlots || [], session.user.id)
       
       updateData.timeSlots = processedTimeSlots
       
@@ -381,8 +461,33 @@ export async function PUT(request: NextRequest) {
       actuelTimeSlots: updatedEvent.actuelTimeSlots,
       class: updatedEvent.class_name,
       room: updatedEvent.room,
-      materials: parseJsonSafe(updatedEvent.equipment_used, []).map((id: any) => ({ id, name: id })),
-      chemicals: parseJsonSafe(updatedEvent.chemicals_used, []).map((id: any) => ({ id, name: id })),
+      materials: parseJsonSafe(updatedEvent.equipment_used, []).map((item: any) => {
+        if (typeof item === 'string') {
+          return { id: item, name: item };
+        }
+        return {
+          id: item.id || item,
+          name: item.name || item.itemName || (typeof item === 'string' ? item : 'Matériel'),
+          itemName: item.itemName || item.name,
+          quantity: item.quantity || null,
+          requestedQuantity: item.requestedQuantity || null,
+          volume: item.volume,
+          isCustom: item.isCustom || false
+        };
+      }),
+      consommables: parseJsonSafe(updatedEvent.consommables_used, []).map((item: any) => {
+        if (typeof item === 'string') {
+          return { id: item, name: item };
+        }
+        return {
+          id: item.id || item,
+          name: item.name || (typeof item === 'string' ? item : 'Consommable'),
+          requestedQuantity: item.requestedQuantity || null,
+          quantity: item.quantity || null,
+          unit: item.unit,
+          isCustom: item.isCustom || false
+        };
+      }),
       remarks: updatedEvent.notes,
       createdBy: updatedEvent.created_by,
       createdAt: updatedEvent.created_at,
