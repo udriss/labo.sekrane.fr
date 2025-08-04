@@ -138,21 +138,28 @@ export interface CalendarEventWithTimeSlots {
 // Fonction pour obtenir tous les événements de chimie avec les nouveaux champs
 export async function getChemistryEventsWithTimeSlots(startDate?: string, endDate?: string): Promise<CalendarEventWithTimeSlots[]> {
   try {
-    let query = 'SELECT * FROM calendar_chimie'
+    let query = `
+      SELECT 
+        c.*,
+        u.name as creator_name,
+        u.email as creator_email
+      FROM calendar_chimie c
+      LEFT JOIN users u ON c.created_by = u.id
+    `
     const params: any[] = []
     
     if (startDate && endDate) {
-      query += ' WHERE start_date >= ? AND end_date <= ?'
+      query += ' WHERE c.start_date >= ? AND c.end_date <= ?'
       params.push(startDate, endDate)
     } else if (startDate) {
-      query += ' WHERE start_date >= ?'
+      query += ' WHERE c.start_date >= ?'
       params.push(startDate)
     } else if (endDate) {
-      query += ' WHERE end_date <= ?'
+      query += ' WHERE c.end_date <= ?'
       params.push(endDate)
     }
     
-    query += ' ORDER BY start_date ASC'
+    query += ' ORDER BY c.start_date ASC'
     
     const [rows] = await pool.execute(query, params)
     
@@ -230,6 +237,8 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         notes: row.notes,
         color: row.color,
         created_by: row.created_by,
+        creator_name: row.creator_name, // Nouveau champ depuis le JOIN
+        creator_email: row.creator_email, // Nouveau champ depuis le JOIN
         created_at: row.created_at,
         updated_at: row.updated_at,
         timeSlots,
@@ -420,15 +429,22 @@ export async function getChemistryEventByIdWithTimeSlots(id: string): Promise<Ca
 // Fonction pour obtenir tous les événements de physique avec les nouveaux champs
 export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?: string): Promise<CalendarEventWithTimeSlots[]> {
   try {
-    let query = 'SELECT * FROM calendar_physique'
+    let query = `
+      SELECT 
+        p.*,
+        u.name as creator_name,
+        u.email as creator_email
+      FROM calendar_physique p
+      LEFT JOIN users u ON p.created_by = u.id
+    `
     const params: any[] = []
     
     if (startDate && endDate) {
-      query += ' WHERE start_date >= ? AND end_date <= ?'
+      query += ' WHERE p.start_date >= ? AND p.end_date <= ?'
       params.push(startDate, endDate)
     }
     
-    query += ' ORDER BY start_date ASC'
+    query += ' ORDER BY p.start_date ASC'
     
     const [rows] = await pool.execute(query, params)
     
@@ -447,6 +463,8 @@ export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?
       notes: row.notes,
       color: row.color,
       created_by: row.created_by,
+      creator_name: row.creator_name, // Nouveau champ depuis le JOIN
+      creator_email: row.creator_email, // Nouveau champ depuis le JOIN
       created_at: row.created_at,
       updated_at: row.updated_at,
       stateChangeReason: row.stateChangeReason,
@@ -710,3 +728,142 @@ export function processTimeSlots(newTimeSlots: any[], originalTimeSlots: any[], 
     }
   })
 }
+
+// ================================
+// FONCTIONS UTILITAIRES POUR LES SALLES
+// ================================
+
+interface Room {
+  id: string
+  name: string
+  description?: string
+  is_active: boolean
+  capacity: number
+  locations?: RoomLocation[]
+}
+
+interface RoomLocation {
+  id: string
+  room_id: string
+  name: string
+  description?: string
+  is_active: boolean
+}
+
+// Fonction pour obtenir toutes les salles
+export async function getAllRooms(): Promise<Room[]> {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        r.id,
+        r.name,
+        r.description,
+        r.is_active,
+        r.capacity
+      FROM rooms r
+      WHERE r.is_active = TRUE
+      ORDER BY r.name ASC
+    `)
+    
+    const rooms = rows as any[]
+    
+    // Pour chaque salle, récupérer ses localisations
+    const roomsWithLocations = await Promise.all(
+      rooms.map(async (room) => {
+        const [locationRows] = await pool.execute(`
+          SELECT 
+            id,
+            room_id,
+            name,
+            description,
+            is_active
+          FROM room_locations
+          WHERE room_id = ? AND is_active = TRUE
+        `, [room.id])
+        
+        return {
+          id: String(room.id),
+          name: room.name,
+          description: room.description,
+          is_active: room.is_active,
+          capacity: room.capacity,
+          locations: (locationRows as any[]).map(loc => ({
+            id: String(loc.id),
+            room_id: String(loc.room_id),
+            name: loc.name,
+            description: loc.description,
+            is_active: loc.is_active
+          }))
+        }
+      })
+    )
+    
+    return roomsWithLocations
+  } catch (error) {
+    console.error('Erreur lors de la récupération des salles:', error)
+    throw error
+  }
+}
+
+// Fonction pour obtenir les salles par localisation
+export async function getRoomsByLocation(locationId: number): Promise<Room[]> {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        r.*,
+        l.name as location_name,
+        l.description as location_description
+      FROM rooms r
+      INNER JOIN room_locations l ON r.id = l.room_id
+      WHERE l.id = ? AND r.is_active = TRUE AND l.is_active = TRUE
+      ORDER BY r.name ASC
+    `, [locationId])
+    
+    return (rows as any[]).map(row => ({
+      id: String(row.id),
+      name: row.name,
+      description: row.description,
+      is_active: row.is_active,
+      capacity: row.capacity,
+      locations: [{
+        id: String(locationId),
+        room_id: String(row.id),
+        name: row.location_name,
+        description: row.location_description,
+        is_active: true
+      }]
+    }))
+  } catch (error) {
+    console.error('Erreur lors de la récupération des salles par localisation:', error)
+    throw error
+  }
+}
+
+// Fonction pour obtenir les événements associés à une salle
+export async function getEventsForRoom(roomName: string, startDate?: string, endDate?: string): Promise<CalendarEventWithTimeSlots[]> {
+  try {
+    // Récupérer les événements de chimie et physique pour cette salle
+    const [chemistryEvents, physicsEvents] = await Promise.all([
+      getChemistryEventsWithTimeSlots(startDate, endDate),
+      getPhysicsEventsWithTimeSlots(startDate, endDate)
+    ])
+    
+    // Filtrer par salle et fusionner les résultats
+    const filteredChemistry = chemistryEvents.filter(event => 
+      event.room === roomName || (typeof event.room === 'object' && (event.room as any)?.name === roomName)
+    )
+    
+    const filteredPhysics = physicsEvents.filter(event => 
+      event.room === roomName || (typeof event.room === 'object' && (event.room as any)?.name === roomName)
+    )
+    
+    return [...filteredChemistry, ...filteredPhysics].sort((a, b) => 
+      new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    )
+  } catch (error) {
+    console.error('Erreur lors de la récupération des événements pour la salle:', error)
+    throw error
+  }
+}
+
+export type { Room, RoomLocation };

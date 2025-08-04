@@ -6,10 +6,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { withAudit } from '@/lib/api/with-audit';
+import { getAllRooms } from '@/lib/calendar-utils-timeslots'
 
 const ROOMS_FILE = path.join(process.cwd(), 'data', 'rooms.json')
 
-// Fonction pour lire le fichier rooms.json
+// Fonction pour lire le fichier rooms.json (legacy)
 async function readRoomsFile() {
   try {
     const data = await fs.readFile(ROOMS_FILE, 'utf-8')
@@ -21,7 +22,7 @@ async function readRoomsFile() {
   }
 }
 
-// Fonction pour écrire dans le fichier rooms.json
+// Fonction pour écrire dans le fichier rooms.json (legacy)
 async function writeRoomsFile(rooms: any[]) {
   try {
     const data = { rooms }
@@ -37,18 +38,27 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const includeLocations = searchParams.get('includeLocations') === 'true'
+    const useDatabase = searchParams.get('useDatabase') === 'true'
 
-    const rooms = await readRoomsFile()
+    let rooms;
     
-    // Filtrer les salles actives
-    const activeRooms = rooms.filter((room: any) => room.isActive !== false)
-    
-    // Trier par nom
-    const sortedRooms = activeRooms.sort((a: any, b: any) => 
-      (a.name || '').localeCompare(b.name || '')
-    )
+    if (useDatabase) {
+      // Utiliser la base de données MySQL
+      rooms = await getAllRooms()
+    } else {
+      // Utiliser le fichier JSON (legacy)
+      rooms = await readRoomsFile()
+      
+      // Filtrer les salles actives
+      const activeRooms = rooms.filter((room: any) => room.isActive !== false)
+      
+      // Trier par nom
+      rooms = activeRooms.sort((a: any, b: any) => 
+        (a.name || '').localeCompare(b.name || '')
+      )
+    }
 
-    return NextResponse.json({ rooms: sortedRooms })
+    return NextResponse.json({ rooms: rooms })
   } catch (error) {
     console.error('Erreur lors de la récupération des salles:', error)
     return NextResponse.json(

@@ -12,7 +12,7 @@ import {
 import {
   ExpandMore, ExpandLess, Person, LocationOn, Schedule, CalendarToday,
   CheckCircle, Cancel, SwapHoriz, Gavel, Edit, Handyman, ContentCopy,
-  Visibility, AttachFile, Room, Science, Group, Build
+  Visibility, AttachFile, Room, Science, Group, Build, School
 } from '@mui/icons-material'
 import { CalendarEvent, EventState, TimeSlot } from '@/types/calendar'
 import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
@@ -20,6 +20,7 @@ import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data
 import { useSession } from 'next-auth/react'
 import ImprovedTimeSlotActions from './ImprovedTimeSlotActions'
 import ValidationSlotActions from './ValidationSlotActions'
+import { sl } from 'date-fns/locale'
 
 interface ImprovedEventBlockProps {
   event: CalendarEvent
@@ -176,6 +177,7 @@ console.log('Normalisation des données de classe:', normalizedClassData, 'Nom d
     handleGlobalAction('VALIDATE', 'Événement validé globalement')
   }
 
+console.log('Gestion de la validation de l\'événement:', event, 'État:', event.state, 'ValidationState:', event.validationState)
   const handleCancel = () => {
     if (confirm('Êtes-vous sûr de vouloir annuler cet événement ?')) {
       handleGlobalAction('CANCEL', 'Événement annulé par l\'opérateur')
@@ -411,6 +413,8 @@ console.log('Normalisation des données de classe:', normalizedClassData, 'Nom d
                       </Paper>
                     )}
                   </Stack>
+
+
                   {/* Table combinée pour Matériel et Réactifs chimiques */}
                   <TableContainer 
                     sx={{ mt: 2,
@@ -731,42 +735,37 @@ console.log('Normalisation des données de classe:', normalizedClassData, 'Nom d
                   <Stack direction="row" spacing={0.5} alignItems="center">
                     <Person fontSize="small" />
                     <Typography variant="body2">
-                      {event.createdBy}
+                      Par {event.createdBy}
                     </Typography>
                   </Stack>
                 )}
                 
-                {(event.room || event.location) && (
+                {(event.room || event.location) ? (
+                  <></>
+                ) : (
                   <Stack direction="row" spacing={0.5} alignItems="center">
-                    <LocationOn fontSize="small" />
-                    <Typography variant="body2">
-                      {event.room || event.location}
+                    <LocationOn fontSize="small" color="error" />
+                    <Typography variant='caption' color="error"
+                    sx = {{ fontVariant: 'upercase', fontWeight: 'bold' }}
+                    >
+                      AUCUNE SALLE
                     </Typography>
                   </Stack>
                 )}
                 
-                {normalizedClassData && (
-                  <Typography variant="body2">
-                    Classe : {className}
-                  </Typography>
+                {normalizedClassData ? (
+                  <></>
+                ) : (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <School fontSize="small" color="error" />
+                    <Typography variant='caption' color="error"
+                    sx = {{ textTransform: 'uppercase', fontWeight: 'bold' }}
+                    >
+                      AUCUNE CLASSE
+                    </Typography>
+                  </Stack>
                 )}
               </Stack>
-
-              {/* Détail des créneaux */}
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Créneaux détaillés :
-                </Typography>
-                {displaySlots.map((slot, index) => {
-                  const { date, time } = formatTimeSlot(slot)
-                  return (
-                    <Typography key={index} variant="body2" color="text.secondary">
-                      {index + 1}. {date} de {time}
-                      {slot.status && slot.status !== 'active' && ` (${slot.status})`}
-                    </Typography>
-                  )
-                })}
-              </Box>
 
               {/* Table combinée pour Matériel et Réactifs chimiques */}
               {((event.materials && event.materials.length > 0) || 
@@ -844,6 +843,25 @@ console.log('Normalisation des données de classe:', normalizedClassData, 'Nom d
                               </TableCell>
                               <TableCell align="right">
                                 {chemical.requestedQuantity || chemical.quantity} {chemical.unit}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      )}
+                      {discipline === 'physique' && event.consommables && event.consommables.length > 0 && (
+                        <>
+                          <TableRow>
+                            <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
+                              Consommables
+                            </TableCell>
+                          </TableRow>
+                          {event.consommables.map((consommable, index) => (
+                            <TableRow key={`chemical-${index}`}>
+                              <TableCell>
+                                <Typography variant="body2">{consommable.name}</Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                {(consommable.requestedQuantity ?? 1)} {consommable.unit ? consommable.unit : ((consommable.requestedQuantity ?? 0) > 1 ? 'pièces' : 'pièce')}
                               </TableCell>
                             </TableRow>
                           ))}
