@@ -62,7 +62,7 @@
     },
     {
       "id": "ROOM_003",
-      "name": "Laboratoire de recherche",
+      "name": "Laboratoire de recherche 1",
       "description": "Laboratoire pour projets de recherche",
       "isActive": true,
       "capacity": 8,

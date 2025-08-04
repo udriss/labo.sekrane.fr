@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { withAudit } from '@/lib/api/with-audit'
-import { c } from 'framer-motion/dist/types.d-Bq-Qm38R';
+import { ChemicalRoom, ChemicalLocation } from '@/types/chemicals'
 
 // Interface pour les chemicals
 interface Chemical {
@@ -23,8 +23,8 @@ interface Chemical {
   purchaseDate?: string | null
   expirationDate?: string | null
   openedDate?: string | null
-  storage?: string | null
-  room?: string | null
+  location?: ChemicalLocation | null
+  room?: ChemicalRoom | null
   cabinet?: string | null
   shelf?: string | null
   hazardClass?: string | null
@@ -140,7 +140,7 @@ export const POST = withAudit(
     const insertSql = `
       INSERT INTO chemicals (
         id, name, formula, casNumber, quantity, unit, minQuantity, 
-        concentration, purchaseDate, expirationDate, storage, room, 
+        concentration, purchaseDate, expirationDate, location, room, 
         hazardClass, supplierId, status, quantityPrevision
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
@@ -156,8 +156,8 @@ export const POST = withAudit(
       body.concentration ? parseFloat(body.concentration) : null,
       body.purchaseDate || null,
       body.expirationDate || null,
-      body.storage || null,
-      body.room || null,
+      body.location ? JSON.stringify(body.location) : null,
+      body.room ? JSON.stringify(body.room) : null,
       body.hazardClass || null,
       body.supplierId || null,
       body.status || 'IN_STOCK',

@@ -17,6 +17,7 @@ import {
 import { CalendarEvent, EventState, TimeSlot } from '@/types/calendar'
 import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
+import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import { useSession } from 'next-auth/react'
 import ImprovedTimeSlotActions from './ImprovedTimeSlotActions'
 import ValidationSlotActions from './ValidationSlotActions'
@@ -55,7 +56,6 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   // Normaliser les données de classe pour l'affichage
   const normalizedClassData = normalizeClassField(event.class_data)
   const className = getClassNameFromClassData(normalizedClassData)
-console.log('Normalisation des données de classe:', normalizedClassData, 'Nom de la classe:', className)
   // Déterminer le rôle de l'utilisateur par rapport à cet événement
   const isOwner = session?.user && (
     event.createdBy === session.user.id || 
@@ -177,7 +177,6 @@ console.log('Normalisation des données de classe:', normalizedClassData, 'Nom d
     handleGlobalAction('VALIDATE', 'Événement validé globalement')
   }
 
-console.log('Gestion de la validation de l\'événement:', event, 'État:', event.state, 'ValidationState:', event.validationState)
   const handleCancel = () => {
     if (confirm('Êtes-vous sûr de vouloir annuler cet événement ?')) {
       handleGlobalAction('CANCEL', 'Événement annulé par l\'opérateur')
@@ -319,7 +318,7 @@ console.log('Gestion de la validation de l\'événement:', event, 'État:', even
                       </Paper>
                     )}
                     
-                    {(event.room || event.location) && (
+                    {(getRoomDisplayName(event.room) || event.location) && (
                       <Paper
                         elevation={0}
                         sx={{
@@ -337,7 +336,7 @@ console.log('Gestion de la validation de l\'événement:', event, 'État:', even
                       >
                         <Room fontSize="small" color="secondary" />
                         <Typography variant="body2" fontWeight="medium">
-                          {event.room || event.location}
+                          {getRoomDisplayName(event.room) || event.location}
                         </Typography>
                       </Paper>
                     )}
@@ -740,7 +739,7 @@ console.log('Gestion de la validation de l\'événement:', event, 'État:', even
                   </Stack>
                 )}
                 
-                {(event.room || event.location) ? (
+                {(getRoomDisplayName(event.room) || event.location) ? (
                   <></>
                 ) : (
                   <Stack direction="row" spacing={0.5} alignItems="center">

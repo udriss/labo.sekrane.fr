@@ -5,6 +5,14 @@ export type EventState = 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED' | 'IN_P
 
 export type ValidationState = 'noPending' | 'ownerPending' | 'operatorPending'
 
+// Interface pour les données de salle
+export interface RoomData {
+  id: string
+  name: string
+  capacity?: number
+  description?: string
+}
+
 export interface StateChange {
   userId: string
   date: string
@@ -64,7 +72,7 @@ export interface CalendarEvent {
   validationState?: ValidationState // NOUVEAU: qui doit valider (owner ou operator)
   stateChanger?: StateChange[]
   class_data?: { id: string; name: string; type: 'predefined' | 'custom' | 'auto' }[] // NOUVEAU: liste des classes
-  room?: string | null
+  room?: string | RoomData | null // Support pour string legacy et nouveau format objet
   location?: string | null
   materials?: (string | {
     id?: string
@@ -105,7 +113,8 @@ export interface Chemical {
   expirationDate?: string | null
   openedDate?: string | null
   storage?: string | null
-  room?: string | null
+  room?: string | RoomData | null // Support pour string legacy et nouveau format objet
+  location?: string | null
   cabinet?: string | null
   shelf?: string | null
   hazardClass?: HazardClass | null
@@ -142,7 +151,7 @@ export interface PhysicsConsumable {
   purchaseDate?: string | null
   expirationDate?: string | null
   storage?: string | null
-  room?: string | null
+  room?: string | RoomData | null // Support pour string legacy et nouveau format objet
   location?: string | null
   status?: ConsumableStatus | null
   supplierId?: string | null

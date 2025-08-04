@@ -5,6 +5,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { query } from '@/lib/db'
 import { withAudit } from '@/lib/api/with-audit';
+import { ChemicalRoom, ChemicalLocation } from '@/types/chemicals'
 
 // Interface pour les chemicals
 interface Chemical {
@@ -22,8 +23,8 @@ interface Chemical {
   purchaseDate?: string | null
   expirationDate?: string | null
   openedDate?: string | null
-  storage?: string | null
-  room?: string | null
+  location?: ChemicalLocation | null
+  room?: ChemicalRoom | null
   cabinet?: string | null
   shelf?: string | null
   hazardClass?: string | null
@@ -100,6 +101,9 @@ export const PUT = withAudit(
         updateFields.push(`${key} = ?`)
         if (key === 'quantity' || key === 'concentration' || key === 'minQuantity') {
           updateParams.push(value ? parseFloat(value as string) : null)
+        } else if (key === 'location' || key === 'room') {
+          // Sérialiser les objets JSON
+          updateParams.push(value ? JSON.stringify(value) : null)
         } else {
           updateParams.push(value)
         }

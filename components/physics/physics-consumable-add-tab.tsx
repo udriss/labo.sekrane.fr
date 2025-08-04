@@ -36,9 +36,12 @@ interface ConsumableType {
 interface Room {
   id: string
   name: string
+  description?: string
+  capacity?: number
   locations: Array<{
     id: string
     name: string
+    description?: string
   }>
 }
 
@@ -82,7 +85,7 @@ export default function PhysicsConsumableAddTab({ onConsumableAdded }: PhysicsCo
       try {
         const [typesRes, roomsRes] = await Promise.all([
           fetch('/api/physique/consommables-types'),
-          fetch('/api/rooms')
+          fetch('/api/rooms?useDatabase=true')
         ])
 
         if (typesRes.ok) {
@@ -121,12 +124,36 @@ export default function PhysicsConsumableAddTab({ onConsumableAdded }: PhysicsCo
       setLoading(true)
       setError(null)
 
+      // Préparer les données avec room et location as JSON objects
+      const selectedRoomData = rooms.find(room => room.name === formData.room)
+      const roomData = selectedRoomData ? {
+        id: selectedRoomData.id,
+        name: selectedRoomData.name,
+        description: selectedRoomData.description,
+        capacity: selectedRoomData.capacity
+      } : null
+
+      const selectedLocationData = selectedRoomData?.locations.find(loc => loc.name === formData.location)
+      const locationData = selectedLocationData ? {
+        id: selectedLocationData.id,
+        name: selectedLocationData.name,
+        room_id: selectedRoomData?.id,
+        is_active: true,
+        description: selectedLocationData.description
+      } : null
+
+      const dataToSubmit = {
+        ...formData,
+        room: roomData,
+        location: locationData
+      }
+
       const response = await fetch('/api/physique/consommables', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSubmit),
       })
 
       const data = await response.json()

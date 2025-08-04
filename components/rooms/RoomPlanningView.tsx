@@ -12,114 +12,91 @@ import {
   Box,
   Stack,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Tooltip,
   Alert,
   Grid,
   CircularProgress,
-  Paper
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material'
 import {
   Room as RoomIcon,
   Event as EventIcon,
   Person as PersonIcon,
   Schedule as ScheduleIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  ViewWeek as WeekIcon,
+  ViewList as ListIcon
 } from '@mui/icons-material'
-
-// Types pour les salles et événements
-interface RoomLocation {
-  id: string
-  room_id: string
-  name: string
-  description?: string
-  is_active: boolean
-}
-
-interface Room {
-  id: string
-  name: string
-  description?: string
-  capacity?: number
-  is_active: boolean
-  locations: RoomLocation[]
-}
-
-interface CalendarEvent {
-  id: number
-  title: string
-  start_time: string
-  end_time: string
-  creator_name?: string
-  creator_email?: string
-  class_data?: {
-    id: string
-    name: string
-    type: string
-  }
-  room?: string
-  type: 'chemistry' | 'physics'
-}
+import RoomWeeklyView from './RoomWeeklyView'
+import type { Room, RoomOccupancy } from '@/types/rooms'
 
 const RoomPlanningView: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([])
-  const [selectedRoom, setSelectedRoom] = useState<string>('')
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   )
-  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [currentDate, setCurrentDate] = useState<Date>(new Date())
+  const [roomOccupancies, setRoomOccupancies] = useState<RoomOccupancy[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'week'>('week')
 
-  // Charger toutes les salles au montage du composant
+  // Charger toutes les salles et les occupations au montage du composant
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/rooms?useDatabase=true')
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des salles')
-        }
-        const data = await response.json()
-        const roomsData = data.rooms || []
-        setRooms(roomsData)
-        
-        // Sélectionner la première salle par défaut
-        if (roomsData.length > 0) {
-          setSelectedRoom(roomsData[0].name)
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erreur inconnue')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchRooms()
+    fetchRoomPlanningData()
   }, [])
 
-  // Charger les événements quand la salle ou la date change
+  // Recharger les données quand la date change
   useEffect(() => {
-    if (selectedRoom) {
-      fetchEventsForRoom()
+    if (viewMode === 'week') {
+      fetchRoomPlanningData()
     }
-  }, [selectedRoom, selectedDate])
+  }, [currentDate, viewMode])
 
-  const fetchEventsForRoom = async () => {
+  const fetchRoomPlanningData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(
-        `/api/rooms/events?room=${encodeURIComponent(selectedRoom)}&date=${selectedDate}`
-      )
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des événements')
+      setError(null)
+
+      // Calculer les dates de début et fin de semaine pour la vue hebdomadaire
+      const startDate = new Date(currentDate)
+      startDate.setDate(startDate.getDate() - startDate.getDay() + 1) // Lundi
+      const endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 6) // Dimanche
+
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const endDateStr = endDate.toISOString().split('T')[0]
+
+      const params = new URLSearchParams({
+        startDate: startDateStr,
+        endDate: endDateStr
+      })
+
+      if (selectedRoom) {
+        params.append('roomId', selectedRoom.id)
       }
-      const eventsData = await response.json()
-      setEvents(eventsData)
+
+      const response = await fetch(`/api/rooms/planning?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des données de planning')
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Erreur lors du chargement des données')
+      }
+
+      setRoomOccupancies(data.data || [])
+      setRooms(data.rooms || [])
+      
+      // Sélectionner la première salle par défaut si aucune n'est sélectionnée
+      if (!selectedRoom && data.rooms && data.rooms.length > 0) {
+        setSelectedRoom(data.rooms[0])
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
@@ -127,25 +104,16 @@ const RoomPlanningView: React.FC = () => {
     }
   }
 
-  const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const handleEventClick = (eventData: any) => {
+    console.log('Événement cliqué:', eventData)
+    // Ici vous pouvez ajouter la logique pour afficher les détails de l'événement
   }
 
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case 'chemistry':
-        return 'primary'
-      case 'physics':
-        return 'secondary'
-      default:
-        return 'default'
-    }
+  const handleRoomChange = (newRoom: Room | null) => {
+    setSelectedRoom(newRoom)
+    // Recharger les données pour la nouvelle salle
+    fetchRoomPlanningData()
   }
-
-  const selectedRoomData = rooms.find(room => room.name === selectedRoom)
 
   if (loading && rooms.length === 0) {
     return (
@@ -168,40 +136,66 @@ const RoomPlanningView: React.FC = () => {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        {/* Panneau de contrôle */}
-        <Grid size = {{ xs: 12, md: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Sélection
-              </Typography>
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Salle</InputLabel>
-                <Select
-                  value={selectedRoom}
-                  label="Salle"
-                  onChange={(e) => setSelectedRoom(e.target.value)}
-                >
-                  {rooms.map((room) => (
-                    <MenuItem key={room.id} value={room.name}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <RoomIcon fontSize="small" />
-                        {room.name}
-                        {room.capacity && (
-                          <Chip 
-                            label={`${room.capacity} places`} 
-                            size="small" 
-                            variant="outlined" 
-                          />
-                        )}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      {/* Contrôles */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ flexGrow: 1, minWidth: '250px' }}>
+            <FormControl fullWidth>
+              <InputLabel>Salle</InputLabel>
+              <Select
+                value={selectedRoom?.id || ''}
+                label="Salle"
+                onChange={(e) => {
+                  const room = rooms.find(r => r.id === e.target.value)
+                  handleRoomChange(room || null)
+                }}
+              >
+                <MenuItem value="">
+                  <em>Toutes les salles</em>
+                </MenuItem>
+                {rooms.map((room) => (
+                  <MenuItem key={room.id} value={room.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <RoomIcon fontSize="small" />
+                      {room.name}
+                      {room.capacity && (
+                        <Chip 
+                          label={`${room.capacity} places`} 
+                          size="small" 
+                          variant="outlined" 
+                        />
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
 
+          <Box sx={{ minWidth: '200px' }}>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(_, newViewMode) => {
+                if (newViewMode !== null) {
+                  setViewMode(newViewMode)
+                }
+              }}
+              aria-label="mode d'affichage"
+            >
+              <ToggleButton value="week" aria-label="vue hebdomadaire">
+                <WeekIcon sx={{ mr: 1 }} />
+                Semaine
+              </ToggleButton>
+              <ToggleButton value="list" aria-label="vue liste">
+                <ListIcon sx={{ mr: 1 }} />
+                Liste
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {viewMode === 'list' && (
+            <Box sx={{ flexGrow: 1, minWidth: '200px' }}>
               <FormControl fullWidth>
                 <input
                   type="date"
@@ -216,104 +210,115 @@ const RoomPlanningView: React.FC = () => {
                   }}
                 />
               </FormControl>
+            </Box>
+          )}
+        </Box>
 
-              {/* Informations sur la salle sélectionnée */}
-              {selectedRoomData && (
-                <Paper sx={{ mt: 2, p: 2, bgcolor: 'grey.50' }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Informations de la salle
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {selectedRoomData.description || 'Aucune description'}
-                  </Typography>
-                  {selectedRoomData.capacity && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Capacité : {selectedRoomData.capacity} personnes
-                    </Typography>
-                  )}
-                  {selectedRoomData.locations.length > 0 && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Localisations :
-                      </Typography>
-                      {selectedRoomData.locations.map((location) => (
-                        <Chip
-                          key={location.id}
-                          label={location.name}
-                          size="small"
-                          icon={<LocationIcon />}
-                          sx={{ ml: 0.5, mt: 0.5 }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </Paper>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Liste des événements */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ScheduleIcon />
-                Événements du {new Date(selectedDate).toLocaleDateString('fr-FR')}
-                {loading && <CircularProgress size={20} />}
+        {/* Informations sur la salle sélectionnée */}
+        {selectedRoom && (
+          <Paper sx={{ mt: 2, p: 2, bgcolor: 'grey.50' }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Informations de la salle: {selectedRoom.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedRoom.description || 'Aucune description'}
+            </Typography>
+            {selectedRoom.capacity && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Capacité : {selectedRoom.capacity} personnes
               </Typography>
-
-              {events.length === 0 ? (
-                <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-                  Aucun événement prévu pour cette salle à cette date
+            )}
+            {selectedRoom.locations && selectedRoom.locations.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Localisations :
                 </Typography>
-              ) : (
-                <List>
-                  {events
-                    .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                    .map((event) => (
-                    <ListItem key={`${event.type}-${event.id}`} divider>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <EventIcon fontSize="small" />
-                            <Typography variant="subtitle1">
-                              {event.title}
-                            </Typography>
-                            <Chip
-                              label={event.type === 'chemistry' ? 'Chimie' : 'Physique'}
-                              color={getEventTypeColor(event.type)}
-                              size="small"
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {formatTime(event.start_time)} - {formatTime(event.end_time)}
+                {selectedRoom.locations.map((location) => (
+                  <Chip
+                    key={location.id}
+                    label={location.name}
+                    size="small"
+                    icon={<LocationIcon />}
+                    sx={{ ml: 0.5, mt: 0.5 }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Paper>
+        )}
+      </Paper>
+
+      {/* Affichage selon le mode */}
+      {viewMode === 'week' ? (
+        <RoomWeeklyView
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+          roomOccupancies={roomOccupancies}
+          onEventClick={handleEventClick}
+          selectedRoom={selectedRoom}
+        />
+      ) : (
+        /* Vue liste existante */
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ScheduleIcon />
+              Événements du {new Date(selectedDate).toLocaleDateString('fr-FR')}
+              {loading && <CircularProgress size={20} />}
+            </Typography>
+
+            {roomOccupancies.length === 0 ? (
+              <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                Aucun événement prévu pour les salles sélectionnées à cette période
+              </Typography>
+            ) : (
+              <Box>
+                {roomOccupancies.map((occupancy) => (
+                  <Box key={occupancy.room.id} sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <RoomIcon />
+                      {occupancy.room.name}
+                      <Chip label={`${occupancy.events.length} événements`} size="small" />
+                    </Typography>
+                    {occupancy.events.length === 0 ? (
+                      <Typography color="text.secondary" sx={{ pl: 2 }}>
+                        Aucun événement prévu
+                      </Typography>
+                    ) : (
+                      occupancy.events.map((event) => (
+                        <Card key={`${event.type}-${event.id}`} variant="outlined" sx={{ mb: 1 }}>
+                          <CardContent sx={{ py: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <EventIcon fontSize="small" />
+                              <Typography variant="subtitle2">
+                                {event.title}
+                              </Typography>
+                              <Chip
+                                label={event.type === 'chemistry' ? 'Chimie' : 'Physique'}
+                                color={event.type === 'chemistry' ? 'primary' : 'secondary'}
+                                size="small"
+                              />
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              {event.start_time} - {event.end_time}
                             </Typography>
                             {event.creator_name && (
-                              <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <PersonIcon fontSize="small" />
                                 {event.creator_name}
                               </Typography>
                             )}
-                            {event.class_data && (
-                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                Classe : {event.class_data.name} ({event.class_data.type})
-                              </Typography>
-                            )}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </Box>
   )
 }

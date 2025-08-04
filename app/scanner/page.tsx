@@ -110,7 +110,7 @@ export default function ScannerPage() {
           type: data.type,
           name: data.product.name,
           quantity: data.product.quantity,
-          location: data.product.storage || data.product.location,
+          location: data.product.location?.name || (typeof data.product.location === 'string' ? data.product.location : 'Non spécifiée'),
           status: "found",
           timestamp: new Date(),
           details: data.product

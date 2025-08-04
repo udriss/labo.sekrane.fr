@@ -427,18 +427,35 @@ export async function PUT(request: NextRequest) {
 
     // Gestion des TimeSlots
     if (timeSlots !== undefined) {
-      // Utiliser la nouvelle fonction pour traiter les TimeSlots intelligemment
-      const processedTimeSlots = processTimeSlots(timeSlots, existingEvent.timeSlots || [], session.user.id)
-      
-      updateData.timeSlots = processedTimeSlots
-      
-      // Si l'utilisateur est le créateur, synchroniser avec actuelTimeSlots
+      // Si l'utilisateur est le créateur (owner), remplacer complètement actuelTimeSlots
       if (existingEvent.created_by === session.user.id || existingEvent.created_by === session.user.email) {
+        // Pour le créateur, traiter directement les timeSlots comme dans POST
+        const processedTimeSlots = timeSlots.map((slot: any) => ({
+          ...slot,
+          status: slot.status || 'active',
+          modifiedBy: [
+            ...(slot.modifiedBy || []),
+            {
+              userId: session.user.id,
+              date: new Date().toISOString(),
+              action: 'updated' as const
+            }
+          ]
+        }))
+        
+        updateData.timeSlots = processedTimeSlots
         updateData.actuelTimeSlots = processedTimeSlots.filter((slot: any) => slot.status === 'active')
+      } else {
+        // Pour les autres utilisateurs, utiliser processTimeSlots pour l'historique
+        const processedTimeSlots = processTimeSlots(timeSlots, existingEvent.timeSlots || [], session.user.id)
+        updateData.timeSlots = processedTimeSlots
+        // Ne pas toucher actuelTimeSlots si ce n'est pas le créateur
       }
 
-      // Mettre à jour les dates principales basées sur le premier créneau actif
-      const activeSlots = processedTimeSlots.filter((slot: any) => slot.status === 'active')
+      // Mettre à jour les dates principales basées sur les créneaux actifs
+      const activeSlots = (updateData.actuelTimeSlots || existingEvent.actuelTimeSlots || [])
+        .filter((slot: any) => slot.status === 'active')
+      
       if (activeSlots.length > 0) {
         updateData.start_date = activeSlots[0].startDate
         updateData.end_date = activeSlots[activeSlots.length - 1].endDate

@@ -38,6 +38,7 @@ import {
 import { CalendarEvent, EventType, EventState, Chemical, PhysicsConsumable } from '@/types/calendar'
 import { UserRole } from "@/types/global";
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
+import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import { SiMoleculer } from "react-icons/si";
 import { getActiveTimeSlots, hasPendingChanges } from '@/lib/calendar-slot-utils'
 
@@ -1144,7 +1145,7 @@ useEffect(() => {
           </Grid>
 
           {/* Informations de localisation */}
-          {(normalizedClassData || event.room) && (
+          {(normalizedClassData || getRoomDisplayName(event.room)) && (
             <>
 
               <Grid container spacing={2}>
@@ -1158,13 +1159,13 @@ useEffect(() => {
                     </Typography>
                   </Grid>
                 )}
-                {event.room && (
+                {getRoomDisplayName(event.room) && (
                   <Grid size = {{ xs: 12, sm: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Salle
                     </Typography>
                     <Typography variant="body1">
-                      <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.room}
+                      <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {getRoomDisplayName(event.room)}
                     </Typography>
                   </Grid>
                 )}

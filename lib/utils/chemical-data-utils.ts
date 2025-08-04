@@ -5,6 +5,7 @@ import path from 'path';
 import { TimeSlot } from '@/types/calendar';
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
+import { ChemicalRoom, ChemicalLocation } from '@/types/chemicals'
 
 
 
@@ -72,8 +73,8 @@ interface ChemicalInventory {
   purchaseDate?: string | null
   expirationDate?: string | null
   openedDate?: string | null
-  storage?: string
-  room?: string
+  location?: ChemicalLocation | null
+  room?: ChemicalRoom | null
   cabinet?: string
   shelf?: string
   hazardClass?: string | null
@@ -86,7 +87,6 @@ interface ChemicalInventory {
   createdAt: string
   updatedAt: string
   supplier?: string
-  location?: string
   quantityPrevision?: number
 }
 

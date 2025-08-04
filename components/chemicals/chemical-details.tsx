@@ -318,13 +318,18 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
             Localisation
           </Typography>
           <Stack spacing={2}>
-            {chemical.storage && (
+            {chemical.location && (
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Stockage
+                  Localisation
                 </Typography>
                 <Typography variant="body1">
-                  {chemical.storage}
+                  {chemical.location.name}
+                  {chemical.location.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {chemical.location.description}
+                    </Typography>
+                  )}
                 </Typography>
               </Box>
             )}
@@ -335,7 +340,13 @@ export function ChemicalDetails({ chemical, onClose, onUpdate }: ChemicalDetails
                   Salle
                 </Typography>
                 <Typography variant="body1">
-                  {chemical.room}
+                  {chemical.room.name}
+                  {chemical.room.capacity && ` (${chemical.room.capacity} places)`}
+                  {chemical.room.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {chemical.room.description}
+                    </Typography>
+                  )}
                 </Typography>
               </Box>
             )}

@@ -216,8 +216,8 @@ export async function initializeDatabase() {
         purchaseDate DATE DEFAULT NULL,
         expirationDate DATE DEFAULT NULL,
         openedDate DATE DEFAULT NULL,
-        storage VARCHAR(255) DEFAULT NULL,
-        room VARCHAR(100) DEFAULT NULL,
+        location JSON DEFAULT NULL,
+        room JSON DEFAULT NULL,
         cabinet VARCHAR(100) DEFAULT NULL,
         shelf VARCHAR(100) DEFAULT NULL,
         hazardClass ENUM('FLAMMABLE', 'CORROSIVE', 'TOXIC', 'OXIDIZING', 'EXPLOSIVE', 'RADIOACTIVE', 'BIOLOGICAL', 'NONE') DEFAULT NULL,
@@ -236,8 +236,7 @@ export async function initializeDatabase() {
         INDEX idx_status (status),
         INDEX idx_hazardClass (hazardClass),
         INDEX idx_expirationDate (expirationDate),
-        INDEX idx_storage (storage),
-        INDEX idx_room (room),
+        INDEX idx_supplierId (supplierId),
         INDEX idx_supplierId (supplierId),
         FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE SET NULL
       )

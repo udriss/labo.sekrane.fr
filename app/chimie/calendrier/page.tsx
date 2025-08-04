@@ -81,8 +81,7 @@ export default function CalendarPage() {
   const { events, loading, error, fetchEvents, setEvents } = useCalendarEvents()
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData({ discipline: 'chimie' })
   const { tpPresets } = useCalendarData()
-
-  console.log('customClasses dans chimie', customClasses)
+  
   // Fonction pour déterminer si l'utilisateur est le créateur d'un événement
   const isCreator = (event: CalendarEvent): boolean => {
     return event.createdBy === session?.user?.email || event.createdBy === session?.user?.id

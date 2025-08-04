@@ -30,6 +30,7 @@ import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { TimeSlot } from '@/types/calendar'
 import { useEventMove } from '@/lib/hooks/useEventMove'
 import { isEventOwner } from '@/lib/calendar-move-utils'
+import { normalizeRoomData, getRoomDisplayName, compareRoomData, serializeRoomData, type RoomData } from '@/lib/calendar-utils-client-room'
 
 interface EditEventDialogPhysicsProps {
   open: boolean
@@ -155,7 +156,7 @@ export default function EditEventDialogPhysics({
     startTime: '',
     endTime: '',
     class_data: null as { id: string, name: string, type: 'predefined' | 'custom' | 'auto' } | null,
-    room: '',
+    room: null as RoomData | null, // Changé pour supporter les objets room
     materials: [] as any[],
     consommables: [] as any[],
     location: ''
@@ -236,7 +237,7 @@ export default function EditEventDialogPhysics({
         startTime: format(startDate, 'HH:mm'),
         endTime: format(endDate, 'HH:mm'),
         class_data: normalizedClassData,
-        room: event.room || '',
+        room: normalizeRoomData(event.room), // Normaliser les données de salle
         materials: materialsWithQuantities,
         consommables: consommablesWithQuantities,
         location: event.location || ''
@@ -295,7 +296,7 @@ export default function EditEventDialogPhysics({
       // Charger les salles
       setLoadingRooms(true);
       try {
-        const roomsResponse = await fetch('/api/rooms');
+        const roomsResponse = await fetch('/api/rooms?useDatabase=true');
         if (roomsResponse.ok) {
           const roomsData = await roomsResponse.json();
           setRooms(roomsData.rooms || []);
@@ -608,7 +609,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
         !originalEvent.class_data || 
         (formData.class_data && Array.isArray(originalEvent.class_data) && originalEvent.class_data.length > 0 && 
           formData.class_data.id === originalEvent.class_data[0].id)) &&
-      formData.room === originalEvent.room &&
+      compareRoomData(formData.room, originalEvent.room) &&
       formData.location === originalEvent.location &&
       JSON.stringify(formData.consommables) === JSON.stringify(originalEvent.consommables || []) &&
       JSON.stringify(formData.materials) === JSON.stringify(originalEvent.materials || [])
@@ -682,7 +683,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
         state: formData.state,
         type: formData.type,
         class_data: formData.class_data ? [formData.class_data] : [],  // Convertir en tableau pour respecter le type CalendarEvent
-        room: formData.room,
+        room: serializeRoomData(formData.room),
         location: formData.location,
         materials: formData.materials.map((mat: any) => ({
           ...mat,
@@ -854,7 +855,7 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       startTime: '',
       endTime: '',
       class_data: null,
-      room: '',
+      room: null, // Réinitialiser à null
       materials: [],
       consommables: [],
       location: ''
@@ -1343,14 +1344,32 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
 
               <Autocomplete
                 freeSolo
-                options={rooms.map(room => room.name)}
+                options={rooms} // Utiliser directement les objets room
                 loading={loadingRooms}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
                 value={formData.room}
                 onChange={(event, newValue) => {
-                  setFormData({ ...formData, room: newValue || '' });
+                  if (typeof newValue === 'string') {
+                    // Si c'est une chaîne (texte libre), créer un objet room
+                    setFormData({ 
+                      ...formData, 
+                      room: newValue ? { id: newValue, name: newValue } : null 
+                    });
+                  } else {
+                    // Si c'est un objet room ou null
+                    setFormData({ ...formData, room: newValue });
+                  }
                 }}
                 onInputChange={(event, newInputValue) => {
-                  setFormData({ ...formData, room: newInputValue });
+                  // Pour freeSolo, permettre la saisie libre
+                  if (newInputValue) {
+                    setFormData({ 
+                      ...formData, 
+                      room: { id: newInputValue, name: newInputValue } 
+                    });
+                  } else {
+                    setFormData({ ...formData, room: null });
+                  }
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -1370,24 +1389,40 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                 )}
                 renderOption={(props, option) => {
                   const { key, ...otherProps } = props;
-                  const roomData = rooms.find(room => room.name === option);
+                  const roomData = typeof option === 'string' 
+                    ? rooms.find(room => room.name === option)
+                    : option;
                   
                   return (
                     <li key={key} {...otherProps}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                         <Box sx={{ flexGrow: 1 }}>
                           <Typography variant="body2">
-                            {option}
+                            {typeof option === 'string' ? option : option.name}
                           </Typography>
                           {roomData?.description && (
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
                               {roomData.description}
                             </Typography>
                           )}
+                          {roomData?.capacity && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', ml: 1 }}>
+                              Capacité: {roomData.capacity} personnes
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     </li>
                   );
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' && typeof value === 'string') {
+                    return option === value;
+                  }
+                  if (typeof option === 'object' && typeof value === 'object' && option && value) {
+                    return option.id === value.id;
+                  }
+                  return false;
                 }}
               />
             </>

@@ -8,6 +8,107 @@ import { generateTimeSlotId } from '@/lib/calendar-utils-client'
 import { v4 as uuidv4 } from 'uuid'
 import { toZonedTime, format as formatTz } from 'date-fns-tz'
 
+// Types pour les salles en tant qu'objets JSON
+export interface RoomData {
+  id: string
+  name: string
+  capacity?: number
+  description?: string
+}
+
+// Fonction pour normaliser les données de salle (string ou objet)
+export function normalizeRoomData(room: string | RoomData | null | undefined): RoomData | null {
+  if (!room) return null
+  
+  if (typeof room === 'string') {
+    // Si c'est une chaîne, essayer de parser comme JSON
+    if (room.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(room)
+        return {
+          id: parsed.id || parsed.name || room,
+          name: parsed.name || room,
+          capacity: parsed.capacity,
+          description: parsed.description
+        }
+      } catch {
+        // Si le parsing échoue, traiter comme nom simple
+        return {
+          id: room,
+          name: room
+        }
+      }
+    } else {
+      // Nom simple de salle
+      return {
+        id: room,
+        name: room
+      }
+    }
+  }
+  
+  // Si c'est déjà un objet
+  return {
+    id: room.id || room.name || 'unknown',
+    name: room.name || room.id || 'Salle inconnue',
+    capacity: room.capacity,
+    description: room.description
+  }
+}
+
+// Fonction pour obtenir le nom d'affichage d'une salle
+export function getRoomDisplayName(room: string | RoomData | null | undefined): string {
+  if (!room) return ''
+  
+  if (typeof room === 'string') {
+    return room
+  }
+  
+  return room.name || room.id || 'Salle inconnue'
+}
+
+// Fonction pour comparer deux room data
+export function compareRoomData(room1: string | RoomData | null | undefined, room2: string | RoomData | null | undefined): boolean {
+  if (!room1 && !room2) return true
+  if (!room1 || !room2) return false
+  
+  const normalized1 = normalizeRoomData(room1)
+  const normalized2 = normalizeRoomData(room2)
+  
+  if (!normalized1 || !normalized2) return false
+  
+  return normalized1.id === normalized2.id
+}
+
+// Fonction pour convertir un objet room en JSON string pour la base de données
+export function serializeRoomData(room: RoomData | null): string | null {
+  if (!room) return null
+  return JSON.stringify(room)
+}
+
+// Fonction sécurisée pour sérialiser n'importe quel objet JSON pour MySQL
+export function safeJsonStringify(value: any): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  
+  if (typeof value === 'string' && value.trim() === '') {
+    return null
+  }
+  
+  try {
+    const result = JSON.stringify(value)
+    // Éviter les chaînes vides ou les objets vides qui causent des erreurs MySQL
+    if (result === '""' || result === '{}' || result === 'null') {
+      return null
+    }
+    return result
+  } catch (error) {
+    console.error('Erreur de sérialisation JSON:', error)
+    return null
+  }
+}
+
 // Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME avec timezone Paris
 function formatDateForMySQL(isoDateString: string): string {
   try {
@@ -106,7 +207,7 @@ export interface CalendarEventWithTimeSlots {
   type: 'tp' | 'cours' | 'exam' | 'maintenance' | 'reservation' | 'other'
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
   state?: 'PENDING' | 'VALIDATED' | 'CANCELLED' | 'MOVED' | 'IN_PROGRESS'
-  room?: string
+  room?: RoomData | null // Support pour string legacy et nouveau format objet
   teacher?: string
   class_data?: {
     id: string
@@ -228,7 +329,7 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         type: row.type,
         status: row.status,
         state: row.state || 'VALIDATED',
-        room: row.room,
+        room: normalizeRoomData(row.room), // Normaliser les données de salle
         teacher: row.teacher,
         class_data: parseJsonSafe(row.class_data, null), // Nouveau champ
         participants: parseJsonSafe(row.participants, []),
@@ -278,18 +379,18 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
       eventData.type || 'other',
       eventData.status || 'scheduled',
       eventData.state || 'VALIDATED',
-      eventData.room || '',
+      safeJsonStringify(normalizeRoomData(eventData.room)), // Sérialisation sécurisée des données de salle
       eventData.teacher || '',
-      JSON.stringify(eventData.class_data || null),
-      JSON.stringify(eventData.participants || []),
-      JSON.stringify(eventData.equipment_used || []),
-      JSON.stringify(eventData.chemicals_used || []),
+      safeJsonStringify(eventData.class_data),
+      safeJsonStringify(eventData.participants || []),
+      safeJsonStringify(eventData.equipment_used || []),
+      safeJsonStringify(eventData.chemicals_used || []),
       eventData.notes || '',
       eventData.color || '#2196f3',
       eventData.created_by || '',
-      JSON.stringify(eventData.timeSlots || []),
-      JSON.stringify(eventData.actuelTimeSlots || []),
-      JSON.stringify(eventData.lastStateChange || null)
+      safeJsonStringify(eventData.timeSlots || []),
+      safeJsonStringify(eventData.actuelTimeSlots || []),
+      safeJsonStringify(eventData.lastStateChange)
     ]
     
     await pool.execute(query, params)
@@ -347,14 +448,22 @@ export async function updateChemistryEventWithTimeSlots(
         // Traiter updated_at séparément
         updates.push(`${key} = ?`)
         params.push(value ? formatDateForMySQL(value as string) : value)
+      } else if (key === 'room') {
+        // Traiter les données de salle spécialement
+        updates.push(`${key} = ?`)
+        params.push(safeJsonStringify(normalizeRoomData(value as string | RoomData)))
       } else if (key === 'validationState') {
         // Champ enum pour le statut de validation
         updates.push(`${key} = ?`)
         params.push(value)
       } else {
-        // Autres champs texte/nombre (y compris class_data)
+        // Autres champs texte/nombre (y compris class_data et autres JSON)
         updates.push(`${key} = ?`)
-        params.push(key === 'class_data' ? JSON.stringify(value) : value)
+        if (['class_data', 'equipment_used', 'chemicals_used', 'timeSlots', 'actuelTimeSlots', 'lastStateChange', 'participants'].includes(key)) {
+          params.push(safeJsonStringify(value))
+        } else {
+          params.push(value)
+        }
       }
     })
     
@@ -457,7 +566,7 @@ export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?
       type: row.type,
       status: row.status,
       state: row.state,
-      room: row.room,
+      room: normalizeRoomData(row.room), // Normaliser les données de salle
       teacher: row.teacher,
       class_data: row.class_data,
       notes: row.notes,
@@ -500,21 +609,21 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
       type: eventData.type || 'other',
       status: eventData.status || 'scheduled',
       state: eventData.state || 'VALIDATED',
-      room: eventData.room || '',
+      room: safeJsonStringify(normalizeRoomData(eventData.room)), // Sérialisation sécurisée
       teacher: eventData.teacher || '',
-      class_data: eventData.class_data || null,
+      class_data: safeJsonStringify(eventData.class_data),
       notes: eventData.notes || '',
       color: eventData.color || '#2196f3',
       created_by: eventData.created_by || '',
       stateChangeReason: eventData.stateChangeReason || '',
       
       // Sérialiser les champs JSON
-      participants: JSON.stringify(eventData.participants || []),
-      equipment_used: JSON.stringify(eventData.equipment_used || []),
-      consommables_used: JSON.stringify(eventData.consommables_used || []),
-      timeSlots: JSON.stringify(eventData.timeSlots || []),
-      actuelTimeSlots: JSON.stringify(eventData.actuelTimeSlots || []),
-      lastStateChange: JSON.stringify(eventData.lastStateChange || null)
+      participants: safeJsonStringify(eventData.participants || []),
+      equipment_used: safeJsonStringify(eventData.equipment_used || []),
+      consommables_used: safeJsonStringify(eventData.consommables_used || []),
+      timeSlots: safeJsonStringify(eventData.timeSlots || []),
+      actuelTimeSlots: safeJsonStringify(eventData.actuelTimeSlots || []),
+      lastStateChange: safeJsonStringify(eventData.lastStateChange)
     }
     
     // Construire la requête d'insertion
@@ -532,6 +641,8 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
     // Retourner l'événement créé avec les données parsées
     return {
       ...finalEventData,
+      room: normalizeRoomData(eventData.room), // Retourner l'objet room normalisé
+      class_data: eventData.class_data || null, // Retourner les données class originales
       participants: eventData.participants || [],
       equipment_used: eventData.equipment_used || [],
       consommables_used: eventData.consommables_used || [],
@@ -571,9 +682,13 @@ export async function updatePhysicsEventWithTimeSlots(id: string, updateData: Pa
         if (field === 'start_date' || field === 'end_date') {
           const dateValue = processedUpdateData[field as keyof CalendarEventWithTimeSlots] as string
           updateValues.push(dateValue ? formatDateForMySQL(dateValue) : dateValue)
-        } else if (field === 'class_data') {
-          // Traiter class_data comme JSON
-          updateValues.push(JSON.stringify(processedUpdateData[field]))
+        } else if (field === 'room') {
+          // Traiter les données de salle spécialement
+          const roomValue = processedUpdateData[field as keyof CalendarEventWithTimeSlots] as string | RoomData
+          updateValues.push(safeJsonStringify(normalizeRoomData(roomValue)))
+        } else if (['class_data'].includes(field)) {
+          // Traiter les champs JSON simples
+          updateValues.push(safeJsonStringify(processedUpdateData[field]))
         } else {
           updateValues.push(processedUpdateData[field as keyof CalendarEventWithTimeSlots])
         }
@@ -849,13 +964,15 @@ export async function getEventsForRoom(roomName: string, startDate?: string, end
     ])
     
     // Filtrer par salle et fusionner les résultats
-    const filteredChemistry = chemistryEvents.filter(event => 
-      event.room === roomName || (typeof event.room === 'object' && (event.room as any)?.name === roomName)
-    )
+    const filteredChemistry = chemistryEvents.filter(event => {
+      const roomData = normalizeRoomData(event.room)
+      return roomData && (roomData.name === roomName || roomData.id === roomName)
+    })
     
-    const filteredPhysics = physicsEvents.filter(event => 
-      event.room === roomName || (typeof event.room === 'object' && (event.room as any)?.name === roomName)
-    )
+    const filteredPhysics = physicsEvents.filter(event => {
+      const roomData = normalizeRoomData(event.room)
+      return roomData && (roomData.name === roomName || roomData.id === roomName)
+    })
     
     return [...filteredChemistry, ...filteredPhysics].sort((a, b) => 
       new Date(a.start_date).getTime() - new Date(b.start_date).getTime()

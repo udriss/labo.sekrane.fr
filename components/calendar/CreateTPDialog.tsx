@@ -23,6 +23,7 @@ import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
 import { CalendarEvent } from '@/types/calendar'
+import { ChemicalRoom, ChemicalLocation } from '@/types/chemicals'
 import { useSession } from "next-auth/react"
 
 
@@ -68,17 +69,16 @@ interface CreateTPDialogProps {
     expirationDate: string | null;
     item_description: string;
     item_name: string;
-    location: string;
+    location: ChemicalLocation | null;
     minQuantity: string;
     model: string | null;
     notes: string | null;
     orderReference: string | null;
     purchaseDate: string | null;
     quantity: string;
-    room: string;
+    room: ChemicalRoom | null;
     specifications: string | null;
     status: string;
-    storage: string | null;
     supplierId: string | null;
     supplier_name: string | null;
     type_color: string;
@@ -2126,8 +2126,8 @@ const handleCreateCalendarEvent = async () => {
                   {(discipline === 'physique' ? formData.consommables : formData.chemicals).map((chemical, index) => {
                     // Utiliser quantityPrevision si disponible, sinon quantity
                     const availableStock = chemical.quantityPrevision !== undefined 
-                      ? chemical.quantityPrevision 
-                      : (chemical.quantity || 0)
+                      ? (typeof chemical.quantityPrevision === 'number' ? chemical.quantityPrevision : parseFloat(chemical.quantityPrevision || '0'))
+                      : (typeof chemical.quantity === 'number' ? chemical.quantity : parseFloat(chemical.quantity || '0'))
                     
                     const tooltipKey = `${chemical.id || index}`
                     const tooltipOpen = tooltipStates[tooltipKey] || { actual: false, prevision: false, after: false }
@@ -2211,7 +2211,7 @@ const handleCreateCalendarEvent = async () => {
                             chemical.quantityPrevision !== chemical.quantity && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <Typography variant="body2" color="warning.main">
-                                  Stock prévisionnel : {chemical.quantityPrevision.toFixed(1)}{chemical.unit || ''}
+                                  Stock prévisionnel : {(typeof chemical.quantityPrevision === 'number' ? chemical.quantityPrevision : parseFloat(chemical.quantityPrevision || '0')).toFixed(1)}{chemical.unit || ''}
                                 </Typography>
                                 <ClickAwayListener onClickAway={() => {
                                   if (tooltipOpen.prevision) handleTooltipToggle('prevision')
@@ -2373,8 +2373,8 @@ const handleCreateCalendarEvent = async () => {
               }
               
               const availableStock = c.quantityPrevision !== undefined 
-                ? c.quantityPrevision 
-                : (c.quantity || 0)
+                ? (typeof c.quantityPrevision === 'number' ? c.quantityPrevision : parseFloat(c.quantityPrevision || '0'))
+                : (typeof c.quantity === 'number' ? c.quantity : parseFloat(c.quantity || '0'))
               const stockAfterRequest = availableStock - (c.requestedQuantity || 0)
               return stockAfterRequest < (c.minQuantity || 0) && stockAfterRequest >= 0
             }) && (
@@ -2392,8 +2392,8 @@ const handleCreateCalendarEvent = async () => {
             {discipline !== 'physique' && formData.chemicals.some(c => {
               if (c.isCustom || c.id?.endsWith('_CUSTOM')) return false;
               const availableStock = c.quantityPrevision !== undefined 
-                ? c.quantityPrevision 
-                : (c.quantity || 0)
+                ? (typeof c.quantityPrevision === 'number' ? c.quantityPrevision : parseFloat(c.quantityPrevision || '0'))
+                : (typeof c.quantity === 'number' ? c.quantity : parseFloat(c.quantity || '0'))
               return (c.requestedQuantity || 0) > availableStock
             }) && (
               <Alert severity="error" sx={{ mt: 2 }}>

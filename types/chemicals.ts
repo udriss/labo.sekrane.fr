@@ -34,6 +34,23 @@ export enum HazardClass {
   NONE = 'NONE'
 }
 
+// Interface pour les objets Room dans chemicals
+export interface ChemicalRoom {
+  id: string
+  name: string
+  description?: string | null
+  capacity?: number | null
+}
+
+// Interface pour les objets Location dans chemicals
+export interface ChemicalLocation {
+  id: string
+  name: string
+  room_id: string
+  is_active: boolean
+  description?: string | null
+}
+
 export interface Supplier {
   id: string
   name: string
@@ -62,9 +79,8 @@ export interface Chemical {
   purchaseDate?: Date | string | null
   expirationDate?: Date | string | null
   openedDate?: Date | string | null
-  storage?: string | null
-  room?: string | null
-  location?: string | null
+  room?: ChemicalRoom | null
+  location?: ChemicalLocation | null
   cabinet?: string | null
   shelf?: string | null
   hazardClass?: HazardClass | null
@@ -74,7 +90,7 @@ export interface Chemical {
   orderReference?: string | null
   status: ChemicalStatus
   notes?: string | null
-  quantityPrevision?: number | null
+  quantityPrevision?: number | string | null
   createdAt: Date | string
   updatedAt: Date | string
   // Relations

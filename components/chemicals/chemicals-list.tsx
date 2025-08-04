@@ -55,7 +55,7 @@ import { useSiteConfig } from "@/lib/hooks/useSiteConfig"
 
 // Types pour le tri
 type Order = 'asc' | 'desc'
-type OrderBy = 'name' | 'formula' | 'quantity' | 'status' | 'expirationDate' | 'storage'
+type OrderBy = 'name' | 'formula' | 'quantity' | 'status' | 'expirationDate' | 'location'
 
 interface ChemicalsListProps {
   chemicals: Chemical[]
@@ -372,11 +372,11 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'storage'}
-                  direction={orderBy === 'storage' ? order : 'asc'}
-                  onClick={() => handleRequestSort('storage')}
+                  active={orderBy === 'location'}
+                  direction={orderBy === 'location' ? order : 'asc'}
+                  onClick={() => handleRequestSort('location')}
                 >
-                  Stockage
+                  Localisation
                 </TableSortLabel>
               </TableCell>
               <TableCell>CAS</TableCell>
@@ -474,7 +474,7 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {chemical.storage || '-'}
+                    {chemical.location?.name || '-'}
                   </Typography>
                 </TableCell>
                 <TableCell>
@@ -674,7 +674,8 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
                           <Typography variant="body2" color="text.secondary">
-                            {chemical.room}
+                            {chemical.room.name}
+                            {chemical.room.capacity && ` (${chemical.room.capacity} places)`}
                           </Typography>
                         </Stack>
                       )}
@@ -684,17 +685,8 @@ export function ChemicalsList({ chemicals: initialChemicals, onRefresh }: Chemic
                           color="text.secondary"
                           sx={{ ml: 3, fontStyle: 'italic' }}
                         >
-                          → {chemical.location}
+                          → {chemical.location.name}
                         </Typography>
-                      )}
-                      {/* Fallback pour l'ancien champ storage */}
-                      {!chemical.room && !chemical.location && chemical.storage && (
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {chemical.storage}
-                          </Typography>
-                        </Stack>
                       )}
                     </Stack>
                   )}

@@ -25,6 +25,7 @@ import {
 import { CalendarEvent, EventType, EventState } from '@/types/calendar'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
+import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 
 interface EventsListProps {
   events: CalendarEvent[]
@@ -507,9 +508,9 @@ const renderEventItem = (event: CalendarEvent) => {
             </Grid>
             </Box>
         }
-        secondary={event.room && (
+        secondary={getRoomDisplayName(event.room) && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {event.room}
+            <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {getRoomDisplayName(event.room)}
           </Typography>
         )}
       />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Chemical, ChemicalStatus } from "@/types/chemicals"
+import { Chemical, ChemicalStatus, ChemicalRoom, ChemicalLocation } from "@/types/chemicals"
 import {
   Box,
   Button,
@@ -48,9 +48,8 @@ interface FormData {
   purchaseDate: Date | null
   expirationDate: Date | null
   supplier: string
-  location: string
-  storage: string
-  room: string
+  location: ChemicalLocation | null
+  room: ChemicalRoom | null
   cabinet: string
   shelf: string
   status: ChemicalStatus
@@ -68,9 +67,8 @@ export function ChemicalForm({ chemical, onSuccess, onCancel }: ChemicalFormProp
     purchaseDate: chemical?.purchaseDate ? new Date(chemical.purchaseDate) : null,
     expirationDate: chemical?.expirationDate ? new Date(chemical.expirationDate) : null,
     supplier: chemical?.supplierId || "",
-    location: chemical?.storage || "",
-    storage: chemical?.storage || "",
-    room: chemical?.room || "",
+    location: chemical?.location || null,
+    room: chemical?.room || null,
     cabinet: chemical?.cabinet || "",
     shelf: chemical?.shelf || "",
     status: chemical?.status || ChemicalStatus.IN_STOCK,
