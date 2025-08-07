@@ -10,8 +10,8 @@ async function testActiveTimeslots() {
     // Configuration de connexion (adaptez selon votre configuration)
     connection = await mysql.createConnection({
       host: 'localhost',
-      user: 'int',
-      password: '4Na9Gm8mdTVgnUp',
+      user: 'labo_user',
+      password: 'labo_password',
       database: 'labo'
     })
     

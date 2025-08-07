@@ -64,8 +64,21 @@ export async function getChemistryEvents(startDate?: string, endDate?: string): 
         timeSlots = parsedNotes.timeSlots || []
         actuelTimeSlots = parsedNotes.actuelTimeSlots || []
       } catch {
-        // Erreur de parsing JSON - données corrompues pour événement chimie
-        throw new Error(`Données de créneaux corrompues pour l'événement chimie ${row.id}`)
+        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
+        const fallbackSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: new Date(row.start_date).toISOString(),
+          endDate: new Date(row.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: row.created_by || 'system',
+          modifiedBy: [{
+            userId: row.created_by || 'system',
+            date: row.created_at || new Date().toISOString(),
+            action: 'created' as const
+          }]
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
       }
 
       return {
@@ -115,8 +128,21 @@ export async function getPhysicsEvents(startDate?: string, endDate?: string): Pr
         timeSlots = parsedNotes.timeSlots || []
         actuelTimeSlots = parsedNotes.actuelTimeSlots || []
       } catch {
-        // Erreur de parsing JSON - données corrompues pour événement physique
-        throw new Error(`Données de créneaux corrompues pour l'événement physique ${row.id}`)
+        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
+        const fallbackSlot: TimeSlot = {
+          id: generateTimeSlotId(),
+          startDate: new Date(row.start_date).toISOString(),
+          endDate: new Date(row.end_date).toISOString(),
+          status: 'active' as const,
+          createdBy: row.created_by || 'system',
+          modifiedBy: [{
+            userId: row.created_by || 'system',
+            date: row.created_at || new Date().toISOString(),
+            action: 'created' as const
+          }]
+        }
+        timeSlots = [fallbackSlot]
+        actuelTimeSlots = [fallbackSlot]
       }
 
       return {

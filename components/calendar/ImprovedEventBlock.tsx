@@ -22,6 +22,7 @@ import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import { useSession } from 'next-auth/react'
 import ImprovedTimeSlotActions from './ImprovedTimeSlotActions'
 import ValidationSlotActions from './ValidationSlotActions'
+import { is } from 'date-fns/locale'
 
 interface ImprovedEventBlockProps {
   event: CalendarEvent
@@ -103,6 +104,13 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   const showOperatorValidationInterface = canOperate && event.state === 'PENDING' && event.validationState === 'operatorPending'
   const showOperatorInterface = isOperator && event.state !== 'PENDING'
   const showOwnerInterface = isOwner
+
+  console.log({
+    event: event,
+    isOwner: isOwner,
+    isOperator: isOperator,
+    session: session
+  })
 
   const getEventStateColor = (state: EventState) => {
     switch (state) {

@@ -157,15 +157,19 @@ export function EditEventDialog({
       console.log('🔍 Event materials:', event.materials)
       console.log('🔍 Event chemicals:', event.chemicals)
       
-      // Vérifier que l'événement a des créneaux horaires
-      if (!event.timeSlots || event.timeSlots.length === 0) {
-        throw new Error('Aucun créneau horaire trouvé pour cet événement')
+      // Utiliser le premier timeSlot pour initialiser les dates (si disponible)
+      let startDate: Date
+      let endDate: Date
+      
+      if (event.timeSlots && event.timeSlots.length > 0) {
+        const firstSlot = event.timeSlots[0]
+        startDate = new Date(firstSlot.startDate)
+        endDate = new Date(firstSlot.endDate)
+      } else {
+        // Fallback: utiliser la date courante
+        startDate = new Date()
+        endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000) // +2h
       }
-
-      // Utiliser le premier timeSlot pour initialiser les dates
-      const firstSlot = event.timeSlots[0]
-      const startDate = new Date(firstSlot.startDate)
-      const endDate = new Date(firstSlot.endDate)
 
       // Préparer les matériels avec quantités (reste inchangé)
       const materialsWithQuantities = event.materials?.map((mat: any) => {
@@ -275,14 +279,48 @@ export function EditEventDialog({
             console.log('✅ [EditEventDialog] Créneaux chargés depuis l\'API:', formattedTimeSlots.length)
           } else {
             console.warn('⚠️ [EditEventDialog] Aucun créneau trouvé via API')
-            setTimeSlots([])
+            
+            // Créer un créneau par défaut
+            const defaultSlot = {
+              id: undefined,
+              date: new Date(),
+              startTime: '08:00',
+              endTime: '10:00',
+              status: 'active' as const,
+              isExisting: false,
+              wasModified: false,
+              originalData: undefined,
+              createdBy: session?.user?.id || 'INDISPONIBLE',
+              modifiedBy: []
+            }
+            
+            setTimeSlots([defaultSlot])
             setShowMultipleSlots(false)
+            
+            console.log('🆕 [EditEventDialog] Créneau par défaut créé')
           }
         })
         .catch(error => {
           console.error('❌ [EditEventDialog] Erreur lors du chargement des créneaux depuis l\'API:', error)
-          setTimeSlots([])
+          
+          // Créer un créneau par défaut en cas d'erreur
+          const defaultSlot = {
+            id: undefined,
+            date: new Date(),
+            startTime: '08:00',
+            endTime: '10:00',
+            status: 'active' as const,
+            isExisting: false,
+            wasModified: false,
+            originalData: undefined,
+            createdBy: session?.user?.id || 'INDISPONIBLE',
+            modifiedBy: []
+          }
+          
+          setTimeSlots([defaultSlot])
           setShowMultipleSlots(false)
+          
+          console.log('🆕 [EditEventDialog] Créneau par défaut créé après erreur')
         })
     }
   }, [open, event?.id, getTimeslots, session?.user?.id])
@@ -799,47 +837,28 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                   Créneaux horaires
                 </Typography>
               </Box>
-
-              {/* Message d'erreur si aucun créneau n'est trouvé */}
-              {timeSlots.length === 0 && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  <Typography variant="body2" fontWeight="bold" gutterBottom>
-                    Aucun créneau trouvé pour cet événement
-                  </Typography>
-                  <Typography variant="body2">
-                    Les créneaux de cet événement n'ont pas pu être récupérés depuis la base de données. 
-                    Veuillez contacter l'administrateur ou essayer de recharger la page.
-                  </Typography>
-                </Alert>
-              )}
-
-              {/* Interface normale si des créneaux existent */}
-              {timeSlots.length > 0 && (
-                <>
-                  <Alert severity="info"
-                    icon={<InfoOutlined />}
-                    lang='Ajouter des créneaux'
-                    action={
-                      <Button
-                        startIcon={<Add />}
-                        onClick={addTimeSlot}
-                        color='success'
-                        variant="outlined"
-                        size="small"
-                      >
-                        Ajouter un créneau
-                      </Button>
-                    }
-                    sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Typography variant="body2">
-                        Voulez-vous ajouter des créneaux supplémentaires pour cette séance TP ?
-                      </Typography>
-                    </Box>
-                  </Alert>
-                </>
-              )}
+            <Alert severity="info"
+              icon={<InfoOutlined />}
+              lang='Ajouter des créneaux'
+              action={
+                <Button
+                  startIcon={<Add />}
+                  onClick={addTimeSlot}
+                  color='success'
+                  variant="outlined"
+                  size="small"
+                >
+                  Ajouter un créneau
+                </Button>
+              }
+              sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="body2">
+                  Voulez-vous ajouter des créneaux supplémentaires pour cette séance TP ?
+                </Typography>
+              </Box>
+            </Alert>
 
               {timeSlots.map((slot, index) => {
                 // Ne pas afficher les slots supprimés

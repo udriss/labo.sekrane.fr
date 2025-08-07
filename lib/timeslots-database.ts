@@ -175,12 +175,6 @@ export async function getActiveTimeslots(
   discipline?: Discipline,
   userId?: string
 ): Promise<TimeslotData[]> {
-  console.log('🔍 [getActiveTimeslots] Début avec paramètres:', {
-    eventId,
-    discipline,
-    userId
-  })
-  
   const connection = await db.getConnection()
   
   try {
@@ -204,28 +198,10 @@ export async function getActiveTimeslots(
     
     query += ' ORDER BY timeslot_date ASC, start_date ASC'
     
-    console.log('🔍 [getActiveTimeslots] Requête SQL:', query)
-    console.log('🔍 [getActiveTimeslots] Paramètres:', params)
-    
     const [rows] = await connection.execute<RowDataPacket[]>(query, params)
     
-    console.log('📊 [getActiveTimeslots] Résultats bruts de la DB:', {
-      rowsCount: rows.length,
-      firstRow: rows.length > 0 ? rows[0] : null
-    })
+    return rows.map(convertDbRowToTimeslotData)
     
-    const results = rows.map(convertDbRowToTimeslotData)
-    
-    console.log('📊 [getActiveTimeslots] Résultats convertis:', {
-      resultsCount: results.length,
-      firstResult: results.length > 0 ? results[0] : null
-    })
-    
-    return results
-    
-  } catch (error) {
-    console.error('❌ [getActiveTimeslots] Erreur:', error)
-    throw error
   } finally {
     connection.release()
   }

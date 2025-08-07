@@ -211,25 +211,39 @@ export async function getTimeslotsByType(
   userId?: string
 ): Promise<TimeslotApiResponse> {
   try {
+    console.log('🔍 [getTimeslotsByType] Début avec paramètres:', {
+      eventId,
+      discipline,
+      type,
+      userId
+    })
     
     let timeslots: TimeslotData[]
     
     switch (type) {
       case 'active':
+        console.log('📊 [getTimeslotsByType] Appel getActiveTimeslots...')
         timeslots = await getActiveTimeslots(eventId, discipline, userId)
+        console.log('📊 [getTimeslotsByType] getActiveTimeslots retourné:', timeslots?.length || 0, 'créneaux')
         break
         
       case 'pending':
+        console.log('📊 [getTimeslotsByType] Appel getTimeslotsByEventId pour pending...')
         timeslots = await getTimeslotsByEventId(eventId, discipline, ['created', 'modified'])
+        console.log('📊 [getTimeslotsByType] getTimeslotsByEventId(pending) retourné:', timeslots?.length || 0, 'créneaux')
         break
         
       case 'all':
+        console.log('📊 [getTimeslotsByType] Appel getTimeslotsByEventId pour all...')
         timeslots = await getTimeslotsByEventId(eventId, discipline)
+        console.log('📊 [getTimeslotsByType] getTimeslotsByEventId(all) retourné:', timeslots?.length || 0, 'créneaux')
         break
         
       case 'summary':
+        console.log('📊 [getTimeslotsByType] Mode summary - récupération stats...')
         // Pour le summary, on récupère juste les stats
         const stats = await getTimeslotStats(eventId, discipline)
+        console.log('📊 [getTimeslotsByType] Stats récupérées:', stats)
         return {
           timeslots: [],
           summary: {
@@ -249,9 +263,16 @@ export async function getTimeslotsByType(
         console.error('❌ [getTimeslotsByType] Type non supporté:', type)
         throw new Error(`Type de créneau non supporté: ${type}`)
     }
-
+    
+    console.log('📊 [getTimeslotsByType] Créneaux récupérés:', {
+      count: timeslots?.length || 0,
+      timeslots: timeslots
+    })
+    
     // Calculer les statistiques
+    console.log('📊 [getTimeslotsByType] Calcul des statistiques...')
     const stats = await getTimeslotStats(eventId, discipline)
+    console.log('📊 [getTimeslotsByType] Statistiques calculées:', stats)
     
     // Sanitize timeslots pour éviter les erreurs de sérialisation JSON
     const sanitizedTimeslots = timeslots?.map(slot => {
@@ -287,6 +308,7 @@ export async function getTimeslotsByType(
       }
     }
     
+    console.log('✅ [getTimeslotsByType] Résultat final:', result)
     
     return result
     

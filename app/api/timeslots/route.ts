@@ -39,7 +39,14 @@ export async function GET(request: NextRequest) {
     const type = (searchParams.get('type') as TimeslotType) || 'active'
     const userId = searchParams.get('user_id')
     
-
+    console.log('🔍 [API /api/timeslots] GET - Paramètres reçus:', {
+      eventId,
+      discipline,
+      type,
+      userId,
+      sessionUserId: session.user.id,
+      searchParams: Object.fromEntries(searchParams.entries())
+    })
     
     // Validation des paramètres
     if (!eventId) {
@@ -66,6 +73,7 @@ export async function GET(request: NextRequest) {
       )
     }
     
+    console.log('✅ [API /api/timeslots] Validation des paramètres réussie, appel de getTimeslotsByType...')
     
     // Récupérer les créneaux
     const result = await getTimeslotsByType(
@@ -74,7 +82,14 @@ export async function GET(request: NextRequest) {
       type,
       userId || session.user.id
     )
-
+    
+    console.log('📊 [API /api/timeslots] Résultat de getTimeslotsByType:', {
+      resultType: typeof result,
+      resultKeys: result ? Object.keys(result) : 'null',
+      timeslotsCount: result?.timeslots?.length || 0,
+      timeslots: result?.timeslots
+    })
+    
     // S'assurer que le résultat est sérialisable JSON
     const sanitizedResult = {
       timeslots: result?.timeslots || [],
@@ -85,6 +100,7 @@ export async function GET(request: NextRequest) {
       summary: result?.summary || null
     }
     
+    console.log('📊 [API /api/timeslots] Résultat sanitized:', sanitizedResult)
     
     return NextResponse.json(sanitizedResult)
     

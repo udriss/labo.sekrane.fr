@@ -451,6 +451,15 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
   if (!eventToEdit) return;
   
   try {
+    // 🔍 LOG 3: Données reçues dans handleSaveEdit (page chimie)
+    console.log('🔍 [ChimieCalendar] LOG 3 - Données reçues dans handleSaveEdit (page chimie):', {
+      originalEventId: eventToEdit.id,
+      receivedEventData: updatedEvent,
+      timeSlotsReceived: updatedEvent.timeSlots,
+      timeSlotsCount: updatedEvent.timeSlots?.length || 0,
+      chemicalsReceived: updatedEvent.chemicals,
+      materialsReceived: updatedEvent.materials
+    })
 
     // Extraire timeSlots et les convertir au format attendu
     const { timeSlots, ...eventDataWithoutSlots } = updatedEvent;
@@ -461,6 +470,14 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
       startTime: slot.startDate.split('T')[1]?.substring(0, 5) || '08:00', // Extraire l'heure
       endTime: slot.endDate.split('T')[1]?.substring(0, 5) || '09:00' // Extraire l'heure
     })) || [];
+    
+    // 🔍 LOG 4: Données préparées pour l'API centralisée
+    console.log('🔍 [ChimieCalendar] LOG 4 - Données préparées pour l\'API centralisée:', {
+      eventId: eventToEdit.id,
+      timeSlotInputs,
+      timeSlotsCount: timeSlotInputs.length,
+      eventDataWithoutSlots
+    })
 
     // Utiliser le système centralisé pour la mise à jour
     const result = await updateEventWithTimeslots(
@@ -469,6 +486,14 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
       timeSlotInputs,
       'chimie'
     );
+
+    // 🔍 LOG 5: Résultat du système centralisé
+    console.log('🔍 [ChimieCalendar] LOG 5 - Résultat du système centralisé:', {
+      success: result.success,
+      message: result.message,
+      updatedEvent: result.event,
+      timeslots: result.timeslots
+    })
 
     if (!result.success) {
       throw new Error(result.message || 'Erreur lors de la modification');

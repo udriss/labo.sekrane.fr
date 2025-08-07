@@ -6,7 +6,6 @@ import pool from '@/lib/db'
 import { TimeSlot, CalendarEvent, EventState } from '@/types/calendar'
 import { generateTimeSlotId, getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import { v4 as uuidv4 } from 'uuid'
-import { toZonedTime, format as formatTz } from 'date-fns-tz'
 import { format } from 'date-fns'
 import { 
   createTimeslot, 
@@ -116,7 +115,18 @@ export function safeJsonStringify(value: any): string | null {
   }
 }
 
-// Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME avec timezone Paris
+// Fonction utilitaire pour convertir une date en ISO string SANS conversion timezone
+function toISOStringWithoutTimezone(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`
+}
+
+// Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME SANS conversion de timezone
 function formatDateForMySQL(isoDateString: string): string {
   try {
     const date = new Date(isoDateString)
@@ -124,17 +134,13 @@ function formatDateForMySQL(isoDateString: string): string {
       throw new Error('Date invalide')
     }
     
-    // Convertir vers le timezone Paris (Europe/Paris)
-    const parisTimeZone = 'Europe/Paris'
-    const parisDate = toZonedTime(date, parisTimeZone)
-    
     // Format MySQL DATETIME: YYYY-MM-DD HH:MM:SS
-    return formatTz(parisDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: parisTimeZone })
+    // Utilisation directe sans conversion de timezone pour préserver l'heure exacte saisie
+    return format(date, 'yyyy-MM-dd HH:mm:ss')
   } catch (error) {
     console.error('Erreur lors du formatage de la date pour MySQL:', error, 'Date:', isoDateString)
-    // Retourner une date par défaut en cas d'erreur avec timezone Paris
-    const fallbackDate = toZonedTime(new Date(), 'Europe/Paris')
-    return formatTz(fallbackDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: 'Europe/Paris' })
+    // Retourner une date par défaut en cas d'erreur sans conversion de timezone
+    return format(new Date(), 'yyyy-MM-dd HH:mm:ss')
   }
 }
 
@@ -247,11 +253,10 @@ export function processTimeSlotEdition(
     // Ensuite, ajouter les nouveaux créneaux
     activeTimeSlots.forEach((slot: any, slotIndex: number) => {
       if (slot.date && slot.startTime && slot.endTime) {
-        const startDateTime = new Date(slot.date)
-        startDateTime.setHours(parseInt(slot.startTime.split(':')[0]), parseInt(slot.startTime.split(':')[1]))
-        
-        const endDateTime = new Date(slot.date)
-        endDateTime.setHours(parseInt(slot.endTime.split(':')[0]), parseInt(slot.endTime.split(':')[1]))
+        // Créer les dates sans décalage timezone - format local
+        const dateStr = slot.date instanceof Date ? slot.date.toISOString().split('T')[0] : slot.date
+        const startDateTime = new Date(`${dateStr}T${slot.startTime}:00`)
+        const endDateTime = new Date(`${dateStr}T${slot.endTime}:00`)
         
         console.log(`🔍 [processTimeSlotEdition] Traitement slot ${slotIndex}:`, {
           slotIndex,
@@ -261,8 +266,8 @@ export function processTimeSlotEdition(
           slotIsExisting: slot.isExisting,
           slotId: slot.id,
           slotStatus: slot.status,
-          startDateTimeCalculated: startDateTime.toISOString(),
-          endDateTimeCalculated: endDateTime.toISOString()
+          startDateTimeCalculated: toISOStringWithoutTimezone(startDateTime),
+          endDateTimeCalculated: toISOStringWithoutTimezone(endDateTime)
         })
         
         if (slot.isExisting && slot.id) {
@@ -273,14 +278,14 @@ export function processTimeSlotEdition(
             existingSlotFound: !!existingSlot,
             existingSlotData: existingSlot,
             currentSlotData: slot,
-            dateChanged: existingSlot ? existingSlot.startDate !== startDateTime.toISOString() : 'N/A'
+            dateChanged: existingSlot ? existingSlot.startDate !== toISOStringWithoutTimezone(startDateTime) : 'N/A'
           })
           
           if (existingSlot) {
             processedTimeSlots.push({
               ...existingSlot,
-              startDate: startDateTime.toISOString(),
-              endDate: endDateTime.toISOString(),
+              startDate: toISOStringWithoutTimezone(startDateTime),
+              endDate: toISOStringWithoutTimezone(endDateTime),
               status: 'active' as const,
               modifiedBy: [
                 ...(existingSlot.modifiedBy || []),
@@ -296,8 +301,8 @@ export function processTimeSlotEdition(
           // Nouveau créneau
           const newSlot = {
             id: generateTimeSlotId(),
-            startDate: startDateTime.toISOString(),
-            endDate: endDateTime.toISOString(),
+            startDate: toISOStringWithoutTimezone(startDateTime),
+            endDate: toISOStringWithoutTimezone(endDateTime),
             status: 'active' as const,
             createdBy: slot.createdBy || userId,
             modifiedBy: [{
@@ -334,11 +339,10 @@ export function processTimeSlotEdition(
         isExisting: activeTimeSlot.isExisting
       })
       
-      const startDateTime = new Date(activeTimeSlot.date)
-      startDateTime.setHours(parseInt(activeTimeSlot.startTime.split(':')[0]), parseInt(activeTimeSlot.startTime.split(':')[1]))
-      
-      const endDateTime = new Date(activeTimeSlot.date)
-      endDateTime.setHours(parseInt(activeTimeSlot.endTime.split(':')[0]), parseInt(activeTimeSlot.endTime.split(':')[1]))
+      // Créer les dates sans décalage timezone - format local
+      const dateStr = activeTimeSlot.date instanceof Date ? activeTimeSlot.date.toISOString().split('T')[0] : activeTimeSlot.date
+      const startDateTime = new Date(`${dateStr}T${activeTimeSlot.startTime}:00`)
+      const endDateTime = new Date(`${dateStr}T${activeTimeSlot.endTime}:00`)
       
       // Marquer tous les anciens créneaux comme supprimés
       if (originalEvent?.timeSlots) {
@@ -366,7 +370,7 @@ export function processTimeSlotEdition(
       const newSlot = {
         id: generateTimeSlotId(),
         startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
+        endDate: toISOStringWithoutTimezone(endDateTime),
         status: 'active' as const,
         createdBy: userId,
         modifiedBy: [{
@@ -380,9 +384,9 @@ export function processTimeSlotEdition(
       console.log('🔍 [processTimeSlotEdition] Créneau unique créé:', {
         originalSlotDate: activeTimeSlot.date,
         startDateTime,
-        startDateTimeISO: startDateTime.toISOString(),
+        startDateTimeISO: toISOStringWithoutTimezone(startDateTime),
         endDateTime,
-        endDateTimeISO: endDateTime.toISOString(),
+        endDateTimeISO: toISOStringWithoutTimezone(endDateTime),
         slotData: newSlot
       })
       
@@ -390,11 +394,10 @@ export function processTimeSlotEdition(
       // Fallback vers formData si aucun timeSlot actif trouvé
       console.warn('🔍 [processTimeSlotEdition] FALLBACK - Aucun timeSlot actif, utilisation de formData')
       
-      const startDateTime = new Date(formData.startDate)
-      startDateTime.setHours(parseInt(formData.startTime.split(':')[0]), parseInt(formData.startTime.split(':')[1]))
-      
-      const endDateTime = new Date(formData.startDate)
-      endDateTime.setHours(parseInt(formData.endTime.split(':')[0]), parseInt(formData.endTime.split(':')[1]))
+      // Créer les dates sans décalage timezone - format local
+      const dateStr = formData.startDate instanceof Date ? formData.startDate.toISOString().split('T')[0] : formData.startDate
+      const startDateTime = new Date(`${dateStr}T${formData.startTime}:00`)
+      const endDateTime = new Date(`${dateStr}T${formData.endTime}:00`)
       
       // Marquer tous les anciens créneaux comme supprimés
       if (originalEvent?.timeSlots) {
@@ -422,7 +425,7 @@ export function processTimeSlotEdition(
       const newSlot = {
         id: generateTimeSlotId(),
         startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
+        endDate: toISOStringWithoutTimezone(endDateTime),
         status: 'active' as const,
         createdBy: userId,
         modifiedBy: [{
@@ -813,7 +816,7 @@ export interface CalendarEventWithTimeSlots {
   consommables_used?: string[] // Will be stored as JSON
   notes?: string
   color?: string
-  created_by?: string
+  createdBy: string
   created_at?: string
   updated_at?: string
   timeSlots?: TimeSlot[] // Array des TimeSlots proposés/modifiés
@@ -909,21 +912,7 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         }
       } catch (error) {
         console.error('Erreur récupération créneaux pour événement', row.id, error)
-        // Fallback: créer un créneau depuis les dates de l'événement
-        const fallbackSlot: TimeSlot = {
-          id: generateTimeSlotId(),
-          startDate: new Date(row.start_date).toISOString(),
-          endDate: new Date(row.end_date).toISOString(),
-          status: 'active' as const,
-          createdBy: row.created_by || 'system',
-          modifiedBy: [{
-            userId: row.created_by || 'system',
-            date: row.created_at || new Date().toISOString(),
-            action: 'created' as const
-          }]
-        }
-        timeSlots = [fallbackSlot]
-        actuelTimeSlots = [fallbackSlot]
+        throw new Error(`Impossible de récupérer les créneaux pour l'événement ${row.id}: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
       }
 
       return {
@@ -943,6 +932,7 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         chemicals_used: transformChemicals(parseJsonSafe(row.chemicals_used, []), 'chimie'),
         notes: row.notes,
         color: row.color,
+        createdBy: row.created_by,
         created_by: row.created_by,
         creator_name: row.creator_name, // Nouveau champ depuis le JOIN
         creator_email: row.creator_email, // Nouveau champ depuis le JOIN
@@ -967,6 +957,11 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
 // Fonction pour créer un événement de chimie avec les nouveaux champs
 export async function createChemistryEventWithTimeSlots(eventData: Partial<CalendarEventWithTimeSlots>): Promise<CalendarEventWithTimeSlots> {
   try {
+    // Validation des données requises
+    if (!eventData.createdBy) {
+      throw new Error('Le champ createdBy est requis pour créer un événement')
+    }
+    
     const id = uuidv4()
     
     // 1. Créer l'événement principal dans calendar_chimie (sans les timeSlots dans les colonnes JSON)
@@ -979,9 +974,9 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
     `
     
     // Debug logging
-    console.log('DEBUG createChemistryEventWithTimeSlots - eventData.created_by:', eventData.created_by)
-    console.log('DEBUG createChemistryEventWithTimeSlots - typeof eventData.created_by:', typeof eventData.created_by)
-    
+    console.log('DEBUG createChemistryEventWithTimeSlots - eventData.createdBy:', eventData.createdBy)
+    console.log('DEBUG createChemistryEventWithTimeSlots - typeof eventData.createdBy:', typeof eventData.createdBy)
+
     const params = [
       id,
       eventData.title || '',
@@ -999,10 +994,10 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
       safeJsonStringify(eventData.chemicals_used || []),
       eventData.notes || '',
       eventData.color || '#2196f3',
-      eventData.created_by || ''
+      eventData.createdBy! // ! car déjà validé plus haut
     ]
     
-    console.log('DEBUG createChemistryEventWithTimeSlots - created_by param (index 16):', params[16])
+    console.log('DEBUG createChemistryEventWithTimeSlots - createdBy param (index 16):', params[16])
     
     await pool.execute(query, params)
     
@@ -1029,7 +1024,7 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
         return {
           event_id: id,
           discipline: 'chimie' as Discipline,
-          user_id: eventData.created_by || 'system',
+          user_id: eventData.createdBy!, // ! car déjà validé plus haut
           start_date: startDate,
           end_date: endDate,
           timeslot_date: timeslotDate,
@@ -1042,8 +1037,8 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
       await proposeNewTimeslots(
         id,
         'chimie',
-        eventData.created_by || 'system',
-        eventData.created_by || 'system', // event_owner
+        eventData.createdBy!, // ! car déjà validé plus haut
+        eventData.createdBy!, // event_owner - ! car déjà validé plus haut
         timeslotProposals
       )
     }
@@ -1269,6 +1264,7 @@ export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?
       class_data: row.class_data,
       notes: row.notes,
       color: row.color,
+      createdBy: row.created_by,
       created_by: row.created_by,
       creator_name: row.creator_name, // Nouveau champ depuis le JOIN
       creator_email: row.creator_email, // Nouveau champ depuis le JOIN
@@ -1312,7 +1308,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
       class_data: safeJsonStringify(eventData.class_data),
       notes: eventData.notes || '',
       color: eventData.color || '#2196f3',
-      created_by: eventData.created_by || '',
+      created_by: eventData.createdBy || '',
       stateChangeReason: eventData.stateChangeReason || '',
       
       // Sérialiser les champs JSON
@@ -1339,6 +1335,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
     // Retourner l'événement créé avec les données parsées
     return {
       ...finalEventData,
+      createdBy: eventData.createdBy || '',
       room: normalizeRoomData(eventData.room), // Retourner l'objet room normalisé
       class_data: eventData.class_data || null, // Retourner les données class originales
       participants: eventData.participants || [],
@@ -1464,7 +1461,7 @@ export async function getPhysicsEventByIdWithTimeSlots(id: string): Promise<Cale
       class_data: parseJsonSafe(row.class_data, null), // Nouveau champ
       notes: row.notes,
       color: row.color,
-      created_by: row.created_by,
+      createdBy: row.created_by,
       created_at: row.created_at,
       updated_at: row.updated_at,
       stateChangeReason: row.stateChangeReason,
