@@ -12,7 +12,7 @@ import {
   CheckCircle, Cancel, SwapHoriz, Edit, Undo, History, Gavel
 } from '@mui/icons-material'
 import { CalendarEvent, TimeSlot, ValidationState } from '@/types/calendar'
-import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { getDisplayTimeSlots } from '@/lib/timeslots-utils'
 import { useSession } from 'next-auth/react'
 
 interface ValidationSlotActionsProps {

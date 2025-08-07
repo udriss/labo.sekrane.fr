@@ -337,9 +337,9 @@ class AuditLogger {
       }
     } catch (error) {
       console.error('Error reading index file:', error);
-      // Fallback: scan all log files et créer l'index si nécessaire
+      // Réinitialiser l'index si corrompu
       await this.initializeIndex();
-      filePaths = new Set(await this.getAllLogFiles());
+      throw new Error('Index des logs corrompu, réinitialisé. Veuillez réessayer.')
     }
 
     return Array.from(filePaths);

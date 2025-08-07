@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que l'utilisateur est le créateur de l'événement (seul le créateur peut rejeter)
-    if (existingEvent.created_by !== session.user.id && 
-        existingEvent.created_by !== session.user.email) {
+    if (existingEvent.createdBy !== session.user.id && 
+        existingEvent.createdBy !== session.user.email) {
       return NextResponse.json(
         { error: 'Seul le créateur de l\'événement peut rejeter les créneaux' },
         { status: 403 }

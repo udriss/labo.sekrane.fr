@@ -3,7 +3,7 @@
 
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Card, CardContent, Typography, Stack, Chip, Box, Collapse, IconButton,
   Divider, Button, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -15,13 +15,13 @@ import {
   Visibility, AttachFile, Room, Science, Group, Build, School
 } from '@mui/icons-material'
 import { CalendarEvent, EventState, TimeSlot } from '@/types/calendar'
-import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { TimeslotData } from '@/types/timeslots'
+import { useTimeslots } from '@/hooks/useTimeslots'
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import { useSession } from 'next-auth/react'
 import ImprovedTimeSlotActions from './ImprovedTimeSlotActions'
 import ValidationSlotActions from './ValidationSlotActions'
-import { sl } from 'date-fns/locale'
 
 interface ImprovedEventBlockProps {
   event: CalendarEvent
@@ -51,11 +51,44 @@ const ImprovedEventBlock: React.FC<ImprovedEventBlockProps> = ({
   const [timeSlotActionsOpen, setTimeSlotActionsOpen] = useState(false)
   const [validationActionsOpen, setValidationActionsOpen] = useState(false)
 
-  const displaySlots = getDisplayTimeSlots(event)
+  // 🎯 NOUVEAU: Utiliser l'API des créneaux au lieu de event.timeSlots
+  const { 
+    timeslots: apiTimeslots, 
+    loading: timelsotsLoading, 
+    error: timelsotsError,
+    getTimeslots 
+  } = useTimeslots()
+
+  // Charger les créneaux depuis l'API
+  useEffect(() => {
+    if (event?.id && discipline) {
+      getTimeslots(event.id, discipline, 'active') // ✅ Signature correcte
+    }
+  }, [event?.id, discipline, getTimeslots])
+
+  // Convertir les données API vers le format TimeSlot legacy pour compatibilité
+  const convertApiTimeslotsToTimeSlots = (apiData: TimeslotData[]): TimeSlot[] => {
+    return apiData.map(timeslot => ({
+      id: timeslot.id,
+      startDate: timeslot.start_date,
+      endDate: timeslot.end_date,
+      status: timeslot.state === 'approved' ? 'active' : 
+              timeslot.state === 'deleted' ? 'deleted' : 'active',
+      createdBy: timeslot.user_id,
+      modifiedBy: [], // À remplir si nécessaire depuis l'historique
+      notes: timeslot.notes || undefined
+    }))
+  }
+
+  // Utiliser uniquement les créneaux de l'API
+  const displaySlots = apiTimeslots.length > 0 
+    ? convertApiTimeslotsToTimeSlots(apiTimeslots)
+    : [] // Plus de fallback vers l'ancien système
   
   // Normaliser les données de classe pour l'affichage
   const normalizedClassData = normalizeClassField(event.class_data)
   const className = getClassNameFromClassData(normalizedClassData)
+  
   // Déterminer le rôle de l'utilisateur par rapport à cet événement
   const isOwner = session?.user && (
     event.createdBy === session.user.id || 

@@ -4,9 +4,15 @@
 
 import pool from '@/lib/db'
 import { TimeSlot, CalendarEvent, EventState } from '@/types/calendar'
-import { generateTimeSlotId } from '@/lib/calendar-utils-client'
+import { generateTimeSlotId, getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import { v4 as uuidv4 } from 'uuid'
-import { toZonedTime, format as formatTz } from 'date-fns-tz'
+import { format } from 'date-fns'
+import { 
+  createTimeslot, 
+  proposeNewTimeslots, 
+  getTimeslotsByEventId
+} from '@/lib/timeslots-database'
+import { TimeslotProposal, Discipline } from '@/types/timeslots'
 
 // Types pour les salles en tant qu'objets JSON
 export interface RoomData {
@@ -109,7 +115,7 @@ export function safeJsonStringify(value: any): string | null {
   }
 }
 
-// Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME avec timezone Paris
+// Fonction utilitaire pour convertir une date ISO en format MySQL DATETIME SANS conversion de timezone
 function formatDateForMySQL(isoDateString: string): string {
   try {
     const date = new Date(isoDateString)
@@ -117,17 +123,13 @@ function formatDateForMySQL(isoDateString: string): string {
       throw new Error('Date invalide')
     }
     
-    // Convertir vers le timezone Paris (Europe/Paris)
-    const parisTimeZone = 'Europe/Paris'
-    const parisDate = toZonedTime(date, parisTimeZone)
-    
     // Format MySQL DATETIME: YYYY-MM-DD HH:MM:SS
-    return formatTz(parisDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: parisTimeZone })
+    // Utilisation directe sans conversion de timezone pour préserver l'heure exacte saisie
+    return format(date, 'yyyy-MM-dd HH:mm:ss')
   } catch (error) {
     console.error('Erreur lors du formatage de la date pour MySQL:', error, 'Date:', isoDateString)
-    // Retourner une date par défaut en cas d'erreur avec timezone Paris
-    const fallbackDate = toZonedTime(new Date(), 'Europe/Paris')
-    return formatTz(fallbackDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: 'Europe/Paris' })
+    // Retourner une date par défaut en cas d'erreur sans conversion de timezone
+    return format(new Date(), 'yyyy-MM-dd HH:mm:ss')
   }
 }
 
@@ -162,8 +164,588 @@ function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultVa
   }
 }
 
+// ================================
+// FONCTIONS CENTRALISÉES POUR GESTION DES TIMESLOTS
+// Synthèse de toutes les modifications et corrections apportées
+// ================================
+
+// 🎯 Fonctions Principales
+// processTimeSlotEdition() - Cœur du traitement avec détection automatique du mode
+// prepareEventDataForSave() - Préparation complète des données pour sauvegarde
+// 🔧 Fonctions Utilitaires
+// validateTimeSlots() - Validation avec erreurs et avertissements
+// hasOnlyTimeSlotsChanged() - Détection du type de modification
+// prepareTimeSlotsForMoveAPI() - Format pour API de déplacement
+// initializeTimeSlotsFromEvent() - Initialisation depuis événement existant
+
+/**
+ * Fonction centralisée pour traiter les TimeSlots en mode édition
+ * Détermine automatiquement le mode (simple/multiple) et traite les données
+ */
+export function processTimeSlotEdition(
+  timeSlots: any[],
+  originalEvent: any,
+  userId: string,
+  formData?: any
+): {
+  mode: 'single' | 'multiple';
+  processedTimeSlots: TimeSlot[];
+  logData: any;
+} {
+  // Filtrer les créneaux actifs
+  const activeTimeSlots = timeSlots.filter(slot => slot.status !== 'deleted')
+  
+  // Déterminer le mode basé sur le nombre de créneaux actifs réels
+  const mode = activeTimeSlots.length > 1 ? 'multiple' : 'single'
+  
+  const currentDate = new Date().toISOString()
+  
+  // Log de détection du mode
+  const logData = {
+    activeTimeSlotsCount: activeTimeSlots.length,
+    mode: mode.toUpperCase(),
+    modeChoisi: mode === 'multiple' ? 'MULTI-CRENEAUX' : 'CRENEAU-UNIQUE',
+    timeSlots: activeTimeSlots
+  }
+  
+  console.log('🔍 [processTimeSlotEdition] Détection du mode:', logData)
+  
+  let processedTimeSlots: TimeSlot[] = []
+  
+  if (mode === 'multiple') {
+    // Mode multi-créneaux
+    console.log('🔍 [processTimeSlotEdition] Traitement mode MULTI-CRENEAUX')
+    
+    // D'abord, marquer tous les créneaux existants comme supprimés
+    if (originalEvent?.timeSlots) {
+      originalEvent.timeSlots.forEach((existingSlot: any) => {
+        if (existingSlot.status === 'active') {
+          processedTimeSlots.push({
+            ...existingSlot,
+            status: 'deleted' as const,
+            modifiedBy: [
+              ...(existingSlot.modifiedBy || []),
+              {
+                userId,
+                date: currentDate,
+                action: 'deleted' as const
+              }
+            ]
+          })
+        } else {
+          // Garder les slots déjà supprimés
+          processedTimeSlots.push(existingSlot)
+        }
+      })
+    }
+    
+    // Ensuite, ajouter les nouveaux créneaux
+    activeTimeSlots.forEach((slot: any, slotIndex: number) => {
+      if (slot.date && slot.startTime && slot.endTime) {
+        const startDateTime = new Date(slot.date)
+        startDateTime.setHours(parseInt(slot.startTime.split(':')[0]), parseInt(slot.startTime.split(':')[1]))
+        
+        const endDateTime = new Date(slot.date)
+        endDateTime.setHours(parseInt(slot.endTime.split(':')[0]), parseInt(slot.endTime.split(':')[1]))
+        
+        console.log(`🔍 [processTimeSlotEdition] Traitement slot ${slotIndex}:`, {
+          slotIndex,
+          slotDate: slot.date,
+          slotStartTime: slot.startTime,
+          slotEndTime: slot.endTime,
+          slotIsExisting: slot.isExisting,
+          slotId: slot.id,
+          slotStatus: slot.status,
+          startDateTimeCalculated: startDateTime.toISOString(),
+          endDateTimeCalculated: endDateTime.toISOString()
+        })
+        
+        if (slot.isExisting && slot.id) {
+          // Si c'est un créneau existant qu'on garde, on le marque comme modifié
+          const existingSlot = originalEvent?.timeSlots?.find((s: any) => s.id === slot.id)
+          
+          console.log(`🔍 [processTimeSlotEdition] Slot existant trouvé:`, {
+            existingSlotFound: !!existingSlot,
+            existingSlotData: existingSlot,
+            currentSlotData: slot,
+            dateChanged: existingSlot ? existingSlot.startDate !== startDateTime.toISOString() : 'N/A'
+          })
+          
+          if (existingSlot) {
+            processedTimeSlots.push({
+              ...existingSlot,
+              startDate: startDateTime.toISOString(),
+              endDate: endDateTime.toISOString(),
+              status: 'active' as const,
+              modifiedBy: [
+                ...(existingSlot.modifiedBy || []),
+                {
+                  userId,
+                  date: currentDate,
+                  action: 'modified' as const
+                }
+              ]
+            })
+          }
+        } else {
+          // Nouveau créneau
+          const newSlot = {
+            id: generateTimeSlotId(),
+            startDate: startDateTime.toISOString(),
+            endDate: endDateTime.toISOString(),
+            status: 'active' as const,
+            createdBy: slot.createdBy || userId,
+            modifiedBy: [{
+              userId,
+              date: currentDate,
+              action: 'created' as const
+            }]
+          }
+          
+          console.log(`🔍 [processTimeSlotEdition] Nouveau slot créé:`, {
+            newSlotId: newSlot.id,
+            startDateTime: newSlot.startDate,
+            endDateTime: newSlot.endDate
+          })
+          
+          processedTimeSlots.push(newSlot)
+        }
+      }
+    })
+    
+  } else {
+    // Mode créneau unique (un seul créneau actif)
+    console.log('🔍 [processTimeSlotEdition] Traitement mode CRENEAU-UNIQUE')
+    
+    const activeTimeSlot = activeTimeSlots[0]
+    
+    if (activeTimeSlot && activeTimeSlot.date && activeTimeSlot.startTime && activeTimeSlot.endTime) {
+      console.log('🔍 [processTimeSlotEdition] Mode créneau unique - Slot utilisé:', {
+        activeTimeSlot,
+        slotDate: activeTimeSlot.date,
+        slotStartTime: activeTimeSlot.startTime,
+        slotEndTime: activeTimeSlot.endTime,
+        wasModified: activeTimeSlot.wasModified,
+        isExisting: activeTimeSlot.isExisting
+      })
+      
+      const startDateTime = new Date(activeTimeSlot.date)
+      startDateTime.setHours(parseInt(activeTimeSlot.startTime.split(':')[0]), parseInt(activeTimeSlot.startTime.split(':')[1]))
+      
+      const endDateTime = new Date(activeTimeSlot.date)
+      endDateTime.setHours(parseInt(activeTimeSlot.endTime.split(':')[0]), parseInt(activeTimeSlot.endTime.split(':')[1]))
+      
+      // Marquer tous les anciens créneaux comme supprimés
+      if (originalEvent?.timeSlots) {
+        originalEvent.timeSlots.forEach((slot: any) => {
+          if (slot.status === 'active') {
+            processedTimeSlots.push({
+              ...slot,
+              status: 'deleted' as const,
+              modifiedBy: [
+                ...(slot.modifiedBy || []),
+                {
+                  userId,
+                  date: currentDate,
+                  action: 'deleted' as const
+                }
+              ]
+            })
+          } else {
+            processedTimeSlots.push(slot)
+          }
+        })
+      }
+      
+      // Ajouter le nouveau créneau
+      const newSlot = {
+        id: generateTimeSlotId(),
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        status: 'active' as const,
+        createdBy: userId,
+        modifiedBy: [{
+          userId,
+          date: currentDate,
+          action: 'created' as const
+        }]
+      }
+      processedTimeSlots.push(newSlot)
+      
+      console.log('🔍 [processTimeSlotEdition] Créneau unique créé:', {
+        originalSlotDate: activeTimeSlot.date,
+        startDateTime,
+        startDateTimeISO: startDateTime.toISOString(),
+        endDateTime,
+        endDateTimeISO: endDateTime.toISOString(),
+        slotData: newSlot
+      })
+      
+    } else if (formData?.startDate && formData?.startTime && formData?.endTime) {
+      // Fallback vers formData si aucun timeSlot actif trouvé
+      console.warn('🔍 [processTimeSlotEdition] FALLBACK - Aucun timeSlot actif, utilisation de formData')
+      
+      const startDateTime = new Date(formData.startDate)
+      startDateTime.setHours(parseInt(formData.startTime.split(':')[0]), parseInt(formData.startTime.split(':')[1]))
+      
+      const endDateTime = new Date(formData.startDate)
+      endDateTime.setHours(parseInt(formData.endTime.split(':')[0]), parseInt(formData.endTime.split(':')[1]))
+      
+      // Marquer tous les anciens créneaux comme supprimés
+      if (originalEvent?.timeSlots) {
+        originalEvent.timeSlots.forEach((slot: any) => {
+          if (slot.status === 'active') {
+            processedTimeSlots.push({
+              ...slot,
+              status: 'deleted' as const,
+              modifiedBy: [
+                ...(slot.modifiedBy || []),
+                {
+                  userId,
+                  date: currentDate,
+                  action: 'deleted' as const
+                }
+              ]
+            })
+          } else {
+            processedTimeSlots.push(slot)
+          }
+        })
+      }
+      
+      // Ajouter le nouveau créneau
+      const newSlot = {
+        id: generateTimeSlotId(),
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+        status: 'active' as const,
+        createdBy: userId,
+        modifiedBy: [{
+          userId,
+          date: currentDate,
+          action: 'created' as const
+        }]
+      }
+      
+      processedTimeSlots.push(newSlot)
+    }
+  }
+  
+  return {
+    mode,
+    processedTimeSlots,
+    logData
+  }
+}
+
+/**
+ * Fonction pour préparer les données d'événement pour sauvegarde
+ * Centralise toute la logique de préparation des données
+ */
+export function prepareEventDataForSave(
+  formData: any,
+  timeSlots: any[],
+  originalEvent: any,
+  userId: string,
+  files: any[] = [],
+  remarks: string = ''
+): {
+  dataToSave: any;
+  logData: any;
+} {
+  // Préparer les données de base
+  const baseData = {
+    id: originalEvent?.id,
+    title: formData.title,
+    description: formData.description,
+    state: formData.state,
+    type: formData.type,
+    class_data: formData.class_data,
+    room: serializeRoomData(formData.room),
+    location: formData.location,
+    materials: formData.materials.map((mat: any) => ({
+      ...mat,
+      quantity: mat.quantity || 1
+    })),
+    chemicals: formData.chemicals.map((chem: any) => ({
+      ...chem,
+      requestedQuantity: chem.requestedQuantity || 1
+    })),
+    files: files.map(f => f.existingFile || f.file).filter(Boolean),
+    remarks: remarks,
+    updatedAt: new Date().toISOString()
+  }
+  
+  // Log des données de base
+  const baseLogData = {
+    eventId: originalEvent?.id,
+    title: formData.title,
+    description: formData.description,
+    type: formData.type,
+    chemicalsCount: formData.chemicals.length,
+    chemicalsData: formData.chemicals,
+    materialsCount: formData.materials.length,
+    materialsData: formData.materials,
+    roomData: formData.room,
+    classData: formData.class_data,
+    timeSlotsCount: timeSlots.length,
+    activeTimeSlots: timeSlots.filter(slot => slot.status !== 'deleted')
+  }
+  
+  console.log('🔍 [prepareEventDataForSave] Données de base préparées:', baseLogData)
+  
+  // Traiter les TimeSlots
+  const { mode, processedTimeSlots, logData } = processTimeSlotEdition(
+    timeSlots,
+    originalEvent,
+    userId,
+    formData
+  )
+  
+  // Ajouter les TimeSlots aux données finales
+  const dataToSave = {
+    ...baseData,
+    timeSlots: processedTimeSlots
+  }
+  
+  // Log final des données
+  const finalLogData = {
+    eventId: dataToSave.id,
+    title: dataToSave.title,
+    timeSlotsCount: dataToSave.timeSlots?.length || 0,
+    timeSlotsData: dataToSave.timeSlots,
+    activeSlotsCount: dataToSave.timeSlots?.filter(slot => slot.status === 'active').length || 0,
+    deletedSlotsCount: dataToSave.timeSlots?.filter(slot => slot.status === 'deleted').length || 0,
+    chemicalsData: dataToSave.chemicals,
+    materialsData: dataToSave.materials,
+    mode,
+    completeDataToSave: dataToSave
+  }
+  
+  console.log('🔍 [prepareEventDataForSave] Données finales avec timeSlots:', finalLogData)
+  
+  return {
+    dataToSave,
+    logData: {
+      base: baseLogData,
+      processing: logData,
+      final: finalLogData
+    }
+  }
+}
+
+/**
+ * Fonction pour déterminer si seuls les créneaux horaires ont changé
+ * Utilisée pour décider entre modification directe ou proposition de déplacement
+ */
+export function hasOnlyTimeSlotsChanged(
+  formData: any,
+  originalEvent: any
+): boolean {
+  if (!originalEvent) return false
+  
+  return (
+    formData.title === originalEvent.title &&
+    formData.description === originalEvent.description &&
+    formData.type === originalEvent.type &&
+    JSON.stringify(formData.class_data) === JSON.stringify(originalEvent.class_data) &&
+    compareRoomData(formData.room, originalEvent.room) &&
+    formData.location === originalEvent.location &&
+    JSON.stringify(formData.chemicals) === JSON.stringify(originalEvent.chemicals || []) &&
+    JSON.stringify(formData.materials) === JSON.stringify(originalEvent.materials || [])
+  )
+}
+
+/**
+ * Fonction pour préparer les créneaux pour l'API de déplacement
+ */
+export function prepareTimeSlotsForMoveAPI(timeSlots: any[]): any[] {
+  return timeSlots
+    .filter(slot => slot.date && slot.startTime && slot.endTime && slot.status !== 'deleted')
+    .map(slot => ({
+      date: slot.date!.toISOString().split('T')[0],
+      startTime: slot.startTime,
+      endTime: slot.endTime
+    }))
+}
+
+/**
+ * Fonction utilitaire pour valider les créneaux horaires
+ */
+export function validateTimeSlots(timeSlots: any[]): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  const errors: string[] = []
+  const warnings: string[] = []
+  const activeSlots = timeSlots.filter(slot => slot.status !== 'deleted')
+  
+  if (activeSlots.length === 0) {
+    errors.push('Au moins un créneau horaire valide est requis')
+  }
+  
+  // Vérifier chaque créneau
+  activeSlots.forEach((slot, index) => {
+    if (!slot.date) {
+      errors.push(`Créneau ${index + 1} : Date manquante`)
+    }
+    if (!slot.startTime) {
+      errors.push(`Créneau ${index + 1} : Heure de début manquante`)
+    }
+    if (!slot.endTime) {
+      errors.push(`Créneau ${index + 1} : Heure de fin manquante`)
+    }
+    
+    // Vérifier les heures d'ouverture
+    if (slot.startTime) {
+      const [startHour] = slot.startTime.split(':').map(Number)
+      if (startHour < 8) {
+        warnings.push(`Créneau ${index + 1} : début avant 8h00`)
+      }
+    }
+    
+    if (slot.endTime) {
+      const [endHour, endMinute] = slot.endTime.split(':').map(Number)
+      if (endHour > 19 || (endHour === 19 && endMinute > 0)) {
+        warnings.push(`Créneau ${index + 1} : fin après 19h00`)
+      }
+    }
+    
+    // Vérifier que l'heure de fin est après l'heure de début
+    if (slot.startTime && slot.endTime) {
+      const start = new Date(`2000-01-01T${slot.startTime}`)
+      const end = new Date(`2000-01-01T${slot.endTime}`)
+      if (end <= start) {
+        errors.push(`Créneau ${index + 1} : l'heure de fin doit être après l'heure de début`)
+      }
+    }
+  })
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  }
+}
+
+
+/**
+ * Fonction pour initialiser les TimeSlots depuis un événement existant
+ * Utilisée dans l'initialisation des composants d'édition
+ */
+export function initializeTimeSlotsFromEvent(event: any): {
+  timeSlots: any[];
+  showMultipleSlots: boolean;
+  firstSlotData: {
+    startDate: Date;
+    endDate: Date;
+    startTime: string;
+    endTime: string;
+  } | null;
+} {
+  if (!event) {
+    return {
+      timeSlots: [],
+      showMultipleSlots: false,
+      firstSlotData: null
+    }
+  }
+  
+  // Fonction pour obtenir les créneaux actifs (doit être importée ou redéfinie)
+  const getActiveTimeSlots = (evt: any) => {
+    if (evt.actuelTimeSlots && Array.isArray(evt.actuelTimeSlots)) {
+      return evt.actuelTimeSlots.filter((slot: any) => slot.status === 'active')
+    }
+    if (evt.timeSlots && Array.isArray(evt.timeSlots)) {
+      return evt.timeSlots.filter((slot: any) => slot.status === 'active')
+    }
+    // Fallback : créer un slot depuis les dates de l'événement
+    return [{
+      id: `${evt.id}-fallback`,
+      startDate: evt.start_date,
+      endDate: evt.end_date,
+      status: 'active'
+    }]
+  }
+  
+  const activeSlots = getActiveTimeSlots(event)
+  const firstSlot = activeSlots[0]
+  
+  if (!firstSlot) {
+    console.warn('Aucun créneau actif trouvé pour l\'événement')
+    return {
+      timeSlots: [],
+      showMultipleSlots: false,
+      firstSlotData: null
+    }
+  }
+  
+  const startDate = new Date(firstSlot.startDate)
+  const endDate = new Date(firstSlot.endDate)
+  
+  // Formater les TimeSlots avec conservation de l'historique
+  const formattedTimeSlots = activeSlots.map((slot: any) => ({
+    id: slot.id,
+    date: new Date(slot.startDate),
+    startTime: new Date(slot.startDate).toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    }),
+    endTime: new Date(slot.endDate).toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    }),
+    status: (slot.status || 'active') as 'active' | 'deleted' | 'cancelled',
+    isExisting: true,
+    wasModified: false,
+    originalData: {
+      date: new Date(slot.startDate),
+      startTime: new Date(slot.startDate).toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      }),
+      endTime: new Date(slot.endDate).toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      })
+    },
+    createdBy: slot.createdBy,
+    modifiedBy: slot.modifiedBy || []
+  }))
+  
+  return {
+    timeSlots: formattedTimeSlots,
+    showMultipleSlots: activeSlots.length > 1,
+    firstSlotData: {
+      startDate,
+      endDate,
+      startTime: startDate.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      }),
+      endTime: endDate.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+      })
+    }
+  }
+}
+
 // Fonction utilitaire pour transformer les matériaux/équipements
 function transformMaterials(rawData: any[]): any[] {
+  // Vérifier que rawData est bien un array
+  if (!Array.isArray(rawData)) {
+    console.warn('transformMaterials: rawData n\'est pas un array:', rawData);
+    return [];
+  }
+  
   return rawData.map((item: any) => {
     if (typeof item === 'string') {
       return { id: item, name: item };
@@ -181,6 +763,12 @@ function transformMaterials(rawData: any[]): any[] {
 
 // Fonction utilitaire pour transformer les produits chimiques/consommables
 function transformChemicals(rawData: any[], discipline = 'chimie'): any[] {
+  // Vérifier que rawData est bien un array
+  if (!Array.isArray(rawData)) {
+    console.warn('transformChemicals: rawData n\'est pas un array:', rawData);
+    return [];
+  }
+  
   return rawData.map((item: any) => {
     if (typeof item === 'string') {
       return { id: item, name: item };
@@ -220,7 +808,7 @@ export interface CalendarEventWithTimeSlots {
   consommables_used?: string[] // Will be stored as JSON
   notes?: string
   color?: string
-  created_by?: string
+  createdBy: string
   created_at?: string
   updated_at?: string
   timeSlots?: TimeSlot[] // Array des TimeSlots proposés/modifiés
@@ -264,60 +852,59 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
     
     const [rows] = await pool.execute(query, params)
     
-    return (rows as any[]).map(row => {
-      // Parser les TimeSlots depuis les nouveaux champs JSON
-      let timeSlots: TimeSlot[] = []
-      let actuelTimeSlots: TimeSlot[] = []
-      let lastStateChange = null
+    // Pour chaque événement, récupérer ses créneaux depuis la nouvelle table
+    const eventsWithTimeslots = await Promise.all((rows as any[]).map(async (row) => {
+      // Récupérer les créneaux depuis la table calendar_timeslots
+      let timeSlots: any[] = []
+      let actuelTimeSlots: any[] = []
       
       try {
-        // Utiliser les nouveaux champs timeSlots et actuelTimeSlots avec parsing sécurisé
-        timeSlots = parseJsonSafe(row.timeSlots, [])
-        actuelTimeSlots = parseJsonSafe(row.actuelTimeSlots, [])
-        lastStateChange = parseJsonSafe(row.lastStateChange, null)
+        const timeslots = await getTimeslotsByEventId(row.id, 'chimie')
         
-        // Fallback vers l'ancien système si les nouveaux champs sont vides
-        if (timeSlots.length === 0 && actuelTimeSlots.length === 0 && row.notes) {
-          try {
-            const parsedNotes = parseJsonSafe(row.notes, {} as any)
-            if (parsedNotes.timeSlots) {
-              timeSlots = parsedNotes.timeSlots || []
-              actuelTimeSlots = parsedNotes.actuelTimeSlots || []
-            }
-          } catch (noteError) {
-            // Ignore l'erreur de parsing des notes
-          }
-        }
-        
-        // Si toujours vides, créer des timeSlots à partir de start_date/end_date
-        if (timeSlots.length === 0 && actuelTimeSlots.length === 0) {
-          const defaultSlot: TimeSlot = {
-            id: `${row.id}-default`,
-            startDate: row.start_date,
-            endDate: row.end_date,
-            status: 'active',
-            createdBy: row.created_by
-          }
-          timeSlots = [defaultSlot]
-          actuelTimeSlots = [defaultSlot]
-        }
-      } catch (error) {
-        console.error('Erreur parsing TimeSlots:', error)
-        // Fallback: créer des TimeSlots depuis les dates de l'événement si le JSON est invalide
-        const fallbackSlot: TimeSlot = {
-          id: generateTimeSlotId(),
-          startDate: new Date(row.start_date).toISOString(),
-          endDate: new Date(row.end_date).toISOString(),
+        // Convertir les TimeslotData vers le format TimeSlot attendu par les composants
+        timeSlots = timeslots.map(slot => ({
+          id: slot.id,
+          startDate: new Date(slot.start_date).toISOString(),
+          endDate: new Date(slot.end_date).toISOString(),
           status: 'active' as const,
-          createdBy: row.created_by || 'system',
+          createdBy: slot.user_id,
           modifiedBy: [{
-            userId: row.created_by || 'system',
-            date: row.created_at || new Date().toISOString(),
+            userId: slot.user_id,
+            date: new Date(slot.created_at).toISOString(),
             action: 'created' as const
           }]
+        }))
+        
+        // Les créneaux actuels sont tous les créneaux approuvés ou créés
+        actuelTimeSlots = timeSlots.filter((_, index) => 
+          ['approved', 'created'].includes(timeslots[index].state)
+        )
+        
+        // Fallback vers l'ancien système si aucun créneau trouvé dans la nouvelle table
+        if (timeSlots.length === 0) {
+          // Essayer de récupérer depuis les anciens champs JSON (compatibilité)
+          const legacyTimeSlots = parseJsonSafe(row.timeSlots, [])
+          const legacyActuelTimeSlots = parseJsonSafe(row.actuelTimeSlots, [])
+          
+          if (legacyTimeSlots.length > 0) {
+            timeSlots = legacyTimeSlots
+            actuelTimeSlots = legacyActuelTimeSlots
+          } else {
+            // Créer un créneau par défaut depuis start_date/end_date
+            const defaultSlot: TimeSlot = {
+              id: `${row.id}-default`,
+              startDate: row.start_date,
+              endDate: row.end_date,
+              status: 'active',
+              createdBy: row.created_by
+            }
+            timeSlots = [defaultSlot]
+            actuelTimeSlots = [defaultSlot]
+          }
         }
-        timeSlots = [fallbackSlot]
-        actuelTimeSlots = [fallbackSlot]
+      } catch (error) {
+        console.error('Erreur récupération créneaux pour événement', row.id, error)
+        throw new Error(`Impossible de récupérer les créneaux pour l'événement ${row.id}: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
       }
 
       return {
@@ -337,6 +924,7 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         chemicals_used: transformChemicals(parseJsonSafe(row.chemicals_used, []), 'chimie'),
         notes: row.notes,
         color: row.color,
+        createdBy: row.created_by,
         created_by: row.created_by,
         creator_name: row.creator_name, // Nouveau champ depuis le JOIN
         creator_email: row.creator_email, // Nouveau champ depuis le JOIN
@@ -345,10 +933,12 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
         timeSlots,
         actuelTimeSlots,
         stateChangeReason: row.stateChangeReason,
-        lastStateChange,
+        lastStateChange: parseJsonSafe(row.lastStateChange, null),
         validationState: row.validationState
       }
-    })
+    }))
+    
+    return eventsWithTimeslots
     
   } catch (error) {
     console.error('Erreur lors de la récupération des événements de chimie:', error)
@@ -359,17 +949,26 @@ export async function getChemistryEventsWithTimeSlots(startDate?: string, endDat
 // Fonction pour créer un événement de chimie avec les nouveaux champs
 export async function createChemistryEventWithTimeSlots(eventData: Partial<CalendarEventWithTimeSlots>): Promise<CalendarEventWithTimeSlots> {
   try {
+    // Validation des données requises
+    if (!eventData.createdBy) {
+      throw new Error('Le champ createdBy est requis pour créer un événement')
+    }
+    
     const id = uuidv4()
     
+    // 1. Créer l'événement principal dans calendar_chimie (sans les timeSlots dans les colonnes JSON)
     const query = `
       INSERT INTO calendar_chimie (
         id, title, start_date, end_date, description, type, status, state,
         room, teacher, class_data, participants, equipment_used, chemicals_used,
-        notes, color, created_by, timeSlots, actuelTimeSlots, lastStateChange,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        notes, color, created_by, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `
     
+    // Debug logging
+    console.log('DEBUG createChemistryEventWithTimeSlots - eventData.createdBy:', eventData.createdBy)
+    console.log('DEBUG createChemistryEventWithTimeSlots - typeof eventData.createdBy:', typeof eventData.createdBy)
+
     const params = [
       id,
       eventData.title || '',
@@ -387,23 +986,88 @@ export async function createChemistryEventWithTimeSlots(eventData: Partial<Calen
       safeJsonStringify(eventData.chemicals_used || []),
       eventData.notes || '',
       eventData.color || '#2196f3',
-      eventData.created_by || '',
-      safeJsonStringify(eventData.timeSlots || []),
-      safeJsonStringify(eventData.actuelTimeSlots || []),
-      safeJsonStringify(eventData.lastStateChange)
+      eventData.createdBy! // ! car déjà validé plus haut
     ]
+    
+    console.log('DEBUG createChemistryEventWithTimeSlots - createdBy param (index 16):', params[16])
     
     await pool.execute(query, params)
     
-    // Retourner l'événement créé
+    // 2. Créer les créneaux dans la table calendar_timeslots si fournis
+    if (eventData.timeSlots && Array.isArray(eventData.timeSlots) && eventData.timeSlots.length > 0) {
+      const timeslotProposals: TimeslotProposal[] = eventData.timeSlots.map((slot: any) => {
+        // Convertir le format timeSlot vers TimeslotProposal
+        let startDate: string, endDate: string, timeslotDate: string
+        
+        if (slot.date && slot.startTime && slot.endTime) {
+          // Format CreateTPDialog: { date, startTime, endTime }
+          startDate = `${slot.date}T${slot.startTime}:00`
+          endDate = `${slot.date}T${slot.endTime}:00`
+          timeslotDate = slot.date
+        } else if (slot.startDate && slot.endDate) {
+          // Format TimeSlot: { startDate, endDate }
+          startDate = slot.startDate
+          endDate = slot.endDate
+          timeslotDate = slot.startDate.split('T')[0]
+        } else {
+          throw new Error('Format de créneau invalide')
+        }
+        
+        return {
+          event_id: id,
+          discipline: 'chimie' as Discipline,
+          user_id: eventData.createdBy!, // ! car déjà validé plus haut
+          start_date: startDate,
+          end_date: endDate,
+          timeslot_date: timeslotDate,
+          action: 'create' as const,
+          notes: slot.notes || 'Créneau créé automatiquement'
+        }
+      })
+      
+      // Créer les créneaux via la nouvelle API
+      await proposeNewTimeslots(
+        id,
+        'chimie',
+        eventData.createdBy!, // ! car déjà validé plus haut
+        eventData.createdBy!, // event_owner - ! car déjà validé plus haut
+        timeslotProposals
+      )
+    }
+    
+    // 3. Récupérer l'événement créé avec ses créneaux
     const [rows] = await pool.execute('SELECT * FROM calendar_chimie WHERE id = ?', [id])
     const createdEvent = (rows as any[])[0]
     
+    // Récupérer les créneaux depuis la nouvelle table
+    const timeslots = await getTimeslotsByEventId(id, 'chimie')
+    
+    // Convertir les TimeslotData vers le format TimeSlot attendu par les composants
+    const convertedTimeSlots = timeslots.map(slot => ({
+      id: slot.id,
+      startDate: new Date(slot.start_date).toISOString(),
+      endDate: new Date(slot.end_date).toISOString(),
+      status: 'active' as const,
+      createdBy: slot.user_id,
+      modifiedBy: [{
+        userId: slot.user_id,
+        date: new Date(slot.created_at).toISOString(),
+        action: 'created' as const
+      }]
+    }))
+    
     return {
       ...createdEvent,
-      timeSlots: parseJsonSafe(createdEvent.timeSlots, []),
-      actuelTimeSlots: parseJsonSafe(createdEvent.actuelTimeSlots, []),
-      lastStateChange: parseJsonSafe(createdEvent.lastStateChange, null)
+      timeSlots: convertedTimeSlots, // Créneaux depuis la nouvelle table
+      actuelTimeSlots: convertedTimeSlots.filter((_, index) => 
+        ['approved', 'created'].includes(timeslots[index].state)
+      ), // Créneaux approuvés
+      lastStateChange: null,
+      room: normalizeRoomData(createdEvent.room),
+      class_data: parseJsonSafe(createdEvent.class_data, null),
+      participants: parseJsonSafe(createdEvent.participants, []),
+      equipment_used: transformMaterials(parseJsonSafe(createdEvent.equipment_used, [])),
+      chemicals_used: transformChemicals(parseJsonSafe(createdEvent.chemicals_used, []), 'chimie')
     }
     
   } catch (error) {
@@ -424,6 +1088,27 @@ export async function updateChemistryEventWithTimeSlots(
       processedEventData.class_data = (eventData as any).class[0] // Prendre le premier élément du tableau
       delete processedEventData.class // Supprimer l'ancien champ
     }
+    
+    // Mapping des champs API vers les colonnes de la base de données
+    if (processedEventData.materials !== undefined) {
+      processedEventData.equipment_used = processedEventData.materials
+      delete processedEventData.materials
+    }
+    if (processedEventData.chemicals !== undefined) {
+      processedEventData.chemicals_used = processedEventData.chemicals
+      delete processedEventData.chemicals
+    }
+    if (processedEventData.remarks !== undefined) {
+      processedEventData.notes = processedEventData.remarks
+      delete processedEventData.remarks
+    }
+    // Ignorer les champs qui n'existent pas dans la table
+    const fieldsToIgnore = ['files', 'location']
+    fieldsToIgnore.forEach(field => {
+      if (processedEventData[field] !== undefined) {
+        delete processedEventData[field]
+      }
+    })
     
     const updates: string[] = []
     const params: any[] = []
@@ -571,6 +1256,7 @@ export async function getPhysicsEventsWithTimeSlots(startDate?: string, endDate?
       class_data: row.class_data,
       notes: row.notes,
       color: row.color,
+      createdBy: row.created_by,
       created_by: row.created_by,
       creator_name: row.creator_name, // Nouveau champ depuis le JOIN
       creator_email: row.creator_email, // Nouveau champ depuis le JOIN
@@ -614,7 +1300,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
       class_data: safeJsonStringify(eventData.class_data),
       notes: eventData.notes || '',
       color: eventData.color || '#2196f3',
-      created_by: eventData.created_by || '',
+      created_by: eventData.createdBy || '',
       stateChangeReason: eventData.stateChangeReason || '',
       
       // Sérialiser les champs JSON
@@ -641,6 +1327,7 @@ export async function createPhysicsEventWithTimeSlots(eventData: Partial<Calenda
     // Retourner l'événement créé avec les données parsées
     return {
       ...finalEventData,
+      createdBy: eventData.createdBy || '',
       room: normalizeRoomData(eventData.room), // Retourner l'objet room normalisé
       class_data: eventData.class_data || null, // Retourner les données class originales
       participants: eventData.participants || [],
@@ -766,7 +1453,7 @@ export async function getPhysicsEventByIdWithTimeSlots(id: string): Promise<Cale
       class_data: parseJsonSafe(row.class_data, null), // Nouveau champ
       notes: row.notes,
       color: row.color,
-      created_by: row.created_by,
+      createdBy: row.created_by,
       created_at: row.created_at,
       updated_at: row.updated_at,
       stateChangeReason: row.stateChangeReason,
@@ -984,3 +1671,500 @@ export async function getEventsForRoom(roomName: string, startDate?: string, end
 }
 
 export type { Room, RoomLocation };
+
+// =====================================================================================
+// FONCTIONS ADDITIONNELLES POUR LA GESTION COMPLETE DES TIMESLOTS
+// =====================================================================================
+
+/**
+ * Fonction pour supprimer/marquer un timeSlot comme supprimé
+ * Différence entre chimie (marquer comme deleted) et physique (supprimer complètement)
+ */
+export function removeTimeSlot(
+  timeSlots: any[],
+  index: number,
+  userId: string,
+  mode: 'chemistry' | 'physics' = 'chemistry'
+): any[] {
+  const activeSlots = timeSlots.filter(slot => slot.status !== 'deleted');
+  
+  // Ne pas supprimer s'il n'y a qu'un seul slot actif
+  if (activeSlots.length <= 1) {
+    console.warn('🔍 [removeTimeSlot] Impossible de supprimer le dernier slot actif');
+    return timeSlots;
+  }
+
+  const newTimeSlots = [...timeSlots];
+  const slotToRemove = newTimeSlots[index];
+  
+  if (mode === 'chemistry') {
+    // Mode chimie : marquer comme supprimé si existant, supprimer si nouveau
+    if (slotToRemove.isExisting) {
+      slotToRemove.status = 'deleted';
+      slotToRemove.wasModified = true;
+      
+      // Ajouter l'entrée de modification
+      if (!slotToRemove.modifiedBy) {
+        slotToRemove.modifiedBy = [];
+      }
+      slotToRemove.modifiedBy.push({
+        userId,
+        date: new Date().toISOString(),
+        action: 'deleted',
+        note: 'Supprimé via EditEventDialog'
+      });
+      
+      console.log('🔍 [removeTimeSlot] Slot existant marqué comme supprimé:', {
+        slotId: slotToRemove.id,
+        userId,
+        mode
+      });
+      
+      return newTimeSlots;
+    } else {
+      // Nouveau slot créé dans cette session, supprimer complètement
+      const filteredSlots = timeSlots.filter((_, i) => i !== index);
+      console.log('🔍 [removeTimeSlot] Nouveau slot supprimé complètement:', {
+        slotIndex: index,
+        userId,
+        mode
+      });
+      return filteredSlots;
+    }
+  } else {
+    // Mode physique : supprimer complètement
+    const filteredSlots = timeSlots.filter((_, i) => i !== index);
+    console.log('🔍 [removeTimeSlot] Slot supprimé en mode physique:', {
+      slotIndex: index,
+      userId,
+      mode
+    });
+    return filteredSlots;
+  }
+}
+
+/**
+ * Fonction pour initialiser les timeSlots locaux depuis un événement existant
+ * Gère la conversion entre l'ancien système et le nouveau système TimeSlots
+ * Version spécialisée pour les composants EditEventDialog
+ */
+export function initializeLocalTimeSlotsFromEvent(event: any): any[] {
+  if (!event) return [];
+
+  console.log('🔍 [initializeTimeSlotsFromEvent] Initialisation depuis événement:', {
+    eventId: event.id,
+    hasTimeSlots: !!event.timeSlots,
+    hasActuelTimeSlots: !!event.actuelTimeSlots,
+    legacyDates: { start: event.start_date, end: event.end_date }
+  });
+
+  // Obtenir les créneaux actifs
+  const activeSlots = getActiveTimeSlots(event);
+  
+  if (activeSlots.length === 0) {
+    console.warn('🔍 [initializeTimeSlotsFromEvent] Aucun créneau actif trouvé');
+    return [];
+  }
+
+  // Convertir les créneaux actifs en format local avec traçabilité
+  const formattedTimeSlots = activeSlots.map(slot => ({
+    id: slot.id,
+    date: new Date(slot.startDate),
+    startTime: format(new Date(slot.startDate), 'HH:mm'),
+    endTime: format(new Date(slot.endDate), 'HH:mm'),
+    status: (slot.status || 'active') as 'active' | 'deleted' | 'cancelled',
+    isExisting: true,
+    wasModified: false,
+    originalData: {
+      date: new Date(slot.startDate),
+      startTime: format(new Date(slot.startDate), 'HH:mm'),
+      endTime: format(new Date(slot.endDate), 'HH:mm')
+    },
+    createdBy: slot.createdBy,
+    modifiedBy: slot.modifiedBy || [] // Conservation complète de l'historique
+  }));
+
+  console.log('🔍 [initializeTimeSlotsFromEvent] TimeSlots initialisés:', {
+    count: formattedTimeSlots.length,
+    slots: formattedTimeSlots.map(s => ({
+      id: s.id,
+      date: s.date?.toISOString(),
+      time: `${s.startTime}-${s.endTime}`,
+      isExisting: s.isExisting
+    }))
+  });
+
+  return formattedTimeSlots;
+}
+
+/**
+ * Fonction pour valider les données before submission
+ */
+export function validateEventSubmission(formData: any, timeSlots: any[], showMultipleSlots: boolean): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Validation du titre
+  if (!formData.title || !formData.title.trim()) {
+    errors.push('Le titre est requis');
+  }
+
+  // Validation des créneaux
+  if (showMultipleSlots) {
+    const activeSlots = timeSlots.filter(slot => slot.status !== 'deleted');
+    if (activeSlots.length === 0) {
+      errors.push('Au moins un créneau horaire est requis');
+    }
+
+    // Vérifier chaque créneau
+    activeSlots.forEach((slot, index) => {
+      if (!slot.date || !slot.startTime || !slot.endTime) {
+        errors.push(`Créneau ${index + 1} : date, heure de début et heure de fin sont requises`);
+      }
+    });
+  } else {
+    // Mode créneau unique
+    if (!formData.startDate || !formData.startTime || !formData.endTime) {
+      errors.push('Date, heure de début et heure de fin sont requises');
+    }
+  }
+
+  // Avertissements pour heures hors ouverture
+  const checkBusinessHours = (startTime: string, endTime: string, label: string = '') => {
+    if (startTime) {
+      const [startHour] = startTime.split(':').map(Number);
+      if (startHour < 8) {
+        warnings.push(`${label}début avant 8h00`);
+      }
+    }
+    
+    if (endTime) {
+      const [endHour, endMinute] = endTime.split(':').map(Number);
+      if (endHour > 19 || (endHour === 19 && endMinute > 0)) {
+        warnings.push(`${label}fin après 19h00`);
+      }
+    }
+  };
+
+  if (showMultipleSlots) {
+    timeSlots.filter(slot => slot.status !== 'deleted').forEach((slot, index) => {
+      checkBusinessHours(slot.startTime, slot.endTime, `Créneau ${index + 1} : `);
+    });
+  } else {
+    checkBusinessHours(formData.startTime, formData.endTime);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
+}
+
+/**
+ * Fonction pour détecter si seuls les timeSlots ont changé
+ * Utilisée pour déterminer s'il faut utiliser l'API de déplacement
+ */
+export function detectOnlyTimeSlotsChanged(
+  formData: any,
+  originalEvent: any,
+  compareRoomDataFn?: (room1: any, room2: any) => boolean
+): boolean {
+  if (!originalEvent) return false;
+
+  const roomComparison = compareRoomDataFn ? 
+    compareRoomDataFn(formData.room, originalEvent.room) :
+    compareRoomData(formData.room, originalEvent.room);
+
+  return (
+    formData.title === originalEvent.title &&
+    formData.description === originalEvent.description &&
+    formData.type === originalEvent.type &&
+    roomComparison &&
+    formData.location === originalEvent.location &&
+    // Pour la physique, comparer consommables au lieu de chemicals
+    JSON.stringify(formData.consommables || formData.chemicals || []) === 
+      JSON.stringify(originalEvent.consommables || originalEvent.chemicals || []) &&
+    JSON.stringify(formData.materials || []) === JSON.stringify(originalEvent.materials || [])
+  );
+}
+
+/**
+ * Fonction pour préparer les données de déplacement pour l'API move
+ */
+export function prepareMoveApiData(timeSlots: any[]): any[] {
+  return timeSlots
+    .filter(slot => slot.date && slot.startTime && slot.endTime && slot.status !== 'deleted')
+    .map(slot => ({
+      date: slot.date.toISOString().split('T')[0],
+      startTime: slot.startTime,
+      endTime: slot.endTime
+    }));
+}
+
+/**
+ * Fonction centralisée pour la création de TimeSlots - VERSION SERVEUR
+ * Centralise toute la logique de création des timeSlots pour les APIs (POST uniquement)
+ */
+export function processTimeSlotCreation(
+  timeSlots: any[],
+  userId: string
+): {
+  generatedTimeSlots: TimeSlot[];
+  actuelTimeSlots: TimeSlot[];
+  validation: {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  };
+} {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Validation des timeSlots d'entrée
+  if (!timeSlots || timeSlots.length === 0) {
+    errors.push('Au moins un créneau horaire est requis')
+    return {
+      generatedTimeSlots: [],
+      actuelTimeSlots: [],
+      validation: { isValid: false, errors, warnings }
+    }
+  }
+
+  // Filtrer et valider les créneaux
+  const validSlots = timeSlots.filter((slot: any) => {
+    if (!slot.startTime || !slot.endTime) {
+      warnings.push(`Créneau ignoré: heures manquantes (startTime="${slot.startTime}", endTime="${slot.endTime}")`)
+      return false
+    }
+    return true
+  })
+
+  if (validSlots.length === 0) {
+    errors.push('Aucun créneau valide trouvé')
+    return {
+      generatedTimeSlots: [],
+      actuelTimeSlots: [],
+      validation: { isValid: false, errors, warnings }
+    }
+  }
+
+  const currentDate = new Date().toISOString()
+  
+  // Générer les TimeSlots avec historique intégré dans modifiedBy
+  const generatedTimeSlots: TimeSlot[] = validSlots.map((slot: any, index: number) => {
+    // Utiliser slot.date si présent, sinon date par défaut (aujourd'hui)
+    const slotDate = slot.date || new Date().toISOString().split('T')[0]
+    
+    // Valider et nettoyer les heures
+    const startTime = slot.startTime?.trim()
+    const endTime = slot.endTime?.trim()
+    
+    if (!startTime || !endTime) {
+      throw new Error(`Heures manquantes pour le créneau ${index + 1}: startTime="${startTime}", endTime="${endTime}"`)
+    }
+    
+    // Construire les dates ISO complètes
+    const startDate = `${slotDate}T${startTime}:00`
+    const endDate = `${slotDate}T${endTime}:00`
+    
+    return {
+      id: generateTimeSlotId(),
+      startDate,
+      endDate,
+      status: 'active' as const,
+      createdBy: userId,
+      modifiedBy: [{
+        userId,
+        date: currentDate, // Format requis par TimeSlot
+        action: 'created' as const,
+        note: `Création automatique - nouvelles dates: ${startDate} -> ${endDate}`
+      }],
+      // Champs optionnels du TimeSlot
+      actuelTimeSlotsReferent: slot.actuelTimeSlotsReferent,
+      referentActuelTimeID: slot.referentActuelTimeID
+    } as TimeSlot
+  })
+
+  // À la création, actuelTimeSlots = timeSlots
+  const actuelTimeSlots = [...generatedTimeSlots]
+
+  console.log('🔍 [processTimeSlotCreation] TimeSlots générés:', {
+    inputSlotsCount: timeSlots.length,
+    validSlotsCount: validSlots.length,
+    generatedCount: generatedTimeSlots.length,
+    actuelCount: actuelTimeSlots.length,
+    generatedTimeSlots,
+    actuelTimeSlots
+  })
+
+  return {
+    generatedTimeSlots,
+    actuelTimeSlots,
+    validation: {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    }
+  }
+}
+
+/**
+ * Fonction centralisée pour la mise à jour de TimeSlots - VERSION SERVEUR
+ * Gère la mise à jour correcte d'actuelTimeSlots selon les permissions utilisateur
+ */
+export function processTimeSlotUpdate(
+  newTimeSlots: any[],
+  existingEvent: any,
+  userId: string
+): {
+  updatedTimeSlots: TimeSlot[];
+  updatedActuelTimeSlots: TimeSlot[];
+  validation: {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  };
+} {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Validation des timeSlots d'entrée
+  if (!newTimeSlots || newTimeSlots.length === 0) {
+    errors.push('Au moins un créneau horaire est requis')
+    return {
+      updatedTimeSlots: [],
+      updatedActuelTimeSlots: [],
+      validation: { isValid: false, errors, warnings }
+    }
+  }
+
+  const currentDate = new Date().toISOString()
+  const isOwner = existingEvent.created_by === userId
+
+  console.log('🔍 [processTimeSlotUpdate] Analyse des TimeSlots reçus:', {
+    timeSlotsCount: newTimeSlots.length,
+    firstSlot: newTimeSlots[0],
+    hasStartDate: !!newTimeSlots[0]?.startDate,
+    hasStartTime: !!newTimeSlots[0]?.startTime,
+    isOwner
+  })
+
+  if (isOwner) {
+    // Le propriétaire peut remplacer complètement les timeSlots
+    console.log('🔍 [processTimeSlotUpdate] Mise à jour par le propriétaire')
+    
+    // Vérifier si les TimeSlots sont déjà au bon format (avec startDate/endDate ISO)
+    const areTimeSlotsPrepared = newTimeSlots.every(slot => 
+      slot.startDate && slot.endDate && !slot.startTime && !slot.endTime
+    )
+
+    if (areTimeSlotsPrepared) {
+      // TimeSlots déjà préparés, les utiliser directement
+      console.log('🔍 [processTimeSlotUpdate] TimeSlots déjà au format ISO, utilisation directe')
+      
+      // Valider les TimeSlots préparés
+      const validSlots = newTimeSlots.filter((slot: any) => {
+        if (!slot.startDate || !slot.endDate) {
+          warnings.push(`Créneau ignoré: dates manquantes`)
+          return false
+        }
+        return true
+      })
+
+      if (validSlots.length === 0) {
+        errors.push('Aucun créneau valide trouvé')
+        return {
+          updatedTimeSlots: [],
+          updatedActuelTimeSlots: [],
+          validation: { isValid: false, errors, warnings }
+        }
+      }
+
+      // Assurer que tous les slots ont les propriétés requises
+      const processedTimeSlots = validSlots.map((slot: any) => ({
+        ...slot,
+        id: slot.id || generateTimeSlotId(),
+        status: slot.status || 'active',
+        createdBy: slot.createdBy || userId,
+        modifiedBy: slot.modifiedBy || [{
+          userId,
+          date: currentDate,
+          action: 'updated' as const
+        }]
+      }))
+
+      return {
+        updatedTimeSlots: processedTimeSlots,
+        updatedActuelTimeSlots: processedTimeSlots.filter((slot: any) => slot.status === 'active'),
+        validation: {
+          isValid: true,
+          errors,
+          warnings
+        }
+      }
+    } else {
+      // TimeSlots au format startTime/endTime, utiliser processTimeSlotCreation
+      const timeSlotResult = processTimeSlotCreation(newTimeSlots, userId)
+      
+      if (!timeSlotResult.validation.isValid) {
+        return {
+          updatedTimeSlots: [],
+          updatedActuelTimeSlots: [],
+          validation: timeSlotResult.validation
+        }
+      }
+
+      return {
+        updatedTimeSlots: timeSlotResult.generatedTimeSlots,
+        updatedActuelTimeSlots: timeSlotResult.actuelTimeSlots, // Owner remplace actuelTimeSlots
+        validation: timeSlotResult.validation
+      }
+    }
+  } else {
+    // Autre utilisateur : utiliser processTimeSlots pour proposer des modifications
+    console.log('🔍 [processTimeSlotUpdate] Mise à jour par un autre utilisateur')
+    
+    // Traiter les TimeSlots selon leur format
+    let timeSlotResult
+    const areTimeSlotsPrepared = newTimeSlots.every(slot => 
+      slot.startDate && slot.endDate && !slot.startTime && !slot.endTime
+    )
+
+    if (areTimeSlotsPrepared) {
+      // TimeSlots déjà au format ISO, créer un résultat compatible
+      timeSlotResult = {
+        generatedTimeSlots: newTimeSlots,
+        validation: { isValid: true, errors: [], warnings: [] }
+      }
+    } else {
+      // TimeSlots au format startTime/endTime
+      timeSlotResult = processTimeSlotCreation(newTimeSlots, userId)
+    }
+    
+    if (!timeSlotResult.validation.isValid) {
+      return {
+        updatedTimeSlots: [],
+        updatedActuelTimeSlots: existingEvent.actuelTimeSlots || [],
+        validation: timeSlotResult.validation
+      }
+    }
+
+    // Utiliser processTimeSlots pour merger avec l'historique
+    const processedTimeSlots = processTimeSlots(
+      timeSlotResult.generatedTimeSlots, 
+      existingEvent.timeSlots || [], 
+      userId
+    )
+
+    return {
+      updatedTimeSlots: processedTimeSlots,
+      updatedActuelTimeSlots: existingEvent.actuelTimeSlots || [], // Ne pas toucher actuelTimeSlots
+      validation: timeSlotResult.validation
+    }
+  }
+}

@@ -3,7 +3,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
-import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
 import type { Room, RoomLocation, RoomEvent, RoomOccupancy } from '@/types/rooms'
 
 // Interface pour les événements de calendrier avec timeSlots

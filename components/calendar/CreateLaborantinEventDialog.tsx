@@ -11,6 +11,8 @@ import {
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { isBefore, isAfter, startOfDay, endOfDay } from 'date-fns'
+import { createSimpleEvent } from '@/lib/event-creation-utils'
+import type { EventType } from '@/types/calendar'
 
 type LaborantinEventType = 'MAINTENANCE' | 'INVENTAIRE' | 'AUTRE'
 
@@ -161,10 +163,20 @@ const isOutsideBusinessHours = useMemo(() => {
         endDateTime = new Date(`${formData.startDate}T${formData.endTime}:00`)
       }
 
+      // Mapper les types laborantin vers les types d'événements
+      const mapType = (laborantinType: LaborantinEventType): EventType => {
+        switch (laborantinType) {
+          case 'MAINTENANCE': return 'MAINTENANCE'
+          case 'INVENTAIRE': return 'INVENTORY'
+          case 'AUTRE': return 'OTHER'
+          default: return 'OTHER'
+        }
+      }
+
       const eventData = {
         title: formData.title,
         description: formData.description,
-        type: formData.type,
+        type: mapType(formData.type),
         startDate: startDateTime.toISOString(),
         endDate: endDateTime.toISOString(),
         location: formData.location,
@@ -172,17 +184,10 @@ const isOutsideBusinessHours = useMemo(() => {
         notes: formData.notes
       }
 
-      const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData)
+      // Utiliser la nouvelle approche hybride pour la création d'événements
+      await createSimpleEvent(eventData, discipline, {
+        allowPastDates: true // Permettre les dates passées pour les événements laborantin
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erreur lors de la création de l\'événement')
-      }
       
       handleClose()
       onSuccess()

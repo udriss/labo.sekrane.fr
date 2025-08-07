@@ -9,7 +9,7 @@ import {
 } from '@mui/material'
 import { Search, Event } from '@mui/icons-material'
 import { CalendarEvent } from '@/types/calendar'
-import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { getDisplayTimeSlots } from '@/lib/timeslots-utils'
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import ImprovedEventBlock from './ImprovedEventBlock'

@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Retourner le fichier avec les headers appropriés
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,
@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
     const fileBuffer = await readFile(fullPath)
     const downloadName = fileName || path.basename(filePath)
     
-    // Forcer le téléchargement
-    return new NextResponse(fileBuffer, {
+    // Forcer le téléchargement - Convertir Buffer en Uint8Array pour NextResponse
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/octet-stream',

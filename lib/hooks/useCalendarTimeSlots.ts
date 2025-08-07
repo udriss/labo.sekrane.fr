@@ -12,27 +12,31 @@ export const useCalendarTimeSlots = (discipline: 'chimie' | 'physique') => {
 
   // API endpoints selon la discipline
   const getApiEndpoint = useCallback((path: string = '') => {
-    return `/api/calendrier/${discipline}${path}`
-  }, [discipline])
+    return `/api/events${path}`
+  }, [])
 
   // Charger tous les événements
   const loadEvents = useCallback(async (startDate?: string, endDate?: string) => {
     setLoading(true)
     setError(null)
     try {
-      let url = getApiEndpoint()
       const params = new URLSearchParams()
+      params.append('discipline', discipline) // Utiliser la nouvelle API centralisée
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
-      if (params.toString()) {
-        url += `?${params.toString()}`
-      }
+      
+      const url = `${getApiEndpoint()}?${params.toString()}`
+      console.log(`[useCalendarTimeSlots] Récupération des événements ${discipline} depuis:`, url)
+      
       const response = await fetch(url)
       if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`)
       const result = await response.json()
-      const eventsData = result.events || result // Support ancien et nouveau format
+      console.log(`[useCalendarTimeSlots] Événements ${discipline} récupérés:`, result)
+      
+      const eventsData = Array.isArray(result) ? result : (result.events || result)
       setEvents(Array.isArray(eventsData) ? eventsData : [])
     } catch (err) {
+      console.error(`[useCalendarTimeSlots] Erreur chargement ${discipline}:`, err)
       setError(err instanceof Error ? err.message : `Erreur lors du chargement des événements de ${discipline}`)
       setEvents([])
     } finally {
@@ -48,7 +52,10 @@ export const useCalendarTimeSlots = (discipline: 'chimie' | 'physique') => {
       const response = await fetch(getApiEndpoint(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData)
+        body: JSON.stringify({
+          ...eventData,
+          discipline // Ajouter la discipline dans le body
+        })
       })
       if (!response.ok) throw new Error('Erreur lors de la création')
       const result = await response.json()
@@ -61,17 +68,20 @@ export const useCalendarTimeSlots = (discipline: 'chimie' | 'physique') => {
     } finally {
       setLoading(false)
     }
-  }, [getApiEndpoint])
+  }, [getApiEndpoint, discipline])
 
   // Mettre à jour un événement
   const updateEvent = useCallback(async (eventId: string, updatedFields: Partial<CalendarEvent>) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${getApiEndpoint()}?id=${eventId}`, {
+      const response = await fetch(`${getApiEndpoint()}?id=${eventId}&discipline=${discipline}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedFields)
+        body: JSON.stringify({
+          ...updatedFields,
+          discipline // Ajouter la discipline dans le body
+        })
       })
       if (!response.ok) throw new Error('Erreur lors de la modification')
       const result = await response.json()
@@ -84,14 +94,14 @@ export const useCalendarTimeSlots = (discipline: 'chimie' | 'physique') => {
     } finally {
       setLoading(false)
     }
-  }, [getApiEndpoint])
+  }, [getApiEndpoint, discipline])
 
   // Supprimer un événement
   const deleteEvent = useCallback(async (eventId: string) => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${getApiEndpoint()}?id=${eventId}`, {
+      const response = await fetch(`${getApiEndpoint()}?id=${eventId}&discipline=${discipline}`, {
         method: 'DELETE'
       })
       if (!response.ok) throw new Error('Erreur lors de la suppression')
@@ -102,7 +112,7 @@ export const useCalendarTimeSlots = (discipline: 'chimie' | 'physique') => {
     } finally {
       setLoading(false)
     }
-  }, [getApiEndpoint])
+  }, [getApiEndpoint, discipline])
 
   // Déplacer un événement (proposer nouveaux créneaux) - UTILISE L'API CENTRALISÉE
   const moveEvent = useCallback(async (eventId: string, timeSlots: any[], reason?: string) => {

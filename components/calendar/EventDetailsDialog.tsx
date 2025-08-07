@@ -40,7 +40,7 @@ import { UserRole } from "@/types/global";
 import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
 import { SiMoleculer } from "react-icons/si";
-import { getActiveTimeSlots, hasPendingChanges } from '@/lib/calendar-slot-utils'
+import { getActiveTimeSlots, hasPendingChanges } from '@/lib/timeslots-utils'
 
 
 interface DocumentFile {

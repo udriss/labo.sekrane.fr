@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id
     const currentDate = new Date().toISOString()
-    const isOwner = existingEvent.created_by === userId || existingEvent.created_by === session.user.email
+    const isOwner = existingEvent.createdBy === userId || existingEvent.createdBy === session.user.email
 
     // Valider les nouveaux créneaux
     const validatedNewSlots: TimeSlot[] = []
@@ -297,7 +297,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = session.user.id
-    const isOwner = existingEvent.created_by === userId || existingEvent.created_by === session.user.email
+    const isOwner = existingEvent.createdBy === userId || existingEvent.createdBy === session.user.email
 
     if (!isOwner) {
       return NextResponse.json(

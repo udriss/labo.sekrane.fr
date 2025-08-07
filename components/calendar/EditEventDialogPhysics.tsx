@@ -20,17 +20,26 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent, EventType, PhysicsConsumable } from '@/types/calendar'
+import { TimeslotData, TimeslotProposal } from '@/types/timeslots'
+import { useTimeslots } from '@/hooks/useTimeslots'
 import { format, isSameDay } from 'date-fns'
 import { normalizeClassField } from '@/lib/class-data-utils'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { useSession } from 'next-auth/react'
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
-import { generateTimeSlotId } from '@/lib/calendar-utils-client'
-import { TimeSlot } from '@/types/calendar'
 import { useEventMove } from '@/lib/hooks/useEventMove'
-import { isEventOwner } from '@/lib/calendar-move-utils'
 import { normalizeRoomData, getRoomDisplayName, compareRoomData, serializeRoomData, type RoomData } from '@/lib/calendar-utils-client-room'
+import { 
+  processEventEdition, 
+  createNewTimeSlot,
+  updateTimeSlotWithTracking,
+  checkAndSwapTimes,
+  isEventOwner,
+  convertApiTimeslotsToLocalSlots,
+  convertLocalSlotsToProposals,
+  type LocalTimeSlot
+} from '@/lib/timeslots-utils'
 
 interface EditEventDialogPhysicsProps {
   open: boolean
@@ -130,19 +139,47 @@ export default function EditEventDialogPhysics({
   const { data: session } = useSession();
   const theme = useTheme()
   
-  // Type des timeSlots locaux avec traçabilité complète
+  // ✅ NOUVEAU: Hook pour gérer les créneaux via l'API centralisée
+  const { 
+    timeslots: apiTimeslots, 
+    loading: timeslotsLoading, 
+    error: timeslotsError,
+    getTimeslots,
+    proposeTimeslots 
+  } = useTimeslots()
+  
+  // Type des timeSlots locaux avec traçabilité complète et historique dans modifiedBy
   const [timeSlots, setTimeSlots] = useState<Array<{
     id?: string;
     date: Date | null;
     startTime: string;
     endTime: string;
+    status?: 'active' | 'deleted' | 'cancelled';
     isExisting?: boolean;
+    wasModified?: boolean;
+    originalData?: {
+      date: Date;
+      startTime: string;
+      endTime: string;
+    };
     createdBy?: string;
     modifiedBy?: Array<{
       userId: string;
-      date: string;
-      action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected' | 'restored';
+      timestamp?: string; // Nouveau format avec timestamp
+      date?: string; // Format legacy
+      action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected' | 'restored' | 'time_modified';
       note?: string;
+      // NOUVEAU: Historique des dates intégré dans modifiedBy
+      previousStartDate?: string | null; // Date de début précédente
+      previousEndDate?: string | null;   // Date de fin précédente  
+      newStartDate?: string | null;      // Nouvelle date de début
+      newEndDate?: string | null;        // Nouvelle date de fin
+      changes?: { // Détails des modifications (format legacy)
+        previousStart?: string;
+        previousEnd?: string;
+        newStart?: string;
+        newEnd?: string;
+      };
     }>;
   }>>([])
   
@@ -180,20 +217,47 @@ export default function EditEventDialogPhysics({
   }, [files])
 
 
+  // useEffect pour charger les créneaux depuis l'API centralisée
+  useEffect(() => {
+    if (open && event?.id) {
+      // Charger les créneaux depuis l'API
+      getTimeslots(event.id, 'physique', 'active')
+        .then(apiTimeslots => {
+          if (apiTimeslots.length > 0) {
+            // ✅ Convertir les créneaux API vers le format local avec la fonction centralisée
+            const formattedTimeSlots = convertApiTimeslotsToLocalSlots(apiTimeslots)
+
+            // Conversion vers le type local du composant physique
+            const localSlots = formattedTimeSlots.map(slot => ({
+              ...slot,
+              originalData: slot.originalData && slot.date ? {
+                ...slot.originalData,
+                date: slot.date
+              } : undefined
+            }))
+
+            setTimeSlots(localSlots)
+            setShowMultipleSlots(localSlots.length > 1)
+            
+            console.log('🎯 [EditEventDialogPhysics] Créneaux chargés depuis l\'API:', localSlots.length)
+          }
+        })
+        .catch(error => {
+          console.error('❌ [EditEventDialogPhysics] Impossible de charger les créneaux depuis l\'API:', error)
+          setSnackbar({
+            open: true,
+            message: 'Erreur lors du chargement des créneaux',
+            severity: 'error'
+          })
+        })
+    }
+  }, [open, event?.id, getTimeslots])
+
   // Initialiser le formulaire avec les données de l'événement
   useEffect(() => {
     if (event) {
-      // Récupérer les créneaux actifs
-      const activeSlots = getActiveTimeSlots(event)
-      const firstSlot = activeSlots[0]
-      
-      if (!firstSlot) {
-        console.warn('Aucun créneau actif trouvé pour l\'événement')
-        return
-      }
-
-      const startDate = new Date(firstSlot.startDate)
-      const endDate = new Date(firstSlot.endDate)
+      // ✅ Les créneaux seront chargés séparément via l'API useTimeslots
+      // On utilise seulement les données de base de l'événement pour initialiser le formulaire
 
       // Préparer les matériels avec quantités (reste inchangé)
       const materialsWithQuantities = event.materials?.map((mat: any) => {
@@ -226,16 +290,16 @@ export default function EditEventDialogPhysics({
       // Normaliser les données de classe
       const normalizedClassData = normalizeClassField(event.class_data)
 
-      // Initialiser avec le premier créneau
+      // ✅ Initialiser les données de base (les créneaux viendront de l'API)
       setFormData({
         title: event.title || '',
         state: event.state || 'PENDING',
         description: event.description || '',
         type: event.type || 'TP',
-        startDate: startDate,
-        endDate: endDate,
-        startTime: format(startDate, 'HH:mm'),
-        endTime: format(endDate, 'HH:mm'),
+        startDate: new Date(), // Valeur par défaut, sera mise à jour quand les créneaux seront chargés
+        endDate: new Date(),   // Valeur par défaut, sera mise à jour quand les créneaux seront chargés
+        startTime: '08:00',    // Valeur par défaut, sera mise à jour quand les créneaux seront chargés
+        endTime: '10:00',      // Valeur par défaut, sera mise à jour quand les créneaux seront chargés
         class_data: normalizedClassData,
         room: normalizeRoomData(event.room), // Normaliser les données de salle
         materials: materialsWithQuantities,
@@ -254,24 +318,25 @@ export default function EditEventDialogPhysics({
 
       // Initialiser les remarques
       setRemarks(event.remarks || '')
-
-      // Initialiser tous les créneaux avec conservation de l'historique
-      const formattedTimeSlots = activeSlots.map(slot => ({
-        id: slot.id,
-        date: new Date(slot.startDate),
-        startTime: format(new Date(slot.startDate), 'HH:mm'),
-        endTime: format(new Date(slot.endDate), 'HH:mm'),
-        isExisting: true,
-        createdBy: slot.createdBy,
-        modifiedBy: slot.modifiedBy || [] // Conservation complète de l'historique
-      }))
-
-      setTimeSlots(formattedTimeSlots)
-      
-      // Activer le mode multi-créneaux si plus d'un créneau
-      setShowMultipleSlots(activeSlots.length > 1)
     }
   }, [event, materials, consommables, disciplineConsommables])
+
+  // ✅ NOUVEAU: Effect séparé pour mettre à jour les données de formulaire quand les créneaux sont chargés
+  useEffect(() => {
+    if (timeSlots.length > 0) {
+      const firstSlot = timeSlots[0]
+      if (firstSlot && firstSlot.date) {
+        // Mise à jour du formulaire avec les données du premier créneau
+        setFormData(prev => ({
+          ...prev,
+          startDate: firstSlot.date,
+          endDate: firstSlot.date, // Même date pour le premier créneau
+          startTime: firstSlot.startTime,
+          endTime: firstSlot.endTime
+        }))
+      }
+    }
+  }, [timeSlots])
 
 
   const [snackbar, setSnackbar] = useState<{
@@ -384,22 +449,23 @@ export default function EditEventDialogPhysics({
     setTimeout(() => setAnimatingSlot(null), 1000)
   }
 
-  // Gestion des créneaux - Ajout avec traçabilité complète
+  // Gestion des créneaux - Ajout avec traçabilité complète (utilise la fonction centralisée)
   const addTimeSlot = () => {
-    const newSlot = {
-      id: generateTimeSlotId(),
-      date: formData.startDate,
-      startTime: formData.startTime || '08:00',
-      endTime: formData.endTime || '10:00',
-      isExisting: false,
-      createdBy: session?.user?.id || 'INDISPONIBLE',
-      modifiedBy: [{
-        userId: session?.user?.id || 'INDISPONIBLE',
-        date: new Date().toISOString(),
-        action: 'created' as const
-      }]
+    const newSlot = createNewTimeSlot(
+      session?.user?.id || 'INDISPONIBLE',
+      formData.startDate || undefined,
+      formData.startTime || '08:00',
+      formData.endTime || '10:00'
+    )
+    // Conversion pour compatibilité avec le type local
+    const localSlot = {
+      ...newSlot,
+      originalData: newSlot.originalData && newSlot.date ? {
+        ...newSlot.originalData,
+        date: newSlot.date
+      } : undefined
     }
-    setTimeSlots([...timeSlots, newSlot])
+    setTimeSlots([...timeSlots, localSlot])
   }
 
   const removeTimeSlot = (index: number) => {
@@ -411,44 +477,51 @@ export default function EditEventDialogPhysics({
 
   const updateTimeSlot = (index: number, field: 'date' | 'startTime' | 'endTime', value: any, checkSwap: boolean = true) => {
     const newTimeSlots = [...timeSlots]
-    const slot = newTimeSlots[index]
+    const updatedSlot = updateTimeSlotWithTracking(
+      newTimeSlots[index],
+      field,
+      value,
+      session?.user?.id || 'INDISPONIBLE'
+    )
     
-    if (field === 'date') {
-      slot.date = value
-    } else {
-      slot[field] = value
+    // Conversion pour compatibilité avec le type local
+    const localSlot = {
+      ...updatedSlot,
+      originalData: updatedSlot.originalData && updatedSlot.date ? {
+        ...updatedSlot.originalData,
+        date: updatedSlot.date
+      } : undefined
     }
     
-    // Ajouter une entrée de modification avec traçabilité complète
-    if (slot.modifiedBy) {
-      slot.modifiedBy = [
-        ...slot.modifiedBy,
-        {
-          userId: session?.user?.id || 'INDISPONIBLE',
-          date: new Date().toISOString(),
-          action: 'modified' as const
-        }
-      ]
-    } else {
-      // Initialiser modifiedBy pour les nouveaux slots
-      slot.modifiedBy = [{
-        userId: session?.user?.id || 'INDISPONIBLE',
-        date: new Date().toISOString(),
-        action: 'modified' as const
-      }]
-    }
-    
+    newTimeSlots[index] = localSlot
     setTimeSlots(newTimeSlots)
 
-    // Vérifier si on doit échanger les heures
+    // Vérifier si on doit échanger les heures (seulement pour les champs de temps)
     if (checkSwap && field !== 'date') {
-      if (slot.startTime && slot.endTime) {
-        const start = new Date(`2000-01-01T${slot.startTime}`)
-        const end = new Date(`2000-01-01T${slot.endTime}`)
-        if (end < start) {
-          setTimeout(() => performTimeSwap(index), 100) // Petit délai pour laisser le temps à l'UI de se mettre à jour
+      const { needsSwap, swappedSlot } = checkAndSwapTimes(updatedSlot, (slot) => {
+        // Callback appelé quand un échange est nécessaire
+        setSnackbar({
+          open: true,
+          message: 'Les heures ont été inversées (l\'heure de fin était avant l\'heure de début)',
+          severity: 'info'
+        })
+        
+        // Mettre à jour avec le slot échangé - conversion pour compatibilité
+        const swappedTimeSlots = [...newTimeSlots]
+        const localSwappedSlot = {
+          ...slot,
+          originalData: slot.originalData && slot.date ? {
+            ...slot.originalData,
+            date: slot.date
+          } : undefined
         }
-      }
+        swappedTimeSlots[index] = localSwappedSlot
+        setTimeSlots(swappedTimeSlots)
+        
+        // Déclencher l'animation
+        setAnimatingSlot(index)
+        setTimeout(() => setAnimatingSlot(null), 1000)
+      })
     }
   }
 
@@ -596,241 +669,102 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
       return
     }
 
-    // Vérifier si l'utilisateur est propriétaire de l'événement
-    const isOwner = event ? isEventOwner(event, session?.user?.id, session?.user?.email) : false
+    setLoading(true)
     
-    // Détecter si seuls les créneaux horaires ont changé
-    const originalEvent = event
-    const onlyTimeSlotsChanged = originalEvent && (
-      formData.title === originalEvent.title &&
-      formData.description === originalEvent.description &&
-      formData.type === originalEvent.type &&
-      (formData.class_data === null || 
-        !originalEvent.class_data || 
-        (formData.class_data && Array.isArray(originalEvent.class_data) && originalEvent.class_data.length > 0 && 
-          formData.class_data.id === originalEvent.class_data[0].id)) &&
-      compareRoomData(formData.room, originalEvent.room) &&
-      formData.location === originalEvent.location &&
-      JSON.stringify(formData.consommables) === JSON.stringify(originalEvent.consommables || []) &&
-      JSON.stringify(formData.materials) === JSON.stringify(originalEvent.materials || [])
-      // TODO: vérifier les fichiers si nécessaire
-    )
+    try {
+      // Adapter les données pour le système centralisé (physique utilise consommables)
+      const adaptedFormData = {
+        ...formData,
+        chemicals: formData.consommables  // Mapping pour la compatibilité avec les fonctions centralisées
+      }
 
-    // Si seuls les créneaux ont changé et que l'utilisateur n'est pas propriétaire, 
-    // utiliser l'API de proposition de déplacement
-    if (onlyTimeSlotsChanged && originalEvent) {
-      try {
-        setLoading(true)
-        
-        // Préparer les nouveaux créneaux au format attendu par l'API
-        const newTimeSlots = timeSlots
-          .filter(slot => slot.date && slot.startTime && slot.endTime)
-          .map(slot => ({
-            date: slot.date!.toISOString().split('T')[0],
+      // Utiliser la fonction centralisée pour traiter toutes les données
+      const result = processEventEdition({
+        formData: adaptedFormData,
+        timeSlots,
+        originalEvent: event,
+        userId: session?.user?.id || 'INDISPONIBLE',
+        files,
+        remarks
+      })
+
+      // Vérifier la validation
+      if (!result.validation.isValid) {
+        setSnackbar({
+          open: true,
+          message: result.validation.errors.join(', '),
+          severity: 'error'
+        })
+        return
+      }
+
+      // Afficher les avertissements s'il y en a
+      if (result.validation.warnings.length > 0) {
+        console.warn('Avertissements TimeSlots:', result.validation.warnings)
+        // Optionnel : afficher les avertissements à l'utilisateur
+        if (result.validation.warnings.some(w => w.includes('avant 8h00') || w.includes('après 19h00'))) {
+          setSnackbar({
+            open: true,
+            message: `Attention: ${result.validation.warnings.join(', ')}`,
+            severity: 'warning'
+          })
+          // Continuer malgré les avertissements
+        }
+      }
+
+      // Vérifier si l'utilisateur est propriétaire
+      const isOwner = event ? isEventOwner(event, session?.user?.id, session?.user?.email) : false
+
+      // Si seuls les créneaux ont changé et que l'utilisateur n'est pas propriétaire
+      if (result.hasTimeslotChanges && !result.hasOtherChanges && !isOwner && event) {
+        try {
+          // Préparer les données pour l'API de déplacement
+          const moveApiData = timeSlots.map(slot => ({
+            date: slot.date ? slot.date.toISOString().split('T')[0] : '',
             startTime: slot.startTime,
             endTime: slot.endTime
           }))
+          
+          const moveResult = await moveEvent(
+            event.id,
+            'physique',
+            moveApiData,
+            'Proposition de déplacement via EditEventDialogPhysics'
+          )
 
-        if (newTimeSlots.length === 0) {
+          if (moveResult.success) {
+            setSnackbar({
+              open: true,
+              message: moveResult.message || 'Proposition de déplacement envoyée',
+              severity: 'success'
+            })
+            handleClose()
+            return
+          } else {
+            throw new Error(moveResult.error || 'Erreur lors de la proposition')
+          }
+        } catch (error) {
+          console.error('Erreur lors de la proposition de déplacement:', error)
           setSnackbar({
             open: true,
-            message: 'Au moins un créneau horaire valide est requis',
+            message: 'Erreur lors de la proposition de déplacement',
             severity: 'error'
           })
           return
         }
-
-        const result = await moveEvent(
-          originalEvent.id,
-          'physique',
-          newTimeSlots,
-          'Proposition de déplacement via EditEventDialogPhysics'
-        )
-
-        if (result.success) {
-          setSnackbar({
-            open: true,
-            message: result.message || 'Proposition de déplacement envoyée',
-            severity: 'success'
-          })
-          handleClose()
-          return
-        } else {
-          throw new Error(result.error || 'Erreur lors de la proposition')
-        }
-      } catch (error) {
-        console.error('Erreur lors de la proposition de déplacement:', error)
-        setSnackbar({
-          open: true,
-          message: 'Erreur lors de la proposition de déplacement',
-          severity: 'error'
-        })
-        return
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Si l'utilisateur est propriétaire ou si d'autres champs ont changé, 
-    // utiliser l'API de mise à jour standard
-    setLoading(true)
-    try {
-      // Préparer les données à sauvegarder
-      const dataToSave: Partial<CalendarEvent> = {
-        id: event?.id,
-        title: formData.title,
-        description: formData.description,
-        state: formData.state,
-        type: formData.type,
-        class_data: formData.class_data ? [formData.class_data] : [],  // Convertir en tableau pour respecter le type CalendarEvent
-        room: serializeRoomData(formData.room),
-        location: formData.location,
-        materials: formData.materials.map((mat: any) => ({
-          ...mat,
-          quantity: mat.quantity || 1
-        })),
-        // Pour la physique, utiliser consommables
-        consommables: formData.consommables.map((cons: any) => ({
-          ...cons,
-          requestedQuantity: cons.requestedQuantity || null
-        })),
-        files: files.map(f => f.existingFile || f.file).filter(Boolean),
-        remarks: remarks,
-        updatedAt: new Date().toISOString()
       }
 
-      // Gérer les créneaux horaires
-      if (showMultipleSlots) {
-        // Préparer les nouveaux timeSlots avec la nouvelle interface
-        const updatedTimeSlots: TimeSlot[] = []
-        const currentDate = new Date().toISOString()
-        const userId = session?.user?.id || 'INDISPONIBLE'
-
-        // D'abord, marquer tous les créneaux existants comme supprimés
-        if (event?.timeSlots) {
-          event.timeSlots.forEach(existingSlot => {
-            if (existingSlot.status === 'active') {
-              updatedTimeSlots.push({
-                ...existingSlot,
-                status: 'deleted' as const,
-                modifiedBy: [
-                  ...(existingSlot.modifiedBy || []),
-                  {
-                    userId,
-                    date: currentDate,
-                    action: 'deleted' as const
-                  }
-                ]
-              })
-            } else {
-              // Garder les slots déjà supprimés
-              updatedTimeSlots.push(existingSlot)
-            }
-          })
-        }
-
-        // Ensuite, ajouter les nouveaux créneaux
-        timeSlots.forEach(slot => {
-          if (slot.date && slot.startTime && slot.endTime) {
-            const startDateTime = new Date(slot.date)
-            startDateTime.setHours(parseInt(slot.startTime.split(':')[0]), parseInt(slot.startTime.split(':')[1]))
-            
-            const endDateTime = new Date(slot.date)
-            endDateTime.setHours(parseInt(slot.endTime.split(':')[0]), parseInt(slot.endTime.split(':')[1]))
-            
-            if (slot.isExisting && slot.id) {
-              // Si c'est un créneau existant qu'on garde, on le marque comme modifié
-              const existingSlot = event?.timeSlots?.find(s => s.id === slot.id)
-              if (existingSlot) {
-                updatedTimeSlots.push({
-                  ...existingSlot,
-                  startDate: startDateTime.toISOString(),
-                  endDate: endDateTime.toISOString(),
-                  status: 'active' as const,
-                  modifiedBy: [
-                    ...(existingSlot.modifiedBy || []),
-                    {
-                      userId,
-                      date: currentDate,
-                      action: 'modified' as const
-                    }
-                  ]
-                })
-              }
-            } else {
-              // Nouveau créneau
-              updatedTimeSlots.push({
-                id: generateTimeSlotId(),
-                startDate: startDateTime.toISOString(),
-                endDate: endDateTime.toISOString(),
-                status: 'active' as const,
-                createdBy: slot.createdBy || userId,
-                modifiedBy: [{
-                  userId,
-                  date: currentDate,
-                  action: 'created' as const
-                }]
-              })
-            }
-          }
-        })
-
-        dataToSave.timeSlots = updatedTimeSlots
-      } else {
-        // Mode créneau unique
-        if (formData.startDate && formData.startTime && formData.endTime) {
-          const startDateTime = new Date(formData.startDate)
-          startDateTime.setHours(parseInt(formData.startTime.split(':')[0]), parseInt(formData.startTime.split(':')[1]))
-          
-          const endDateTime = new Date(formData.startDate)
-          endDateTime.setHours(parseInt(formData.endTime.split(':')[0]), parseInt(formData.endTime.split(':')[1]))
-          
-          const currentDate = new Date().toISOString()
-          const userId = session?.user?.id || 'INDISPONIBLE'
-          
-          // Marquer tous les anciens créneaux comme supprimés
-          const updatedTimeSlots: TimeSlot[] = []
-          if (event?.timeSlots) {
-            event.timeSlots.forEach(slot => {
-              if (slot.status === 'active') {
-                updatedTimeSlots.push({
-                  ...slot,
-                  status: 'deleted' as const,
-                  modifiedBy: [
-                    ...(slot.modifiedBy || []),
-                    {
-                      userId,
-                      date: currentDate,
-                      action: 'deleted' as const
-                    }
-                  ]
-                })
-              } else {
-                updatedTimeSlots.push(slot)
-              }
-            })
-          }
-          
-          // Ajouter le nouveau créneau
-          updatedTimeSlots.push({
-            id: generateTimeSlotId(),
-            startDate: startDateTime.toISOString(),
-            endDate: endDateTime.toISOString(),
-            status: 'active' as const,
-            createdBy: userId,
-            modifiedBy: [{
-              userId,
-              date: currentDate,
-              action: 'created' as const
-            }]
-          })
-          
-          dataToSave.timeSlots = updatedTimeSlots
-        }
+      // Adapter les données de retour pour la physique (chemicals -> consommables)
+      const finalDataToSave = {
+        ...result.dataToSave,
+        consommables: result.dataToSave.chemicals,  // Remapping pour la physique
+        chemicals: undefined  // Supprimer le champ chemicals pour la physique
       }
 
-      await onSave(dataToSave)
+      // Sinon, utiliser l'API de mise à jour standard
+      await onSave(finalDataToSave)
       handleClose()
+
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
       setSnackbar({
@@ -1039,6 +973,9 @@ const handleFileUploaded = useCallback(async (fileId: string, uploadedFile: {
                     </Typography>
                     {slot.isExisting && (
                       <Chip label="Existant" size="small" color="primary" />
+                    )}
+                    {slot.wasModified && (
+                      <Chip label="Modifié" size="small" color="secondary" />
                     )}
                   </Box>
                   {timeSlots.length > 1 && (

@@ -37,6 +37,7 @@ import { useCalendarEvents } from '@/lib//hooks/useCalendarEvents'
 import { useReferenceData } from '@/lib//hooks/useReferenceData'
 import { UserRole } from "@/types/global";
 import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
+import { updateEventWithTimeslots } from '@/lib/event-creation-utils'
 
 const TAB_INDICES = {
   DAILY: 0,
@@ -78,7 +79,7 @@ export default function CalendarPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Hooks personnalisés
-  const { events, loading, error, fetchEvents, setEvents } = useCalendarEvents()
+  const { events, loading, error, fetchEvents, setEvents } = useCalendarEvents('chimie')
   const { materials, chemicals, userClasses, customClasses, setCustomClasses, saveNewClass } = useReferenceData({ discipline: 'chimie' })
   const { tpPresets } = useCalendarData()
   
@@ -450,34 +451,28 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
   if (!eventToEdit) return;
   
   try {
-    // Extraire timeSlots séparément pour éviter la confusion
+
+    // Extraire timeSlots et les convertir au format attendu
     const { timeSlots, ...eventDataWithoutSlots } = updatedEvent;
     
-    // Utiliser les timeSlots mis à jour s'ils existent, sinon garder les anciens
-    const finalTimeSlots = timeSlots || eventToEdit.timeSlots || [];
-    
-    
+    // Convertir les timeSlots au format TimeSlotInput
+    const timeSlotInputs = timeSlots?.map(slot => ({
+      date: slot.startDate.split('T')[0], // Extraire la date
+      startTime: slot.startDate.split('T')[1]?.substring(0, 5) || '08:00', // Extraire l'heure
+      endTime: slot.endDate.split('T')[1]?.substring(0, 5) || '09:00' // Extraire l'heure
+    })) || [];
 
-    const response = await fetch(`/api/calendrier/chimie?id=${eventToEdit.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...eventDataWithoutSlots,
-        timeSlots: finalTimeSlots // Envoyer directement tous les timeSlots
-      })
-    });
+    // Utiliser le système centralisé pour la mise à jour
+    const result = await updateEventWithTimeslots(
+      eventToEdit.id,
+      eventDataWithoutSlots,
+      timeSlotInputs,
+      'chimie'
+    );
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Erreur serveur:', errorData);
-      throw new Error('Erreur lors de la modification');
+    if (!result.success) {
+      throw new Error(result.message || 'Erreur lors de la modification');
     }
-
-    const result = await response.json();
-    
-
 
     // Rafraîchir la liste des événements
     await fetchEvents();
@@ -499,7 +494,8 @@ const handleSaveEdit = async (updatedEvent: Partial<CalendarEvent>) => {
     }
 
     try {
-      const response = await fetch(`/api/calendrier/chimie?id=${event.id}`, {
+      // ✅ MIGRATION CENTRALISÉE: Utiliser l'API centralisée /api/events au lieu de /api/calendrier/chimie
+      const response = await fetch(`/api/events?id=${event.id}&discipline=chimie`, {
         method: 'DELETE'
       })
 

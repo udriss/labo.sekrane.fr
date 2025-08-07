@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que l'utilisateur est bien l'owner
-    const isOwner = existingEvent.created_by === session.user.email || 
-                   existingEvent.created_by === session.user.id
+    const isOwner = existingEvent.createdBy === session.user.email || 
+                   existingEvent.createdBy === session.user.id
     
     if (!isOwner) {
       return NextResponse.json(

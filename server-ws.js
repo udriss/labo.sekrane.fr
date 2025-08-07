@@ -37,14 +37,14 @@ app.prepare().then(async () => {
     path: '/api/notifications/ws'
   });
 
-  console.log('🔌 WebSocket server created on path: /api/notifications/ws');
+  
 
   // WebSocket connection handling
   wss.on('connection', (ws, req) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const userId = url.searchParams.get('userId') || uuidv4();
     
-    console.log(`[WebSocket] New connection: ${userId}`);
+    
     
     // Store connection with user info
     wsConnections.set(userId, {
@@ -53,7 +53,7 @@ app.prepare().then(async () => {
       connectedAt: new Date()
     });
 
-    console.log(`[WebSocket] Total connections: ${wsConnections.size}`);
+    
     
     // Send initial connection message
     ws.send(JSON.stringify({
@@ -80,7 +80,7 @@ app.prepare().then(async () => {
     ws.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString());
-        console.log(`[WebSocket] Message from ${userId}:`, message);
+        
         
         switch (message.type) {
           case 'ping':
@@ -90,7 +90,7 @@ app.prepare().then(async () => {
             }));
             break;
           default:
-            console.log(`[WebSocket] Unknown message type: ${message.type}`);
+            
         }
       } catch (error) {
         console.error('[WebSocket] Error parsing message:', error);
@@ -99,10 +99,10 @@ app.prepare().then(async () => {
     
     // Handle connection close
     ws.on('close', (code, reason) => {
-      console.log(`[WebSocket] Connection closed: ${userId}, code: ${code}, reason: ${reason}`);
+      
       clearInterval(heartbeatInterval);
       wsConnections.delete(userId);
-      console.log(`[WebSocket] Total connections: ${wsConnections.size}`);
+      
     });
     
     // Handle errors
@@ -121,10 +121,10 @@ app.prepare().then(async () => {
         type: 'notification',
         ...notification
       }));
-      console.log(`[WebSocket] Notification sent to user ${targetUserId}`);
+      
       return true;
     } else {
-      console.log(`[WebSocket] User ${targetUserId} not connected`);
+      
       return false;
     }
   }
@@ -141,7 +141,7 @@ app.prepare().then(async () => {
         sentCount++;
       }
     });
-    console.log(`[WebSocket] Notification broadcasted to ${sentCount} users`);
+    
     return sentCount;
   }
 
@@ -155,15 +155,15 @@ app.prepare().then(async () => {
       getConnectedUsers: () => Array.from(wsConnections.keys()),
       getConnectionCount: () => wsConnections.size
     });
-    console.log('✅ WebSocket notification service initialized');
+    
   } catch (error) {
     console.warn('⚠️ WebSocket notification service not available:', error.message);
   }
 
   server.listen(port, () => {
-    console.log(`✅ Server ready on http://${hostname}:${port}`);
-    console.log(`🔔 WebSocket notifications enabled on path: /api/notifications/ws`);
-    console.log(`🌐 Environment: ${dev ? 'development' : 'production'}`);
+    
+    
+    
   });
 
   // Gestion propre de l'arrêt (idempotente)
@@ -171,11 +171,11 @@ app.prepare().then(async () => {
   
   function shutdown(signal) {
     if (isShuttingDown) {
-      console.log(`🔌 ${signal} received but already shutting down...`);
+      
       return;
     }
     isShuttingDown = true;
-    console.log(`🔌 ${signal} received, closing WebSocket connections...`);
+    
     
     // Nettoyer tous les intervalles heartbeat
     wsConnections.forEach((connection, userId) => {
@@ -187,17 +187,17 @@ app.prepare().then(async () => {
     
     // Fermer le serveur WebSocket
     wss.close(() => {
-      console.log('🔌 WebSocket server closed');
+      
       // Fermer le serveur HTTP
       server.close(() => {
-        console.log('✅ Server closed');
+        
         process.exit(0);
       });
     });
     
     // Force exit after 5 seconds if graceful shutdown fails
     setTimeout(() => {
-      console.log('🚨 Force exit after timeout');
+      
       process.exit(1);
     }, 5000);
   }

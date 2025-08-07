@@ -21,8 +21,6 @@ import {
   Circle, Room as RoomIcon, LocationOn,
   Person, Class
 } from '@mui/icons-material'
-import { getActiveTimeSlots } from '@/lib/calendar-utils-client'
-import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
 import type { Room, RoomOccupancy } from '@/types/rooms'
 
 interface RoomWeeklyViewProps {

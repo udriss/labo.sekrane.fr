@@ -23,23 +23,23 @@ const { ClassServiceSQL } = require('./lib/services/classService.sql.ts');
 
 async function migrateClasses() {
     try {
-        console.log('📖 Lecture du fichier JSON...');
+        
         
         const classesFile = path.join(process.cwd(), 'data', 'classes.json');
         const jsonData = JSON.parse(fs.readFileSync(classesFile, 'utf-8'));
         
-        console.log(`📊 Classes prédéfinies trouvées: ${jsonData.predefinedClasses?.length || 0}`);
-        console.log(`📊 Classes personnalisées trouvées: ${jsonData.customClasses?.length || 0}`);
         
-        console.log('💾 Migration vers la base de données...');
+        
+        
+        
         await ClassServiceSQL.migrateFromJSON(jsonData);
         
-        console.log('✅ Migration terminée avec succès!');
+        
         
         // Sauvegarder l'ancien fichier
         const backupFile = `${classesFile}.backup.${Date.now()}`;
         fs.copyFileSync(classesFile, backupFile);
-        console.log(`💾 Ancien fichier sauvegardé: ${backupFile}`);
+        
         
     } catch (error) {
         console.error('❌ Erreur lors de la migration:', error);

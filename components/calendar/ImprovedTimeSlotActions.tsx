@@ -13,7 +13,7 @@ import {
 } from '@mui/icons-material'
 import { DatePicker, TimePicker } from '@mui/x-date-pickers'
 import { CalendarEvent, TimeSlot } from '@/types/calendar'
-import { getDisplayTimeSlots } from '@/lib/calendar-migration-utils'
+import { getDisplayTimeSlots } from '@/lib/timeslots-utils'
 
 interface ImprovedTimeSlotActionsProps {
   event: CalendarEvent

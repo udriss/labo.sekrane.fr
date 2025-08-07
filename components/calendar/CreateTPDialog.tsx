@@ -22,6 +22,7 @@ import { fr } from 'date-fns/locale'
 import { FileUploadSection } from './FileUploadSection'
 import { RichTextEditor } from './RichTextEditor'
 import { FileWithMetadata } from '@/types/global'
+import { createEventWithTimeslots } from '@/lib/event-creation-utils'
 import { CalendarEvent } from '@/types/calendar'
 import { ChemicalRoom, ChemicalLocation } from '@/types/chemicals'
 import { useSession } from "next-auth/react"
@@ -521,17 +522,18 @@ const handleCreateCalendarEvent = async () => {
       }))
     }
 
-    // Créer l'événement
-    const apiEndpoint = discipline === 'physique' ? '/api/calendrier/physique' : '/api/calendrier/chimie'
-    const response = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(eventData)
-    })
+    // Extraire les timeSlots du eventData pour la nouvelle API
+    const { timeSlots, ...eventDataWithoutSlots } = eventData
+    
+    // Créer l'événement avec créneaux via l'API centralisée
+    const creationResult = await createEventWithTimeslots(
+      eventDataWithoutSlots as Partial<CalendarEvent>,
+      timeSlots,
+      discipline
+    )
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Erreur lors de la création des événements')
+    if (!creationResult.success) {
+      throw new Error(creationResult.message || 'Erreur lors de la création de l\'événement')
     }
 
     // Mettre à jour les quantités prévisionnelles uniquement pour les réactifs non-custom
