@@ -7,70 +7,81 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import LayoutWrapper from '@/components/layout/LayoutWrapper';
+import { loadAppSettings } from '@/lib/services/app-settings';
 
-export const metadata: Metadata = {
-  title: {
-    default: 'SGIL - Système de Gestion d\'Information de Laboratoire',
-    template: '%s — SGIL'
-  },
-  description: "Système complet de gestion de laboratoire scolaire : planification des séances, gestion du matériel, inventaire des réactifs chimiques, cahiers de TP et suivi des équipements.",
-  keywords: [
-    "laboratoire", "école", "physique", "chimie", "TP", "matériel", "réactifs",
-    "gestion", "inventaire", "planification", "équipement", "sécurité", "éducation"
-  ],
-  authors: [{ name: "Équipe SGIL" }],
-  creator: "SGIL Team",
-  publisher: "SGIL - Système de Gestion d'Information de Laboratoire",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await loadAppSettings();
+  const footerBrand = settings.NOM_ETABLISSEMENT || settings.brandingName || 'Paul VALÉRY • Paris 12e';
+  const brandSuffix = footerBrand ? ` - ${footerBrand}` : '';
+
+  return {
+    title: {
+      default: `SGIL${brandSuffix}`,
+      template: `%s — SGIL${brandSuffix}`
+    },
+    description: "Système complet de gestion de laboratoire scolaire : planification des séances, gestion du matériel, inventaire des réactifs chimiques, cahiers de TP et suivi des équipements.",
+    keywords: [
+      "laboratoire", "école", "physique", "chimie", "TP", "matériel", "réactifs",
+      "gestion", "inventaire", "planification", "équipement", "sécurité", "éducation"
+    ],
+    authors: [{ name: "M. Idriss SEKRANE" }],
+    creator: "M. Idriss SEKRANE",
+    publisher: `SGIL${brandSuffix}`,
+    robots: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
-  },
-  openGraph: {
-    title: "SGIL - Système de Gestion d'Information de Laboratoire",
-    description: "Plateforme complète pour la gestion des laboratoires scolaires : planification, matériel, réactifs, sécurité et suivi pédagogique.",
-    url: "https://labo.sekrane.fr",
-    siteName: "SGIL - Laboratoire Sekrane",
-    images: [
-      {
-        url: "https://labo.sekrane.fr/static_images/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "SGIL - Système de Gestion d'Information de Laboratoire",
-      },
-    ],
-    locale: "fr_FR",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "SGIL - Système de Gestion d'Information de Laboratoire",
-    description: "Plateforme complète pour la gestion des laboratoires scolaires : planification, matériel, réactifs, sécurité et suivi pédagogique.",
-    images: [
-      {
-        url: "https://labo.sekrane.fr/static_images/og-image.jpg",
-        alt: "SGIL - Système de Gestion d'Information de Laboratoire",
-      },
-    ],
-  },
-  other: {
-    "og:image:width": "1200",
-    "og:image:height": "630",
-    "og:image:type": "image/jpeg",
-    "theme-color": "#1976d2",
-    "msapplication-TileColor": "#1976d2",
-    "msapplication-TileImage": "/static_images/apple-touch-icon.png",
-    "format-detection": "telephone=no",
-  },
-};
+    openGraph: {
+      title: `SGIL${brandSuffix}`,
+      description: "Plateforme complète pour la gestion des laboratoires scolaires : planification, matériel, réactifs, sécurité et suivi pédagogique.",
+      url: "https://labo.sekrane.fr",
+      siteName: `SGIL${brandSuffix}`,
+      images: [
+        {
+          url: "https://labo.sekrane.fr/static_images/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `SGIL${brandSuffix}`,
+        },
+      ],
+      locale: "fr_FR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `SGIL${brandSuffix}`,
+      description: "Plateforme complète pour la gestion des laboratoires scolaires : planification, matériel, réactifs, sécurité et suivi pédagogique.",
+      images: [
+        {
+          url: "https://labo.sekrane.fr/static_images/og-image.png",
+          alt: `SGIL${brandSuffix}`,
+        },
+      ],
+    },
+    other: {
+      "og:image:width": "1200",
+      "og:image:height": "630",
+      "og:image:type": "image/jpeg",
+      "theme-color": "#1976d2",
+      "msapplication-TileColor": "#1976d2",
+      "msapplication-TileImage": "/static_images/apple-touch-icon.png",
+      "format-detection": "telephone=no",
+    },
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await loadAppSettings();
+  const footerBrand = settings.NOM_ETABLISSEMENT || settings.brandingName || '';
+  const brandSuffix = footerBrand ? ` - ${footerBrand}` : '';
+
   return (
     <html lang="fr">
       <head>
@@ -89,8 +100,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* Pour WhatsApp et autres messageries */}
         <meta property="og:description" content="Système complet de gestion de laboratoire scolaire : planification des séances, gestion du matériel, inventaire des réactifs chimiques, cahiers de TP et suivi des équipements." />
-        <meta property="og:title" content="SGIL - Système de Gestion d'Information de Laboratoire" />
-        <meta property="og:image" content="https://labo.sekrane.fr/static_images/og-image.jpg" />
+        <meta property="og:title" content="SGIL" />
+        <meta property="og:image" content="https://labo.sekrane.fr/static_images/og-image.png" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://labo.sekrane.fr" />
         <meta property="og:site_name" content="SGIL - Laboratoire Sekrane" />

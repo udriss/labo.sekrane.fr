@@ -64,14 +64,6 @@ export default function SignInPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  // Générer les positions des particules une seule fois
-  const particlePositions = useMemo(() => {
-    return [...Array(5)].map(() => ({
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-    }));
-  }, []);
-
   useEffect(() => {
     setMounted(true);
 
@@ -208,40 +200,6 @@ export default function SignInPage() {
     setShowPassword(!showPassword);
   };
 
-  // Composant de particule sans Math.random()
-  const FloatingParticle = ({
-    delay,
-    position,
-  }: {
-    delay: number;
-    position: { left: number; top: number };
-  }) => {
-    if (!mounted) return null;
-
-    return (
-      <motion.div
-        initial={{ y: 0, opacity: 0 }}
-        animate={{
-          y: [-20, 20, -20],
-          opacity: [0, 0.3, 0],
-        }}
-        transition={{
-          duration: 8,
-          delay,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        style={{
-          position: 'absolute',
-          left: `${position.left}%`,
-          top: `${position.top}%`,
-        }}
-      >
-        <Science sx={{ fontSize: 30, color: 'rgba(255,255,255,0.1)' }} />
-      </motion.div>
-    );
-  };
-
   // Ne rien afficher pendant la vérification de la session
   if (status === 'loading') {
     return (
@@ -306,25 +264,6 @@ export default function SignInPage() {
         overflow: 'auto',
       }}
     >
-      {/* Particules en arrière-plan - ne s'affiche qu'après le montage */}
-      {mounted &&
-        particlePositions.map((position, i) => (
-          <FloatingParticle key={i} delay={i * 1.5} position={position} />
-        ))}
-
-      {/* Overlay avec motif */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundImage: `radial-gradient(circle at 20% 80%, transparent 30%, rgba(0,0,0,0.3) 70%),
-                           radial-gradient(circle at 80% 20%, transparent 30%, rgba(0,0,0,0.3) 70%)`,
-          zIndex: 1,
-        }}
-      />
 
       <AnimatePresence mode="wait">
         {!inactivePrompt ? (
@@ -377,26 +316,26 @@ export default function SignInPage() {
                   <Grow in timeout={1200}>
                     <Box
                       sx={{
-                        position: 'relative',
-                        width: 100,
-                        height: 100,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      position: 'relative',
+                      width: 100,
+                      height: 100,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 1)}, ${alpha(theme.palette.secondary.main, 1)})`,
+                      borderRadius: 3,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: -2,
                         borderRadius: 3,
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          inset: -2,
-                          borderRadius: 3,
-                          padding: 2,
-                          background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.secondary.light})`,
-                          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                          maskComposite: 'exclude',
-                          opacity: 0.5,
-                        },
+                        padding: 2,
+                        background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.secondary.light})`,
+                        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        maskComposite: 'exclude',
+                        opacity: 0.5,
+                      },
                       }}
                     >
                       <Biotech sx={{ fontSize: 60, color: 'white' }} />
@@ -420,9 +359,9 @@ export default function SignInPage() {
                       {footerBrand}
                     </Typography>
                     <Typography
-                      variant="body2"
+                      variant="overline"
                       color="text.secondary"
-                      sx={{ maxWidth: 400, mx: 'auto' }}
+                      sx={{ maxWidth: 400, mx: 'auto', fontSize: 9 }}
                     >
                       Système de gestion de l'information du laboratoire scolaire
                     </Typography>
