@@ -969,12 +969,34 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
   });
   const [saving, setSaving] = useState(false);
 
+  // Progress tracking state for single preset creation
+  const [singleProgress, setSingleProgress] = useState<{
+    title: string;
+    status: 'pending' | 'creating' | 'slots' | 'documents' | 'completed' | 'error';
+    documentCount: number;
+    slotsCount: number;
+    error?: string;
+  } | null>(null);
+
+  // Completion control to delay tab change
+  const [creationComplete, setCreationComplete] = useState(false);
+
   const handleFinish = async () => {
     if (saving) return;
     setSaving(true);
+    
     try {
       // Récupérer les créneaux s'ils existent pour les ajouter après création
       const drafts: any[] = (meta as any).timeSlotsDrafts || [];
+      const uploads = meta.uploads || [];
+      
+      // Initialize progress tracking
+      setSingleProgress({
+        title: form.title || 'TP',
+        status: 'creating',
+        documentCount: uploads.length,
+        slotsCount: drafts.length,
+      });
 
       const res = await fetch('/api/event-presets', {
         method: 'POST',
@@ -1006,48 +1028,252 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
             })),
         }),
       });
-      if (res.ok) {
-        const created = await res.json();
-        const presetId = created?.preset?.id;
-        
-        // ✅ Ajouter les créneaux séparément s'ils existent
-        if (presetId && drafts.length > 0) {
-          await fetch(`/api/event-presets/${presetId}/creneaux`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ discipline: form.discipline, slots: drafts }),
-          });
-        }
-
-        // ✅ Uploader les fichiers après création du preset
-        if (presetId && (window as any).uploadFilesToEventWizard) {
-          try {
-            await (window as any).uploadFilesToEventWizard(presetId);
-            console.log('📄 Fichiers uploadés vers preset:', presetId);
-          } catch (error) {
-            console.error('❌ Erreur upload fichiers preset:', error);
-          }
-        }
-
-        onCreated();
+      
+      if (!res.ok) {
+        throw new Error(`Échec création TP: ${form.title || 'TP'}`);
       }
+      
+      const created = await res.json();
+      const presetId = created?.preset?.id;
+      
+      if (!presetId) {
+        throw new Error('ID preset manquant');
+      }
+
+      // Update progress to slots phase
+      setSingleProgress(prev => prev ? { ...prev, status: 'slots' } : null);
+      
+      // ✅ Ajouter les créneaux séparément s'ils existent
+      if (drafts.length > 0) {
+        await fetch(`/api/event-presets/${presetId}/creneaux`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ discipline: form.discipline, slots: drafts }),
+        });
+      }
+
+      // Update progress to documents phase
+      setSingleProgress(prev => prev ? { ...prev, status: 'documents' } : null);
+
+      // ✅ Uploader les fichiers après création du preset
+      if ((window as any).uploadFilesToEventWizard && uploads.length > 0) {
+        try {
+          await (window as any).uploadFilesToEventWizard(presetId);
+          console.log('📄 Fichiers uploadés vers preset:', presetId);
+        } catch (error) {
+          console.error('❌ Erreur upload fichiers preset:', error);
+        }
+      }
+
+      // Mark as completed
+      setSingleProgress(prev => prev ? { ...prev, status: 'completed' } : null);
+      setCreationComplete(true);
+
+      // Delay the onCreated call to let user see the completion
+      setTimeout(() => {
+        onCreated();
+      }, 2000); // 2 seconds delay to see the completion
+
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setSingleProgress(prev => 
+        prev ? { ...prev, status: 'error', error: errorMessage } : null
+      );
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <EventWizardCore
-      form={form}
-      onFormChange={setForm}
-      meta={meta}
-      onMetaChange={setMeta}
-      mode="page"
-      presetOnly
-      // Ne pas passer [] pour éviter refetch en boucle; laisser le composant auto-fetcher et cache
-      onFinish={handleFinish}
-      finishLabel={saving ? 'Sauvegarde...' : 'Ajouter le TP'}
-    />
+    <Box>
+      <EventWizardCore
+        form={form}
+        onFormChange={setForm}
+        meta={meta}
+        onMetaChange={setMeta}
+        mode="page"
+        presetOnly
+        // Ne pas passer [] pour éviter refetch en boucle; laisser le composant auto-fetcher et cache
+        onFinish={handleFinish}
+        finishLabel={saving ? 'Sauvegarde...' : 'Ajouter le TP'}
+      />
+      
+      {singleProgress && (
+        <Box sx={{ mt: 3, width: '100%', maxWidth: 600, mx: 'auto' }}>
+          <Typography
+            variant="body2"
+            gutterBottom
+            sx={{
+              fontWeight: 'bold',
+              color: 'text.primary',
+              width: '100%',
+              textAlign: 'left',
+            }}
+          >
+            Ajout en cours...
+          </Typography>
+
+          <Box display="flex" flexDirection="column" gap={1}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                mt: 1,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                width: '100%',
+                textAlign: 'right',
+              }}
+            >
+              • TP • Créneaux • Documents
+            </Typography>
+            
+            <Card sx={{ p: 2 }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    bgcolor:
+                      singleProgress.status === 'completed'
+                        ? 'success.main'
+                        : singleProgress.status === 'error'
+                          ? 'error.main'
+                          : singleProgress.status === 'pending'
+                            ? 'grey.300'
+                            : 'primary.main',
+                    animation:
+                      singleProgress.status === 'creating' ||
+                      singleProgress.status === 'slots' ||
+                      singleProgress.status === 'documents'
+                        ? 'pulse 1.5s ease-in-out infinite'
+                        : 'none',
+                    '@keyframes pulse': {
+                      '0%': { opacity: 1 },
+                      '50%': { opacity: 0.5 },
+                      '100%': { opacity: 1 },
+                    },
+                  }}
+                />
+                <Typography variant="body2" sx={{ flex: 1 }}>
+                  {singleProgress.title}
+                </Typography>
+                <Box display="flex" gap={1}>
+                  {/* Status indicators */}
+                  <Tooltip
+                    title={
+                      singleProgress.status === 'completed' || singleProgress.status === 'creating'
+                        ? 'TP ajouté'
+                        : 'TP en attente'
+                    }
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor:
+                          singleProgress.status === 'completed' || singleProgress.status === 'creating'
+                            ? 'success.main'
+                            : 'grey.300',
+                      }}
+                    />
+                  </Tooltip>
+
+                  <Tooltip
+                    title={
+                      singleProgress.slotsCount === 0
+                        ? 'Aucun créneau'
+                        : singleProgress.status === 'completed' || singleProgress.status === 'slots'
+                          ? `${singleProgress.slotsCount} créneau(x) ajouté(s)`
+                          : 'Créneaux en attente'
+                    }
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor:
+                          singleProgress.slotsCount === 0
+                            ? 'grey.400'
+                            : singleProgress.status === 'completed' ||
+                                singleProgress.status === 'slots' ||
+                                singleProgress.status === 'documents'
+                              ? 'success.main'
+                              : 'grey.300',
+                      }}
+                    />
+                  </Tooltip>
+
+                  <Tooltip
+                    title={
+                      singleProgress.documentCount === 0
+                        ? 'Aucun document'
+                        : singleProgress.status === 'completed'
+                          ? `${singleProgress.documentCount} document(s) ajouté(s)`
+                          : 'Documents en attente'
+                    }
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor:
+                          singleProgress.documentCount === 0
+                            ? 'grey.400'
+                            : singleProgress.status === 'completed'
+                              ? 'success.main'
+                              : 'grey.300',
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+
+                {singleProgress.status === 'creating' && <CircularProgress size={16} />}
+                {singleProgress.status === 'slots' && <CircularProgress size={16} />}
+                {singleProgress.status === 'documents' && <CircularProgress size={16} />}
+                {singleProgress.error && (
+                  <Typography variant="caption" color="error">
+                    {singleProgress.error}
+                  </Typography>
+                )}
+              </Box>
+            </Card>
+
+            {creationComplete && (
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <CheckIcon color="success" />
+                  <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
+                  TP ajouté avec succès !
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckIcon />}
+                  onClick={() => {
+                    setSingleProgress(null);
+                    setCreationComplete(false);
+                    onCreated();
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  Terminer maintenant
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  ou retour automatique dans quelques secondes...
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 }
 
