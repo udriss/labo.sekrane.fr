@@ -1069,10 +1069,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       setSingleProgress(prev => prev ? { ...prev, status: 'completed' } : null);
       setCreationComplete(true);
 
-      // Delay the onCreated call to let user see the completion
-      setTimeout(() => {
-        onCreated();
-      }, 2000); // 2 seconds delay to see the completion
+      // No automatic tab change - user must click "Terminer maintenant" button
 
     } catch (error) {
       console.error(error);
@@ -1263,10 +1260,10 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
                   }}
                   sx={{ mr: 1 }}
                 >
-                  Terminer maintenant
+                  Terminer et revenir à la liste
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  ou retour automatique dans quelques secondes...
+                  Cliquez pour revenir à la liste des TP
                 </Typography>
               </Box>
             )}

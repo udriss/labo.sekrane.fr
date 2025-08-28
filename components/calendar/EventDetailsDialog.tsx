@@ -222,7 +222,7 @@ export default function EventDetailsDialog({
     setEventClassIds(parseIds(event.classIds));
   }, [event]);
 
-  // Refetch event on external updates (edits) and update local state to reflect changes dynamically
+  // Refetch event on external updates AND when dialog opens to always show fresh documents
   useEffect(() => {
     if (!event?.id) return;
     let cancelled = false;
@@ -253,6 +253,12 @@ export default function EventDetailsDialog({
         setEventClassIds(parseIds(ev.classIds));
       } catch {}
     };
+
+    // Immediate refetch when the dialog opens or when the event id changes
+    if (open) {
+      refetchEvent();
+    }
+
     const onEnd = (e: any) => {
       try {
         const id = e?.detail?.eventId;
@@ -267,7 +273,7 @@ export default function EventDetailsDialog({
       window.removeEventListener('event-update:end', onEnd as any);
       window.removeEventListener('event:refetch', onEnd as any);
     };
-  }, [event?.id]);
+  }, [event?.id, open]);
 
   const hasPendingSlots = (event?.timeslots || []).some(
     (slot) =>
