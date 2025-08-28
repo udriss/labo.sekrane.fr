@@ -1359,41 +1359,51 @@ export default function EventWizardCore({
     };
   }, [uploadFilesToEventWizard]);
 
+  // Mémoriser la conversion des fichiers pour éviter les boucles infinies
+  const convertedUploads = useMemo(() => {
+    return selectedFiles.map(fileObj => {
+      if (fileObj.file && fileObj.uploadStatus === 'pending') {
+        // Local file format expected by BatchPresetWizard
+        return {
+          isLocal: true,
+          fileData: fileObj.file,
+          fileName: fileObj.file.name,
+          fileSize: fileObj.file.size,
+          fileType: fileObj.file.type,
+        };
+      } else if (fileObj.existingFile) {
+        // Already uploaded file format
+        return {
+          isLocal: false,
+          fileName: fileObj.existingFile.fileName,
+          fileUrl: fileObj.existingFile.fileUrl,
+          fileSize: fileObj.existingFile.fileSize,
+          fileType: fileObj.existingFile.fileType,
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }, [selectedFiles]);
+
+  // Référence stable pour éviter les changements inutiles
+  const uploadsRef = useRef<any[]>([]);
+  
   // Update meta to include files for parent component logic
   useEffect(() => {
-    if (updateMeta) {
-      // Convert selectedFiles to the format expected by BatchPresetWizard
-      const uploads = selectedFiles.map(fileObj => {
-        if (fileObj.file && fileObj.uploadStatus === 'pending') {
-          // Local file format expected by BatchPresetWizard
-          return {
-            isLocal: true,
-            fileData: fileObj.file,
-            fileName: fileObj.file.name,
-            fileSize: fileObj.file.size,
-            fileType: fileObj.file.type,
-          };
-        } else if (fileObj.existingFile) {
-          // Already uploaded file format
-          return {
-            isLocal: false,
-            fileName: fileObj.existingFile.fileName,
-            fileUrl: fileObj.existingFile.fileUrl,
-            fileSize: fileObj.existingFile.fileSize,
-            fileType: fileObj.existingFile.fileType,
-          };
-        }
-        return null;
-      }).filter(Boolean);
-
-      // Update only the uploads part of meta, keep existing data
-      const currentMeta = (meta || {}) as any;
-      updateMeta({
-        ...currentMeta,
-        uploads,
-      });
+    if (updateMeta && convertedUploads) {
+      // Vérifier si le contenu a réellement changé pour éviter les boucles
+      const uploadsChanged = JSON.stringify(convertedUploads) !== JSON.stringify(uploadsRef.current);
+      
+      if (uploadsChanged) {
+        uploadsRef.current = convertedUploads;
+        const currentMeta = (meta || {}) as any;
+        updateMeta({
+          ...currentMeta,
+          uploads: convertedUploads,
+        });
+      }
     }
-  }, [selectedFiles, updateMeta]); // ✅ CORRECTION: Retirer 'meta' des dépendances
+  }, [convertedUploads, updateMeta, meta]);
 
   return (
     <Box>

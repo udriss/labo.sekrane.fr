@@ -711,12 +711,14 @@ function EditPresetDialog({
             unit: r.unit || 'g',
             isCustom: !r.id,
           })),
-          documents: (meta.uploads || []).map((u: any) => ({
-            fileName: u.fileName || u.name || 'document',
-            fileUrl: u.fileUrl || u.url || u,
-            fileSize: u.fileSize,
-            fileType: u.fileType,
-          })),
+          documents: (meta.uploads || [])
+            .filter((u: any) => !u.isLocal || u.fileUrl) // ✅ Filtrer les fichiers locaux non uploadés
+            .map((u: any) => ({
+              fileName: u.fileName || u.name || 'document',
+              fileUrl: u.fileUrl || u.url || u,
+              fileSize: u.fileSize,
+              fileType: u.fileType,
+            })),
         }),
       });
       if (!res.ok) return;
@@ -971,6 +973,9 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
     if (saving) return;
     setSaving(true);
     try {
+      // Récupérer les créneaux s'ils existent pour les ajouter après création
+      const drafts: any[] = (meta as any).timeSlotsDrafts || [];
+
       const res = await fetch('/api/event-presets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -991,26 +996,39 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
             unit: r.unit || 'g',
             isCustom: !r.id,
           })),
-          documents: (meta.uploads || []).map((u: any) => ({
-            fileName: u.fileName || u.name || 'document',
-            fileUrl: u.fileUrl || u.url || u,
-            fileSize: u.fileSize,
-            fileType: u.fileType,
-          })),
+          documents: (meta.uploads || [])
+            .filter((u: any) => !u.isLocal || u.fileUrl) // ✅ Filtrer les fichiers locaux non uploadés
+            .map((u: any) => ({
+              fileName: u.fileName || u.name || 'document',
+              fileUrl: u.fileUrl || u.url || u,
+              fileSize: u.fileSize,
+              fileType: u.fileType,
+            })),
         }),
       });
       if (res.ok) {
         const created = await res.json();
         const presetId = created?.preset?.id;
-        // Persist timeslots from wizard into preset creneaux table
-        const drafts: any[] = (meta as any).timeSlotsDrafts || [];
-        if (presetId && drafts.length) {
+        
+        // ✅ Ajouter les créneaux séparément s'ils existent
+        if (presetId && drafts.length > 0) {
           await fetch(`/api/event-presets/${presetId}/creneaux`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ discipline: form.discipline, slots: drafts }),
           });
         }
+
+        // ✅ Uploader les fichiers après création du preset
+        if (presetId && (window as any).uploadFilesToEventWizard) {
+          try {
+            await (window as any).uploadFilesToEventWizard(presetId);
+            console.log('📄 Fichiers uploadés vers preset:', presetId);
+          } catch (error) {
+            console.error('❌ Erreur upload fichiers preset:', error);
+          }
+        }
+
         onCreated();
       }
     } finally {
