@@ -230,7 +230,20 @@ function CalendrierContent() {
     async (eventId: number) => {
       try {
         const response = await fetch(`/api/events/${eventId}`);
-        if (!response.ok) throw new Error("Erreur lors du rechargement de l'événement");
+        if (!response.ok) {
+          // Si l'événement n'existe plus (404), le supprimer de la liste locale
+          if (response.status === 404) {
+            console.log(`Événement ${eventId} supprimé, mise à jour de la liste locale`);
+            setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+            // Si l'événement sélectionné était celui-ci, le fermer
+            if (selectedEvent && selectedEvent.id === eventId) {
+              setSelectedEvent(null);
+              setDetailsDialogOpen(false);
+            }
+            return;
+          }
+          throw new Error("Erreur lors du rechargement de l'événement");
+        }
 
         const data = await response.json();
         if (data.event) {
@@ -575,9 +588,14 @@ function CalendrierContent() {
         isCustom: !!c.isCustom,
       })),
       documents: ((createMeta as any)?.uploads || [])
-        .filter((u: any) => !!u && !u.isLocal) // Only include already uploaded files, not local ones
+        .filter((u: any) => {
+          if (!u) return false;
+          const isLocal = !!(u as any).isLocal;
+          // Exclude only local files (they will be uploaded via multipart after creation)
+          return !isLocal;
+        })
         .map((u: any) => {
-          const fileUrl = typeof u === 'string' ? u : u.fileUrl;
+          const fileUrl = typeof u === 'string' ? u : (u.fileUrl || u.existingFile?.fileUrl || '');
           let fileName =
             typeof u === 'object' && u.fileName
               ? u.fileName
@@ -652,6 +670,9 @@ function CalendrierContent() {
     } else {
       showSnackbar('Événement ajouté avec succès', 'success');
     }
+
+    // Handle preset files copying via uploadFilesToEvent if available
+    // Plus besoin d'une étape de copie post-création: le serveur copie les fichiers /preset/ -> /user_{id}/{mois} pendant POST /api/events
     // Add the new event to the local state optimistically for animation (at the top)
     setEvents((prev) => [newEvent, ...prev]);
 
@@ -1054,10 +1075,11 @@ function CalendrierContent() {
         />
         {/* Export moved to dedicated tab */}
 
-        {/* Zone de test des rôles (développement uniquement) */}
+        {/* Zone de test des rôles (développement uniquement)
         {Number(userId) === 1 && baseUserRole === 'ADMIN' && (
           <RoleTester config={roleTestConfig} onConfigChange={setRoleTestConfig} />
         )}
+        */}
 
         {/* Content Section via CalendarTabs */}
         <CalendarTabs

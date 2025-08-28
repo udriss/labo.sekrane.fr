@@ -406,7 +406,7 @@ export default function AdminSecurityPage() {
             <TableCell>Type</TableCell>
             <TableCell>Email</TableCell>
             <TableCell>Succès</TableCell>
-            <TableCell>Créé</TableCell>
+            <TableCell>Ajouté</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

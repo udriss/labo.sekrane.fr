@@ -126,7 +126,7 @@ export default function CreateEventDialog({
     createEventDialogCache.selectedFiles || [],
   );
 
-  // État pour gérer l'événement créé (pour upload des fichiers)
+  // État pour gérer l'événement ajouté (pour upload des fichiers)
   const [createdEventId, setCreatedEventId] = useState<number | null>(null);
 
   // Function to upload files to a specific event ID (called after event creation)
@@ -171,49 +171,95 @@ export default function CreateEventDialog({
       }
     }
 
-    // 2) Ajouter les références existantes (documents de preset copiés en /public/tmp)
+    // 2) Copy existing files (from presets) to event folder and update database
     const existingPending = selectedFiles.filter(
       (f) => !f.file && f.existingFile && f.uploadStatus === 'pending',
     );
     for (const fileObj of existingPending) {
       const ef = fileObj.existingFile!;
       try {
-        const response = await fetch(`/api/events/${eventId}/documents`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: ef.fileName || 'document',
-            fileUrl: ef.fileUrl,
-            fileSize: ef.fileSize,
-            fileType: ef.fileType || 'application/octet-stream',
-          }),
-        });
-        if (response.ok) {
-          const uploaded = await response.json();
-          setSelectedFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileObj.id
-                ? {
-                    ...f,
-                    existingFile: {
-                      fileName: uploaded.document?.fileName || ef.fileName,
-                      fileUrl: uploaded.document?.fileUrl || ef.fileUrl,
-                      fileSize: uploaded.document?.fileSize ?? ef.fileSize,
-                      fileType: uploaded.document?.fileType || ef.fileType,
-                    },
-                    uploadStatus: 'completed',
-                    uploadProgress: 100,
-                    isPersisted: true,
-                  }
-                : f,
-            ),
-          );
-          console.log(`✅ Document lié (preset): ${ef.fileName || ef.fileUrl}`);
+        // Check if this is a preset file that needs to be copied
+        const isPresetFile = ef.fileUrl.includes('/preset/');
+
+        if (isPresetFile) {
+          // For preset files, we need to copy them to the event folder
+          // The API will handle the file copying and return the new URL
+          const response = await fetch(`/api/events/${eventId}/documents`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: ef.fileName || 'document',
+              fileUrl: ef.fileUrl, // Original preset URL - API will copy the file
+              fileSize: ef.fileSize,
+              fileType: ef.fileType || 'application/octet-stream',
+              copyFromPreset: true, // Flag to indicate this needs copying
+            }),
+          });
+
+          if (response.ok) {
+            const uploaded = await response.json();
+            setSelectedFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileObj.id
+                  ? {
+                      ...f,
+                      existingFile: {
+                        fileName: uploaded.document?.fileName || ef.fileName,
+                        fileUrl: uploaded.document?.fileUrl || ef.fileUrl,
+                        fileSize: uploaded.document?.fileSize ?? ef.fileSize,
+                        fileType: uploaded.document?.fileType || ef.fileType,
+                      },
+                      uploadStatus: 'completed',
+                      uploadProgress: 100,
+                      isPersisted: true,
+                    }
+                  : f,
+              ),
+            );
+            console.log(`✅ Document copié depuis preset: ${ef.fileName || ef.fileUrl}`);
+          } else {
+            console.error(`❌ Échec copie preset: ${ef.fileName || ef.fileUrl}`);
+          }
         } else {
-          console.error(`❌ Échec ajout référence: ${ef.fileName || ef.fileUrl}`);
+          // For non-preset files, just reference them
+          const response = await fetch(`/api/events/${eventId}/documents`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileName: ef.fileName || 'document',
+              fileUrl: ef.fileUrl,
+              fileSize: ef.fileSize,
+              fileType: ef.fileType || 'application/octet-stream',
+            }),
+          });
+
+          if (response.ok) {
+            const uploaded = await response.json();
+            setSelectedFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileObj.id
+                  ? {
+                      ...f,
+                      existingFile: {
+                        fileName: uploaded.document?.fileName || ef.fileName,
+                        fileUrl: uploaded.document?.fileUrl || ef.fileUrl,
+                        fileSize: uploaded.document?.fileSize ?? ef.fileSize,
+                        fileType: uploaded.document?.fileType || ef.fileType,
+                      },
+                      uploadStatus: 'completed',
+                      uploadProgress: 100,
+                      isPersisted: true,
+                    }
+                  : f,
+              ),
+            );
+            console.log(`✅ Document lié: ${ef.fileName || ef.fileUrl}`);
+          } else {
+            console.error(`❌ Échec liaison: ${ef.fileName || ef.fileUrl}`);
+          }
         }
       } catch (error) {
-        console.error('❌ Erreur ajout référence:', ef.fileName || ef.fileUrl, error);
+        console.error('❌ Erreur traitement document:', ef.fileName || ef.fileUrl, error);
       }
     }
 
@@ -235,13 +281,12 @@ export default function CreateEventDialog({
     }
   }, [onEventCreated, createdEventId, uploadFilesToEvent]);
 
-  // Update meta to include files for parent component upload logic
+  // Update meta to include files for parent component upload logic (avoid loops)
   useEffect(() => {
-    if (onMetaChange) {
-      // Convert selectedFiles to the format expected by handleCreateEvent
-      const uploads = selectedFiles.map(fileObj => {
+    if (!onMetaChange) return;
+    const uploads = selectedFiles
+      .map((fileObj) => {
         if (fileObj.file && fileObj.uploadStatus === 'pending') {
-          // Local file format expected by handleCreateEvent
           return {
             isLocal: true,
             fileData: fileObj.file,
@@ -250,7 +295,6 @@ export default function CreateEventDialog({
             fileType: fileObj.file.type,
           };
         } else if (fileObj.existingFile) {
-          // Already uploaded file format
           return {
             isLocal: false,
             fileName: fileObj.existingFile.fileName,
@@ -260,16 +304,18 @@ export default function CreateEventDialog({
           };
         }
         return null;
-      }).filter(Boolean);
-
-      // Update only the uploads part of meta, keep existing classes/materials/chemicals
-      const currentMeta = (valueMeta || {}) as any;
-      onMetaChange({
-        ...currentMeta,
-        uploads,
-      });
-    }
-  }, [selectedFiles, onMetaChange, valueMeta]);
+      })
+      .filter(Boolean);
+    const currentMeta = (valueMeta || {}) as any;
+    // Skip if uploads are identical to avoid infinite update loops
+    try {
+      const a = JSON.stringify((currentMeta.uploads || []).map((u: any) => (typeof u === 'string' ? { fileUrl: u } : u)));
+      const b = JSON.stringify((uploads || []).map((u: any) => (typeof u === 'string' ? { fileUrl: u } : u)));
+      if (a === b) return;
+    } catch {}
+    onMetaChange({ ...currentMeta, uploads });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFiles]);
 
   // Expose upload function via window global (for parent to call after event creation)
   useEffect(() => {
@@ -626,6 +672,23 @@ export default function CreateEventDialog({
                       onChange={(_, val) => {
                         setSelectedPreset(val);
                         if (val) {
+                          // Reset all local dialog state to avoid overlap with previous selection
+                          try { resetCreateEventDialogCache(); } catch {}
+                          setSelectedFiles([]);
+                          createEventDialogCache.selectedFiles = [];
+                          setTimeSlots([{ date: null, startTime: null, endTime: null, salleIds: [], classIds: [] }]);
+                          // Clear meta before applying new preset
+                          updateMeta({
+                            materialsDetailed: [],
+                            chemicalsDetailed: [],
+                            customMaterials: [],
+                            customChemicals: [],
+                            uploads: [],
+                            remarks: '',
+                          });
+                          // Clear local notes
+                          setForm((f) => ({ ...f, notes: '' }));
+
                           (async () => {
                             try {
                               // Fetch full preset details to include all related tables
@@ -650,37 +713,42 @@ export default function CreateEventDialog({
                                 uploads: (preset.documents || []).map((d: any) => d.fileUrl),
                               });
 
-                              // Copy preset documents to /public/tmp and add as local pending files
+                              // Reference preset documents directly; backend will copy into user folder on event creation
                               const docs: any[] = preset.documents || [];
                               if (docs.length) {
                                 const newFiles: FileWithMetadata[] = [];
                                 for (const d of docs) {
                                   if (!d?.fileUrl) continue;
-                                  try {
-                                    const copyRes = await fetch('/api/tmp/copy', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ fileUrl: d.fileUrl }),
-                                    });
-                                    if (!copyRes.ok) continue;
-                                    const info = await copyRes.json();
-                                    // Create a lightweight FileWithMetadata referencing the tmp URL (no actual File object)
-                                    newFiles.push({
-                                      id: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-                                      existingFile: {
-                                        fileName: info.fileName || d.fileName || 'document',
-                                        fileUrl: info.tmpUrl,
-                                        fileSize: info.fileSize || d.fileSize || 0,
-                                        fileType: info.fileType || d.fileType || 'application/octet-stream',
-                                      },
-                                      uploadStatus: 'pending',
-                                      uploadProgress: 0,
-                                    });
-                                  } catch {}
+                                  const baseName = (() => {
+                                    try {
+                                      const raw = decodeURIComponent(String(d.fileUrl)).split('?')[0];
+                                      const parts = raw.split('/');
+                                      return d.fileName || parts[parts.length - 1] || 'document';
+                                    } catch {
+                                      return d.fileName || 'document';
+                                    }
+                                  })();
+                                  newFiles.push({
+                                    id: `preset_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                                    existingFile: {
+                                      fileName: baseName,
+                                      fileUrl: d.fileUrl,
+                                      fileSize: d.fileSize || 0,
+                                      fileType: d.fileType || 'application/octet-stream',
+                                    },
+                                    uploadStatus: 'pending',
+                                    uploadProgress: 0,
+                                  });
                                 }
                                 if (newFiles.length) {
                                   setSelectedFiles((prev) => {
-                                    const merged = [...prev, ...newFiles];
+                                    // deduplicate by existing fileUrl
+                                    const byUrl = new Map<string, FileWithMetadata>();
+                                    [...prev, ...newFiles].forEach((f) => {
+                                      const url = f.existingFile?.fileUrl || `${f.file?.name || ''}:${f.id}`;
+                                      if (url) byUrl.set(url, f);
+                                    });
+                                    const merged = Array.from(byUrl.values());
                                     createEventDialogCache.selectedFiles = merged;
                                     return merged;
                                   });
@@ -1266,7 +1334,7 @@ export default function CreateEventDialog({
               </Stack>
             </Box>
           )}
-          {(valueMeta?.uploads || []).length > 0 && (
+          {/* {(valueMeta?.uploads || []).length > 0 && (
             <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
               {(valueMeta?.uploads || []).map((u: any) => {
                 const fileUrl = typeof u === 'string' ? u : u.fileUrl;
@@ -1288,7 +1356,7 @@ export default function CreateEventDialog({
                 );
               })}
             </Stack>
-          )}
+          )} */}
           <Box display="flex" gap={1} mt={2}>
             <Button onClick={() => setActiveStep(isLaborantin ? idxTimeslots : idxResources)}>
               Retour

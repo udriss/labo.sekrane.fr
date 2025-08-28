@@ -20,6 +20,7 @@ const jsonAddSchema = z.object({
   fileUrl: z.string().min(1),
   fileSize: z.number().optional(),
   fileType: z.string().optional(),
+  copyFromPreset: z.boolean().optional(), // Flag to indicate file needs to be copied from preset folder
 });
 
 const ALLOWED_EXTS = [
@@ -37,13 +38,27 @@ const ALLOWED_EXTS = [
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 function getFrenchMonthFolder(date = new Date()) {
-  const month = date.toLocaleString('fr-FR', { month: 'long' });
-  return `${month}_${date.getFullYear()}`;
+  const raw = date.toLocaleString('fr-FR', { month: 'long' });
+  // Normalize: remove accents, replace apostrophes with '_', spaces with '_', restrict charset
+  let safe = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  safe = safe.replace(/['’]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!safe) safe = 'mois';
+  return `${safe}_${date.getFullYear()}`;
 }
 
 function sanitizeFilename(name: string): string {
-  const base = name.split(/[\\/]/).pop() || 'fichier';
-  return base.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-éèêëàâäôöîïûüçÉÈÊËÀÂÄÔÖÎÏÛÜÇ]/g, '');
+  // 1) Extract base
+  let base = name.split(/[\\/]/).pop() || 'fichier';
+  // 2) Normalize and strip accents (diacritics)
+  base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // 3) Replace apostrophes with underscore
+  base = base.replace(/['’]/g, '_');
+  // 4) Replace spaces with underscore
+  base = base.replace(/\s+/g, '_');
+  // 5) Remove any disallowed characters (keep a-z A-Z 0-9 . _ -)
+  base = base.replace(/[^a-zA-Z0-9._-]/g, '');
+  // Fallback if empty
+  return base || 'fichier';
 }
 
 async function ensureUniqueFile(filePath: string): Promise<string> {
@@ -169,14 +184,67 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
     // JSON reference mode
     const raw = await req.json();
     const parsed = jsonAddSchema.parse(raw);
+
+    // Copy the source into the current user's folder (do not remove the source)
+    const publicRoot = path.join(process.cwd(), 'public');
+    let buffer: Buffer | null = null;
+    let srcFileName = sanitizeFilename(parsed.fileName || 'fichier');
+    let srcFileType: string | undefined = parsed.fileType || 'application/octet-stream';
+    let srcFileSize: number | undefined = parsed.fileSize;
+
+    if (/^https?:\/\//i.test(parsed.fileUrl)) {
+      // Remote URL: fetch then copy
+      const res2 = await fetch(parsed.fileUrl, { headers: { cookie: req.headers.get('cookie') ?? '' } });
+      if (!res2.ok) {
+        return NextResponse.json({ error: 'Téléchargement source impossible' }, { status: 400 });
+      }
+      const ab = await res2.arrayBuffer();
+      buffer = Buffer.from(ab);
+      srcFileType = res2.headers.get('content-type') || srcFileType;
+      srcFileSize = Number(res2.headers.get('content-length') || buffer.length);
+      try {
+        const u = new URL(parsed.fileUrl);
+        const base = path.basename(decodeURIComponent(u.pathname).split('?')[0] || 'fichier');
+        if (!parsed.fileName) srcFileName = sanitizeFilename(base);
+      } catch {}
+    } else if (parsed.fileUrl.startsWith('/')) {
+      // Local public file: read then copy
+      const srcAbs = path.join(publicRoot, parsed.fileUrl.replace(/^\/+/, ''));
+      const stat = await fs.stat(srcAbs).catch(() => null);
+      if (!stat || !stat.isFile()) {
+        return NextResponse.json({ error: 'Fichier source introuvable' }, { status: 404 });
+      }
+      buffer = await fs.readFile(srcAbs);
+      srcFileSize = stat.size;
+      if (!parsed.fileName) srcFileName = sanitizeFilename(path.basename(srcAbs));
+
+      // If this is a preset file that needs to be copied to event folder, ensure it's copied to the correct location
+      if (parsed.copyFromPreset && parsed.fileUrl.includes('/preset/')) {
+        // This is a preset file being copied to an event - ensure it goes to event folder structure
+        // The targetDir is already set correctly above, so the file will be copied to the event folder
+        console.log(`📋 Copie fichier preset vers événement: ${srcFileName}`);
+      }
+    } else {
+      return NextResponse.json({ error: 'URL source non supportée' }, { status: 400 });
+    }
+
+    // Write to user's folder with unique name
+    const userFolder = `user_${session.user.id}`;
+    const monthFolder = getFrenchMonthFolder();
+    const targetDir = path.join(publicRoot, userFolder, monthFolder);
+    await fs.mkdir(targetDir, { recursive: true });
+    const finalPath = await ensureUniqueFile(path.join(targetDir, srcFileName));
+    await fs.writeFile(finalPath, buffer!);
+    const relPath = '/' + [userFolder, monthFolder, path.basename(finalPath)].join('/');
+
     try {
       const created = await prisma.evenementDocument.create({
         data: {
           eventId,
-          fileName: parsed.fileName,
-          fileUrl: parsed.fileUrl,
-          fileSize: parsed.fileSize,
-          fileType: parsed.fileType,
+          fileName: path.basename(finalPath),
+          fileUrl: relPath,
+          fileSize: srcFileSize,
+          fileType: srcFileType,
         },
       });
       // Owner notification (document added)
@@ -226,43 +294,63 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
   if (Number.isNaN(eventId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  
   try {
     const { searchParams } = new URL(req.url);
     const fileUrl = searchParams.get('fileUrl');
-    if (!fileUrl) return NextResponse.json({ error: 'fileUrl requis' }, { status: 400 });
-    const doc = await prisma.evenementDocument.findFirst({ where: { eventId, fileUrl } });
-    if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 });
-    await prisma.evenementDocument.delete({ where: { id: doc.id } });
-    // Archiver physiquement (non bloquant si erreur)
-    archivePhysicalFile(doc.fileUrl, session.user.name || `user_${session.user.id}`).catch(
-      () => {},
-    );
-    // Owner notification (document removed)
-    try {
-      const settings = await loadAppSettings();
-      if (
-        settings.notificationOwnerEvents?.enabled &&
-        settings.notificationOwnerEvents.includeDocuments
-      ) {
-        const ev = await prisma.evenement.findUnique({
-          where: { id: eventId },
-          select: { ownerId: true, title: true },
-        });
-        const actorId = Number(session.user.id);
-        const blocked = settings.notificationOwnerEvents?.blockedUserIds || [];
-        if (ev?.ownerId && !blocked.includes(ev.ownerId)) {
-          await notificationService.createAndDispatch({
-            module: 'EVENTS_OWNER',
-            actionType: 'OWNER_DOC_REMOVED',
-            severity: 'low',
-            message: `Un document a été supprimé de votre événement <strong>${ev.title}</strong>`,
-            data: { eventId, fileUrl: doc.fileUrl, byUserId: actorId },
-            targetUserIds: [ev.ownerId],
+    
+    if (fileUrl) {
+      // Delete specific document
+      const doc = await prisma.evenementDocument.findFirst({ where: { eventId, fileUrl } });
+      if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 });
+      await prisma.evenementDocument.delete({ where: { id: doc.id } });
+      // Archiver physiquement (non bloquant si erreur)
+      archivePhysicalFile(doc.fileUrl, session.user.name || `user_${session.user.id}`).catch(
+        () => {},
+      );
+      // Owner notification (document removed)
+      try {
+        const settings = await loadAppSettings();
+        if (
+          settings.notificationOwnerEvents?.enabled &&
+          settings.notificationOwnerEvents.includeDocuments
+        ) {
+          const ev = await prisma.evenement.findUnique({
+            where: { id: eventId },
+            select: { ownerId: true, title: true },
           });
+          const actorId = Number(session.user.id);
+          const blocked = settings.notificationOwnerEvents?.blockedUserIds || [];
+          if (ev?.ownerId && !blocked.includes(ev.ownerId)) {
+            await notificationService.createAndDispatch({
+              module: 'EVENTS_OWNER',
+              actionType: 'OWNER_DOC_REMOVED',
+              severity: 'low',
+              message: `Un document a été supprimé de votre événement <strong>${ev.title}</strong>`,
+              data: { eventId, fileUrl: doc.fileUrl, byUserId: actorId },
+              targetUserIds: [ev.ownerId],
+            });
+          }
         }
+      } catch {}
+      return NextResponse.json({ ok: true });
+    } else {
+      // Delete ALL documents for this event
+      const documents = await prisma.evenementDocument.findMany({ 
+        where: { eventId },
+        select: { id: true, fileUrl: true }
+      });
+      
+      // Archive all physical files
+      for (const doc of documents) {
+        archivePhysicalFile(doc.fileUrl, session.user.name || `user_${session.user.id}`).catch(() => {});
       }
-    } catch {}
-    return NextResponse.json({ ok: true });
+      
+      // Delete all documents from database
+      await prisma.evenementDocument.deleteMany({ where: { eventId } });
+      
+      return NextResponse.json({ ok: true, deletedCount: documents.length });
+    }
   } catch (e) {
     console.error('[documents][DELETE]', e);
     return NextResponse.json({ error: 'Échec suppression' }, { status: 500 });

@@ -12,9 +12,27 @@ import {
   Tooltip,
   Paper,
   CircularProgress,
+  Checkbox,
+  Button,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Pagination,
+  Stack,
 } from '@mui/material';
 import { FilterList as FilterListIcon } from '@mui/icons-material';
-import { Print as PrintIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Print as PrintIcon, Search as SearchIcon, Delete as DeleteIcon, SelectAll as SelectAllIcon, AttachFile as AttachFileIcon, Description as DescriptionIcon, DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
 import MultiAssignDialog, { MultiAssignOption } from '@/components/shared/MultiAssignDialog';
 import SlotDisplay from '@/components/calendar/SlotDisplay';
 import { Person as PersonIcon } from '@mui/icons-material';
@@ -100,10 +118,22 @@ export default function EventList({
   const [allClasses, setAllClasses] = React.useState<Array<{ id: number; name: string }>>([]);
   const [loadingClasses, setLoadingClasses] = React.useState(false);
   const [exportingIds, setExportingIds] = React.useState<Set<number>>(new Set());
+  // Multi-selection states
+  const [selectionMode, setSelectionMode] = React.useState(false);
+  const [selectedEvents, setSelectedEvents] = React.useState<Set<number>>(new Set());
+  const [batchDeleting, setBatchDeleting] = React.useState(false);
+  const [batchDeleteError, setBatchDeleteError] = React.useState<string | null>(null);
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = React.useState(false);
+  const [selectedEventsDetails, setSelectedEventsDetails] = React.useState<any[]>([]);
   // Dialog state must be declared before any conditional returns to keep hooks order stable
   const [dialog, setDialog] = React.useState<null | { type: 'salles' | 'classes'; slot: any }>(
     null,
   );
+
+  // Pagination states
+  const [page, setPage] = React.useState(1);
+  const [pageSize] = React.useState(10); // Fixed page size
+  const [showAll, setShowAll] = React.useState(false);
 
   // Keep track of previous event IDs to detect new additions
   const previousEventIdsRef = React.useRef<Set<number>>(new Set());
@@ -336,11 +366,31 @@ export default function EventList({
     })
     .filter(isEventInDateRange);
 
+  // Pagination logic
+  const totalEvents = filteredEvents.length;
+  const totalPages = Math.ceil(totalEvents / pageSize);
+  const paginatedEvents = showAll ? filteredEvents : filteredEvents.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [roomFilterLocal, classFilterLocal, dateRange, discipline]);
+
+  // Reset to paginated view when events change significantly
+  React.useEffect(() => {
+    if (totalEvents <= pageSize) {
+      setShowAll(true);
+    } else if (showAll && totalEvents > pageSize * 2) {
+      setShowAll(false);
+      setPage(1);
+    }
+  }, [totalEvents, pageSize, showAll]);
+
   if (loading) {
     return <EventListSkeleton />;
   }
 
-  const isEmpty = filteredEvents.length === 0;
+  const isEmpty = totalEvents === 0;
 
   // parseDate already defined above
   const formatDateHeader = (key: string) => {
@@ -496,16 +546,175 @@ export default function EventList({
     // Si pop-up bloqué, l'utilisateur restera sur la page courante; aucune action supplémentaire
   };
 
+  // Multi-selection functions
+  const handleSelectEvent = (eventId: number, checked: boolean) => {
+    setSelectedEvents(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(eventId);
+      } else {
+        newSet.delete(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedEvents.size === paginatedEvents.length) {
+      // Deselect all
+      setSelectedEvents(new Set());
+    } else {
+      // Select all visible events
+      setSelectedEvents(new Set(paginatedEvents.map(e => e.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedEvents.size === 0) return;
+
+    // Fetch detailed information for selected events including documents
+    setBatchDeleting(true);
+    try {
+      const eventDetailsPromises = Array.from(selectedEvents).map(eventId =>
+        fetch(`/api/events/${eventId}`)
+          .then(res => res.json())
+          .then(data => data.event)
+          .catch(() => null)
+      );
+
+      const details = await Promise.all(eventDetailsPromises);
+      const validDetails = details.filter(event => event !== null);
+      setSelectedEventsDetails(validDetails);
+      setBatchDeleteDialogOpen(true);
+    } catch (error) {
+      setBatchDeleteError('Erreur lors du chargement des détails des événements');
+    } finally {
+      setBatchDeleting(false);
+    }
+  };
+
+  const confirmBatchDelete = async () => {
+    setBatchDeleteDialogOpen(false);
+    setBatchDeleting(true);
+    setBatchDeleteError(null);
+
+    try {
+      const idsToDelete = Array.from(selectedEvents);
+      const deletePromises = idsToDelete.map((eventId) =>
+        (async () => {
+          // First delete the event's documents
+          try {
+            await fetch(`/api/events/${eventId}/documents`, { method: 'DELETE' });
+          } catch (docError) {
+            console.warn(`Erreur lors de la suppression des documents de l'événement ${eventId}:`, docError);
+            // Continue with event deletion even if document deletion fails
+          }
+          
+          // Then delete the event itself
+          const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(`Failed to delete event ${eventId}`);
+          return eventId;
+        })()
+      );
+
+      await Promise.all(deletePromises);
+
+      setLocalEvents((prev) => prev.filter((event) => !idsToDelete.includes(event.id)));
+
+      if (onEventUpdate) {
+        idsToDelete.forEach((eventId) => onEventUpdate(eventId));
+      }
+
+      setSelectedEvents(new Set());
+      setSelectionMode(false);
+    } catch (error) {
+      setBatchDeleteError(error instanceof Error ? error.message : 'Erreur lors de la suppression');
+    } finally {
+      setBatchDeleting(false);
+    }
+  };
+
+  const openFileInNewTab = (fileUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!fileUrl) return;
+    const proxyUrl = `/api/documents/proxy?fileUrl=${encodeURIComponent(fileUrl)}`;
+    window.open(proxyUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(prev => !prev);
+    if (selectionMode) {
+      // Exiting selection mode, clear selection
+      setSelectedEvents(new Set());
+      setBatchDeleteError(null);
+    }
+  };
+
   return (
     <Box>
-      {/* Filters toggle button */}
-      <Box display="flex" justifyContent="flex-end" my={1}>
+      {/* Bulk actions bar */}
+      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+        {!selectionMode ? (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteSweepIcon />}
+            onClick={toggleSelectionMode}
+            disabled={totalEvents === 0}
+          >
+            Suppression en lot
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setSelectionMode(false);
+                setSelectedEvents(new Set());
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleSelectAll}
+              disabled={paginatedEvents.length === 0 || paginatedEvents.every((e) => selectedEvents.has(e.id))}
+            >
+              Tout sélectionner
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setSelectedEvents(new Set())}
+              disabled={selectedEvents.size === 0}
+            >
+              Tout déselectionner
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteIcon />}
+              disabled={selectedEvents.size === 0}
+              onClick={handleBatchDelete}
+            >
+              Supprimer ({selectedEvents.size})
+            </Button>
+          </>
+        )}
         <Tooltip title={filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}>
           <IconButton onClick={() => setFiltersOpen((v) => !v)} aria-label="filtrer">
             <FilterListIcon />
           </IconButton>
         </Tooltip>
       </Box>
+
+      {/* Batch delete error */}
+      {batchDeleteError && (
+        <Alert severity="error" sx={{ my: 1 }} onClose={() => setBatchDeleteError(null)}>
+          {batchDeleteError}
+        </Alert>
+      )}
 
       {/* Hidden filters panel */}
       {filtersOpen && (
@@ -538,24 +747,23 @@ export default function EventList({
                 >
                   Salle :
                 </Typography>
-                <TextField
-                  select
-                  size="small"
-                  value={roomFilterLocal}
-                  onChange={(e: React.ChangeEvent<any>) =>
-                    setRoomFilterLocal(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                  }
-                  slotProps={{ select: { native: true } }}
-                  fullWidth={isMobile}
-                  sx={{ width: isMobile ? '100%' : 180 }}
-                >
-                  <option value="all">Toutes</option>
-                  {sallesOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </TextField>
+                <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 180 }}>
+                  <InputLabel>Salle</InputLabel>
+                  <Select
+                    value={roomFilterLocal}
+                    label="Salle"
+                    onChange={(e: any) =>
+                      setRoomFilterLocal(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                    }
+                  >
+                    <MenuItem value="all">Toutes</MenuItem>
+                    {sallesOptions.map((s) => (
+                      <MenuItem key={s.id} value={s.id}>
+                        {s.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
             )}
 
@@ -576,23 +784,23 @@ export default function EventList({
               >
                 Classe:
               </Typography>
-              <TextField
-                select
-                size="small"
-                value={classFilterLocal}
-                onChange={(e: React.ChangeEvent<any>) =>
-                  setClassFilterLocal(e.target.value === 'all' ? 'all' : Number(e.target.value))
-                }
-                slotProps={{ select: { native: true } }}
-                sx={{ maxWidth: isMobile ? '100%' : 200, width: '100%' }}
-              >
-                <option value="all">Toutes</option>
-                {uniqueClassOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </TextField>
+              <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 200 }}>
+                <InputLabel>Classe</InputLabel>
+                <Select
+                  value={classFilterLocal}
+                  label="Classe"
+                  onChange={(e: any) =>
+                    setClassFilterLocal(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                  }
+                >
+                  <MenuItem value="all">Toutes</MenuItem>
+                  {uniqueClassOptions.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
 
             {/* Date range */}
@@ -615,6 +823,7 @@ export default function EventList({
               <TextField
                 type="date"
                 size="small"
+                label="Début"
                 value={dateRange.start ? new Date(dateRange.start).toISOString().slice(0, 10) : ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setDateRange((prev) => ({
@@ -623,12 +832,13 @@ export default function EventList({
                   }))
                 }
                 sx={{ maxWidth: isMobile ? '100%' : 180, width: '100%' }}
-                slotProps={{ inputLabel: { shrink: false } }}
+                InputLabelProps={{ shrink: true }}
               />
               <Typography variant="body2">→</Typography>
               <TextField
                 type="date"
                 size="small"
+                label="Fin"
                 value={dateRange.end ? new Date(dateRange.end).toISOString().slice(0, 10) : ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setDateRange((prev) => ({
@@ -637,7 +847,7 @@ export default function EventList({
                   }))
                 }
                 sx={{ maxWidth: isMobile ? '100%' : 180, width: '100%' }}
-                slotProps={{ inputLabel: { shrink: false } }}
+                InputLabelProps={{ shrink: true }}
               />
             </Box>
           </Box>
@@ -663,12 +873,22 @@ export default function EventList({
               color: 'text.secondary',
             }}
           >
-            <Typography variant="h6">{emptyMessage}</Typography>
-            <Typography variant="body2">{emptySubMessage}</Typography>
+            <Typography variant="h6">
+              {selectionMode
+                ? `Aucun événement ${discipline === 'all' ? '' : `de ${discipline}`} à sélectionner`
+                : emptyMessage
+              }
+            </Typography>
+            <Typography variant="body2">
+              {selectionMode
+                ? 'Utilisez les filtres pour affiner votre recherche'
+                : emptySubMessage
+              }
+            </Typography>
           </Box>
         )}
         {!isEmpty &&
-          filteredEvents.map((event) => {
+          paginatedEvents.map((event) => {
             const isLaborantin =
               userRole === 'LABORANTIN_CHIMIE' || userRole === 'LABORANTIN_PHYSIQUE';
             const slots = event.timeslots;
@@ -688,15 +908,25 @@ export default function EventList({
             return (
               <Box
                 key={event.id}
-                onClick={() => onEventClick(event)}
+                onClick={() => {
+                  if (selectionMode) {
+                    handleSelectEvent(event.id, !selectedEvents.has(event.id));
+                  } else {
+                    onEventClick(event);
+                  }
+                }}
                 className={isNewEvent ? 'new-event-animation' : ''}
                 sx={(theme) => ({
                   p: { xs: 2, md: 3 },
-                  // Réserver de l'espace à gauche pour le panneau actions des laborantins
-                  pl: isLaborantin ? { xs: 2, md: '88px' } : { xs: 2, md: 3 },
+                  // Réserver de l'espace à gauche pour le panneau actions des laborantins et la checkbox
+                  pl: selectionMode
+                    ? { xs: 6, md: '88px' } // Plus d'espace pour la checkbox
+                    : isLaborantin
+                      ? { xs: 2, md: '88px' }
+                      : { xs: 2, md: 3 },
                   borderRadius: 3,
                   bgcolor: 'background.paper',
-                  border: `2px solid ${theme.palette.divider}`,
+                  border: `2px solid ${selectionMode && selectedEvents.has(event.id) ? theme.palette.primary.main : theme.palette.divider}`,
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   position: 'relative',
@@ -708,11 +938,32 @@ export default function EventList({
                     ...(theme.breakpoints.up('md') && {
                       transform: 'translateY(-2px)',
                       boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-                      borderColor: theme.palette.primary.main,
+                      borderColor: selectionMode && selectedEvents.has(event.id) ? theme.palette.primary.main : theme.palette.divider,
                     }),
                   },
                 })}
               >
+                {/* Selection checkbox */}
+                {selectionMode && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      zIndex: 4,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selectedEvents.has(event.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectEvent(event.id, e.target.checked);
+                      }}
+                      size="small"
+                    />
+                  </Box>
+                )}
                 {/* Boutons PDF */}
                 {!isLaborantin && (
                   // Affichage standard: petits boutons en haut à droite
@@ -1024,7 +1275,152 @@ export default function EventList({
             dialogType={dialog.type}
           />
         )}
+
+        {/* Pagination and Show All controls */}
+        {!isEmpty && totalEvents > pageSize && (
+          <Stack
+            direction="row"
+            spacing={2}
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mt: 3, px: 1 }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {showAll ? (
+                  `Affichage de tous les ${totalEvents} événements`
+                ) : (
+                  `Page ${page} sur ${totalPages} (${totalEvents} événements au total)`
+                )}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setShowAll(!showAll);
+                  if (!showAll) {
+                    setPage(1);
+                  }
+                }}
+              >
+                {showAll ? 'Paginer' : 'Tout afficher'}
+              </Button>
+
+              {!showAll && (
+                <Pagination
+                  size="small"
+                  page={page}
+                  count={Math.max(1, totalPages)}
+                  onChange={(_, v) => setPage(v)}
+                  showFirstButton
+                  showLastButton
+                />
+              )}
+            </Box>
+          </Stack>
+        )}
       </Box>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <Dialog
+        open={batchDeleteDialogOpen}
+        onClose={() => setBatchDeleteDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { maxHeight: '80vh' }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <DeleteIcon color="error" />
+            <Typography variant="h6" component="span">
+              Confirmer la suppression ({selectedEvents.size} événement{selectedEvents.size > 1 ? 's' : ''})
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Les événements suivants et tous leurs fichiers associés seront définitivement supprimés. Cette action est irréversible.
+          </Typography>
+
+          <List>
+            {selectedEventsDetails.map((event, index) => {
+              const associatedFiles = event.documents || [];
+              
+              return (
+                <React.Fragment key={event.id}>
+                  <ListItem sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} width="100%">
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <DescriptionIcon color="error" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {event.title || `Événement ID ${event.id}`}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.secondary">
+                            {event.owner?.name || 'Utilisateur inconnu'} • {event.discipline} • {event.timeslots?.length || 0} créneau{(event.timeslots?.length || 0) > 1 ? 'x' : ''}
+                          </Typography>
+                        }
+                      />
+                    </Box>
+
+                    {associatedFiles.length > 0 && (
+                      <Box sx={{ mt: 2, width: '100%', pl: 5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Fichiers associés ({associatedFiles.length}) :
+                        </Typography>
+                        <Box display="flex" flexWrap="wrap" gap={1}>
+                          {associatedFiles.map((file: any, fileIndex: number) => (
+                            <Chip
+                              key={fileIndex}
+                              icon={<AttachFileIcon />}
+                              label={file.fileName || file.name || 'Fichier inconnu'}
+                              size="small"
+                              variant="outlined"
+                              color="warning"
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: 'warning.light' }
+                              }}
+                              onClick={(e) => openFileInNewTab(file.fileUrl || file.url, e)}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </ListItem>
+                  {index < selectedEventsDetails.length - 1 && <Divider />}
+                </React.Fragment>
+              );
+            })}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={() => setBatchDeleteDialogOpen(false)}
+            color="inherit"
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={confirmBatchDelete}
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            disabled={batchDeleting}
+          >
+            {batchDeleting ? 'Suppression...' : 'Supprimer définitivement'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

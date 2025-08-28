@@ -103,6 +103,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
     const id = Number(idStr);
     if (!(await ensureOwner(id, userId)))
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
     await prisma.evenementPreset.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch {

@@ -1465,12 +1465,9 @@ const EditEventDialog = React.forwardRef<
                       
                       const buildDownloadUrl = (rawUrl: string) => {
                         if (!rawUrl) return rawUrl;
-                        // In production, serve via proxy API for auth and headers
-                        if (process.env.NODE_ENV === 'production') {
-                          const enc = encodeURIComponent(rawUrl);
-                          return `/api/documents/proxy?fileUrl=${enc}`;
-                        }
-                        return rawUrl;
+                        // Always serve via proxy API for auth and consistent behavior
+                        const enc = encodeURIComponent(rawUrl);
+                        return `/api/documents/proxy?fileUrl=${enc}`;
                       };
                       const openUrl = buildDownloadUrl(fileUrl);
                       
@@ -1572,29 +1569,29 @@ const EditEventDialog = React.forwardRef<
             content: (
               <>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Titre: {form.title || '(aucun)'}{' '}
+                  Titre : {form.title || '(aucun)'}{' '}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Discipline: {form.discipline}
+                  Discipline : {form.discipline}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Méthode: {uploadMethod || valueMeta?.method}
+                  Méthode : {uploadMethod || valueMeta?.method}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Créneaux: {timeSlots.length}
+                  Créneaux : {timeSlots.length}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Matériel:{' '}
+                  Matériel :{' '}
                   {(valueMeta?.materialsDetailed || []).length +
                     (valueMeta?.customMaterials || []).length}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Réactifs:{' '}
+                  Réactifs :{' '}
                   {(valueMeta?.chemicalsDetailed || []).length +
                     (valueMeta?.customChemicals || []).length}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Documents: {(valueMeta?.uploads || []).length}
+                  Documents : {(valueMeta?.uploads || []).length}
                 </Typography>
                 <Alert severity="info" sx={{ mt: 1 }}>
                   Les créneaux marqués <Chip size="small" color="info" label="Nouveau" /> seront

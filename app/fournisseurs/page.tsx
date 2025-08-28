@@ -508,7 +508,7 @@ export default function FournisseurPage() {
             },
             {
               id: 'createdAt',
-              header: 'Créé le',
+              header: 'Ajouté le',
               cell: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : '—'),
               exportValue: (r) =>
                 r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : '',

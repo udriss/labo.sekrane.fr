@@ -19,11 +19,6 @@ export async function GET(req: NextRequest) {
     const fileUrl = searchParams.get('fileUrl');
     if (!fileUrl) return new Response(JSON.stringify({ error: 'fileUrl requis' }), { status: 400 });
 
-    // Only allow relative paths starting with /user_ to avoid arbitrary fetch
-    if (!fileUrl.startsWith('/user_')) {
-      return new Response(JSON.stringify({ error: 'Chemin invalide' }), { status: 400 });
-    }
-
     // Decode URL-encoded path (support unicode like accents)
     let relPath = '';
     try {

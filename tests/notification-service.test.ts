@@ -94,7 +94,7 @@ describe('notificationService', () => {
     const created = await notificationService.createAndDispatch({
       module: 'MATERIEL',
       actionType: 'CREATE',
-      message: 'Matériel créé',
+      message: 'Matériel ajouté',
       data: { materielId: 10 },
     });
     expect(created).toBeTruthy();

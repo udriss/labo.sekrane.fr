@@ -6,9 +6,12 @@ import fs from 'fs/promises';
 export const runtime = 'nodejs';
 
 function getFrenchMonthFolder(date = new Date()) {
-  const month = date.toLocaleString('fr-FR', { month: 'long' }); // ex: "août"
-  const year = date.getFullYear();
-  return `${month}_${year}`;
+  const raw = date.toLocaleString('fr-FR', { month: 'long' });
+  // Normalize: remove accents, replace apostrophes with '_', spaces with '_', restrict charset
+  let safe = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  safe = safe.replace(/['’]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!safe) safe = 'mois';
+  return `${safe}_${date.getFullYear()}`;
 }
 
 function sanitizeFilename(name: string): string {

@@ -48,6 +48,7 @@ import {
   Description as DescriptionIcon,
   OpenInNew as OpenInNewIcon,
   DeleteSweep as DeleteSweepIcon,
+  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
@@ -72,6 +73,13 @@ interface PresetItem {
   createdAt: string;
 }
 
+interface OptionItem {
+  id: number;
+  name: string;
+  group: string;
+  isCustom?: boolean;
+}
+
 export default function CahierPage() {
   // Hook pour la gestion des tabs avec URL
   const { tabValue: tab, handleTabChange } = useTabWithURL({
@@ -94,6 +102,9 @@ export default function CahierPage() {
   const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
+    // Only fetch when on the "Mes TP" tab (tab === 0)
+    if (tab !== 0) return;
+
     let cancelled = false;
     setLoading(true);
     fetch('/api/event-presets')
@@ -111,7 +122,7 @@ export default function CahierPage() {
     return () => {
       cancelled = true;
     };
-  }, [refreshTick]);
+  }, [refreshTick, tab]);
 
   const handleCreated = () => {
     // After creation, switch to list tab with animation
@@ -311,12 +322,23 @@ export default function CahierPage() {
         onClose={() => setBulkDeleteDialog(false)}
         onConfirm={async () => {
           try {
-            // Delete all selected presets
-            await Promise.all(
+            // Delete all selected presets and their documents
+            const results = await Promise.allSettled(
               Array.from(selectedPresets).map(async (id) => {
-                await fetch(`/api/event-presets/${id}`, { method: 'DELETE' });
-              }),
+                const docRes = await fetch(`/api/event-presets/${id}/documents`, { method: 'DELETE' });
+                if (!docRes.ok) {
+                  console.warn(`Erreur suppression documents TP ${id}: ${docRes.status} ${docRes.statusText}`);
+                }
+                const presetRes = await fetch(`/api/event-presets/${id}`, { method: 'DELETE' });
+                if (!presetRes.ok) {
+                  throw new Error(`Échec suppression du TP ${id}: ${presetRes.status} ${presetRes.statusText}`);
+                }
+              })
             );
+            const rejected = results.filter(r => r.status === 'rejected');
+            if (rejected.length) {
+              throw new Error(`Certaines suppressions ont échoué (${rejected.length}/${results.length}).`);
+            }
 
             // Reset states
             setBulkDeleteDialog(false);
@@ -600,7 +622,22 @@ function PresetCard({
           onClose={() => setDeleteDialog(false)}
           onConfirm={async () => {
             try {
-              await fetch(`/api/event-presets/${preset.id}`, { method: 'DELETE' });
+              // Delete documents first
+              try {
+                const docResponse = await fetch(`/api/event-presets/${preset.id}/documents`, { method: 'DELETE' });
+                if (!docResponse.ok) {
+                  console.warn('Erreur lors de la suppression des documents:', docResponse.statusText);
+                }
+              } catch (docError) {
+                console.warn('Erreur lors de la suppression des documents:', docError);
+                // Continue with preset deletion even if document deletion fails
+              }
+
+              // Then delete the preset
+              const presetResponse = await fetch(`/api/event-presets/${preset.id}`, { method: 'DELETE' });
+              if (!presetResponse.ok) {
+                throw new Error(`Erreur lors de la suppression du TP: ${presetResponse.statusText}`);
+              }
               setDeleteDialog(false);
               onChanged();
             } catch (error) {
@@ -959,6 +996,160 @@ function SharePresetDialog({
   );
 }
 
+function BulkDeleteDialog({
+  open,
+  presets,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  presets: any[];
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { maxHeight: '80vh' }
+      }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <DeleteIcon color="error" />
+          <Typography variant="h6" component="span">
+            Confirmer la suppression ({presets.length} TP)
+          </Typography>
+        </Box>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Les TP suivants et tous leurs fichiers associés seront définitivement supprimés. Cette action est irréversible.
+        </Typography>
+
+        <List>
+          {presets.map((preset, index) => {
+            const associatedFiles = preset.documents || [];
+            
+            return (
+              <React.Fragment key={preset.id}>
+                <ListItem sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1} width="100%">
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <DescriptionIcon color="error" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {preset.title || `TP ID ${preset.id}`}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography variant="body2" color="text.secondary">
+                          {preset.discipline} • Ajouté le {new Date(preset.createdAt).toLocaleDateString('fr-FR')}
+                        </Typography>
+                      }
+                    />
+                  </Box>
+
+                  {associatedFiles.length > 0 && (
+                    <Box sx={{ mt: 2, width: '100%', pl: 5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                        {associatedFiles.length} fichier{associatedFiles.length > 1 ? 's' : ''} associé{associatedFiles.length > 1 ? 's' : ''} :
+                        </Typography>
+                      <Box display="flex" flexWrap="wrap" gap={1}>
+                        {associatedFiles.map((file: any, fileIndex: number) => (
+                          <Chip
+                            key={fileIndex}
+                            icon={<AttachFileIcon />}
+                            label={file.fileName || file.name || 'Fichier inconnu'}
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            disabled={!(file?.fileUrl || file?.url)}
+                            sx={{
+                              cursor: (file?.fileUrl || file?.url) ? 'pointer' : 'default',
+                              '&:hover': (file?.fileUrl || file?.url) ? { bgcolor: 'warning.light' } : undefined,
+                            }}
+                            onClick={(e) => {
+                              const url = file?.fileUrl || file?.url;
+                              if (!url) return;
+                              e.stopPropagation();
+                              const proxyUrl = `/api/documents/proxy?fileUrl=${encodeURIComponent(url)}`;
+                              window.open(proxyUrl, '_blank', 'noopener,noreferrer');
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Show additional information */}
+                  <Box sx={{ mt: 1, width: '100%', pl: 5 }}>
+                    <Box display="flex" gap={2} flexWrap="wrap">
+                      {preset.creneaux?.length > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          {preset.creneaux.length} créneau{preset.creneaux.length > 1 ? 'x' : ''}
+                        </Typography>
+                      )}
+                      {preset.materiels?.length > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          {preset.materiels.length} matériel{preset.materiels.length > 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                      {preset.reactifs?.length > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          {preset.reactifs.length} réactif{preset.reactifs.length > 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                      {preset.sharedIds?.length > 0 && (
+                        <Typography variant="caption" color="primary">
+                          Partagé avec {preset.sharedIds.length} utilisateur{preset.sharedIds.length > 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </ListItem>
+                {index < presets.length - 1 && <Divider />}
+              </React.Fragment>
+            );
+          })}
+        </List>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button
+          onClick={onClose}
+          color="inherit"
+          disabled={submitting}
+        >
+          Annuler
+        </Button>
+        <Button
+          onClick={async () => {
+            if (submitting) return;
+            setSubmitting(true);
+            try {
+              await onConfirm();
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+          variant="contained"
+          color="error"
+          startIcon={<DeleteIcon />}
+          disabled={submitting}
+        >
+          Supprimer définitivement
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function PresetWizard({ onCreated }: { onCreated: () => void }) {
   const [form, setForm] = useState<WizardForm>({ title: '', discipline: 'chimie', notes: '' });
   const [meta, setMeta] = useState<WizardMeta>({
@@ -980,6 +1171,10 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
 
   // Completion control to delay tab change
   const [creationComplete, setCreationComplete] = useState(false);
+  const [lastPresetId, setLastPresetId] = useState<number | null>(null);
+
+  // Add missing activeStep state
+  const [activeStep, setActiveStep] = useState(0);
 
   const handleFinish = async () => {
     if (saving) return;
@@ -990,6 +1185,9 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       const drafts: any[] = (meta as any).timeSlotsDrafts || [];
       const uploads = meta.uploads || [];
       
+      // Check if this is a re-upload (same preset already exists)
+      const isReupload = lastPresetId !== null && creationComplete;
+      
       // Initialize progress tracking
       setSingleProgress({
         title: form.title || 'TP',
@@ -998,58 +1196,73 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
         slotsCount: drafts.length,
       });
 
-      const res = await fetch('/api/event-presets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title || 'TP',
-          discipline: form.discipline,
-          notes: meta.remarks || form.notes,
-          materiels: (meta.materialsDetailed || []).map((m: any) => ({
-            materielId: m.id ?? undefined,
-            materielName: m.name,
-            quantity: m.quantity || 1,
-            isCustom: !m.id,
-          })),
-          reactifs: (meta.chemicalsDetailed || []).map((r: any) => ({
-            reactifId: r.id ?? undefined,
-            reactifName: r.name,
-            requestedQuantity: r.requestedQuantity || 0,
-            unit: r.unit || 'g',
-            isCustom: !r.id,
-          })),
-          documents: (meta.uploads || [])
-            .filter((u: any) => !u.isLocal || u.fileUrl) // ✅ Filtrer les fichiers locaux non uploadés
-            .map((u: any) => ({
-              fileName: u.fileName || u.name || 'document',
-              fileUrl: u.fileUrl || u.url || u,
-              fileSize: u.fileSize,
-              fileType: u.fileType,
-            })),
-        }),
-      });
+      let presetId: number;
       
-      if (!res.ok) {
-        throw new Error(`Échec ajout TP: ${form.title || 'TP'}`);
-      }
-      
-      const created = await res.json();
-      const presetId = created?.preset?.id;
-      
-      if (!presetId) {
-        throw new Error('ID preset manquant');
-      }
-
-      // Update progress to slots phase
-      setSingleProgress(prev => prev ? { ...prev, status: 'slots' } : null);
-      
-      // ✅ Ajouter les créneaux séparément s'ils existent
-      if (drafts.length > 0) {
-        await fetch(`/api/event-presets/${presetId}/creneaux`, {
+      if (isReupload && lastPresetId) {
+        // Use existing preset for re-upload
+        presetId = lastPresetId;
+        console.log('🔄 Ré-upload vers preset existant:', presetId);
+      } else {
+        // Create new preset
+        const res = await fetch('/api/event-presets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discipline: form.discipline, slots: drafts }),
+          body: JSON.stringify({
+            title: form.title || 'TP',
+            discipline: form.discipline,
+            notes: meta.remarks || form.notes,
+            materiels: (meta.materialsDetailed || []).map((m: any) => ({
+              materielId: m.id ?? undefined,
+              materielName: m.name,
+              quantity: m.quantity || 1,
+              isCustom: !m.id,
+            })),
+            reactifs: (meta.chemicalsDetailed || []).map((r: any) => ({
+              reactifId: r.id ?? undefined,
+              reactifName: r.name,
+              requestedQuantity: r.requestedQuantity || 0,
+              unit: r.unit || 'g',
+              isCustom: !r.id,
+            })),
+            documents: (meta.uploads || [])
+              .filter((u: any) => !u.isLocal || u.fileUrl) // ✅ Filtrer les fichiers locaux non uploadés
+              .map((u: any) => ({
+                fileName: u.fileName || u.name || 'document',
+                fileUrl: u.fileUrl || u.url || u,
+                fileSize: u.fileSize,
+                fileType: u.fileType,
+              })),
+          }),
         });
+        
+        if (!res.ok) {
+          throw new Error(`Échec ajout TP: ${form.title || 'TP'}`);
+        }
+        
+        const created = await res.json();
+        presetId = created?.preset?.id;
+        
+        if (!presetId) {
+          throw new Error('ID preset manquant');
+        }
+        
+        setLastPresetId(presetId);
+        
+        // Update progress to slots phase
+        setSingleProgress(prev => prev ? { ...prev, status: 'slots' } : null);
+        
+        // ✅ Ajouter les créneaux séparément s'ils existent
+        if (drafts.length > 0) {
+          const slotsRes = await fetch(`/api/event-presets/${presetId}/creneaux`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discipline: form.discipline, slots: drafts }),
+          });
+          if (!slotsRes.ok) {
+            console.warn('Échec ajout des créneaux:', slotsRes.status, slotsRes.statusText);
+            throw new Error('Échec ajout des créneaux');
+          }
+        }
       }
 
       // Update progress to documents phase
@@ -1058,8 +1271,8 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       // ✅ Uploader les fichiers après ajout du preset
       if ((window as any).uploadFilesToEventWizard && uploads.length > 0) {
         try {
-          await (window as any).uploadFilesToEventWizard(presetId);
-          console.log('📄 Fichiers uploadés vers preset:', presetId);
+          await (window as any).uploadFilesToEventWizard(presetId, isReupload);
+          console.log(`${isReupload ? '🔄 Ré-upload' : '📄 Upload'} des fichiers vers preset:`, presetId);
         } catch (error) {
           console.error('❌ Erreur upload fichiers preset:', error);
         }
@@ -1093,24 +1306,25 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
         presetOnly
         // Ne pas passer [] pour éviter refetch en boucle; laisser le composant auto-fetcher et cache
         onFinish={handleFinish}
-        finishLabel={saving ? 'Sauvegarde...' : 'Ajouter le TP'}
+        finishLabel={saving ? 'Sauvegarde...' : creationComplete ? 'Ré-uploader les fichiers' : 'Ajouter le TP'}
       />
       
       {singleProgress && (
+
         <Box sx={{ mt: 3, width: '100%', maxWidth: 600, mx: 'auto' }}>
-          <Typography
+            <Typography
             variant="body2"
+            color="warning"
             gutterBottom
             sx={{
-              fontWeight: 'bold',
-              color: 'text.primary',
+              fontWeight: 500,
               width: '100%',
               textAlign: 'left',
             }}
-          >
-            Ajout en cours...
-          </Typography>
-
+            >
+            {creationComplete ? "Ajout terminé" : "Ajout en cours..."}
+            </Typography>
+        
           <Box display="flex" flexDirection="column" gap={1}>
             <Typography
               variant="caption"
@@ -1250,12 +1464,33 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
                   </Typography>
                 </Box>
                 <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setSingleProgress(null);
+                    setCreationComplete(false);
+                    setLastPresetId(null);
+                    // Reset form and meta to initial state
+                    setForm({ title: '', discipline: 'chimie', notes: '' });
+                    setMeta({
+                      method: 'preset',
+                      materialsDetailed: [],
+                      chemicalsDetailed: [],
+                      uploads: [],
+                    });
+                    setActiveStep(0);
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  Nouveau TP
+                </Button>
+                <Button
                   variant="contained"
                   color="success"
                   startIcon={<CheckIcon />}
                   onClick={() => {
                     setSingleProgress(null);
                     setCreationComplete(false);
+                    setLastPresetId(null); // Reset for new creation
                     onCreated();
                   }}
                   sx={{ mr: 1 }}
@@ -1274,9 +1509,6 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-// ===================== Batch creation wizard =====================
-type OptionItem = { id: number; name: string; group: string; isCustom?: boolean };
-
 function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
   // Step 1: description + naming
   const [discipline, setDiscipline] = useState<'chimie' | 'physique'>('chimie');
@@ -1285,9 +1517,10 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
   const [format, setFormat] = useState<'base_hash' | 'hash_base' | 'custom'>('base_hash');
   const [customPattern, setCustomPattern] = useState<string>('Événement {i}');
   const [notes, setNotes] = useState<string>('');
+  const [creationCompleteBatch, setCreationCompleteBatch] = useState(false);
 
   // Step 2: scheduling
-  const [mode, setMode] = useState<'recurrence' | 'manual' | 'none'>('recurrence');
+  const [mode, setMode] = useState<'recurrence' | 'manual' | 'none'>('none');
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [weekday, setWeekday] = useState<number>(new Date().getDay()); // 0=Dimanche
   const [timeStart, setTimeStart] = useState<string | null>('10:00');
@@ -1471,51 +1704,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
       slotsCount: number;
       error?: string;
     }>;
-  } | null>(
-    // Fake value for development testing
-    // process.env.NODE_ENV === 'development' ? {
-    //   currentIndex: 2,
-    //   total: 5,
-    //   events: [
-    //     {
-    //       index: 0,
-    //       title: 'TP Chimie 1',
-    //       status: 'completed',
-    //       documentCount: 2,
-    //       slotsCount: 1,
-    //     },
-    //     {
-    //       index: 1,
-    //       title: 'TP Chimie 2',
-    //       status: 'completed',
-    //       documentCount: 1,
-    //       slotsCount: 2,
-    //     },
-    //     {
-    //       index: 2,
-    //       title: 'TP Chimie 3',
-    //       status: 'documents',
-    //       documentCount: 3,
-    //       slotsCount: 1,
-    //     },
-    //     {
-    //       index: 3,
-    //       title: 'TP Chimie 4',
-    //       status: 'pending',
-    //       documentCount: 0,
-    //       slotsCount: 1,
-    //     },
-    //     {
-    //       index: 4,
-    //       title: 'TP Chimie 5',
-    //       status: 'pending',
-    //       documentCount: 1,
-    //       slotsCount: 0,
-    //     },
-    //   ]
-    // } :
-    null,
-  );
+  } | null>(null);
 
   // Batch control states
   const [batchStopped, setBatchStopped] = useState(false);
@@ -1523,18 +1712,6 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
   const [batchComplete, setBatchComplete] = useState(false);
 
   // Handle batch resumption
-  useEffect(() => {
-    if (!batchStopped || !batchProgress || !abortController) return;
-
-    // Find the first pending task to resume from
-    const hasPendingTasks = batchProgress.events.some((e) => e.status === 'pending');
-    if (!hasPendingTasks) {
-      // No more tasks to resume
-      setBatchComplete(true);
-    }
-  }, [batchStopped, batchProgress, abortController]);
-
-  // Function to resume batch processing
   const handleBatchResume = async () => {
     if (!batchProgress) return;
 
@@ -1674,6 +1851,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
       // Mark as complete if all done and not stopped
       if (!batchStopped && !controller.signal.aborted) {
         setBatchComplete(true);
+        setCreationCompleteBatch(true);
       }
     } catch (e) {
       console.error(e);
@@ -1722,7 +1900,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
             label="Nombre de TP à ajouter"
             value={count}
             onChange={(e) => setCount(Math.max(1, Number(e.target.value || 1)))}
-            inputProps={{ min: 1 }}
+            slotProps={{ htmlInput: { min: 1, max: 25 } }}
           />
           <TextField
             label="Nom de base"
@@ -1810,10 +1988,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: {
-                    xs: 'column',
-                    sm: 'row',
-                  },
+                  flexDirection: 'column',
                   gap: 1,
                   width: '100%',
                   alignItems: 'end',
@@ -1869,10 +2044,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: {
-                    xs: 'column',
-                    sm: 'row',
-                  },
+                  flexDirection: 'column',
                   gap: 1,
                   width: '100%',
                   alignItems: 'end',
@@ -2636,6 +2808,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                       // Mark as complete only if not stopped
                       if (!batchStopped && !controller.signal.aborted) {
                         setBatchComplete(true);
+                        setCreationCompleteBatch(true);
                       }
                     } catch (e) {
                       console.error(e);
@@ -2674,8 +2847,26 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                     textAlign: 'left',
                   }}
                 >
-                  Ajout en cours... ({batchProgress.currentIndex + 1}/{batchProgress.total})
+                  {creationCompleteBatch ? "Ajout terminé" : "Ajout en cours..."} ({batchProgress.currentIndex + 1} / {batchProgress.total})
                 </Typography>
+
+                {creationCompleteBatch && (
+                  <Alert
+                    severity="success"
+                    sx={{
+                      mb: 2,
+                      width: '100%',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      Tous les TP ont été ajoutés avec succès !
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Vous pouvez maintenant fermer cette fenêtre ou ajouter de nouveaux TP.
+                    </Typography>
+                  </Alert>
+                )}
 
                 <Box display="flex" flexDirection="column" gap={1}>
                   <Typography
@@ -2827,127 +3018,4 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
     </Box>
   );
 }
-// Composant pour le dialog de suppression en lot
-function BulkDeleteDialog({
-  open,
-  presets,
-  onClose,
-  onConfirm,
-}: {
-  open: boolean;
-  presets: any[];
-  onClose: () => void;
-  onConfirm: () => void;
-}) {
-  const openDocument = (fileUrl: string) => {
-    window.open(fileUrl, '_blank');
-  };
 
-  const totalDocuments = presets.reduce((sum, preset) => sum + (preset.documents?.length || 0), 0);
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={1}>
-          <DeleteSweepIcon color="error" />
-          Confirmer la suppression en lot
-        </Box>
-      </DialogTitle>
-      <DialogContent dividers>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            ⚠️ ATTENTION : Suppression définitive
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Tous les fichiers documents associés ({totalDocuments} fichier
-            {totalDocuments > 1 ? 's' : ''}) seront automatiquement supprimés du disque et ne
-            pourront pas être récupérés.
-          </Typography>
-        </Alert>
-
-        <Typography variant="h6" gutterBottom>
-          {presets.length} TP{presets.length > 1 ? 's' : ''} à supprimer :
-        </Typography>
-
-        <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-          {presets.map((preset) => (
-            <Box key={preset.id}>
-              <ListItem sx={{ px: 0, py: 1 }}>
-                <ListItemIcon>
-                  <DeleteIcon color="error" />
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {preset.title}
-                    </Typography>
-                  }
-                  secondary={
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {preset.discipline} • Créé le{' '}
-                        {new Date(preset.createdAt).toLocaleDateString('fr-FR')}
-                      </Typography>
-                      {preset.creneaux?.length > 0 && (
-                        <Typography variant="caption" color="text.secondary">
-                          {preset.creneaux.length} créneau{preset.creneaux.length > 1 ? 'x' : ''}
-                        </Typography>
-                      )}
-                      {(preset.materiels?.length > 0 || preset.reactifs?.length > 0) && (
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                          • {preset.materiels?.length || 0} matériel
-                          {(preset.materiels?.length || 0) > 1 ? 's' : ''}•{' '}
-                          {preset.reactifs?.length || 0} réactif
-                          {(preset.reactifs?.length || 0) > 1 ? 's' : ''}
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItem>
-
-              {/* Documents section */}
-              {preset.documents?.length > 0 && (
-                <Box sx={{ ml: 6, mb: 2 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.main' }}>
-                    Documents à supprimer définitivement :
-                  </Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    {preset.documents.map((doc: any, idx: number) => (
-                      <Box
-                        key={idx}
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}
-                      >
-                        <DescriptionIcon fontSize="small" color="action" />
-                        <Typography variant="caption" sx={{ flex: 1 }}>
-                          {doc.fileName || 'Document'}
-                        </Typography>
-                        <Tooltip title="Ouvrir le document">
-                          <IconButton
-                            size="small"
-                            onClick={() => openDocument(doc.fileUrl)}
-                            sx={{ ml: 'auto' }}
-                          >
-                            <OpenInNewIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-
-              {preset !== presets[presets.length - 1] && <Divider sx={{ my: 1 }} />}
-            </Box>
-          ))}
-        </List>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
-        <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={onConfirm}>
-          Supprimer définitivement ({presets.length})
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}

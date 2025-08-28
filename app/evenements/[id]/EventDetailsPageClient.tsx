@@ -1101,11 +1101,9 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
                 const buildDownloadUrl = (rawUrl: string) => {
                   if (!rawUrl) return rawUrl;
-                  if (process.env.NODE_ENV === 'production') {
-                    const enc = encodeURIComponent(rawUrl);
-                    return `/api/documents/proxy?fileUrl=${enc}`;
-                  }
-                  return rawUrl;
+                  // Always serve via proxy API for auth and consistent behavior
+                  const enc = encodeURIComponent(rawUrl);
+                  return `/api/documents/proxy?fileUrl=${enc}`;
                 };
                 const openUrl = buildDownloadUrl(doc.fileUrl);
                 return (

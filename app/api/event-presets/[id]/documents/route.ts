@@ -5,6 +5,11 @@ import { z } from 'zod';
 import path from 'path';
 import fs from 'fs/promises';
 
+// Rate limiting cache (in-memory for simplicity, use Redis in production)
+const uploadRateLimit = new Map<string, { count: number; lastUpload: number }>();
+const UPLOAD_COOLDOWN_MS = 60 * 1000; // 60 seconds
+const MAX_UPLOADS_PER_WINDOW = 3; // Max uploads per cooldown window
+
 export const runtime = 'nodejs';
 const toLocalLiteral = (d: Date | string | null | undefined): string | null => {
   if (!d) return null;
@@ -41,12 +46,25 @@ const ALLOWED_EXTS = [
 const MAX_BYTES = 10 * 1024 * 1024;
 
 function getFrenchMonthFolder(date = new Date()) {
-  const month = date.toLocaleString('fr-FR', { month: 'long' });
-  return `${month}_${date.getFullYear()}`;
+  const raw = date.toLocaleString('fr-FR', { month: 'long' });
+  // Normalize: remove accents, replace apostrophes with '_', spaces with '_', restrict charset
+  let safe = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  safe = safe.replace(/['’]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!safe) safe = 'mois';
+  return `${safe}_${date.getFullYear()}`;
 }
 function sanitizeFilename(name: string): string {
-  const base = name.split(/[\\/]/).pop() || 'fichier';
-  return base.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-éèêëàâäôöîïûüçÉÈÊËÀÂÄÔÖÎÏÛÜÇ]/g, '');
+  // 1) Extract base
+  let base = name.split(/[\\/]/).pop() || 'fichier';
+  // 2) Normalize and strip accents (diacritics)
+  base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // 3) Replace apostrophes with underscore
+  base = base.replace(/['’]/g, '_');
+  // 4) Replace spaces with underscore
+  base = base.replace(/\s+/g, '_');
+  // 5) Restrict to safe characters
+  base = base.replace(/[^a-zA-Z0-9._-]/g, '');
+  return base || 'fichier';
 }
 async function ensureUniqueFile(filePath: string): Promise<string> {
   const dir = path.dirname(filePath);
@@ -95,6 +113,38 @@ async function archivePhysicalFile(relativeUrl: string) {
   } catch {}
 }
 
+function checkRateLimit(userId: string, presetId: number): { allowed: boolean; waitTime?: number; message?: string } {
+  const now = Date.now();
+  const key = `${userId}:${presetId}`;
+  const userLimit = uploadRateLimit.get(key);
+
+  if (!userLimit) {
+    // First upload for this user/preset combination
+    uploadRateLimit.set(key, { count: 1, lastUpload: now });
+    return { allowed: true };
+  }
+
+  const timeSinceLastUpload = now - userLimit.lastUpload;
+
+  if (timeSinceLastUpload < UPLOAD_COOLDOWN_MS) {
+    // Still in cooldown period
+    const waitTime = Math.ceil((UPLOAD_COOLDOWN_MS - timeSinceLastUpload) / 1000);
+    return {
+      allowed: false,
+      waitTime,
+      message: `Trop d'uploads récents. Veuillez attendre ${waitTime} seconde${waitTime > 1 ? 's' : ''} avant de réessayer.`
+    };
+  }
+
+  // Reset or increment counter
+  if (timeSinceLastUpload >= UPLOAD_COOLDOWN_MS) {
+    uploadRateLimit.set(key, { count: 1, lastUpload: now });
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const presetId = Number(id);
@@ -102,6 +152,17 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Check rate limiting
+  const rateLimitCheck = checkRateLimit(session.user.id, presetId);
+  if (!rateLimitCheck.allowed) {
+    return NextResponse.json({
+      error: rateLimitCheck.message,
+      waitTime: rateLimitCheck.waitTime,
+      type: 'rate_limit'
+    }, { status: 429 });
+  }
+
   const ct = req.headers.get('content-type') || '';
   try {
     if (ct.startsWith('multipart/form-data')) {
@@ -121,12 +182,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       const uploadsRoot = path.join(process.cwd(), 'public');
       const userFolder = `user_${session.user.id}`;
       const monthFolder = getFrenchMonthFolder();
-      const targetDir = path.join(uploadsRoot, userFolder, monthFolder);
+      const targetDir = path.join(uploadsRoot, userFolder, 'preset', monthFolder);
       await fs.mkdir(targetDir, { recursive: true });
       const safeName = sanitizeFilename(originalName);
       const finalPath = await ensureUniqueFile(path.join(targetDir, safeName));
       await fs.writeFile(finalPath, buf);
-      const relPath = '/' + [userFolder, monthFolder, path.basename(finalPath)].join('/');
+      const relPath = '/' + [userFolder, 'preset', monthFolder, path.basename(finalPath)].join('/');
       const created = await prisma.evenementPresetDocument.create({
         data: {
           presetId,
@@ -145,6 +206,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
         : created;
       return NextResponse.json({ document: mapped, uploaded: true });
     }
+
+    // Handle JSON requests (for existing file references)
     const raw = await req.json();
     const parsed = jsonAddSchema.parse(raw);
     try {
@@ -187,15 +250,35 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  
   try {
     const { searchParams } = new URL(req.url);
     const fileUrl = searchParams.get('fileUrl');
-    if (!fileUrl) return NextResponse.json({ error: 'fileUrl requis' }, { status: 400 });
-    const doc = await prisma.evenementPresetDocument.findFirst({ where: { presetId, fileUrl } });
-    if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 });
-    await prisma.evenementPresetDocument.delete({ where: { id: doc.id } });
-    archivePhysicalFile(doc.fileUrl).catch(() => {});
-    return NextResponse.json({ ok: true });
+    
+    if (fileUrl) {
+      // Delete specific document
+      const doc = await prisma.evenementPresetDocument.findFirst({ where: { presetId, fileUrl } });
+      if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 });
+      await prisma.evenementPresetDocument.delete({ where: { id: doc.id } });
+      archivePhysicalFile(doc.fileUrl).catch(() => {});
+      return NextResponse.json({ ok: true });
+    } else {
+      // Delete ALL documents for this preset
+      const documents = await prisma.evenementPresetDocument.findMany({ 
+        where: { presetId },
+        select: { id: true, fileUrl: true }
+      });
+      
+      // Archive all physical files
+      for (const doc of documents) {
+        archivePhysicalFile(doc.fileUrl).catch(() => {});
+      }
+      
+      // Delete all documents from database
+      await prisma.evenementPresetDocument.deleteMany({ where: { presetId } });
+      
+      return NextResponse.json({ ok: true, deletedCount: documents.length });
+    }
   } catch (e) {
     console.error('[preset-documents][DELETE]', e);
     return NextResponse.json({ error: 'Échec suppression' }, { status: 500 });

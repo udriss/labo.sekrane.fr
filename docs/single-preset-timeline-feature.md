@@ -111,7 +111,7 @@ sequenceDiagram
 {creationComplete && (
   <Box sx={{ mt: 2, textAlign: 'center' }}>
     <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold', mb: 2 }}>
-      ✅ TP créé avec succès !
+      ✅ TP ajouté avec succès !
     </Typography>
     
     <Button variant="contained" color="success" startIcon={<CheckIcon />}>

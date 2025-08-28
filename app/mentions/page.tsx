@@ -53,8 +53,8 @@ export default function MentionsLegalesPage() {
 
         <Section title="Éditeur du site">
           <List dense>
-            <Info label="Nom de l'application" value="Labo – Gestion de laboratoire" />
-            <Info label="Responsable de publication" value="Nom Prénom" />
+            <Info label="Nom de l'application" value="SGIL" />
+            <Info label="Responsable de publication" value="M. Idriss SEKRANE" />
             <Info label="Contact" value={<Link href="mailto:admin@sekrane.fr">admin@sekrane.fr</Link>} />
             <Info label="Adresse" value="Établissement scolaire / Adresse postale" />
           </List>

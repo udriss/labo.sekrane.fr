@@ -374,9 +374,9 @@ export function FileUploadSection({
             onFilesChange(next);
           }}
         />
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+        {/* <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
           {files.length}/{maxFiles} fichiers
-        </Typography>
+        </Typography> */}
       </Card>
     </Box>
   );

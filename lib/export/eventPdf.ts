@@ -127,7 +127,7 @@ export async function buildAndDownloadEventPdf(opts: BuildEventPdfOptions) {
   });
   doc.setTextColor(120);
   doc.setFontSize(9);
-  doc.text(`Créé le ${createdAt} • Modifié le ${updatedAt}`, SMALL_MARGIN, y);
+  doc.text(`Ajouté le ${createdAt} • Modifié le ${updatedAt}`, SMALL_MARGIN, y);
   doc.setTextColor(0);
   y += LINE_HEIGHT + 2;
 

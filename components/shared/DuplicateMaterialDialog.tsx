@@ -134,7 +134,7 @@ export function DuplicateMaterialDialog({
 
             <Divider sx={{ my: 2 }} />
             <Typography variant="caption" color="text.secondary">
-              Créé le: {formatDate(existingMaterial.createdAt)}
+              Ajouté le: {formatDate(existingMaterial.createdAt)}
               {existingMaterial.updatedAt !== existingMaterial.createdAt && (
                 <> • Modifié le: {formatDate(existingMaterial.updatedAt)}</>
               )}

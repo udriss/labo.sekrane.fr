@@ -5,6 +5,8 @@ import { prisma } from '@/lib/services/db';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { notificationService } from '@/lib/services/notification-service';
+import path from 'path';
+import fs from 'fs/promises';
 // Convert Date/ISO strings into local-literal "YYYY-MM-DDTHH:MM:SS" (server local time)
 function formatLocalLiteral(d: Date | string | null | undefined): string | null {
   if (!d) return null;
@@ -53,6 +55,7 @@ const documentItemSchema = z.object({
   fileUrl: z.string(),
   fileSize: z.number().int().optional(),
   fileType: z.string().optional(),
+  isPreset: z.boolean().optional(),
 });
 
 const createEventSchema = z.object({
@@ -67,6 +70,41 @@ const createEventSchema = z.object({
   documents: z.array(documentItemSchema).optional().default([]),
   replaceReservedId: z.number().int().optional(), // ID of placeholder to replace
 });
+
+// Helpers for copying preset files into event folder
+function getFrenchMonthFolder(date = new Date()) {
+  const raw = date.toLocaleString('fr-FR', { month: 'long' });
+  // Normalize: remove accents, replace apostrophes with '_', spaces with '_', restrict charset
+  let safe = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  safe = safe.replace(/['’]/g, '_').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+  if (!safe) safe = 'mois';
+  return `${safe}_${date.getFullYear()}`;
+}
+function sanitizeFilename(name: string): string {
+  let base = name.split(/[\\/]/).pop() || 'fichier';
+  base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  base = base.replace(/['’]/g, '_');
+  base = base.replace(/\s+/g, '_');
+  base = base.replace(/[^a-zA-Z0-9._-]/g, '');
+  return base || 'fichier';
+}
+async function ensureUniqueFile(filePath: string): Promise<string> {
+  const dir = path.dirname(filePath);
+  const ext = path.extname(filePath);
+  const base = path.basename(filePath, ext);
+  let finalPath = filePath;
+  let i = 1;
+  while (true) {
+    try {
+      await fs.access(finalPath);
+      finalPath = path.join(dir, `${base}-${i}${ext}`);
+      i++;
+    } catch {
+      break;
+    }
+  }
+  return finalPath;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -233,16 +271,51 @@ export async function POST(req: NextRequest) {
       );
     }
     if (validatedData.documents && validatedData.documents.length) {
+      console.log(`[events][create] Preparing to add ${validatedData.documents.length} documents for event ID ${event.id}`);
+      const publicRoot = path.join(process.cwd(), 'public');
+      const userFolder = `user_${userId}`;
+      const monthFolder = getFrenchMonthFolder();
+      const prepared: Array<{ fileName: string; fileUrl: string; fileSize?: number; fileType?: string }> = [];
+      for (const d of validatedData.documents) {
+        let outName = sanitizeFilename(d.fileName || 'document');
+        let outUrl = d.fileUrl;
+        let outSize = d.fileSize;
+        const outType = d.fileType;
+        const wantCopy = d.isPreset === true || (typeof d.fileUrl === 'string' && d.fileUrl.includes('/preset/'));
+        if (wantCopy) {
+          const relRaw = d.fileUrl.replace(/^\/+/, '');
+          let relDec = relRaw;
+          try { relDec = decodeURIComponent(relRaw); } catch {}
+          const relNoPreset = relDec.replace('/preset/', '/');
+          const targetAbs = path.join(publicRoot, relNoPreset);
+          await fs.mkdir(path.dirname(targetAbs), { recursive: true });
+          // Locate source
+          const candidates = [relDec, relRaw];
+          let stat: any = null;
+          let srcAbs: string | null = null;
+          for (const rel of candidates) {
+            const abs = path.join(publicRoot, rel);
+            const st = await fs.stat(abs).catch(() => null);
+            if (st && st.isFile()) { stat = st; srcAbs = abs; break; }
+          }
+          if (!srcAbs || !stat) {
+            console.warn('[events][create] preset source not found, skipping doc', d.fileUrl);
+            continue;
+          }
+          const buffer = await fs.readFile(srcAbs);
+          // Ensure unique name at destination with sanitized name
+          const finalDest = await ensureUniqueFile(path.join(path.dirname(targetAbs), outName));
+          await fs.writeFile(finalDest, buffer);
+          outSize = stat.size;
+          outName = path.basename(finalDest);
+          outUrl = '/' + [userFolder, monthFolder, outName].join('/');
+        }
+        prepared.push({ fileName: outName, fileUrl: outUrl, fileSize: outSize, fileType: outType });
+      }
       await prisma.$transaction(
-        validatedData.documents.map((d) =>
+        prepared.map((d) =>
           prisma.evenementDocument.create({
-            data: {
-              eventId: event.id,
-              fileName: d.fileName,
-              fileUrl: d.fileUrl,
-              fileSize: d.fileSize,
-              fileType: d.fileType,
-            },
+            data: { eventId: event.id, ...d },
           }),
         ),
       );

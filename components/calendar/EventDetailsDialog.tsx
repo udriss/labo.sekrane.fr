@@ -1273,23 +1273,29 @@ export default function EventDetailsDialog({
                       const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
                       const buildDownloadUrl = (rawUrl: string) => {
                         if (!rawUrl) return rawUrl;
-                        // In production, serve via proxy API for auth and headers
-                        if (process.env.NODE_ENV === 'production') {
-                          const enc = encodeURIComponent(rawUrl);
-                          return `/api/documents/proxy?fileUrl=${enc}`;
-                        }
-                        return rawUrl;
+                        // Always serve via proxy API for auth and consistent behavior
+                        const enc = encodeURIComponent(rawUrl);
+                        return `/api/documents/proxy?fileUrl=${enc}`;
                       };
                       const openUrl = buildDownloadUrl(doc.fileUrl);
+                      const key = doc.id || doc.fileUrl || `${effectiveName}-${Math.random()}`;
                       return (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Tooltip key={doc.id || doc.fileUrl} title={tooltip} arrow>
+                        <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Tooltip title={tooltip} arrow>
                             <Chip
                               label={effectiveName}
                               size="small"
                               variant="outlined"
                               onClick={() => openUrl && window.open(openUrl, '_blank')}
                               icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                          sx={{
+                          cursor: 'pointer',
+                          '& .MuiChip-label': {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          },
+                          }}
                             />
                           </Tooltip>
                           <Tooltip title="Télécharger">

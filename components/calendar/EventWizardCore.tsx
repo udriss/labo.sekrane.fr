@@ -12,13 +12,13 @@ import {
   Chip,
   MenuItem,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import WizardStepper, { GenericWizardStep } from './WizardStepper';
 import { computeWizardValidation } from './wizardValidation';
 import {
   Assignment as AssignmentIcon,
   Class as ClassIcon,
   CloudUpload as CloudUploadIcon,
+  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import AddResourcesDialog, { AddResourcesDialogChange } from './AddResourcesDialog';
 import { FileUploadSection } from './FileUploadSection';
@@ -1018,17 +1018,29 @@ export default function EventWizardCore({
                 {selectedFiles.map((file) => (
                   <Card key={file.id} sx={{ p: 1.5 }}>
                     <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="body2">
-                          {file.file?.name || file.existingFile?.fileName || 'Fichier inconnu'}
-                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1}>
+                        <Chip
+                          label={file.file?.name || file.existingFile?.fileName || 'Fichier inconnu'}
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                          cursor: 'pointer',
+                          '& .MuiChip-label': {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          },
+                          }}
+                          icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                          onClick={() => handleFileClick(file)}
+                        />
                         {file.uploadStatus === 'completed' && (
                           <Chip label="Uploadé" color="success" size="small" />
                         )}
                         {file.uploadStatus === 'pending' && (
                           <Chip label="En attente" color="warning" size="small" />
                         )}
-                      </Box>
+                        </Box>
                       <IconButton
                         size="small"
                         color="error"
@@ -1178,6 +1190,22 @@ export default function EventWizardCore({
     },
   ];
 
+  // Function to handle file opening via proxy API
+  const handleFileClick = useCallback(async (file: FileWithMetadata) => {
+    try {
+      const fileUrl = file.existingFile?.fileUrl || file.file?.name;
+      if (!fileUrl) return;
+
+      // Use the proxy API to securely serve the file
+      const proxyUrl = `/api/documents/proxy?fileUrl=${encodeURIComponent(fileUrl)}`;
+      
+      // Open in new tab/window
+      window.open(proxyUrl, '_blank');
+    } catch (error) {
+      console.error('Erreur lors de l\'ouverture du fichier:', error);
+    }
+  }, []);
+
   // Adopt draft files and trigger uploads to preset when presetId becomes available
   const adoptedRef = useRef<Set<string>>(new Set());
   const pendingUploadsRef = useRef<Set<string>>(new Set());
@@ -1295,7 +1323,16 @@ export default function EventWizardCore({
   }, [meta.presetId, selectedFiles, meta.uploads, updateMeta]);
 
   // Function to upload files to a specific preset ID (called after preset creation)
-  const uploadFilesToEventWizard = useCallback(async (presetId: number): Promise<void> => {
+  const uploadFilesToEventWizard = useCallback(async (presetId: number, forceReupload: boolean = false): Promise<void> => {
+    // If force reupload, reset all completed files to pending
+    if (forceReupload) {
+      setSelectedFiles(prev => prev.map(f => 
+        f.uploadStatus === 'completed' 
+          ? { ...f, uploadStatus: 'pending', uploadProgress: 0 }
+          : f
+      ));
+    }
+
     const filesToUpload = selectedFiles.filter(f => f.file && f.uploadStatus === 'pending');
     
     for (const fileObj of filesToUpload) {
@@ -1333,7 +1370,25 @@ export default function EventWizardCore({
           ));
           console.log(`✅ Fichier uploadé vers preset: ${doc.fileName || fileObj.file.name}`);
         } else {
-          console.error(`❌ Échec upload vers preset: ${fileObj.file.name}`);
+          // Handle rate limiting error
+          if (response.status === 429) {
+            const errorData = await response.json();
+            console.error(`❌ Rate limit atteint: ${errorData.error}`);
+            
+            // Show user-friendly error with countdown
+            setSelectedFiles(prev => prev.map(f => 
+              f.id === fileObj.id 
+                ? {
+                    ...f,
+                    uploadStatus: 'error',
+                    uploadProgress: 0,
+                    error: errorData.error || 'Trop d\'uploads récents'
+                  }
+                : f
+            ));
+          } else {
+            console.error(`❌ Échec upload vers preset: ${fileObj.file.name}`);
+          }
         }
       } catch (error) {
         console.error('❌ Erreur upload vers preset:', fileObj.file.name, error);

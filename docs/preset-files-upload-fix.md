@@ -108,7 +108,7 @@ if (presetId && (window as any).uploadFilesToEventWizard) {
 ### ✅ **Gestion d'Erreur**
 - Try/catch pour les échecs d'upload
 - Logs explicites pour debugging
-- Upload non-bloquant (le preset reste créé même si upload échoue)
+- Upload non-bloquant (le preset reste ajouté même si upload échoue)
 
 ### ✅ **UX Améliorée**
 - Fichiers uploadés automatiquement après ajout preset
@@ -130,7 +130,7 @@ POST /api/event-presets/123/documents 201 in 35ms (par fichier)
 
 1. **Preset avec fichiers** : Vérifier POST vers `/documents` et entrées dans `EvenementPresetDocument`
 2. **Preset sans fichiers** : Pas d'appel upload, pas d'erreur
-3. **Échec upload** : Preset créé, mais fichiers non uploadés (logs d'erreur)
+3. **Échec upload** : Preset ajouté, mais fichiers non uploadés (logs d'erreur)
 
 ## Statut
 

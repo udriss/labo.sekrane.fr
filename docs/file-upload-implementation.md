@@ -5,14 +5,14 @@
 Les composants `CreateEventDialog` et `EventWizardCore` ont été refactorisés pour suivre l'approche éprouvée de `BatchPresetWizard` :
 
 1. **Ajout d'abord de l'entité** (événement) dans la base de données
-2. **Récupération de l'ID fraîchement créé**
+2. **Récupération de l'ID fraîchement ajouté**
 3. **Upload des fichiers** en utilisant cet ID pour l'association
 
 ## Pourquoi cette approche
 
 ### ✅ **Avantages :**
 - **Cohérence** : Suit exactement le même pattern que `BatchPresetWizard` qui fonctionne parfaitement
-- **Pas de fichiers orphelins** : Les fichiers sont associés directement à l'entité créée
+- **Pas de fichiers orphelins** : Les fichiers sont associés directement à l'entité ajoutée
 - **Simplicité** : Plus de gestion de draft ou d'IDs temporaires
 - **Fiabilité** : Pattern déjà testé et validé en production
 
@@ -28,7 +28,7 @@ Les composants `CreateEventDialog` et `EventWizardCore` ont été refactorisés 
 ```
 1. Utilisateur sélectionne les fichiers → Stockage local (pas d'upload)
 2. Utilisateur finalise le wizard → Ajout de l'événement en DB
-3. Événement créé avec succès → Upload des fichiers vers event.id
+3. Événement ajouté avec succès → Upload des fichiers vers event.id
 4. Association directe → documents liés à l'événement
 ```
 
@@ -69,7 +69,7 @@ const handleCreateEvent = async () => {
     
     if (!eventId) throw new Error('ID événement manquant');
     
-    // 2. Uploader les fichiers vers l'événement créé
+    // 2. Uploader les fichiers vers l'événement ajouté
     await (window as any).uploadFilesToEvent(eventId);
     
     // 3. Succès !

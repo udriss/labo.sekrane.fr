@@ -132,7 +132,7 @@ export default function ActivationTokensAdminPage() {
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Email</TableCell>
-            <TableCell>Créé le</TableCell>
+            <TableCell>Ajouté le</TableCell>
             <TableCell>Expire le</TableCell>
             <TableCell>État</TableCell>
           </TableRow>
