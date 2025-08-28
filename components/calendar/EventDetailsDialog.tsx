@@ -226,9 +226,9 @@ export default function EventDetailsDialog({
   useEffect(() => {
     if (!event?.id) return;
     let cancelled = false;
-    const refetchEvent = async () => {
+  const refetchEvent = async () => {
       try {
-        const res = await fetch(`/api/events/${event.id}`);
+    const res = await fetch(`/api/events/${event.id}?r=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json();
         const ev = json?.event || {};

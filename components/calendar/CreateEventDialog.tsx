@@ -131,39 +131,37 @@ export default function CreateEventDialog({
 
   // Function to upload files to a specific event ID (called after event creation)
   const uploadFilesToEvent = useCallback(async (eventId: number): Promise<void> => {
-    const filesToUpload = selectedFiles.filter(f => f.file && f.uploadStatus === 'pending');
-    
-    for (const fileObj of filesToUpload) {
+    // 1) Upload local File objects (multipart)
+    const localPending = selectedFiles.filter((f) => f.file && f.uploadStatus === 'pending');
+    for (const fileObj of localPending) {
       if (!fileObj.file) continue;
-      
       try {
         const formData = new FormData();
         formData.append('file', fileObj.file);
-        
         const response = await fetch(`/api/events/${eventId}/documents`, {
           method: 'POST',
           body: formData,
         });
-
         if (response.ok) {
           const uploaded = await response.json();
-          // Marquer le fichier comme uploadé
-          setSelectedFiles(prev => prev.map(f => 
-            f.id === fileObj.id 
-              ? {
-                  ...f,
-                  existingFile: {
-                    fileName: uploaded.fileName || uploaded.document?.fileName,
-                    fileUrl: uploaded.fileUrl || uploaded.document?.fileUrl,
-                    fileSize: uploaded.fileSize || uploaded.document?.fileSize,
-                    fileType: uploaded.fileType || uploaded.document?.fileType,
-                  },
-                  uploadStatus: 'completed',
-                  uploadProgress: 100,
-                  isPersisted: true,
-                }
-              : f
-          ));
+          setSelectedFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileObj.id
+                ? {
+                    ...f,
+                    existingFile: {
+                      fileName: uploaded.fileName || uploaded.document?.fileName,
+                      fileUrl: uploaded.fileUrl || uploaded.document?.fileUrl,
+                      fileSize: uploaded.fileSize || uploaded.document?.fileSize,
+                      fileType: uploaded.fileType || uploaded.document?.fileType,
+                    },
+                    uploadStatus: 'completed',
+                    uploadProgress: 100,
+                    isPersisted: true,
+                  }
+                : f,
+            ),
+          );
           console.log(`✅ Fichier uploadé: ${uploaded.fileName || fileObj.file.name}`);
         } else {
           console.error(`❌ Échec upload: ${fileObj.file.name}`);
@@ -173,11 +171,55 @@ export default function CreateEventDialog({
       }
     }
 
+    // 2) Ajouter les références existantes (documents de preset copiés en /public/tmp)
+    const existingPending = selectedFiles.filter(
+      (f) => !f.file && f.existingFile && f.uploadStatus === 'pending',
+    );
+    for (const fileObj of existingPending) {
+      const ef = fileObj.existingFile!;
+      try {
+        const response = await fetch(`/api/events/${eventId}/documents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: ef.fileName || 'document',
+            fileUrl: ef.fileUrl,
+            fileSize: ef.fileSize,
+            fileType: ef.fileType || 'application/octet-stream',
+          }),
+        });
+        if (response.ok) {
+          const uploaded = await response.json();
+          setSelectedFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileObj.id
+                ? {
+                    ...f,
+                    existingFile: {
+                      fileName: uploaded.document?.fileName || ef.fileName,
+                      fileUrl: uploaded.document?.fileUrl || ef.fileUrl,
+                      fileSize: uploaded.document?.fileSize ?? ef.fileSize,
+                      fileType: uploaded.document?.fileType || ef.fileType,
+                    },
+                    uploadStatus: 'completed',
+                    uploadProgress: 100,
+                    isPersisted: true,
+                  }
+                : f,
+            ),
+          );
+          console.log(`✅ Document lié (preset): ${ef.fileName || ef.fileUrl}`);
+        } else {
+          console.error(`❌ Échec ajout référence: ${ef.fileName || ef.fileUrl}`);
+        }
+      } catch (error) {
+        console.error('❌ Erreur ajout référence:', ef.fileName || ef.fileUrl, error);
+      }
+    }
+
     // Émettre un événement pour notifier que les documents de l'événement ont été mis à jour
     try {
-      window.dispatchEvent(
-        new CustomEvent('event-update:end', { detail: { eventId } })
-      );
+      window.dispatchEvent(new CustomEvent('event-update:end', { detail: { eventId } }));
       console.log(`📄 Documents mis à jour pour événement ${eventId}`);
     } catch (error) {
       console.error('❌ Erreur émission événement:', error);
@@ -584,23 +626,73 @@ export default function CreateEventDialog({
                       onChange={(_, val) => {
                         setSelectedPreset(val);
                         if (val) {
-                          updateMeta({
-                            method: 'preset',
-                            presetId: val.id,
-                            materialsDetailed: (val.materiels || []).map((m: any) => ({
-                              id: m.materielId || undefined,
-                              name: m.materielName,
-                              quantity: m.quantity,
-                            })),
-                            chemicalsDetailed: (val.reactifs || []).map((r: any) => ({
-                              id: r.reactifId || undefined,
-                              name: r.reactifName,
-                              requestedQuantity: Number(r.requestedQuantity) || 0,
-                              unit: r.unit || 'g',
-                            })),
-                            uploads: (val.documents || []).map((d: any) => d.fileUrl),
-                          });
-                          if (!form.title) setForm((f) => ({ ...f, title: val.title }));
+                          (async () => {
+                            try {
+                              // Fetch full preset details to include all related tables
+                              const presetRes = await fetch(`/api/event-presets/${val.id}`);
+                              const presetJson = presetRes.ok ? await presetRes.json() : { preset: val };
+                              const preset = presetJson?.preset || val;
+
+                              updateMeta({
+                                method: 'preset',
+                                presetId: preset.id,
+                                materialsDetailed: (preset.materiels || []).map((m: any) => ({
+                                  id: m.materielId || undefined,
+                                  name: m.materielName,
+                                  quantity: m.quantity,
+                                })),
+                                chemicalsDetailed: (preset.reactifs || []).map((r: any) => ({
+                                  id: r.reactifId || undefined,
+                                  name: r.reactifName,
+                                  requestedQuantity: Number(r.requestedQuantity) || 0,
+                                  unit: r.unit || 'g',
+                                })),
+                                uploads: (preset.documents || []).map((d: any) => d.fileUrl),
+                              });
+
+                              // Copy preset documents to /public/tmp and add as local pending files
+                              const docs: any[] = preset.documents || [];
+                              if (docs.length) {
+                                const newFiles: FileWithMetadata[] = [];
+                                for (const d of docs) {
+                                  if (!d?.fileUrl) continue;
+                                  try {
+                                    const copyRes = await fetch('/api/tmp/copy', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ fileUrl: d.fileUrl }),
+                                    });
+                                    if (!copyRes.ok) continue;
+                                    const info = await copyRes.json();
+                                    // Create a lightweight FileWithMetadata referencing the tmp URL (no actual File object)
+                                    newFiles.push({
+                                      id: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                                      existingFile: {
+                                        fileName: info.fileName || d.fileName || 'document',
+                                        fileUrl: info.tmpUrl,
+                                        fileSize: info.fileSize || d.fileSize || 0,
+                                        fileType: info.fileType || d.fileType || 'application/octet-stream',
+                                      },
+                                      uploadStatus: 'pending',
+                                      uploadProgress: 0,
+                                    });
+                                  } catch {}
+                                }
+                                if (newFiles.length) {
+                                  setSelectedFiles((prev) => {
+                                    const merged = [...prev, ...newFiles];
+                                    createEventDialogCache.selectedFiles = merged;
+                                    return merged;
+                                  });
+                                }
+                              }
+
+                              if (!form.title) setForm((f) => ({ ...f, title: preset.title }));
+                            } catch {
+                              // fallback to basic meta only
+                              updateMeta({ method: 'preset', presetId: val.id });
+                            }
+                          })();
                         } else {
                           updateMeta({ method: 'preset', presetId: undefined });
                         }
