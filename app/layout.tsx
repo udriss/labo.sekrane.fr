@@ -14,7 +14,7 @@ const getAppSettings = cache(loadAppSettings);
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getAppSettings();
   const footerBrand = settings.NOM_ETABLISSEMENT || settings.brandingName || '';
-  const brandSuffix = footerBrand ? ` - ${footerBrand}` : '';
+  const brandSuffix = footerBrand ? ` • ${footerBrand}` : '';
 
   return {
     title: {
