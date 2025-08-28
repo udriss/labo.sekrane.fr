@@ -103,7 +103,7 @@ const ACTION_TYPES = [
     label: 'Ajout',
     icon: AddIcon,
     color: '#4caf50',
-    description: "Lors de l\'ajout d'éléments",
+    description: "Lors de l'ajout d'éléments",
   },
   {
     value: 'UPDATE',

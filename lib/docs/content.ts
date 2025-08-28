@@ -57,7 +57,7 @@ export const modules: DocsModule[] = [
         ],
       },
       {
-        heading: 'Flux d'ajout',
+        heading: 'Flux d\'ajout',
         points: [
           'Méthode (file | manual | preset)',
           'Description & remarques (éditeur riche)',
