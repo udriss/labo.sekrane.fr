@@ -1,209 +1,203 @@
-// app/api/rooms/route.ts
+// api/rooms/route.ts
 
-export const runtime = 'nodejs';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/services/db';
+import { auth } from '@/auth';
+import { notificationService } from '@/lib/services/notification-service';
 
-import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { withAudit } from '@/lib/api/with-audit';
-import { getAllRooms } from '@/lib/calendar-utils-timeslots'
-
-const ROOMS_FILE = path.join(process.cwd(), 'data', 'rooms.json')
-
-// Fonction pour lire le fichier rooms.json (legacy)
-async function readRoomsFile() {
+export async function GET(req: NextRequest) {
   try {
-    const data = await fs.readFile(ROOMS_FILE, 'utf-8')
-    const parsed = JSON.parse(data)
-    return parsed.rooms || []
-  } catch (error) {
-    console.error('Erreur lecture rooms.json:', error)
-    return []
-  }
-}
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search');
+    const available = searchParams.get('available');
 
-// Fonction pour écrire dans le fichier rooms.json (legacy)
-async function writeRoomsFile(rooms: any[]) {
-  try {
-    const data = { rooms }
-    await fs.writeFile(ROOMS_FILE, JSON.stringify(data, null, 2))
-    return true
-  } catch (error) {
-    console.error('Erreur écriture rooms.json:', error)
-    return false
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const includeLocations = searchParams.get('includeLocations') === 'true'
-    const useDatabase = searchParams.get('useDatabase') === 'true'
-
-    let rooms;
-    
-    if (useDatabase) {
-      // Utiliser la base de données MySQL
-      rooms = await getAllRooms()
-    } else {
-      // Utiliser le fichier JSON (legacy)
-      rooms = await readRoomsFile()
-      
-      // Filtrer les salles actives
-      const activeRooms = rooms.filter((room: any) => room.isActive !== false)
-      
-      // Trier par nom
-      rooms = activeRooms.sort((a: any, b: any) => 
-        (a.name || '').localeCompare(b.name || '')
-      )
+    const where: any = {};
+    if (search) {
+      where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
+    }
+    if (available === '1') {
+      where.available = true;
     }
 
-    return NextResponse.json({ rooms: rooms })
-  } catch (error) {
-    console.error('Erreur lors de la récupération des salles:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la récupération des salles' },
-      { status: 500 }
-    )
-  }
-}
-
-export const POST = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const body = await request.json()
-    
-    if (!body.name) {
-      return NextResponse.json({ error: 'Le nom de la salle est requis' }, { status: 400 })
-    }
-
-    const rooms = await readRoomsFile()
-    
-    // Créer un nouvel ID
-    const newId = `ROOM_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    // Créer la nouvelle salle
-    const newRoom = {
-      id: newId,
-      name: body.name,
-      description: body.description || '',
-      isActive: true,
-      locations: body.locations || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    
-    rooms.push(newRoom)
-    
-    const success = await writeRoomsFile(rooms)
-    if (!success) {
-      return NextResponse.json({ error: 'Erreur lors de la sauvegarde' }, { status: 500 })
-    }
-    
-    return NextResponse.json(newRoom, { status: 201 })
-  } catch (error) {
-    console.error('Erreur création salle:', error)
-    return NextResponse.json({ error: 'Erreur création' }, { status: 500 })
-  }
-},
-  {
-    module: 'ROOMS',
-    entity: 'room',
-    action: 'CREATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      roomName: response?.name,
-      description: response?.description
-    })
-  }
-);
-
-
-export const PUT = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const body = await request.json()
-    const { id, ...updateData } = body
-    
-    if (!id) {
-      return NextResponse.json({ error: 'ID requis pour la mise à jour' }, { status: 400 })
-    }
-
-    const rooms = await readRoomsFile()
-    const roomIndex = rooms.findIndex((room: any) => room.id === id)
-    
-    if (roomIndex === -1) {
-      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 })
-    }
-    
-    // Mettre à jour la salle
-    rooms[roomIndex] = {
-      ...rooms[roomIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    }
-    
-    const success = await writeRoomsFile(rooms)
-    if (!success) {
-      return NextResponse.json({ error: 'Erreur lors de la sauvegarde' }, { status: 500 })
-    }
-    
-    return NextResponse.json(rooms[roomIndex])
-  } catch (error) {
-    console.error('Erreur mise à jour salle:', error)
-    return NextResponse.json({ error: 'Erreur mise à jour' }, { status: 500 })
-  }
-},
-  {
-    module: 'ROOMS',
-    entity: 'room',
-    action: 'UPDATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      roomName: response?.name
-    })
-  }
-);
-
-
-export const DELETE = withAudit(
-  async (request: NextRequest) => {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({ error: 'ID requis pour la suppression' }, { status: 400 });
-    }
-
-    const rooms = await readRoomsFile();
-    const roomIndex = rooms.findIndex((room: any) => room.id === id);
-    
-    if (roomIndex === -1) {
-      return NextResponse.json({ error: 'Salle non trouvée' }, { status: 404 });
-    }
-    
-    // Stocker les infos avant suppression
-    const deletedRoom = rooms[roomIndex];
-    
-    rooms.splice(roomIndex, 1);
-    
-    const success = await writeRoomsFile(rooms);
-    if (!success) {
-      return NextResponse.json({ error: 'Erreur lors de la sauvegarde' }, { status: 500 });
-    }
-    
-    return NextResponse.json({ 
-      message: 'Salle supprimée avec succès',
-      deletedRoom: { id: deletedRoom.id, name: deletedRoom.name }
+    const rooms = await prisma.salle.findMany({
+      where,
+      include: {
+        _count: {
+          select: {
+            localisations: true,
+            materiels: true,
+            consommables: true,
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
     });
-  },
-  {
-    module: 'ROOMS',
-    entity: 'room',
-    action: 'DELETE',
-    extractEntityIdFromResponse: (response) => response?.deletedRoom?.id,
-    customDetails: (req, response) => ({
-      roomName: response?.deletedRoom?.name
-    })
+
+    return NextResponse.json({ rooms });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des salles:', error);
+    return NextResponse.json({ error: 'Failed to fetch rooms' }, { status: 500 });
   }
-);
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { name, description, placesDisponibles, batiment } = body;
+
+    if (!name) {
+      return NextResponse.json({ error: 'Room name is required' }, { status: 400 });
+    }
+
+    const room = await prisma.salle.create({
+      data: {
+        name,
+        description,
+        placesDisponibles: placesDisponibles ? Number(placesDisponibles) : null,
+        batiment,
+      },
+    });
+
+    notificationService
+      .createAndDispatch({
+        module: 'ROOMS',
+        actionType: 'CREATE',
+        message: `Nouvelle salle ajoutée: <strong>${room.name}</strong>`,
+        data: {
+          roomId: room.id,
+          placesDisponibles: room.placesDisponibles,
+          triggeredBy: session?.user?.name || session?.user?.email || 'système',
+        },
+        // excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+      })
+      .catch(() => {});
+
+    return NextResponse.json({ room }, { status: 201 });
+  } catch (error) {
+    console.error('Erreur lors de la création de la salle:', error);
+    return NextResponse.json({ error: 'Failed to create room' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing room id' }, { status: 400 });
+    }
+
+    const before = await prisma.salle.findUnique({
+      where: { id: Number(id) },
+      select: { name: true, placesDisponibles: true },
+    });
+
+    const room = await prisma.salle.update({
+      where: { id: Number(id) },
+      data: {
+        ...updateData,
+        placesDisponibles: updateData.placesDisponibles
+          ? Number(updateData.placesDisponibles)
+          : undefined,
+      },
+    });
+
+    // Send different notifications based on what changed
+    if (before?.placesDisponibles !== room.placesDisponibles) {
+      notificationService
+        .createAndDispatch({
+          module: 'ROOMS',
+          actionType: 'STATUS',
+          message: `Capacité salle modifiée : <strong>${room.name}</strong> → ${room.placesDisponibles || 'Non définie'} places`,
+          data: {
+            roomId: room.id,
+            previousCapacity: before?.placesDisponibles,
+            newCapacity: room.placesDisponibles,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+          // excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+        })
+        .catch(() => {});
+    } else {
+      notificationService
+        .createAndDispatch({
+          module: 'ROOMS',
+          actionType: 'UPDATE',
+          message: `Salle mise à jour : <strong>${room.name}</strong>`,
+          data: {
+            roomId: room.id,
+            updated: Object.keys(updateData),
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+          // excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+        })
+        .catch(() => {});
+    }
+
+    return NextResponse.json({ room });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la salle:', error);
+    return NextResponse.json({ error: 'Failed to update room' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing room id' }, { status: 400 });
+    }
+
+    const deleteId = Number(id);
+    let roomName: string | undefined;
+
+    try {
+      const existing = await prisma.salle.findUnique({
+        where: { id: deleteId },
+        select: { name: true },
+      });
+      roomName = existing?.name;
+    } catch {}
+
+    await prisma.salle.delete({ where: { id: deleteId } });
+
+    if (roomName) {
+      notificationService
+        .createAndDispatch({
+          module: 'ROOMS',
+          actionType: 'DELETE',
+          message: `Salle supprimée : <strong>${roomName}</strong>`,
+          data: {
+            roomId: deleteId,
+            deletedRoom: roomName,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+          // excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+        })
+        .catch(() => {});
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la salle:', error);
+    return NextResponse.json({ error: 'Failed to delete room' }, { status: 500 });
+  }
+}

@@ -1,570 +1,257 @@
 // app/notifications/page.tsx
+
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Button,
-  Alert,
-  Chip,
-  Stack,
-  Card,
-  CardContent,
-  CardActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Badge,
-  Divider,
-  Switch,
-  FormControlLabel,
-  CircularProgress
-} from '@mui/material';
-import {
-  Notifications,
-  FilterList,
-  Refresh,
-  Settings,
-  Delete,
-  DoneAll,
-  Clear,
-  WifiTethering,
-  WifiTetheringOff,
-  Send,
-  Circle
-} from '@mui/icons-material';
+import React, { useEffect, useMemo, useState } from 'react';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import { Box as MBox } from '@mui/material';
+import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
-import { useNotificationContext } from '@/components/notifications/NotificationProvider';
-import NotificationItem from '@/components/notifications/NotificationItem';
-import { toast } from 'react-hot-toast';
+import { useWebSocketNotifications } from '@/lib/hooks/useWebSocketNotifications';
+import NotificationLiveFeed from '@/components/notifications/NotificationLiveFeed';
+import type { WebSocketNotification } from '@/types/notifications';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+export default function NotificationsPageClient() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated' && !!session?.user;
+  const userId = (session?.user as any)?.id ?? 'guest';
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const [notifications, setNotifications] = useState<WebSocketNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`notifications-tabpanel-${index}`}
-      aria-labelledby={`notifications-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
-export default function NotificationsPage() {
-  const { data: session } = useSession();
-  const {
-    isConnected,
-    lastHeartbeat,
-    notifications,
-    stats,
-    connect,
-    disconnect,
-    reconnect,
-    markAsRead,
-    markAllAsRead,
-    clearNotifications,
-    clearNotification,
-    sendMessage,
-    loadDatabaseNotifications
-  } = useNotificationContext();
-
-  const [tabValue, setTabValue] = useState(0);
-  const [filterModule, setFilterModule] = useState<string>('all');
-  const [filterSeverity, setFilterSeverity] = useState<string>('all');
-  const [filterRead, setFilterRead] = useState<string>('all');
-  const [testMessage, setTestMessage] = useState('');
-  const [testSeverity, setTestSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Fonction pour rafraîchir manuellement les notifications depuis la base de données
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadDatabaseNotifications();
-    setIsRefreshing(false);
-    toast.success('Notifications rafraîchies');
-  };
-
-  // Charger les notifications au montage du composant
-  useEffect(() => {
-    
-    loadDatabaseNotifications().then(() => {
-      
-    });
-  }, [loadDatabaseNotifications]);
-
-  // Debug notifications when they change
-  useEffect(() => {
-    
-  }, [notifications]);
-
-  // Filtrer les notifications
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter(notification => {
-      if (filterModule !== 'all' && notification.module !== filterModule) return false;
-      if (filterSeverity !== 'all' && notification.severity !== filterSeverity) return false;
-      if (filterRead === 'read' && !notification.isRead) return false;
-      if (filterRead === 'unread' && notification.isRead) return false;
-      return true;
-    });
-  }, [notifications, filterModule, filterSeverity, filterRead]);
-
-  // Obtenir les modules uniques
-  const availableModules = useMemo(() => {
-    const modules = new Set(notifications.map(n => n.module));
-    return Array.from(modules).sort();
-  }, [notifications]);
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
-  const handleSendTestNotification = async () => {
-    if (!testMessage.trim()) {
-      toast.error('Veuillez saisir un message de test');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/notifications/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: testMessage,
-          severity: testSeverity
-        })
-      });
-
-      if (response.ok) {
-        toast.success('Notification de test envoyée');
-        setTestMessage('');
-      } else {
-        toast.error('Erreur lors de l\'envoi de la notification de test');
+  const { connected, connect, disconnect } = useWebSocketNotifications({
+    userId,
+    onMessage: (msg) => {
+      // integrate simple notification messages (same shape as server sends)
+      if (!msg) return;
+      if (msg.type === 'notification' && msg.notification) {
+        const n = msg.notification;
+        const data = n.data || {};
+        const notif: WebSocketNotification = {
+          id: String(n.id),
+          ts: new Date(n.createdAt || Date.now()).getTime(),
+          type: n.type || n.severity || 'notification',
+          title: n.title || n.module + ' ' + n.actionType,
+          message: n.message,
+          isRead: !!n.read,
+          module: n.module,
+          actionType: n.actionType,
+          severity: n.severity,
+          data,
+          triggeredBy: data.triggeredBy,
+          quantityPrev: data.quantityPrev,
+          quantityNew: data.quantityNew,
+          stockPrev: data.stockPrev,
+          stockNew: data.stockNew,
+          createdAt: new Date(n.createdAt).toISOString(),
+          eventId: data.eventId,
+          timeslotIds: data.timeslotIds,
+        };
+        setNotifications((prev) => [notif, ...prev.filter((p) => p.id !== notif.id)].slice(0, 200));
       }
-    } catch (error) {
-      toast.error('Erreur lors de l\'envoi de la notification de test');
+      if (msg.type === 'notification-read' && msg.id) {
+        setNotifications((prev) =>
+          prev.map((p) => (p.id === String(msg.id) ? { ...p, isRead: true } : p)),
+        );
+      }
+      if (msg.type === 'bulk-notifications' && Array.isArray(msg.items)) {
+        const mapped = msg.items.map((m: any) => ({
+          id: String(m.id),
+          ts: m.createdAt || Date.now(),
+          type: m.type || 'info',
+          title: m.title || 'Notification',
+          message: m.message || '',
+          isRead: !!m.read,
+          module: m.module,
+          actionType: m.actionType,
+          severity: m.severity,
+          data: m.data || {},
+          triggeredBy: m.data?.triggeredBy,
+          createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
+        }));
+        setNotifications(mapped.slice(0, 200));
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    (async () => {
+      try {
+        const res = await fetch('/api/notifications?limit=50');
+        if (!res.ok) return;
+        const json = await res.json();
+        const items: WebSocketNotification[] = (json.items || []).map((it: any) => {
+          const notif = it.notification;
+          const data = notif.data || {};
+          return {
+            id: String(notif.id),
+            ts: new Date(notif.createdAt).getTime(),
+            type: notif.type || notif.severity || 'notification',
+            title: notif.title || notif.module + ' ' + notif.actionType,
+            message: notif.message,
+            isRead: !!it.readAt,
+            module: notif.module,
+            actionType: notif.actionType,
+            severity: notif.severity,
+            data,
+            triggeredBy: data.triggeredBy,
+            quantityPrev: data.quantityPrev,
+            quantityNew: data.quantityNew,
+            stockPrev: data.stockPrev,
+            stockNew: data.stockNew,
+            createdAt: new Date(notif.createdAt).toISOString(),
+            eventId: data.eventId,
+            timeslotIds: data.timeslotIds,
+          } as WebSocketNotification;
+        });
+        setNotifications(items);
+        if (items.length) setCursor(Number(items[items.length - 1].id));
+        setHasMore(items.length === 50);
+      } catch (e) {
+        console.warn('Failed to fetch notifications', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    connect();
+    return () => disconnect();
+  }, [isAuthenticated, connect, disconnect]);
+
+  const markAsRead = async (id: number) => {
+    try {
+      await fetch('/api/notifications/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: String(id) }),
+      });
+    } catch {}
+    setNotifications((prev) => prev.map((p) => (p.id === String(id) ? { ...p, isRead: true } : p)));
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications/read', { method: 'PUT' });
+    } catch {}
+    setNotifications((prev) => prev.map((p) => ({ ...p, isRead: true })));
+  };
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore || !cursor) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/notifications?limit=50&cursor=${cursor}`);
+      if (res.ok) {
+        const json = await res.json();
+        const items: WebSocketNotification[] = (json.items || []).map((it: any) => {
+          const notif = it.notification;
+          const data = notif.data || {};
+          return {
+            id: String(notif.id),
+            ts: new Date(notif.createdAt).getTime(),
+            type: notif.type || notif.severity || 'notification',
+            title: notif.title || notif.module + ' ' + notif.actionType,
+            message: notif.message,
+            isRead: !!it.readAt,
+            module: notif.module,
+            actionType: notif.actionType,
+            severity: notif.severity,
+            data,
+            triggeredBy: data.triggeredBy,
+            quantityPrev: data.quantityPrev,
+            quantityNew: data.quantityNew,
+            stockPrev: data.stockPrev,
+            stockNew: data.stockNew,
+            createdAt: new Date(notif.createdAt).toISOString(),
+            eventId: data.eventId,
+            timeslotIds: data.timeslotIds,
+          } as WebSocketNotification;
+        });
+        setNotifications((prev) => [...prev, ...items]);
+        if (items.length) setCursor(Number(items[items.length - 1].id));
+        if (items.length < 50) setHasMore(false);
+      }
+    } finally {
+      setLoadingMore(false);
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'error';
-      case 'high': return 'warning';
-      case 'medium': return 'info';
-      case 'low': return 'success';
-      default: return 'default';
-    }
-  };
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical': return '🚨';
-      case 'high': return '⚠️';
-      case 'medium': return 'ℹ️';
-      case 'low': return '📢';
-      default: return '📨';
-    }
-  };
-
-  const formatMessage = (message: string | object) => {
-    if (typeof message === 'string') return message;
-    if (typeof message === 'object' && message !== null) {
-      return (message as any).fr || JSON.stringify(message);
-    }
-    return 'Message de notification';
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'À l\'instant';
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
-    if (diffHours < 24) return `Il y a ${diffHours} h`;
-    if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-    return date.toLocaleDateString('fr-FR');
-  };
+  const readIds = useMemo(
+    () => new Set(notifications.filter((n) => n.isRead).map((n) => Number(n.id))),
+    [notifications],
+  );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            <Badge badgeContent={stats.unreadNotifications} color="error">
-              <Notifications sx={{ mr: 2, verticalAlign: "middle", fontSize: "inherit" }} />
-            </Badge>
-            Notifications
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Système de notifications en temps réel
-          </Typography>
-        </Box>
-        
-        <Stack direction="row" spacing={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            {isConnected ? (
-              <WifiTethering color="success" />
-            ) : (
-              <WifiTetheringOff color="error" />
-            )}
-            <Typography variant="body2" color={isConnected ? 'success.main' : 'error.main'}>
-              {isConnected ? 'Connecté' : 'Déconnecté'}
-            </Typography>
-          </Box>
-          
-          <Button
-            variant="outlined"
-            startIcon={isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            Rafraîchir
-          </Button>
-          
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={reconnect}
-            disabled={isConnected}
-          >
-            Reconnecter
-          </Button>
-        </Stack>
-      </Box>
-
-      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab label={`Notifications (${stats.totalNotifications})`} />
-        <Tab label="Statistiques" />
-        {session?.user && (session.user as any).role === 'ADMIN' && (
-          <Tab label="Administration" />
-        )}
-      </Tabs>
-
-      {/* Onglet Notifications */}
-      <TabPanel value={tabValue} index={0}>
-        <Grid container spacing={3}>
-          {/* Filtres */}
-          <Grid size = {{ xs:12 }}>
-            <Paper sx={{ p: 2, mb: 2 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <FilterList />
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Module</InputLabel>
-                  <Select
-                    value={filterModule}
-                    label="Module"
-                    onChange={(e) => setFilterModule(e.target.value)}
-                  >
-                    <MenuItem value="all">Tous</MenuItem>
-                    {availableModules.map(module => (
-                      <MenuItem key={module} value={module}>{module}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Sévérité</InputLabel>
-                  <Select
-                    value={filterSeverity}
-                    label="Sévérité"
-                    onChange={(e) => setFilterSeverity(e.target.value)}
-                  >
-                    <MenuItem value="all">Toutes</MenuItem>
-                    <MenuItem value="critical">Critique</MenuItem>
-                    <MenuItem value="high">Élevée</MenuItem>
-                    <MenuItem value="medium">Moyenne</MenuItem>
-                    <MenuItem value="low">Faible</MenuItem>
-                  </Select>
-                </FormControl>
-                
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>État</InputLabel>
-                  <Select
-                    value={filterRead}
-                    label="État"
-                    onChange={(e) => setFilterRead(e.target.value)}
-                  >
-                    <MenuItem value="all">Toutes</MenuItem>
-                    <MenuItem value="unread">Non lues</MenuItem>
-                    <MenuItem value="read">Lues</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <Box sx={{ flexGrow: 1 }} />
-                
-                <Button
-                  startIcon={<DoneAll />}
-                  onClick={markAllAsRead}
-                  disabled={stats.unreadNotifications === 0}
-                >
-                  Marquer toutes comme lues
-                </Button>
-                
-                <Button
-                  startIcon={<Clear />}
-                  onClick={clearNotifications}
-                  color="error"
-                  disabled={notifications.length === 0}
-                >
-                  Effacer toutes
-                </Button>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          {/* Liste des notifications */}
-          <Grid size = {{ xs:12 }}>
-            {filteredNotifications.length === 0 ? (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Notifications sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
-                  Aucune notification
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {notifications.length === 0 
-                    ? 'Vous n\'avez aucune notification pour le moment.'
-                    : 'Aucune notification ne correspond aux filtres sélectionnés.'
-                  }
-                </Typography>
-              </Paper>
-            ) : (
-              <List>
-                {filteredNotifications.map((notification, index) => (
-                  <React.Fragment key={notification.id}>
-                    <ListItem sx={{ p: 0 }}>
-                      <NotificationItem 
-                        notification={notification}
-                        onClick={() => {/* Optionnel: action au clic */}}
-                        compact={false}
-                        showActions={true}
-                        onMarkRead={() => markAsRead(notification.id)}
-                        onDelete={() => clearNotification(notification.id)}
-                      />
-                    </ListItem>
-                    {index < filteredNotifications.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            )}
-          </Grid>
-        </Grid>
-      </TabPanel>
-
-      {/* Onglet Statistiques */}
-      <TabPanel value={tabValue} index={1}>
-        <Grid container spacing={3}>
-          <Grid size = {{ xs:12, md:6 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  État de la connexion
-                </Typography>
-                <Stack spacing={2}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography>État:</Typography>
-                    <Chip
-                      label={isConnected ? 'Connecté' : 'Déconnecté'}
-                      color={isConnected ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </Box>
-                  {lastHeartbeat && (
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography>Dernier heartbeat:</Typography>
-                      <Typography variant="body2">
-                        {lastHeartbeat.toLocaleTimeString('fr-FR')}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size = {{ xs:12, md:6 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Résumé des notifications
-                </Typography>
-                <Stack spacing={2}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography>Total:</Typography>
-                    <Typography fontWeight="bold">{stats.totalNotifications}</Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography>Non lues:</Typography>
-                    <Typography fontWeight="bold" color="primary">
-                      {stats.unreadNotifications}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size = {{ xs:12, md:6 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Par module
-                </Typography>
-                <Stack spacing={1}>
-                  {Object.entries(stats.notificationsByModule).map(([module, count]) => (
-                    <Box key={module} display="flex" justifyContent="space-between">
-                      <Typography>{module}:</Typography>
-                      <Typography fontWeight="bold">{count}</Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size = {{ xs:12, md:6 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Par sévérité
-                </Typography>
-                <Stack spacing={1}>
-                  {Object.entries(stats.notificationsBySeverity).map(([severity, count]) => (
-                    <Box key={severity} display="flex" justifyContent="space-between">
-                      <Typography>
-                        {getSeverityIcon(severity)} {severity}:
-                      </Typography>
-                      <Typography fontWeight="bold">{count}</Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </TabPanel>
-
-      {/* Onglet Administration (Admin seulement) */}
-      {session?.user && (session.user as any).role === 'ADMIN' && (
-        <TabPanel value={tabValue} index={2}>
-          <Grid container spacing={3}>
-            <Grid size = {{ xs:12, md:6 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Test de notification
-                  </Typography>
-                  <Stack spacing={2}>
-                    <TextField
-                      fullWidth
-                      label="Message de test"
-                      value={testMessage}
-                      onChange={(e) => setTestMessage(e.target.value)}
-                      multiline
-                      rows={3}
-                    />
-                    <FormControl fullWidth>
-                      <InputLabel>Sévérité</InputLabel>
-                      <Select
-                        value={testSeverity}
-                        label="Sévérité"
-                        onChange={(e) => setTestSeverity(e.target.value as any)}
-                      >
-                        <MenuItem value="low">Faible</MenuItem>
-                        <MenuItem value="medium">Moyenne</MenuItem>
-                        <MenuItem value="high">Élevée</MenuItem>
-                        <MenuItem value="critical">Critique</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <Button
-                      variant="contained"
-                      startIcon={<Send />}
-                      onClick={handleSendTestNotification}
-                      disabled={!testMessage.trim()}
-                    >
-                      Envoyer notification de test
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size = {{ xs:12, md:6 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Contrôles de connexion
-                  </Typography>
-                  <Stack spacing={2}>
-                    <Button
-                      variant="outlined"
-                      onClick={connect}
-                      disabled={isConnected}
-                      fullWidth
-                    >
-                      Se connecter
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={disconnect}
-                      disabled={!isConnected}
-                      fullWidth
-                    >
-                      Se déconnecter
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={reconnect}
-                      fullWidth
-                    >
-                      Reconnecter
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => sendMessage({ type: 'ping' })}
-                      disabled={!isConnected}
-                      fullWidth
-                    >
-                      Envoyer ping
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-      )}
-    </Container>
+    <div style={{ padding: isMobileSmall ? 12 : 24 }}>
+      <MBox component={motion.div} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        <NotificationLiveFeed
+          notifications={notifications.map((n) => ({
+            id: Number(n.id),
+            module: n.module || '',
+            actionType: n.actionType || '',
+            severity: (n.severity as any) || 'low',
+            message: n.message || '',
+            title: n.title || null,
+            data: n.data,
+            createdAt: n.createdAt || new Date(n.ts).toISOString(),
+          }))}
+          loading={loading}
+          wsConnected={!!connected}
+          onRefresh={async () => {
+            setLoading(true);
+            try {
+              const res = await fetch('/api/notifications?limit=50');
+              if (!res.ok) return;
+              const json = await res.json();
+              const items: WebSocketNotification[] = (json.items || []).map((it: any) => {
+                const notif = it.notification;
+                const data = notif.data || {};
+                return {
+                  id: String(notif.id),
+                  ts: new Date(notif.createdAt).getTime(),
+                  type: notif.type || notif.severity || 'notification',
+                  title: notif.title || notif.module + ' ' + notif.actionType,
+                  message: notif.message,
+                  isRead: !!it.readAt,
+                  module: notif.module,
+                  actionType: notif.actionType,
+                  severity: notif.severity,
+                  data,
+                  triggeredBy: data.triggeredBy,
+                  quantityPrev: data.quantityPrev,
+                  quantityNew: data.quantityNew,
+                  stockPrev: data.stockPrev,
+                  stockNew: data.stockNew,
+                  createdAt: new Date(notif.createdAt).toISOString(),
+                } as WebSocketNotification;
+              });
+              setNotifications(items);
+              if (items.length) setCursor(Number(items[items.length - 1].id));
+              setHasMore(items.length === 50);
+            } catch (e) {
+              console.warn('Failed to fetch notifications', e);
+            } finally {
+              setLoading(false);
+            }
+          }}
+          onLoadMore={hasMore ? loadMore : undefined}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          readIds={readIds}
+        />
+      </MBox>
+    </div>
   );
 }

@@ -1,327 +1,411 @@
-// API centralisée pour la gestion des événements
-// Fichier : app/api/events/route.ts
+// api/events/route.ts
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import { CalendarEvent } from '@/types/calendar'
-import { Discipline } from '@/types/timeslots'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/services/db';
+import { z } from 'zod';
+import { auth } from '@/auth';
+import { notificationService } from '@/lib/services/notification-service';
+// Convert Date/ISO strings into local-literal "YYYY-MM-DDTHH:MM:SS" (server local time)
+function formatLocalLiteral(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  const toLocal = (dt: Date) =>
+    `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+  if (typeof d === 'string') {
+    if (!/(Z|[+-]\d{2}:?\d{2})$/.test(d)) return d.replace(/\.\d{3}$/, '');
+    const parsed = new Date(d);
+    if (!isNaN(parsed.getTime())) return toLocal(parsed);
+    return d;
+  }
+  return toLocal(d);
+}
 
-// Importation des fonctions existantes pour maintenir la compatibilité
-import {
-  getChemistryEventsWithTimeSlots,
-  createChemistryEventWithTimeSlots,
-  updateChemistryEventWithTimeSlots,
-  getChemistryEventByIdWithTimeSlots
-} from '@/lib/calendar-utils-timeslots'
+// Accept both legacy keys (materielName / reactifName) and unified 'name'
+const materielItemSchema = z
+  .object({
+    materielId: z.number().int().optional(),
+    materielName: z.string().optional(), // legacy
+    name: z.string().optional(), // unified
+    quantity: z.number().int().min(1).default(1),
+    isCustom: z.boolean().optional().default(false),
+  })
+  .refine((d) => !!(d.materielName || d.name), {
+    message: 'materielName or name required',
+    path: ['name'],
+  });
 
-// Importation des utilitaires nécessaires
-import { 
-  parseClassDataSafe,
-  getClassNameFromClassData,
-  normalizeClassField,
-  createClassDataFromString,
-  type ClassData 
-} from '@/lib/class-data-utils'
+const reactifItemSchema = z
+  .object({
+    reactifId: z.number().int().optional(),
+    reactifName: z.string().optional(), // legacy
+    name: z.string().optional(), // unified
+    requestedQuantity: z.number().min(0).default(0),
+    unit: z.string().optional().default('g'),
+    isCustom: z.boolean().optional().default(false),
+  })
+  .refine((d) => !!(d.reactifName || d.name), {
+    message: 'reactifName or name required',
+    path: ['name'],
+  });
 
-// Fonction utilitaire pour parser le JSON de manière sécurisée
-function parseJsonSafe<T>(jsonString: string | null | undefined | any, defaultValue: T): T {
+const documentItemSchema = z.object({
+  fileName: z.string(),
+  fileUrl: z.string(),
+  fileSize: z.number().int().optional(),
+  fileType: z.string().optional(),
+});
+
+const createEventSchema = z.object({
+  title: z.string().optional(),
+  discipline: z.enum(['chimie', 'physique']),
+  type: z.enum(['TP', 'LABORANTIN_CHIMIE', 'LABORANTIN_PHYSIQUE']).optional(),
+  notes: z.string().optional(),
+  classIds: z.array(z.number().int()).optional().default([]),
+  salleIds: z.array(z.number().int()).optional().default([]),
+  materiels: z.array(materielItemSchema).optional().default([]),
+  reactifs: z.array(reactifItemSchema).optional().default([]),
+  documents: z.array(documentItemSchema).optional().default([]),
+  replaceReservedId: z.number().int().optional(), // ID of placeholder to replace
+});
+
+export async function GET(req: NextRequest) {
   try {
-    if (!jsonString || jsonString === 'null' || jsonString === 'undefined') {
-      return defaultValue
-    }
-    
-    // Si c'est déjà un objet (pas une chaîne), le retourner directement
-    if (typeof jsonString === 'object') {
-      return jsonString as T
-    }
-    
-    return JSON.parse(jsonString) as T
+    const { searchParams } = new URL(req.url);
+    const discipline = searchParams.get('discipline');
+
+    const events = await prisma.evenement.findMany({
+      where: discipline ? { discipline } : undefined,
+      include: {
+        owner: { select: { id: true, name: true, email: true } },
+        timeslots: true,
+        materiels: {
+          include: {
+            materiel: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                model: true,
+                serialNumber: true,
+              },
+            },
+          },
+        },
+        reactifs: {
+          include: {
+            reactif: {
+              include: {
+                reactifPreset: {
+                  select: {
+                    id: true,
+                    name: true,
+                    casNumber: true,
+                    formula: true,
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        customMaterielRequests: true,
+        customReactifRequests: true,
+        documents: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Normalize createdAt/updatedAt to local-literal (no timezone) across objects
+    const mapped = (events as any[]).map((ev) => ({
+      ...ev,
+      createdAt: formatLocalLiteral(ev.createdAt),
+      updatedAt: formatLocalLiteral(ev.updatedAt),
+      timeslots: (ev.timeslots || []).map((t: any) => ({
+        ...t,
+        createdAt: formatLocalLiteral(t.createdAt),
+        updatedAt: formatLocalLiteral(t.updatedAt),
+      })),
+      materiels: (ev.materiels || []).map((m: any) => ({
+        ...m,
+        createdAt: formatLocalLiteral(m.createdAt),
+        updatedAt: formatLocalLiteral(m.updatedAt),
+      })),
+      reactifs: (ev.reactifs || []).map((r: any) => ({
+        ...r,
+        createdAt: formatLocalLiteral(r.createdAt),
+        updatedAt: formatLocalLiteral(r.updatedAt),
+      })),
+      customMaterielRequests: (ev.customMaterielRequests || []).map((cm: any) => ({
+        ...cm,
+        createdAt: formatLocalLiteral(cm.createdAt),
+        updatedAt: formatLocalLiteral(cm.updatedAt),
+      })),
+      customReactifRequests: (ev.customReactifRequests || []).map((cr: any) => ({
+        ...cr,
+        createdAt: formatLocalLiteral(cr.createdAt),
+        updatedAt: formatLocalLiteral(cr.updatedAt),
+      })),
+      documents: (ev.documents || []).map((d: any) => ({
+        ...d,
+        createdAt: formatLocalLiteral(d.createdAt),
+        updatedAt: formatLocalLiteral(d.updatedAt),
+      })),
+    }));
+    return NextResponse.json({ events: mapped });
   } catch (error) {
-    console.warn('Erreur lors du parsing JSON:', error, 'String:', jsonString)
-    return defaultValue
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }
 
-// Note: Pour l'instant, utilisons les mêmes fonctions pour physique
-// TODO: Créer calendar-utils-physique-timeslots.ts si nécessaire
-
-// GET - Récupérer les événements d'une discipline
-export async function GET(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    const session = await auth();
+    const userId = session?.user?.id ? Number(session.user.id) : null;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const body = await req.json();
+    const validatedData = createEventSchema.parse(body);
+
+    // Ensure uniqueness defensively on server-side as well
+    const uniqueSalleIds = Array.isArray(validatedData.salleIds)
+      ? Array.from(new Set(validatedData.salleIds))
+      : [];
+    const uniqueClassIds = Array.isArray(validatedData.classIds)
+      ? Array.from(new Set(validatedData.classIds))
+      : [];
+
+    // no debug logs in production
+
+    // Create event with provided title or generate one
+    const providedTitle = (validatedData.title || '').trim();
+    const finalTitle = providedTitle || `Événement ID ${Date.now()}`;
+
+    const inferredType =
+      validatedData.type ||
+      (finalTitle.toLowerCase().includes('labor')
+        ? validatedData.discipline === 'physique'
+          ? 'LABORANTIN_PHYSIQUE'
+          : 'LABORANTIN_CHIMIE'
+        : 'TP');
+
+    const event = await prisma.evenement.create({
+      data: {
+        title: finalTitle,
+        discipline: validatedData.discipline,
+        type: inferredType,
+        notes: validatedData.notes,
+        ownerId: userId,
+        classIds: uniqueClassIds.length ? (uniqueClassIds as any) : undefined,
+        salleIds: uniqueSalleIds.length ? (uniqueSalleIds as any) : undefined,
+      },
+    });
+
+    if (validatedData.materiels && validatedData.materiels.length) {
+      const mapped = validatedData.materiels.map((m) => ({
+        materielId: m.materielId,
+        materielName: (m as any).materielName || (m as any).name || 'Item',
+        quantity: m.quantity ?? 1,
+        isCustom: m.isCustom || false,
+      }));
+      await prisma.$transaction(
+        mapped.map((m) =>
+          prisma.evenementMateriel.create({
+            data: { eventId: event.id, ...m },
+          }),
+        ),
+      );
+    }
+    if (validatedData.reactifs && validatedData.reactifs.length) {
+      const mapped = validatedData.reactifs.map((r) => ({
+        reactifId: r.reactifId,
+        reactifName: (r as any).reactifName || (r as any).name || 'Réactif',
+        requestedQuantity: r.requestedQuantity ?? 0,
+        unit: r.unit || 'g',
+        isCustom: r.isCustom || false,
+      }));
+      await prisma.$transaction(
+        mapped.map((r) =>
+          prisma.evenementReactif.create({
+            data: { eventId: event.id, ...r },
+          }),
+        ),
+      );
+    }
+    if (validatedData.documents && validatedData.documents.length) {
+      await prisma.$transaction(
+        validatedData.documents.map((d) =>
+          prisma.evenementDocument.create({
+            data: {
+              eventId: event.id,
+              fileName: d.fileName,
+              fileUrl: d.fileUrl,
+              fileSize: d.fileSize,
+              fileType: d.fileType,
+            },
+          }),
+        ),
+      );
     }
 
-    const { searchParams } = new URL(request.url)
-    const discipline = searchParams.get('discipline') as Discipline
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const eventId = searchParams.get('id')
+    // Re-fetch with includes
+    let finalEvent = await prisma.evenement.findUnique({
+      where: { id: event.id },
+      include: {
+        owner: { select: { id: true, name: true, email: true } },
+        timeslots: true,
+        materiels: true,
+        reactifs: true,
+        documents: true,
+        customMaterielRequests: true,
+        customReactifRequests: true,
+      },
+    });
 
-    if (!discipline || !['chimie', 'physique'].includes(discipline)) {
-      return NextResponse.json(
-        { error: 'Discipline requise (chimie ou physique)' },
-        { status: 400 }
-      )
+    if (!providedTitle) {
+      await prisma.evenement.update({
+        where: { id: event.id },
+        data: { title: `Événement ID ${event.id}` },
+      });
+      finalEvent = await prisma.evenement.findUnique({
+        where: { id: event.id },
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+          timeslots: true,
+          materiels: true,
+          reactifs: true,
+          documents: true,
+          customMaterielRequests: true,
+          customReactifRequests: true,
+        },
+      });
     }
 
-    // Si un ID spécifique est demandé
-    if (eventId) {
-      // Pour l'instant, utilisons la même fonction pour les deux disciplines
-      const event = await getChemistryEventByIdWithTimeSlots(eventId)
-      
-      if (!event) {
-        return NextResponse.json({ error: 'Événement non trouvé' }, { status: 404 })
+    // Derive actor name and a representative date (from timeslots if present)
+    const actorName = session?.user?.name || session?.user?.email || 'Un utilisateur';
+    const dateCandidate = (finalEvent?.timeslots || [])
+      .map((t: any) => t.timeslotDate || t.startDate)
+      .filter(Boolean)
+      .sort((a: any, b: any) => new Date(a as any).getTime() - new Date(b as any).getTime())[0] as
+      | string
+      | Date
+      | undefined;
+    const dateStr = dateCandidate
+      ? new Date(dateCandidate).toLocaleDateString('fr-FR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : undefined;
+
+    // Send notification for event creation and await to improve first-run reliability
+    try {
+      await notificationService.createAndDispatch({
+        module: 'EVENTS_GLOBAL',
+        actionType: 'CREATE',
+        message: `${actorName} a ajouté un nouvel événement en ${finalEvent?.discipline}${
+          dateStr ? ` pour le ${dateStr}` : ''
+        }`,
+        data: {
+          eventId: finalEvent?.id,
+          title: finalEvent?.title,
+          discipline: finalEvent?.discipline,
+          classesCount: Array.isArray(finalEvent?.classIds)
+            ? finalEvent.classIds.length
+            : finalEvent?.classIds && typeof finalEvent.classIds === 'object'
+              ? Object.keys(finalEvent.classIds).length || 0
+              : 0,
+          sallesCount: Array.isArray(finalEvent?.salleIds)
+            ? finalEvent.salleIds.length
+            : finalEvent?.salleIds && typeof finalEvent.salleIds === 'object'
+              ? Object.keys(finalEvent.salleIds).length || 0
+              : 0,
+          materielsCount: finalEvent?.materiels?.length || 0,
+          reactifsCount: finalEvent?.reactifs?.length || 0,
+          documentsCount: finalEvent?.documents?.length || 0,
+          triggeredBy: session?.user?.name || session?.user?.email || 'système',
+        },
+        excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+      });
+    } catch (e) {
+      // Retry once after a short delay to handle lazy init
+      try {
+        await new Promise((r) => setTimeout(r, 200));
+        await notificationService.createAndDispatch({
+          module: 'EVENTS_GLOBAL',
+          actionType: 'CREATE',
+          message: `${actorName} a ajouté un nouvel événement en ${finalEvent?.discipline}${
+            dateStr ? ` pour le ${dateStr}` : ''
+          }`,
+          data: {
+            eventId: finalEvent?.id,
+            title: finalEvent?.title,
+            discipline: finalEvent?.discipline,
+            classesCount: Array.isArray(finalEvent?.classIds)
+              ? finalEvent.classIds.length
+              : finalEvent?.classIds && typeof finalEvent.classIds === 'object'
+                ? Object.keys(finalEvent.classIds).length || 0
+                : 0,
+            sallesCount: Array.isArray(finalEvent?.salleIds)
+              ? finalEvent.salleIds.length
+              : finalEvent?.salleIds && typeof finalEvent.salleIds === 'object'
+                ? Object.keys(finalEvent.salleIds).length || 0
+                : 0,
+            materielsCount: finalEvent?.materiels?.length || 0,
+            reactifsCount: finalEvent?.reactifs?.length || 0,
+            documentsCount: finalEvent?.documents?.length || 0,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+          excludeUserIds: session?.user?.id ? [Number(session.user.id)] : [],
+        });
+      } catch (e2) {
+        console.error('[events][notify][create]', e2);
       }
-      
-      return NextResponse.json(event)
     }
 
-    // Récupérer tous les événements de la discipline
-    // Pour l'instant, utilisons la même fonction pour les deux disciplines
-    const events = await getChemistryEventsWithTimeSlots(
-      startDate || undefined, 
-      endDate || undefined
-    )
-
-    // Convertir les événements DB en format CalendarEvent pour l'API (comme dans /api/calendrier/chimie)
-    const convertedEvents = events.map(dbEvent => {
-      // Les données sont déjà parsées dans getChemistryEventsWithTimeSlots
-      const timeSlots = dbEvent.timeSlots || []
-      const actuelTimeSlots = dbEvent.actuelTimeSlots || []
-      
-      // Normaliser les données de classe (support legacy + nouveau format)
-      const classData = normalizeClassField(dbEvent.class_data)
-
-      return {
-        id: dbEvent.id,
-        title: dbEvent.title,
-        description: dbEvent.description,
-        type: dbEvent.type.toUpperCase() === 'TP' ? 'TP' : 
-              dbEvent.type.toUpperCase() === 'MAINTENANCE' ? 'MAINTENANCE' :
-              dbEvent.type.toUpperCase() === 'INVENTORY' ? 'INVENTORY' : 'OTHER',
-        state: dbEvent.state || 'VALIDATED',
-        timeSlots: timeSlots,
-        actuelTimeSlots: actuelTimeSlots,
-        class: getClassNameFromClassData(classData), // Pour compatibilité legacy
-        class_data: Array.isArray(classData) ? classData : (classData ? [classData] : []), // Toujours un tableau
-        room: dbEvent.room,
-        materials: parseJsonSafe(dbEvent.equipment_used, []).map((item: any) => {
-          if (typeof item === 'string') {
-            return { id: item, name: item };
-          }
-          return {
-            id: item.id || item,
-            name: item.name || item.itemName || (typeof item === 'string' ? item : 'Matériel'),
-            itemName: item.itemName || item.name,
-            quantity: item.quantity || 1,
-            volume: item.volume,
-            isCustom: item.isCustom || false
-          };
-        }),
-        chemicals: parseJsonSafe(dbEvent.chemicals_used, []).map((item: any) => {
-          if (typeof item === 'string') {
-            return { id: item, name: item };
-          }
-          return {
-            id: item.id || item,
-            name: item.name || (typeof item === 'string' ? item : 'Réactif'),
-            requestedQuantity: item.requestedQuantity || 1,
-            quantity: item.quantity,
-            unit: item.unit,
-            isCustom: item.isCustom || false,
-            formula: item.formula
-          };
-        }),
-        remarks: dbEvent.notes,
-        createdBy: dbEvent.createdBy,
-        createdAt: dbEvent.created_at,
-        updatedAt: dbEvent.updated_at,
-        stateChangeReason: dbEvent.stateChangeReason,
-        lastStateChange: dbEvent.lastStateChange,
-        validationState: dbEvent.validationState || 'noPending'
-      }
-    })
-
-    return NextResponse.json(convertedEvents)
-
+    // Normalize createdAt/updatedAt for response
+    const mapped = finalEvent
+      ? {
+          ...finalEvent,
+          createdAt: formatLocalLiteral((finalEvent as any).createdAt),
+          updatedAt: formatLocalLiteral((finalEvent as any).updatedAt),
+          timeslots: (finalEvent as any).timeslots?.map((t: any) => ({
+            ...t,
+            createdAt: formatLocalLiteral(t.createdAt),
+            updatedAt: formatLocalLiteral(t.updatedAt),
+          })),
+          materiels: (finalEvent as any).materiels?.map((m: any) => ({
+            ...m,
+            createdAt: formatLocalLiteral(m.createdAt),
+            updatedAt: formatLocalLiteral(m.updatedAt),
+          })),
+          reactifs: (finalEvent as any).reactifs?.map((r: any) => ({
+            ...r,
+            createdAt: formatLocalLiteral(r.createdAt),
+            updatedAt: formatLocalLiteral(r.updatedAt),
+          })),
+          documents: (finalEvent as any).documents?.map((d: any) => ({
+            ...d,
+            createdAt: formatLocalLiteral(d.createdAt),
+            updatedAt: formatLocalLiteral(d.updatedAt),
+          })),
+          customMaterielRequests: (finalEvent as any).customMaterielRequests?.map((cm: any) => ({
+            ...cm,
+            createdAt: formatLocalLiteral(cm.createdAt),
+            updatedAt: formatLocalLiteral(cm.updatedAt),
+          })),
+          customReactifRequests: (finalEvent as any).customReactifRequests?.map((cr: any) => ({
+            ...cr,
+            createdAt: formatLocalLiteral(cr.createdAt),
+            updatedAt: formatLocalLiteral(cr.updatedAt),
+          })),
+        }
+      : null;
+    return NextResponse.json({ event: mapped }, { status: 201 });
   } catch (error) {
-    console.error('Erreur GET /api/events:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la récupération des événements' },
-      { status: 500 }
-    )
-  }
-}
-
-// POST - Créer un événement
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
-
-    console.log('API /events. Session:', session)
-
-    const body = await request.json()
-    const { discipline, timeSlots, ...eventData } = body
-
-    if (!discipline || !['chimie', 'physique'].includes(discipline)) {
-      return NextResponse.json(
-        { error: 'Discipline requise (chimie ou physique)' },
-        { status: 400 }
-      )
-    }
-
-    // Calculer start_date et end_date à partir des timeSlots si fournis
-    let calculatedStartDate = eventData.start_date
-    let calculatedEndDate = eventData.end_date
-
-    if (timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0) {
-      // Trouver la date/heure de début la plus tôt
-      const earliestSlot = timeSlots.reduce((earliest, slot) => {
-        if (!slot.date || !slot.startTime) return earliest
-        const slotDateTime = new Date(`${slot.date}T${slot.startTime}:00`)
-        const earliestDateTime = earliest ? new Date(`${earliest.date}T${earliest.startTime}:00`) : null
-        
-        return !earliestDateTime || slotDateTime < earliestDateTime ? slot : earliest
-      }, null)
-
-      // Trouver la date/heure de fin la plus tard
-      const latestSlot = timeSlots.reduce((latest, slot) => {
-        if (!slot.date || !slot.endTime) return latest
-        const slotDateTime = new Date(`${slot.date}T${slot.endTime}:00`)
-        const latestDateTime = latest ? new Date(`${latest.date}T${latest.endTime}:00`) : null
-        
-        return !latestDateTime || slotDateTime > latestDateTime ? slot : latest
-      }, null)
-
-      if (earliestSlot && latestSlot) {
-        calculatedStartDate = `${earliestSlot.date}T${earliestSlot.startTime}:00`
-        calculatedEndDate = `${latestSlot.date}T${latestSlot.endTime}:00`
-      }
-    }
-
-    // Valider que nous avons des dates
-    if (!calculatedStartDate || !calculatedEndDate) {
-      return NextResponse.json(
-        { error: 'Dates de début et fin requises (soit directement, soit via timeSlots)' },
-        { status: 400 }
-      )
-    }
-
-    // Ajouter l'utilisateur créateur et les dates calculées
-    const eventWithCreator = {
-      ...eventData,
-      start_date: calculatedStartDate,
-      end_date: calculatedEndDate,
-      timeSlots, // Conserver les timeSlots pour le traitement
-      createdBy: session.user.id
-    }
-
-    // Créer l'événement selon la discipline
-    // Pour l'instant, utilisons la même fonction pour les deux disciplines
-    console.log('API /events. Création de l\'événement:', eventWithCreator)
-    const newEvent = await createChemistryEventWithTimeSlots(eventWithCreator)
-
-    return NextResponse.json(newEvent, { status: 201 })
-
-  } catch (error) {
-    console.error('Erreur POST /api/events:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Erreur lors de la création' },
-      { status: 500 }
-    )
-  }
-}
-
-// PUT - Mettre à jour un événement
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { id, discipline, ...eventData } = body
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID de l\'événement requis' },
-        { status: 400 }
-      )
-    }
-
-    if (!discipline || !['chimie', 'physique'].includes(discipline)) {
-      return NextResponse.json(
-        { error: 'Discipline requise (chimie ou physique)' },
-        { status: 400 }
-      )
-    }
-
-    // Mettre à jour l'événement selon la discipline
-    // Pour l'instant, utilisons la même fonction pour les deux disciplines
-    const updatedEvent = await updateChemistryEventWithTimeSlots(id, eventData)
-
-    return NextResponse.json(updatedEvent)
-
-  } catch (error) {
-    console.error('Erreur PUT /api/events:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour' },
-      { status: 500 }
-    )
-  }
-}
-
-// DELETE - Supprimer un événement
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    const discipline = searchParams.get('discipline') as Discipline
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID de l\'événement requis' },
-        { status: 400 }
-      )
-    }
-
-    if (!discipline || !['chimie', 'physique'].includes(discipline)) {
-      return NextResponse.json(
-        { error: 'Discipline requise (chimie ou physique)' },
-        { status: 400 }
-      )
-    }
-
-    // Importer la fonction de suppression
-    const { deleteChemistryEvent } = await import('@/lib/calendar-utils')
-    // Note: Il faudrait aussi avoir deletePhysiqueEvent
-
-    if (discipline === 'chimie') {
-      await deleteChemistryEvent(id)
-    } else {
-      // await deletePhysiqueEvent(id)
-      throw new Error('Suppression physique non implémentée')
-    }
-
-    return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('Erreur DELETE /api/events:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Erreur lors de la suppression' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
   }
 }

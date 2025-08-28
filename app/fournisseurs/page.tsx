@@ -1,388 +1,595 @@
-"use client"
-
-import { useState, useEffect } from "react"
+'use client';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
+  Typography,
+  Tabs,
+  Tab,
+  Stack,
   Button,
   Card,
   CardContent,
-  Typography,
+  CardActions,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Stack,
-  IconButton,
+  CircularProgress,
   Tooltip,
   Alert,
-  CircularProgress,
   Chip,
-  Grid,
-  FormControlLabel,
-  Switch
-} from "@mui/material"
-import {
-  Add,
-  Edit,
-  Delete,
-  Business,
-  Email,
-  Phone,
-  Web,
-  Person,
-  LocationOn
-} from "@mui/icons-material"
-import { Supplier } from "@/types/chemicals"
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Pagination,
+  InputAdornment,
+} from '@mui/material';
+import { Add, Edit, Delete, Info, Search } from '@mui/icons-material';
+import { TbTruckDelivery } from 'react-icons/tb';
+import { useSession } from 'next-auth/react';
+import { useTabWithURL } from '@/lib/hooks/useTabWithURL';
+import DataExportTab from '@/components/export/DataExportTab';
 
-interface SupplierFormData {
-  name: string
-  email: string
-  phone: string
-  address: string
-  website: string
-  contactPerson: string
-  isActive: boolean
+interface Supplier {
+  id: number;
+  name: string;
+  kind: string;
+  contactEmail?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [openDialog, setOpenDialog] = useState(false)
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [formData, setFormData] = useState<SupplierFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    website: "",
-    contactPerson: "",
-    isActive: true
-  })
+// Draft cache pour conserver un formulaire en cours (création)
+const supplierDraftCache: { form?: Partial<Supplier> } = {} as any;
 
-  // Charger les fournisseurs
-  const loadSuppliers = async () => {
+export default function FournisseurPage() {
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
+  const canManage = ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'].includes(
+    role,
+  );
+  // Trois onglets: 0 = liste, 1 = ajouter, 2 = export
+  const { tabValue: tab, handleTabChange } = useTabWithURL({ defaultTab: 0, maxTabs: 3 });
+
+  const [loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [total, setTotal] = useState(0);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier | null>(null);
+  const [form, setForm] = useState({
+    name: '',
+    contactEmail: '',
+    phone: '',
+    address: '',
+    notes: '',
+    kind: 'CUSTOM',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/suppliers')
-      const data = await response.json()
-      
-      if (response.ok) {
-        setSuppliers(data.suppliers || [])
-      } else {
-        setError(data.error || "Erreur lors du chargement")
-      }
-    } catch (err) {
-      setError("Erreur de connexion")
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      params.set('sortBy', sortBy);
+      params.set('sortDir', sortDir);
+      if (search.trim()) params.set('q', search.trim());
+      const r = await fetch('/api/suppliers?' + params.toString());
+      if (!r.ok) throw new Error('Chargement fournisseurs échoué');
+      const j = await r.json();
+      setSuppliers(j.suppliers || []);
+      setTotal(j.total || (j.suppliers || []).length || 0);
+    } catch (e: any) {
+      setError(e.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
+  }, [page, pageSize, sortBy, sortDir, search]);
   useEffect(() => {
-    loadSuppliers()
-  }, [])
+    load();
+  }, [load]);
 
-  // Ouvrir le dialogue pour ajouter un fournisseur
-  const handleAdd = () => {
-    setEditingSupplier(null)
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      website: "",
-      contactPerson: "",
-      isActive: true
-    })
-    setOpenDialog(true)
-  }
-
-  // Ouvrir le dialogue pour éditer un fournisseur
-  const handleEdit = (supplier: Supplier) => {
-    setEditingSupplier(supplier)
-    setFormData({
-      name: supplier.name,
-      email: supplier.email || "",
-      phone: supplier.phone || "",
-      address: supplier.address || "",
-      website: supplier.website || "",
-      contactPerson: supplier.contactPerson || "",
-      isActive: supplier.isActive
-    })
-    setOpenDialog(true)
-  }
-
-  // Sauvegarder le fournisseur
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      setError("Le nom du fournisseur est requis")
-      return
+  const openNew = () => {
+    setEditing(null);
+    if (supplierDraftCache.form) {
+      setForm({
+        name: supplierDraftCache.form.name || '',
+        contactEmail: supplierDraftCache.form.contactEmail || '',
+        phone: supplierDraftCache.form.phone || '',
+        address: supplierDraftCache.form.address || '',
+        notes: supplierDraftCache.form.notes || '',
+        kind: supplierDraftCache.form.kind || 'CUSTOM',
+      });
+    } else {
+      setForm({ name: '', contactEmail: '', phone: '', address: '', notes: '', kind: 'CUSTOM' });
     }
+    setDialogOpen(true);
+  };
+  const openEdit = (s: Supplier) => {
+    setEditing(s);
+    setForm({
+      name: s.name,
+      contactEmail: s.contactEmail || '',
+      phone: s.phone || '',
+      address: s.address || '',
+      notes: s.notes || '',
+      kind: s.kind || 'CUSTOM',
+    });
+    setDialogOpen(true);
+  };
+  const closeDialog = () => {
+    if (!saving && !editing) supplierDraftCache.form = { ...form };
+    if (!saving) setDialogOpen(false);
+  };
 
+  const save = async () => {
     try {
-      setSubmitting(true)
-      setError(null)
-
-      const url = editingSupplier 
-        ? `/api/suppliers/${editingSupplier.id}`
-        : '/api/suppliers'
-      
-      const method = editingSupplier ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
+      setSaving(true);
+      setError(null);
+      const payload = {
+        name: form.name.trim(),
+        contactEmail: form.contactEmail.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        address: form.address.trim() || undefined,
+        notes: form.notes.trim() || undefined,
+        kind: form.kind,
+      };
+      const method = editing ? 'PUT' : 'POST';
+      const url = editing ? `/api/suppliers?id=${editing.id}` : '/api/suppliers';
+      const r = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setOpenDialog(false)
-        await loadSuppliers()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Echec sauvegarde');
+      const returned = j.supplier;
+      if (returned) {
+        setSuppliers((prev) => {
+          if (editing)
+            return prev
+              .map((p) => (p.id === returned.id ? returned : p))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          const next = [...prev, returned];
+          next.sort((a, b) => a.name.localeCompare(b.name));
+          return next;
+        });
       } else {
-        setError(data.error || "Erreur lors de la sauvegarde")
+        await load();
       }
-    } catch (err) {
-      setError("Erreur de connexion")
+      setDialogOpen(false);
+      if (!editing) supplierDraftCache.form = undefined;
+    } catch (e: any) {
+      setError(e.message);
     } finally {
-      setSubmitting(false)
+      setSaving(false);
     }
-  }
+  };
 
-  // Supprimer un fournisseur
-  const handleDelete = async (supplier: Supplier) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le fournisseur "${supplier.name}" ?`)) {
-      return
+  const removeSupplier = async (s: Supplier) => {
+    if (!confirm(`Supprimer le fournisseur "${s.name}" ?`)) return;
+    const r = await fetch(`/api/suppliers?id=${s.id}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert(j.error || 'Suppression impossible');
+      return;
     }
-
-    try {
-      const response = await fetch(`/api/suppliers/${supplier.id}`, {
-        method: 'DELETE',
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        await loadSuppliers()
-      } else {
-        setError(data.error || "Erreur lors de la suppression")
-      }
-    } catch (err) {
-      setError("Erreur de connexion")
-    }
-  }
+    setSuppliers((prev) => prev.filter((p) => p.id !== s.id));
+  };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Gestion des Fournisseurs
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleAdd}
+    <Box
+      sx={{
+        p: 0,
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography
+          variant="h4"
+          component="div"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
         >
-          Ajouter un fournisseur
-        </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+            <TbTruckDelivery fontSize={25} />
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+            Gestion des fournisseurs
+          </Box>
+        </Typography>
+        {canManage && (
+          <Button startIcon={<Add />} onClick={openNew} variant="contained">
+            Nouveau fournisseur
+          </Button>
+        )}
       </Stack>
-
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 2 }}>
-          {suppliers.map((supplier) => (
-            <Card key={supplier.id}>
-                <CardContent>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Box>
-                      <Typography variant="h6" component="h3">
-                        {supplier.name}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        color={supplier.isActive ? "success" : "default"}
-                        label={supplier.isActive ? "Actif" : "Inactif"}
-                      />
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Modifier">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEdit(supplier)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Supprimer">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(supplier)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-
-                  <Stack spacing={1}>
-                    {supplier.email && (
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Email sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {supplier.email}
-                        </Typography>
-                      </Stack>
-                    )}
-
-                    {supplier.phone && (
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Phone sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {supplier.phone}
-                        </Typography>
-                      </Stack>
-                    )}
-
-                    {supplier.website && (
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Web sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography 
-                          variant="body2" 
-                          color="primary" 
-                          component="a"
-                          href={supplier.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{ textDecoration: 'none' }}
-                        >
-                          {supplier.website}
-                        </Typography>
-                      </Stack>
-                    )}
-
-                    {supplier.contactPerson && (
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Person sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {supplier.contactPerson}
-                        </Typography>
-                      </Stack>
-                    )}
-
-                    {supplier.address && (
-                      <Stack direction="row" alignItems="flex-start" spacing={1}>
-                        <LocationOn sx={{ fontSize: 16, color: 'text.secondary', mt: 0.25 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {supplier.address}
-                        </Typography>
-                      </Stack>
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
+      <Tabs value={tab} onChange={(_, v) => handleTabChange(v)} sx={{ mb: 2 }}>
+        <Tab label={`Fournisseurs disponibles (${total})`} />
+        <Tab label="Ajouter" disabled={!canManage} />
+        <Tab label="Export" />
+      </Tabs>
+      {tab === 0 && (
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          alignItems={{ md: 'center' }}
+          sx={{ my: 4 }}
+        >
+          <TextField
+            size="small"
+            label="Recherche"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ maxWidth: 260 }}
+          />
+          <FormControl size="small" sx={{ minWidth: 130 }}>
+            <InputLabel>Tri</InputLabel>
+            <Select
+              value={sortBy}
+              label="Tri"
+              onChange={(e) => {
+                setSortBy(e.target.value as any);
+                setPage(1);
+              }}
+            >
+              <MenuItem value="name">Nom</MenuItem>
+              <MenuItem value="createdAt">Ajouté</MenuItem>
+              <MenuItem value="updatedAt">Maj</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 110 }}>
+            <InputLabel>Ordre</InputLabel>
+            <Select
+              value={sortDir}
+              label="Ordre"
+              onChange={(e) => {
+                setSortDir(e.target.value as any);
+                setPage(1);
+              }}
+            >
+              <MenuItem value="asc">Asc</MenuItem>
+              <MenuItem value="desc">Desc</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Taille</InputLabel>
+            <Select
+              value={pageSize}
+              label="Taille"
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 7, 11, 15].map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Typography variant="caption" color="text.secondary">
+            {total} éléments
+          </Typography>
+        </Stack>
       )}
+      {tab === 1 && canManage ? (
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Ajouter un fournisseur
+            </Typography>
+            <Stack spacing={2}>
+              <TextField
+                label="Nom"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Email"
+                value={form.contactEmail}
+                onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Téléphone"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Adresse"
+                value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+              <TextField
+                label="Notes"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip label={form.kind} size="small" />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    setForm((f) => ({ ...f, kind: f.kind === 'CUSTOM' ? 'NORMAL' : 'CUSTOM' }))
+                  }
+                >
+                  Basculer {form.kind === 'CUSTOM' ? 'NORMAL' : 'CUSTOM'}
+                </Button>
+              </Stack>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  mt: 2,
+                }}
+              >
+                <Button
+                  disabled={saving}
+                  color="error"
+                  onClick={() =>
+                    setForm({
+                      name: '',
+                      contactEmail: '',
+                      phone: '',
+                      address: '',
+                      notes: '',
+                      kind: 'CUSTOM',
+                    })
+                  }
+                >
+                  Réinitialiser
+                </Button>
+                <Button
+                  disabled={!form.name.trim() || saving}
+                  variant="outlined"
+                  color="success"
+                  onClick={save}
+                  startIcon={<Add />}
+                >
+                  {saving ? '…' : 'Ajouter'}
+                </Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : tab === 0 && loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress size={34} />
+        </Box>
+      ) : tab === 0 ? (
+        <Stack spacing={1}>
+          {suppliers.map((s) => (
+            <Card key={s.id} variant="outlined">
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Stack spacing={0.5}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography fontWeight={600}>{s.name}</Typography>
+                      <Chip size="small" label={s.kind} />
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      {s.contactEmail || '—'} • {s.phone || '—'}
+                    </Typography>
+                    {s.address && (
+                      <Typography variant="caption" color="text.secondary">
+                        {s.address}
+                      </Typography>
+                    )}
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Détails / Modifier">
+                      <span>
+                        <IconButton size="small" onClick={() => openEdit(s)} disabled={!canManage}>
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    {canManage && (
+                      <Tooltip title="Supprimer">
+                        <span>
+                          <IconButton size="small" color="error" onClick={() => removeSupplier(s)}>
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </Stack>
+              </CardContent>
+              <CardActions sx={{ pt: 0 }}>
+                <Button
+                  size="small"
+                  startIcon={<Info fontSize="inherit" />}
+                  onClick={() => openEdit(s)}
+                  disabled={!canManage}
+                >
+                  Détails
+                </Button>
+              </CardActions>
+            </Card>
+          ))}
+          {!suppliers.length && <Typography>Aucun fournisseur.</Typography>}
+          <Stack
+            direction="row"
+            spacing={2}
+            justifyContent="end"
+            alignItems="center"
+            sx={{ mt: 2 }}
+          >
+            <Pagination
+              size="small"
+              page={page}
+              count={Math.max(1, Math.ceil(total / pageSize))}
+              onChange={(_, v) => setPage(v)}
+              showFirstButton
+              showLastButton
+            />
+          </Stack>
+        </Stack>
+      ) : tab === 2 ? (
+        <DataExportTab
+          title="Export fournisseurs"
+          rows={suppliers}
+          columns={[
+            { id: 'id', header: 'ID', cell: (r) => r.id, exportValue: (r) => r.id },
+            { id: 'name', header: 'Nom', cell: (r) => r.name, exportValue: (r) => r.name },
+            { id: 'kind', header: 'Type', cell: (r) => r.kind, exportValue: (r) => r.kind },
+            {
+              id: 'contactEmail',
+              header: 'Email de contact',
+              cell: (r) => r.contactEmail || '—',
+              exportValue: (r) => r.contactEmail || '',
+            },
+            {
+              id: 'phone',
+              header: 'Téléphone',
+              cell: (r) => r.phone || '—',
+              exportValue: (r) => r.phone || '',
+            },
+            {
+              id: 'address',
+              header: 'Adresse',
+              cell: (r) => r.address || '—',
+              exportValue: (r) => r.address || '',
+            },
+            {
+              id: 'notes',
+              header: 'Notes',
+              cell: (r) => r.notes || '—',
+              exportValue: (r) => r.notes || '',
+            },
+            {
+              id: 'createdAt',
+              header: 'Créé le',
+              cell: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : '—'),
+              exportValue: (r) =>
+                r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : '',
+            },
+            {
+              id: 'updatedAt',
+              header: 'Modifié le',
+              cell: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString('fr-FR') : '—'),
+              exportValue: (r) =>
+                r.updatedAt ? new Date(r.updatedAt).toLocaleDateString('fr-FR') : '',
+            },
+          ]}
+          filename="fournisseurs"
+          defaultOrientation="landscape"
+        />
+      ) : null}
 
-      {/* Dialog pour ajouter/éditer un fournisseur */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingSupplier ? "Modifier le fournisseur" : "Ajouter un fournisseur"}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editing ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} mt={1}>
             <TextField
+              label="Nom"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               fullWidth
-              label="Nom du fournisseur *"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
-            
             <TextField
-              fullWidth
               label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            
-            <TextField
+              value={form.contactEmail}
+              onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
               fullWidth
+            />
+            <TextField
               label="Téléphone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-            
-            <TextField
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
               fullWidth
-              label="Site web"
-              value={formData.website}
-              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              placeholder="https://..."
             />
-            
             <TextField
-              fullWidth
-              label="Personne de contact"
-              value={formData.contactPerson}
-              onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-            />
-            
-            <TextField
-              fullWidth
               label="Adresse"
+              value={form.address}
+              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              fullWidth
               multiline
-              rows={3}
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              minRows={2}
             />
-            
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                />
-              }
-              label="Fournisseur actif"
+            <TextField
+              label="Notes"
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              fullWidth
+              multiline
+              minRows={2}
             />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label={form.kind} size="small" />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() =>
+                  setForm((f) => ({ ...f, kind: f.kind === 'CUSTOM' ? 'NORMAL' : 'CUSTOM' }))
+                }
+              >
+                Basculer {form.kind === 'CUSTOM' ? 'NORMAL' : 'CUSTOM'}
+              </Button>
+            </Stack>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>
+          <Button onClick={closeDialog} disabled={saving}>
             Annuler
           </Button>
-          <Button 
-            onClick={handleSave}
-            variant="contained"
-            disabled={submitting || !formData.name.trim()}
-          >
-            {submitting ? <CircularProgress size={20} /> : "Sauvegarder"}
-          </Button>
+          {canManage && (
+            <Button variant="contained" disabled={!form.name.trim() || saving} onClick={save}>
+              {saving ? '…' : editing ? 'Sauvegarder' : 'Ajouter'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
-  )
+  );
 }

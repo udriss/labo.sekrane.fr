@@ -1,60 +1,45 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# git rm -r --cached 
 
-# dependencies
+# Dépendances Node.js
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# testing
-/coverage
+# Fichiers générés par Next.js
+/.next
 
-# next.js
-/.next/
-/.qodo/
-/out/
 
-# production
-/build
 
-# misc
-.DS_Store
-*.pem
+# Rapports de couverture de tests
+coverage/
 
-# debug
+# Rapports de tests Playwright
+playwright-report/
+
+# Fichiers système macOS
+**/.DS_Store
+
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# vercel
-.vercel
+# Fichiers générés par les IDE
+.idea/
+.vscode/
+.qodo/
+.venv/
+.vscode/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+*.sublime-workspace
 
-/app/generated/prisma
-
-# local env files
-.env
-.env*.local
-.env.development
-.env.production
+# Fichiers générés par le système
+Thumbs.db
+*.swp
+*.lock
 
 
-# Next.js deployment and development
-deploy.sh
-dev.sh
-update_permissions.sh
-sync_mieldelune_to_aidem.sh
+# Fichiers publics
+public/
 
-# Local development data
-/data
-
-# Uploads
-/public/uploads/
+# scripts
+sync_labo2_vers_labo.sh

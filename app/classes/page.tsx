@@ -1,592 +1,324 @@
-// app/classes/page.tsx
-"use client";
-
-import { useState, useEffect } from "react";
+'use client';
+import React, { useEffect, useState } from 'react';
 import {
-  Container,
-  Typography,
+  Tabs,
+  Tab,
   Box,
+  Typography,
+  Button,
   Card,
   CardContent,
-  Button,
+  CircularProgress,
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
+  IconButton,
   Alert,
-  CircularProgress,
-  Tabs,
-  Tab,
-  Stack,
-  Grid,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  FormControl,
-  FormLabel
-} from "@mui/material";
-import {
-  Add,
-  Edit,
-  Delete,
-  School,
-  Person,
-  AdminPanelSettings,
-  Public,
-  PersonOutline
-} from "@mui/icons-material";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+  Tooltip,
+} from '@mui/material';
+import DataExportTab from '@/components/export/DataExportTab';
+import type { Column } from '@/types/export';
+import { Add, Edit, Delete, School } from '@mui/icons-material';
+import { useSession } from 'next-auth/react';
+import { useTabWithURL } from '@/lib/hooks/useTabWithURL';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
 
-interface ClassData {
-  id: string;
+interface Classe {
+  id: number;
   name: string;
-  type: 'predefined' | 'custom';
-  created_at: string;
-  created_by: string;
-  user_id?: string;
-  user_email?: string;
+  system?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+interface ClassesResponse {
+  predefinedClasses: Classe[];
+  customClasses: Classe[];
+  mine: Classe[];
 }
 
-interface ClassesData {
-  predefinedClasses: ClassData[];
-  customClasses: ClassData[];
-}
+// Module-level draft cache for class creation form
+const classDraftCache: { name?: string } = {} as any;
 
-export default function ClassesManagementPage() {
+export default function ClassesPage() {
+  const theme = useTheme();
+  const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const { data: session } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [classesData, setClassesData] = useState<ClassesData>({
-    predefinedClasses: [],
-    customClasses: []
+  const role = (session?.user as any)?.role;
+  const isAdmin = role === 'ADMIN' || role === 'ADMINLABO';
+
+  // Hook pour la gestion des tabs avec URL
+  const { tabValue: tab, handleTabChange } = useTabWithURL({
+    defaultTab: 0,
+    maxTabs: 4, // 0: system, 1: custom, 2: mine, 3: export
   });
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingClass, setPendingClass] = useState<{ name: string; type: 'predefined' | 'custom' } | null>(null);
-  const [tabValue, setTabValue] = useState(0);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingClass, setEditingClass] = useState<ClassData | null>(null);
-  const [className, setClassName] = useState("");
-  const [classType, setClassType] = useState<'predefined' | 'custom'>('predefined');
 
-  // Vérifier l'autorisation - permettre tous les utilisateurs connectés
-  useEffect(() => {
-    if (session && !session.user) {
-      router.push("/");
-    }
-  }, [session, router]);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ClassesResponse>({
+    predefinedClasses: [],
+    customClasses: [],
+    mine: [],
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Classe | null>(null);
+  const [name, setName] = useState('');
+  const [isSystem, setIsSystem] = useState(false);
 
-  // Charger les données
-  const fetchClasses = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/classes");
-      if (!response.ok) {
-        throw new Error("Erreur lors du chargement des classes");
+      setError(null);
+      const res = await fetch('/api/classes?mode=extended');
+      if (!res.ok) throw new Error('Chargement impossible');
+      const j = await res.json();
+      if (j && typeof j === 'object') {
+        setData({
+          predefinedClasses: j.predefinedClasses || [],
+          customClasses: j.customClasses || [],
+          mine: j.mine || [],
+        });
+      } else {
+        throw new Error('Réponse inattendue');
       }
-      const data = await response.json();
-      setClassesData(data);
-    } catch (error) {
-      console.error("Erreur:", error);
-      setError(error instanceof Error ? error.message : "Erreur de chargement");
+    } catch (e: any) {
+      setError(e.message || 'Erreur inconnue');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (session?.user) {
-      fetchClasses();
-    }
-  }, [session]);
+    load();
+  }, []);
 
-  const handleAddClass = async () => {
-    setError(null);
-    // Vérifier si la classe existe déjà
-    const existingClass = [...(classType === 'predefined' ? classesData.predefinedClasses : classesData.customClasses)]
-      .find(c => c.name.toLowerCase() === className.toLowerCase());
-    if (existingClass) {
-      setPendingClass({ name: className, type: classType });
-      setConfirmDialogOpen(true);
-      return;
-    }
-    await actuallyAddClass(className, classType);
+  const openNew = () => {
+    setEditing(null);
+    setName(classDraftCache.name || '');
+    setIsSystem(false);
+    setDialogOpen(true);
+  };
+  const openEdit = (c: Classe) => {
+    setEditing(c);
+    setName(c.name);
+    setIsSystem(!!c.system);
+    setDialogOpen(true);
+  };
+  const closeDialog = () => {
+    if (!editing) classDraftCache.name = name; // persist draft only for new
+    setDialogOpen(false);
   };
 
-  const actuallyAddClass = async (name: string, type: 'predefined' | 'custom') => {
+  const save = async () => {
     try {
-      setError(null);
-      const response = await fetch("/api/classes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, type }),
+      if (!name.trim()) return;
+      const body = { name, type: isSystem ? 'predefined' : 'custom' };
+      const url = editing ? `/api/classes?id=${editing.id}` : '/api/classes';
+      const method = editing ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de l'ajout");
+      if (!res.ok) throw new Error('Echec sauvegarde');
+      closeDialog();
+      await load();
+      if (!editing) classDraftCache.name = undefined; // clear draft after create
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const del = async (c: Classe) => {
+    if (c.system && !isAdmin) return; // only admin may delete system
+    if (!confirm(`Supprimer la classe "${c.name}" ?`)) return;
+    await fetch(`/api/classes?id=${c.id}`, { method: 'DELETE' });
+    await load();
+  };
+
+  const list = tab === 0 ? data.predefinedClasses : tab === 1 ? data.customClasses : data.mine;
+  const columns: Column<Classe>[] = [
+    { id: 'name', header: 'Nom', cell: (r) => r.name, exportValue: (r) => r.name },
+    {
+      id: 'system',
+      header: 'Type',
+      cell: (r) => (r.system ? 'SYSTEM' : 'CUSTOM'),
+      exportValue: (r) => (r.system ? 'SYSTEM' : 'CUSTOM'),
+    },
+  ];
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onError = (e: any) => {
+      if (e?.message && /originalFactory\.call/.test(e.message)) {
+        console.error('[Diagnostic] originalFactory.call error', e.error || e.message);
       }
-      setSuccessMessage(`Classe ${type === 'predefined' ? 'système' : 'personnalisée'} ajoutée avec succès`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-      setClassName("");
-      setClassType('predefined');
-      setOpenDialog(false);
-      await fetchClasses();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Erreur lors de l'ajout");
-    }
-  };
-
-  const handleEditClass = async () => {
-    if (!editingClass) return;
-
-    try {
-      setError(null);
-      const response = await fetch("/api/classes", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          id: editingClass.id, 
-          name: className 
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la modification");
-      }
-
-      setSuccessMessage("Classe modifiée avec succès");
-      setTimeout(() => setSuccessMessage(null), 3000);
-      setClassName("");
-      setEditingClass(null);
-      setOpenDialog(false);
-      await fetchClasses();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Erreur lors de la modification");
-    }
-  };
-
-  const handleDeleteClass = async (classId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est irréversible.")) {
-      return;
-    }
-
-    try {
-      setError(null);
-      const response = await fetch(`/api/classes?id=${classId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la suppression");
-      }
-
-      setSuccessMessage("Classe supprimée avec succès");
-      setTimeout(() => setSuccessMessage(null), 3000);
-      await fetchClasses();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Erreur lors de la suppression");
-    }
-  };
-
-  const handleOpenDialog = (classData?: ClassData) => {
-    if (classData) {
-      setEditingClass(classData);
-      setClassName(classData.name);
-      setClassType(classData.type);
-    } else {
-      setEditingClass(null);
-      setClassName("");
-      setClassType('predefined');
-    }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingClass(null);
-    setClassName("");
-    setClassType('predefined');
-  };
-
-  if (!session) {
-    return (
-      <Container maxWidth="sm" sx={{ textAlign: "center", mt: 8 }}>
-        <Typography variant="h4" gutterBottom>
-          Accès restreint
-        </Typography>
-        <Typography variant="body1">
-          Veuillez vous connecter pour accéder à cette page.
-        </Typography>
-      </Container>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <CircularProgress />
-        </Box>
-      </Container>
-    );
-  }
+    };
+    window.addEventListener('error', onError);
+    return () => window.removeEventListener('error', onError);
+  }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            <School sx={{ mr: 2, verticalAlign: "middle", fontSize: "inherit" }} />
-            Gestion des Classes
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Gérez les classes système et personnalisées
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          size="large"
-          onClick={() => handleOpenDialog()}
+    <Box
+      sx={{
+        p: 0,
+      }}
+    >
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        gap={1}
+        mb={2}
+      >
+        <Typography
+          variant="h4"
+          component="div"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
         >
-          Nouvelle classe
-        </Button>
-      </Box>
-
+          <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+            <School fontSize="medium" />
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+            Gestion des classes
+          </Box>
+        </Typography>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1}
+          sx={{ width: isMobileSmall ? '100%' : 'auto' }}
+        >
+          <Button
+            onClick={openNew}
+            startIcon={<Add />}
+            variant="contained"
+            fullWidth={isMobileSmall}
+          >
+            Nouvelle classe
+          </Button>
+        </Stack>
+      </Stack>
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      )}
-
-      <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 3 }}>
-        <Tab 
-          label={
-            <Box display="flex" alignItems="center" gap={1}>
-              <Public fontSize="small" />
-              Classes système ({classesData.predefinedClasses.length})
-            </Box>
-          } 
-          disabled={false}
-        />
-        <Tab 
-          label={
-            <Box display="flex" alignItems="center" gap={1}>
-              <PersonOutline fontSize="small" />
-              Classes personnalisées ({classesData.customClasses.length})
-            </Box>
-          } 
-          disabled={false}
-        />
+      <Tabs
+        value={tab}
+        onChange={(_, v) => handleTabChange(v)}
+        sx={{ mb: 2 }}
+        variant={isMobileSmall ? 'scrollable' : 'standard'}
+        scrollButtons={isMobileSmall ? 'auto' : false}
+        allowScrollButtonsMobile
+      >
+        <Tab label={`Système (${data.predefinedClasses.length})`} />
+        <Tab label={`Personnalisées (${data.customClasses.length})`} />
+        <Tab label={`Mes classes (${data.mine.length})`} />
+        <Tab label="Export" />
       </Tabs>
-
-      {/* Onglet Classes système */}
-      {tabValue === 0 && (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nom de la classe</TableCell>
-                <TableCell>Date de création</TableCell>
-                <TableCell>Créé par</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {classesData.predefinedClasses.map((classItem) => (
-                <TableRow key={classItem.id} hover>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Public fontSize="small" color="primary" />
-                      <Typography variant="body1" fontWeight="medium">
-                        {classItem.name}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    {classItem.created_at ? new Date(classItem.created_at).toLocaleDateString("fr-FR") : "Date inconnue"}
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      icon={<AdminPanelSettings fontSize="small" />}
-                      label={classItem.created_by === "SYSTEM" ? "Système initial" : `Admin ${classItem.created_by}`}
-                      size="small"
-                      variant="outlined"
-                      color={classItem.created_by === "SYSTEM" ? "default" : "primary"}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(classItem)}
-                      color="primary"
-                      disabled={!(session?.user?.role === "ADMIN" || session?.user?.role === "ADMINLABO")}
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClass(classItem.id)}
-                      disabled={!(session?.user?.role === "ADMIN" || session?.user?.role === "ADMINLABO")}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {classesData.predefinedClasses.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    <Typography variant="body2" color="text.secondary" py={3}>
-                      Aucune classe système
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-      {/* Dialogue de confirmation pour ajout de classe avec nom existant */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Nom de classe déjà existant</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Une classe avec le nom "{pendingClass?.name}" existe déjà. Voulez-vous quand même l'ajouter ? (L'identifiant sera unique)
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setConfirmDialogOpen(false); setPendingClass(null); }}>Annuler</Button>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              if (pendingClass) {
-                await actuallyAddClass(pendingClass.name, pendingClass.type);
-                setConfirmDialogOpen(false);
-                setPendingClass(null);
-              }
-            }}
-          >
-            Ajouter quand même
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Onglet Classes personnalisées */}
-      {tabValue === 1 && (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nom de la classe</TableCell>
-                <TableCell>Propriétaire</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Date de création</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {classesData.customClasses.map((classItem) => (
-                <TableRow key={classItem.id} hover>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <PersonOutline fontSize="small" color="secondary" />
-                      <Typography variant="body1">
-                        {classItem.name}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={<Person fontSize="small" />}
-                      label={classItem.created_by || "Inconnu"}
-                      size="small"
-                      color="secondary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {classItem.user_email || "-"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {classItem.created_at ? new Date(classItem.created_at).toLocaleDateString("fr-FR") : "Date inconnue"}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {classesData.customClasses.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    <Typography variant="body2" color="text.secondary" py={3}>
-                      Aucune classe personnalisée créée par les utilisateurs
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-
-      {/* Statistiques */}
-      <Box mt={4}>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress size={34} />
+        </Box>
+      ) : tab === 3 ? (
+        <Box sx={{ mt: 1 }}>
+          <DataExportTab
+            title="Export classes"
+            rows={list}
+            columns={columns}
+            filename="classes"
+            defaultOrientation="portrait"
+          />
+        </Box>
+      ) : (
+        <Stack spacing={1}>
+          {list.map((c) => (
+            <Card key={c.id} variant="outlined" component={motion.div} whileHover={{ scale: 1.01 }}>
               <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" gutterBottom>
-                      Total des classes
-                    </Typography>
-                    <Typography variant="h4">
-                      {classesData.predefinedClasses.length + classesData.customClasses.length}
-                    </Typography>
-                  </Box>
-                  <School fontSize="large" color="primary" />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" gutterBottom>
-                      Classes système
-                    </Typography>
-                    <Typography variant="h4">
-                      {classesData.predefinedClasses.length}
-                    </Typography>
-                  </Box>
-                  <Public fontSize="large" color="primary" />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" gutterBottom>
-                      Classes personnalisées
-                    </Typography>
-                    <Typography variant="h4">
-                      {classesData.customClasses.length}
-                    </Typography>
-                  </Box>
-                  <PersonOutline fontSize="large" color="secondary" />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Dialog pour ajouter/modifier une classe */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingClass ? "Modifier la classe" : "Nouvelle classe"}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            {!editingClass && (
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Type de classe</FormLabel>
-                <RadioGroup
-                  value={classType}
-                  onChange={(e) => setClassType(e.target.value as 'predefined' | 'custom')}
+                <Stack
+                  direction={{ xs: 'column', md: 'row' }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'stretch', md: 'center' }}
+                  gap={1}
                 >
-                  <FormControlLabel
-                    value="predefined"
-                    control={<Radio />}
-                    label={
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Public fontSize="small" />
-                        <Box>
-                          <Typography variant="body1">Classe système</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Visible et utilisable par tous les utilisateurs
-                          </Typography>
-                        </Box>
-                      </Box>
-                    }
-                  />
-                  <FormControlLabel
-                    value="custom"
-                    control={<Radio />}
-                    label={
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <PersonOutline fontSize="small" />
-                        <Box>
-                          <Typography variant="body1">Classe personnalisée</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Classe personnelle pour votre usage
-                          </Typography>
-                        </Box>
-                      </Box>
-                    }
-                  />
-                </RadioGroup>
-              </FormControl>
-            )}
-
-            <TextField
-              autoFocus
-              fullWidth
-              label="Nom de la classe"
-              value={className}
-              onChange={(e) => setClassName(e.target.value)}
-              placeholder={classType === 'predefined' ? "Ex: 1ère ES, 208, BTS..." : "Ex: Groupe A, Projet X..."}
-              helperText={
-                editingClass 
-                  ? "Modifiez le nom de la classe"
-                  : classType === 'predefined' 
-                    ? "Cette classe sera disponible pour tous les utilisateurs"
-                    : "Cette classe sera uniquement disponible pour vous"
-              }
-            />
-          </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography fontWeight={600}>{c.name}</Typography>
+                    {c.system && <Chip size="small" label="SYSTEM" />}
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Modifier">
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => openEdit(c)}
+                          disabled={c.system && !isAdmin}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    {(!c.system || isAdmin) && (
+                      <Tooltip title="Supprimer">
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => del(c)}
+                            disabled={c.system && !isAdmin}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+          {!list.length && <Typography>Aucune classe.</Typography>}
+        </Stack>
+      )}
+      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="xs">
+        <DialogTitle>{editing ? 'Modifier la classe' : 'Nouvelle classe'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Nom"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+            autoFocus
+            margin="dense"
+          />
+          {isAdmin && (
+            <Stack direction="row" spacing={1} alignItems="center" mt={1}>
+              <Chip
+                label={isSystem ? 'Classe système' : 'Classe perso'}
+                color={isSystem ? 'primary' : 'default'}
+                size="small"
+              />
+              <Button size="small" variant="outlined" onClick={() => setIsSystem((v) => !v)}>
+                {isSystem ? 'Basculer perso' : 'Basculer système'}
+              </Button>
+            </Stack>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Annuler</Button>
-          <Button
-            onClick={editingClass ? handleEditClass : handleAddClass}
-            variant="contained"
-            disabled={!className.trim()}
-            startIcon={editingClass ? <Edit /> : <Add />}
-          >
-            {editingClass ? "Modifier" : "Ajouter"}
+          <Button onClick={closeDialog}>Annuler</Button>
+          <Button onClick={save} disabled={!name.trim()} variant="contained">
+            {editing ? 'Sauvegarder' : 'Ajouter'}
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }

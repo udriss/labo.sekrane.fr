@@ -1,176 +1,246 @@
-// app/api/classes/route.ts
+// api/classes/route.ts
 
-export const runtime = 'nodejs';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/services/db';
+import { z } from 'zod';
+import { auth } from '@/auth';
 
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { ClassServiceSQL } from '@/lib/services/classService.sql';
+const CreateClassSchema = z.object({
+  name: z.string().min(1, 'Le nom de la classe est requis'),
+  description: z.string().optional(),
+  type: z.enum(['predefined', 'custom']).optional(), // mapping UI -> system boolean
+});
 
-// GET - Récupérer les classes
+const UpdateClassSchema = CreateClassSchema.partial();
+
+const DEFAULT_SYSTEM_CLASSES = [
+  '201',
+  '202',
+  '203',
+  '204',
+  '205',
+  '206',
+  '1ère ES',
+  '1ère STI2D',
+  'Tle STI2D',
+  'Tle ES',
+];
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    const session = await auth();
+    const userIdStr = session?.user ? (session.user as any).id : undefined;
+    const userId = typeof userIdStr === 'string' ? parseInt(userIdStr, 10) : userIdStr;
+    const { searchParams } = new URL(request.url);
+    const withMembers = searchParams.get('withMembers') === 'true';
+    // Fetch DB classes
+    const dbClasses = await prisma.classe.findMany({
+      include: {
+        users: withMembers
+          ? {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true, role: true },
+                },
+              },
+            }
+          : false,
+        _count: { select: { users: true } },
+      },
+      orderBy: [{ name: 'asc' }],
+    });
+    // Do NOT auto-seed defaults here to avoid duplicates; seeding is handled by scripts
+    const classesAll = dbClasses;
+
+    let mine: typeof classesAll = [];
+    if (typeof userId === 'number' && !Number.isNaN(userId)) {
+      const memberships = await prisma.classeUtilisateur.findMany({
+        where: { userId },
+        select: { classId: true },
+      });
+      const memberIds = new Set(memberships.map((m) => m.classId));
+      mine = classesAll.filter((c: any) => memberIds.has(c.id));
     }
-
-    const userId = session.user.id || session.user.email;
-    const classesResponse = await ClassServiceSQL.getClassesForUser(userId);
-
-    // Combiner toutes les classes dans un seul tableau
-    const allClasses = [
-      ...classesResponse.predefinedClasses,
-      ...classesResponse.customClasses
-    ];
-
-    return NextResponse.json({ classes: allClasses });
+    const predefinedClasses = classesAll.filter((c: any) => c.system);
+    const customClasses = classesAll.filter((c: any) => !c.system);
+    return NextResponse.json({
+      success: true,
+      predefinedClasses,
+      customClasses,
+      mine,
+      count: classesAll.length,
+    });
   } catch (error) {
-    console.error("Erreur lors de la récupération des classes:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération des classes" },
-      { status: 500 }
-    );
+    console.error('Failed to fetch classes:', error);
+    return NextResponse.json({ success: false, error: 'Failed to fetch classes' }, { status: 500 });
   }
 }
 
-// POST - Créer une nouvelle classe personnalisée
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    const session = await auth();
+    const userIdStr = session?.user ? (session.user as any).id : undefined;
+    const userId = typeof userIdStr === 'string' ? parseInt(userIdStr, 10) : userIdStr;
+    const body = await request.json();
+    const validatedData = CreateClassSchema.parse(body);
+
+    // Classes can have duplicate names, so we remove this validation
+    // Different teachers can choose identical names for their classes
+
+    const { type, ...rest } = validatedData as any;
+    const newClass = await prisma.classe.create({
+      data: {
+        ...rest,
+        system: type === 'predefined',
+      },
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    });
+
+    // If we have an authenticated user, associate them to the class
+    if (typeof userId === 'number' && !Number.isNaN(userId)) {
+      try {
+        await prisma.classeUtilisateur.create({
+          data: { userId, classId: newClass.id },
+        });
+      } catch (e) {
+        // Ignore if already a member
+      }
     }
 
-    const body = await request.json();
-    const { name, type = 'custom' } = body;
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return NextResponse.json(
+      {
+        success: true,
+        class: newClass,
+        message: 'Classe ajoutée avec succès',
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Le nom de la classe est requis" },
-        { status: 400 }
+        {
+          success: false,
+          error: 'Données invalides',
+          details: error.issues,
+        },
+        { status: 400 },
       );
     }
 
-    const trimmedName = name.trim();
-    const userId = session.user.id || session.user.email;
-    const userEmail = session.user.email;
-
-    // Vérifier si la classe existe déjà
-    const exists = await ClassServiceSQL.classExists(trimmedName, userId);
-    if (exists) {
-      // return NextResponse.json(
-      //   { error: "Une classe avec ce nom existe déjà" },
-      //   { status: 409 }
-      // );
-    }
-
-    // Créer la classe
-    const newClass = await ClassServiceSQL.createCustomClass(
-      trimmedName,
-      userId,
-      userEmail,
-      session.user.name || session.user.email
-    );
-
-    return NextResponse.json({
-      success: true,
-      data: newClass
-    });
-
-  } catch (error) {
-    console.error("Erreur lors de la création de la classe:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la création de la classe" },
-      { status: 500 }
-    );
+    console.error('Failed to create class:', error);
+    return NextResponse.json({ success: false, error: 'Failed to create class' }, { status: 500 });
   }
 }
 
-// PUT - Mettre à jour une classe personnalisée
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { id, name } = body;
-
-    if (!id || !name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "L'ID et le nom de la classe sont requis" },
-        { status: 400 }
-      );
-    }
-
-    const userId = session.user.id || session.user.email;
-    const updatedClass = await ClassServiceSQL.updateCustomClass(id, name.trim(), userId);
-
-    if (!updatedClass) {
-      return NextResponse.json(
-        { error: "Classe non trouvée ou non autorisé" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: updatedClass
-    });
-
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour de la classe:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise à jour de la classe" },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE - Supprimer une classe personnalisée
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('id');
 
     if (!classId) {
-      return NextResponse.json(
-        { error: "L'ID ou l'email de la classe est requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'ID de classe requis' }, { status: 400 });
     }
 
-    const userId = session.user.id;
-    let deleted = false;
+    const body = await request.json();
+    const validatedData = UpdateClassSchema.parse(body);
 
-    if (classId) {
-      deleted = await ClassServiceSQL.deleteCustomClass(classId, userId);
-    } 
+    // Check if class exists
+    const existingClass = await prisma.classe.findUnique({
+      where: { id: parseInt(classId) },
+    });
 
-    if (!deleted) {
-      return NextResponse.json(
-        { error: "Classe non trouvée ou non autorisé" },
-        { status: 404 }
-      );
+    if (!existingClass) {
+      return NextResponse.json({ success: false, error: 'Classe non trouvée' }, { status: 404 });
     }
+
+    // Classes can have duplicate names, so we remove the name conflict validation
+    // Different teachers can choose identical names for their classes
+
+    const updatedClass = await prisma.classe.update({
+      where: { id: parseInt(classId) },
+      data: validatedData,
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Classe supprimée avec succès"
+      class: updatedClass,
+      message: 'Classe mise à jour avec succès',
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Données invalides',
+          details: error.issues,
+        },
+        { status: 400 },
+      );
+    }
+
+    console.error('Failed to update class:', error);
+    return NextResponse.json({ success: false, error: 'Failed to update class' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get('id');
+
+    if (!classId) {
+      return NextResponse.json({ success: false, error: 'ID de classe requis' }, { status: 400 });
+    }
+
+    // Check if class exists and has no members
+    const classWithCounts = await prisma.classe.findUnique({
+      where: { id: parseInt(classId) },
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
     });
 
+    if (!classWithCounts) {
+      return NextResponse.json({ success: false, error: 'Classe non trouvée' }, { status: 404 });
+    }
+
+    if (classWithCounts._count.users > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Impossible de supprimer une classe contenant des membres',
+        },
+        { status: 400 },
+      );
+    }
+
+    await prisma.classe.delete({
+      where: { id: parseInt(classId) },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Classe supprimée avec succès',
+    });
   } catch (error) {
-    console.error("Erreur lors de la suppression de la classe:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression de la classe" },
-      { status: 500 }
-    );
+    console.error('Failed to delete class:', error);
+    return NextResponse.json({ success: false, error: 'Failed to delete class' }, { status: 500 });
   }
 }

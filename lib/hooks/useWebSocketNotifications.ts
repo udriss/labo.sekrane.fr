@@ -1,388 +1,176 @@
-// lib/hooks/useWebSocketNotifications.ts
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useSession } from 'next-auth/react';
+'use client';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  attachWebSocketManager,
+  getWebSocketState,
+  forceCloseWebSocket,
+  onWebSocketState,
+} from '@/lib/services/ws-client-manager';
 
-interface WebSocketMessage {
-  id: string;
-  type: 'notification' | 'heartbeat' | 'connection' | 'error';
-  userId?: string;
-  userRole?: string;
-  module: string;
-  actionType: string;
-  message: string | object;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  entityType?: string;
-  entityId?: string;
-  triggeredBy?: string;
-  timestamp: string;
-  data?: any;
-}
+type WSMessage = {
+  type: string;
+  [key: string]: any;
+};
 
-interface WebSocketNotification {
-  id: string;
-  message: string | object;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  module: string;
-  actionType: string;
-  timestamp: string;
-  createdAt?: string; // Ajouter pour compatibilité avec ExtendedNotification
-  entityType?: string;
-  entityId?: string;
-  triggeredBy?: string;
-  isRead: boolean;
-}
+type UseWSOptions = {
+  userId: string | number;
+  url?: string; // optional override
+  onMessage?: (msg: WSMessage) => void;
+  autoConnect?: boolean;
+  heartbeatMs?: number;
+  reconnectMs?: number;
+};
 
-interface UseWebSocketNotificationsOptions {
-  onNotification?: (notification: WebSocketNotification) => void;
-  onConnected?: () => void;
-  onError?: (error: string) => void;
-  onReconnect?: () => void;
-  autoReconnect?: boolean;
-  reconnectDelay?: number;
-  maxReconnectAttempts?: number;
-}
-
-export function useWebSocketNotifications(options: UseWebSocketNotificationsOptions = {}) {
+export function useWebSocketNotifications(options: UseWSOptions) {
   const {
-    onNotification,
-    onConnected,
-    onError,
-    onReconnect,
-    autoReconnect = true,
-    reconnectDelay = 5000,
-    maxReconnectAttempts = 5
+    userId,
+    onMessage,
+    url,
+    autoConnect = true,
+    heartbeatMs = 30000,
+    reconnectMs = 10000,
   } = options;
+  const [connected, setConnected] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const unsubscribeRef = useRef<null | (() => void)>(null);
+  const onMessageRef = useRef<typeof onMessage | undefined>(undefined);
+  onMessageRef.current = onMessage;
 
-  const { data: session, status } = useSession();
-  const userId = session?.user?.id;
+  const wsUrl = useMemo(() => {
+    // En mode développement, permettre les connexions guest pour le debug
+    // Bloquer totalement les connexions 'guest'
+    if (!userId || String(userId) === 'guest' || !autoConnect) return null;
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-
-  const callbackRefs = useRef({ onNotification, onConnected, onError, onReconnect });
-  useEffect(() => {
-    callbackRefs.current = { onNotification, onConnected, onError, onReconnect };
-  }, [onNotification, onConnected, onError, onReconnect]);
-  
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<WebSocketNotification[]>([]);
-  const [lastHeartbeat, setLastHeartbeat] = useState<Date | null>(null);
-  
-  // Charger les notifications depuis la base de données
-  const loadDatabaseNotifications = useCallback(async () => {
-    if (!userId) return;
-    
-    try {
-      setIsLoading(true);
-      
-      const response = await fetch(`/api/notifications?userId=${userId}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success && Array.isArray(data.notifications)) {
-          // Convertir les notifications de la base de données au format WebSocketNotification
-          const dbNotifications: WebSocketNotification[] = data.notifications.map((dbNotif: any) => ({
-            id: dbNotif.id,
-            message: dbNotif.message,
-            severity: dbNotif.severity,
-            module: dbNotif.module,
-            actionType: dbNotif.actionType || dbNotif.action_type,
-            timestamp: dbNotif.createdAt || dbNotif.created_at,
-            createdAt: dbNotif.createdAt || dbNotif.created_at,
-            entityType: dbNotif.entityType || dbNotif.entity_type,
-            entityId: dbNotif.entityId || dbNotif.entity_id,
-            triggeredBy: dbNotif.triggeredBy || dbNotif.triggered_by,
-            isRead: !!dbNotif.isRead
-          }));
-          
-          // Fusionner avec les notifications WebSocket existantes
-          setNotifications(prev => {
-            // Créer un Map pour éviter les doublons (par ID)
-            const notifMap = new Map(prev.map(n => [n.id, n]));
-            dbNotifications.forEach(n => {
-              if (!notifMap.has(n.id)) {
-                notifMap.set(n.id, n);
+    if (url) return url;
+    const envUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (envUrl) {
+      // Supporte valeur absolue (ws://, wss://) ou relative (/ws)
+      if (/^wss?:\/\//i.test(envUrl)) {
+        // Si la page est servie en HTTPS mais l'URL est en ws:// (insecure), tenter une ré-écriture de sécurité
+        try {
+          const loc = globalThis?.location as Location | undefined;
+          if (loc && loc.protocol === 'https:' && /^ws:\/\//i.test(envUrl)) {
+            const original = new URL(envUrl.replace(/^ws:\/\//i, 'http://'));
+            const sameHost = original.host === loc.host;
+            // Ré-écriture seulement si host différent OU host=localhost pour éviter mixed content
+            if (!sameHost || /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(original.host)) {
+              const rewritten = `wss://${loc.host}${original.pathname}${original.search}`;
+              if (!(globalThis as any).__WS_URL_REWRITE_WARNED__) {
+                (globalThis as any).__WS_URL_REWRITE_WARNED__ = true;
+                console.warn('[ws] Mixed-content avoidance: rewriting', envUrl, '->', rewritten);
               }
-            });
-            // Convertir le Map en tableau et trier par date (plus récent d'abord)
-            return Array.from(notifMap.values())
-              .sort((a, b) => new Date(b.timestamp || b.createdAt || '').getTime() - new Date(a.timestamp || a.createdAt || '').getTime());
-          });
-        } else {
-          console.warn('⚠️ [WebSocket] API returned success=false or no notifications array');
-        }
-      } else {
-        console.error('❌ [WebSocket] Failed to fetch notifications:', await response.text());
+              return `${rewritten}${rewritten.includes('?') ? '&' : '?'}userId=${encodeURIComponent(
+                String(userId),
+              )}`;
+            }
+            // Même host: simplement upgrade protocole si nécessaire
+            const upgraded = envUrl.replace(/^ws:\/\//i, 'wss://');
+            return `${upgraded}?userId=${encodeURIComponent(String(userId))}`;
+          }
+        } catch {}
+        return `${envUrl}?userId=${encodeURIComponent(String(userId))}`;
       }
-    } catch (err) {
-      console.error('❌ [WebSocket] Error loading database notifications:', err);
-    } finally {
-      setIsLoading(false);
+      if (envUrl.startsWith('/')) {
+        const loc = globalThis?.location;
+        const proto = loc?.protocol === 'https:' ? 'wss' : 'ws';
+        const host = loc?.host ?? 'localhost:8006';
+        return `${proto}://${host}${envUrl}?userId=${encodeURIComponent(String(userId))}`;
+      }
+      // Fallback: traiter comme chemin relatif manquant le slash
+      const loc = globalThis?.location;
+      const proto = loc?.protocol === 'https:' ? 'wss' : 'ws';
+      const host = loc?.host ?? 'localhost:8006';
+      return `${proto}://${host}/${envUrl.replace(/^\/+/, '')}?userId=${encodeURIComponent(String(userId))}`;
     }
-  }, [userId]);
+    const loc = globalThis?.location;
+    const proto = loc?.protocol === 'https:' ? 'wss' : 'ws';
+    const host = loc?.host ?? 'localhost:8006'; // preserves port
+    return `${proto}://${host}/ws?userId=${encodeURIComponent(String(userId))}`;
+  }, [url, userId, autoConnect]);
+
+  const connect = useCallback(() => {
+    if (!wsUrl) return; // wait for real user id
+    if (unsubscribeRef.current) return; // already attached
+    if (process.env.NODE_ENV === 'development') console.log('[WS-HOOK] connect()', wsUrl);
+    unsubscribeRef.current = attachWebSocketManager(
+      (data) => {
+        if (data) onMessageRef.current?.(data);
+      },
+      {
+        url: wsUrl,
+        heartbeatMs,
+        minReconnectMs: reconnectMs,
+        maxReconnectMs: reconnectMs * 8,
+        debug: process.env.NODE_ENV === 'development',
+      },
+    );
+    const state = getWebSocketState(wsUrl);
+    setConnected(state.connected);
+  }, [heartbeatMs, reconnectMs, wsUrl]);
 
   const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
+    if (process.env.NODE_ENV === 'development') console.log('[WS-HOOK] disconnect()', wsUrl);
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
-    if (wsRef.current) {
-      wsRef.current.onclose = null; // Prevent onclose from firing on manual disconnect
-      wsRef.current.close(1000, 'User disconnected');
-      wsRef.current = null;
-    }
-    setIsConnected(false);
-  }, []);
+    if (wsUrl) forceCloseWebSocket(wsUrl);
+    setConnected(false);
+  }, [wsUrl]);
 
-  const connect = useCallback(async () => {
-    if (!userId) {
-        setIsLoading(false);
-        return;
-    }
-
-    if (wsRef.current && wsRef.current.readyState < 2) { // 0=CONNECTING, 1=OPEN
-        return;
-    }
-
-    // Disconnect any existing connection before creating a new one
-    disconnect();
-
-    // Charger les notifications de la base de données d'abord
-    await loadDatabaseNotifications();
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = process.env.NODE_ENV === 'production' 
-        ? (window.location.port || (protocol === 'wss:' ? '443' : '80'))
-        : '3000';
-      const wsUrl = `${protocol}//${host}:${port}/api/notifications/ws?userId=${userId}`;
-      
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        
-        setIsConnected(true);
-        setIsLoading(false);
-        reconnectAttemptsRef.current = 0;
-        callbackRefs.current.onConnected?.();
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message: any = JSON.parse(event.data);
-          
-          if (message.type === 'heartbeat') {
-            setLastHeartbeat(new Date());
-            return; // Process silently
-          }
-
-          switch (message.type) {
-            case 'notification':
-              const newNotification: WebSocketNotification = { ...message.data, isRead: false, createdAt: message.timestamp };
-              setNotifications(prev => [newNotification, ...prev]);
-              callbackRefs.current.onNotification?.(newNotification);
-              break;
-            case 'error':
-              console.error('❌ [WebSocket] Server error:', message.message);
-              setError(message.message);
-              callbackRefs.current.onError?.(message.message);
-              break;
-          }
-        } catch (e) {
-          console.error('❌ [WebSocket] Error parsing message:', e);
+  const send = useCallback(
+    (msg: WSMessage | string) => {
+      // Fire-and-forget: If manager has an open socket it will deliver, else ignored.
+      // We avoid creating ad-hoc sockets to keep connection model simple.
+      try {
+        // Access internal registry indirectly by creating a hidden listener (lightweight) – simplified by opening a temp connection is avoided.
+        // For now, we no-op if not connected to keep semantics predictable.
+        if (!connected) return;
+        // @ts-ignore – we stored socket on window for debug optional instrumentation (set in manager if debug) (optional future enhancement)
+        const socket: WebSocket | undefined = (window as any).__WS_DEBUG_SOCKETS__?.[wsUrl];
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          const payload = typeof msg === 'string' ? msg : JSON.stringify(msg);
+          socket.send(payload);
         }
-      };
+      } catch {}
+    },
+    [connected, wsUrl],
+  );
 
-      ws.onclose = (event) => {
-        
-        setIsConnected(false);
-        setIsLoading(false);
-        wsRef.current = null;
+  const broadcast = useCallback((data: any) => send({ type: 'broadcast', data }), [send]);
 
-        if (event.code !== 1000 && autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current++;
-          const delay = Math.min(30000, reconnectDelay * Math.pow(2, reconnectAttemptsRef.current));
-          
-          reconnectTimeoutRef.current = setTimeout(() => connect(), delay);
-        }
-      };
+  useEffect(() => {
+    if (!autoConnect) return;
+    if (!wsUrl) return; // skip until we have a concrete user id
+    // En mode développement, permettre les connexions guest pour le debug
+    if (String(userId) === 'guest') return; // attendre l'authentification réelle
 
-      ws.onerror = (err) => {
-        console.error('❌ [WebSocket] Connection error:', err);
-        setError('WebSocket connection failed.');
-        setIsLoading(false);
-      };
-
-    } catch (err) {
-      console.error('❌ [WebSocket] Connection setup failed:', err);
-      setError('Failed to initialize WebSocket.');
-      setIsLoading(false);
-    }
-  }, [userId, autoReconnect, maxReconnectAttempts, reconnectDelay, disconnect]);
-
-  const reconnect = useCallback(() => {
-    reconnectAttemptsRef.current = 0; // Reset attempts for manual reconnect
     connect();
-  }, [connect]);
+    return () => disconnect();
+  }, [autoConnect, connect, disconnect, wsUrl, userId]);
 
+  // Subscribe to state events instead of polling
   useEffect(() => {
-    if (status === 'authenticated') {
-      connect();
-    } else if (status === 'unauthenticated') {
-      disconnect();
-    }
-    
+    if (!wsUrl) return;
+    const off = onWebSocketState(wsUrl, (s) => {
+      setConnected(s.connected);
+      setAttempts(s.attempts);
+    });
     return () => {
-      disconnect();
+      try {
+        off();
+      } catch {}
     };
-  }, [status, connect, disconnect]);
-
-  // Créer un effet pour recharger périodiquement les notifications de la base de données
-  useEffect(() => {
-    if (!userId) return;
-    
-    // Charger les notifications au montage
-    loadDatabaseNotifications();
-    
-    // Charger les notifications toutes les 30 secondes
-    const intervalId = setInterval(() => {
-      loadDatabaseNotifications();
-    }, 30000);
-    
-    return () => clearInterval(intervalId);
-  }, [userId, loadDatabaseNotifications]);
-
-  const markAsRead = useCallback(async (notificationId: string) => {
-    // Mettre à jour l'état local
-    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
-    
-    // Envoyer la requête à l'API pour marquer comme lu dans la base de données
-    if (userId) {
-      try {
-        await fetch('/api/notifications', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'markAsRead', notificationId })
-        });
-      } catch (error) {
-        console.error('❌ [WebSocket] Error marking notification as read:', error);
-      }
-    }
-  }, [userId]);
-
-  const markAllAsRead = useCallback(async () => {
-    // Mettre à jour l'état local
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    
-    // Envoyer la requête à l'API pour marquer toutes comme lues dans la base de données
-    if (userId) {
-      try {
-        await fetch('/api/notifications', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'markAllAsRead' })
-        });
-      } catch (error) {
-        console.error('❌ [WebSocket] Error marking all notifications as read:', error);
-      }
-    }
-  }, [userId]);
-
-  const clearNotification = useCallback(async (notificationId: string) => {
-    if (!userId) return;
-
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          notificationId,
-          userId
-        }),
-      });
-
-      if (response.ok) {
-        setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      } else {
-        console.error('Erreur lors de la suppression de la notification');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la suppression de la notification:', error);
-    }
-  }, [userId]);
-
-  const clearNotifications = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'deleteAll',
-          userId
-        }),
-      });
-
-      if (response.ok) {
-        setNotifications([]);
-      } else {
-        console.error('Erreur lors de la suppression de toutes les notifications');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la suppression de toutes les notifications:', error);
-    }
-  }, [userId]);
-
-  const sendMessage = useCallback((message: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
-      return true;
-    }
-    return false;
-  }, []);
-
-  const stats = {
-    totalNotifications: notifications.length,
-    unreadNotifications: notifications.filter(n => !n.isRead).length,
-    notificationsByModule: notifications.reduce((acc, notif) => {
-      acc[notif.module] = (acc[notif.module] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
-    notificationsBySeverity: notifications.reduce((acc, notif) => {
-      acc[notif.severity] = (acc[notif.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  };
+  }, [wsUrl]);
 
   return {
-    isConnected,
-    isLoading,
-    error,
-    lastHeartbeat,
-    notifications,
-    stats,
+    connected,
+    attempts,
+    reconnecting: !connected && attempts > 0,
     connect,
     disconnect,
-    markAsRead,
-    markAllAsRead,
-    clearNotification,
-    clearNotifications,
-    sendMessage,
-    reconnect,
-    loadDatabaseNotifications,
+    send,
+    broadcast,
+    url: wsUrl,
   };
 }

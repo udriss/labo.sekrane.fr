@@ -7,8 +7,8 @@ import {
   Box,
   Typography,
   Paper,
-} from "@mui/material";
-import { Warning } from "@mui/icons-material";
+} from '@mui/material';
+import { Warning } from '@mui/icons-material';
 
 interface DeleteDialogProps {
   open: boolean;
@@ -21,7 +21,7 @@ export const DeleteDialog = ({
   open,
   onClose,
   equipmentToDelete,
-  onConfirmDelete
+  onConfirmDelete,
 }: DeleteDialogProps) => {
   return (
     <Dialog
@@ -34,9 +34,9 @@ export const DeleteDialog = ({
           sx: {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
-            borderRadius: 3
-          }
-        }
+            borderRadius: 3,
+          },
+        },
       }}
     >
       <DialogTitle sx={{ color: 'white' }}>
@@ -45,43 +45,46 @@ export const DeleteDialog = ({
           <Typography variant="h6">Confirmer la suppression</Typography>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
-        <Paper sx={{ 
-          p: 2, 
-          backgroundColor: 'rgba(255,255,255,0.1)', 
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 2,
-          color: 'white',
-        }}>
+        <Paper
+          sx={{
+            p: 2,
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 2,
+            color: 'white',
+          }}
+        >
           <Typography variant="body1" fontWeight="bold" gutterBottom>
-            Êtes-vous sûr de vouloir supprimer "{equipmentToDelete?.name}" ?
+            Êtes-vous sûr de vouloir supprimer &ldquo;{equipmentToDelete?.name}&rdquo; ?
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>
-            Cette action est irréversible. L'équipement sera définitivement retiré de l'inventaire.
+            Cette action est irréversible. L&apos;équipement sera définitivement retiré de
+            l&apos;inventaire.
           </Typography>
         </Paper>
       </DialogContent>
-      
+
       <DialogActions sx={{ p: 3, pt: 1 }}>
-        <Button 
+        <Button
           onClick={onClose}
-          sx={{ 
+          sx={{
             color: 'rgba(255,255,255,0.8)',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
           }}
         >
           Annuler
         </Button>
-        <Button 
+        <Button
           onClick={onConfirmDelete}
           variant="contained"
           color="error"
-          sx={{ 
+          sx={{
             backgroundColor: 'rgba(244, 67, 54, 0.8)',
             color: 'white',
             '&:hover': { backgroundColor: 'rgba(244, 67, 54, 1)' },
-            fontWeight: 'bold'
+            fontWeight: 'bold',
           }}
         >
           Supprimer définitivement

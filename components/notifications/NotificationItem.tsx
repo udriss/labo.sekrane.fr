@@ -1,312 +1,263 @@
-// components/notifications/NotificationItem.tsx
 'use client';
 
-import React, { useState } from 'react';
-import {
-  ListItem,
-  ListItemButton,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
-  Typography,
-  Box,
-  Chip,
-  Collapse,
-  IconButton,
-  Card,
-  CardContent,
-  Divider,
-  Stack
-} from '@mui/material';
-import {
-  ExpandMore,
-  ExpandLess,
-  Circle,
-  AccessTime,
-  Person,
-  Category,
-  Timeline,
-  DoneAll,
-  Delete
-} from '@mui/icons-material';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import {
-  parseNotificationMessage,
-  getDetailedDescription,
-  getNotificationIcon,
-  getSeverityColor,
-  formatRelativeTime
-} from '@/lib/utils/notification-messages';
-import type { WebSocketNotification } from '@/types/notifications';
-
-interface NotificationItemProps {
-  notification: WebSocketNotification;
-  onClick?: () => void;
-  compact?: boolean;
-  showActions?: boolean;
-  onMarkRead?: () => void;
-  onDelete?: () => void;
-}
-
-export default function NotificationItem({ 
-  notification, 
-  onClick, 
-  compact = false,
-  showActions = false,
-  onMarkRead,
-  onDelete
-}: NotificationItemProps) {
-  const [expanded, setExpanded] = useState(false);
-  
-  const displayData = parseNotificationMessage(notification.message);
-  const detailedDescription = getDetailedDescription(notification, displayData);
-  const icon = getNotificationIcon(notification.module || 'SYSTEM', notification.actionType || 'INFO');
-  const severityColor = getSeverityColor(notification.severity);
-
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    }
-  };
-
-  const handleExpandClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpanded(!expanded);
-  };
-
-  const timestamp = notification.createdAt || notification.timestamp || new Date().toISOString();
-  const relativeTime = formatRelativeTime(timestamp);
-
-  if (compact) {
-    return (
-      <ListItem
-        disablePadding
-        sx={{
-          bgcolor: notification.isRead ? 'transparent' : 'action.hover',
-          borderLeft: notification.isRead ? 'none' : '4px solid',
-          borderLeftColor: severityColor.color === 'error' ? 'error.main' : 
-                          severityColor.color === 'warning' ? 'warning.main' :
-                          severityColor.color === 'info' ? 'info.main' : 'primary.main'
-        }}
-      >
-        <ListItemButton onClick={handleClick}>
-          <ListItemAvatar>
-            <Avatar sx={{ bgcolor: `${severityColor.color}.main`, fontSize: '1.2rem' }}>
-              {icon}
-            </Avatar>
-          </ListItemAvatar>
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  component="div"
-                  sx={{ 
-                    // fontWeight: notification.isRead ? 400 : 600, 
-                    flex: 1,
-                    '& strong': {
-                      fontWeight: 600
-                    },
-                    '& span': {
-                      fontStyle: 'inherit'
-                    }
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: String(notification.message || displayData.displayMessage || '')
-                  }}
-                />
-                {!notification.isRead && (
-                  <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
-                )}
-              </Box>
-            }
-            secondary={
-              <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                <Chip 
-                  component="span" 
-                  label={notification.module} 
-                  size="small" 
-                  variant="outlined" 
-                  sx={{ fontSize: '0.7rem' }} 
-                />
-                <Typography component="span" variant="caption" color="text.secondary">
-                  <AccessTime sx={{ fontSize: 12, mr: 0.5 }} />
-                  {relativeTime}
-                </Typography>
-              </Box>
-            }
-          />
-        </ListItemButton>
-      </ListItem>
+import React, { useMemo } from 'react';
+import { Box, Typography, Chip, IconButton, Tooltip, Stack } from '@mui/material';
+import { CheckCircle, Circle, OpenInNew } from '@mui/icons-material';
+// Lightweight sanitizer fallback (allow <b><strong><i><em><br>)
+function sanitize(html: string): string {
+  try {
+    // Remove script/style tags entirely
+    html = html
+      .replace(/<\/(script|style)>/gi, '')
+      .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '');
+    // Escape all angle brackets then unescape allowed tags
+    const escaped = html.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[c] as string,
+    );
+    // Unescape allowed paired tags
+    let unescaped = escaped.replace(/&lt;(\/?)(b|strong|i|em)\s*&gt;/gi, '<$1$2>');
+    // Unescape <br> or self-closing <br/>
+    unescaped = unescaped.replace(/&lt;br\s*\/?&gt;/gi, '<br/>');
+    return unescaped;
+  } catch {
+    return html.replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[c] as string,
     );
   }
+}
+import type { WebSocketNotification } from '@/types/notifications';
 
-  // Affichage étendu pour la page complète des notifications
+export default function NotificationItem({
+  n,
+  onOpen,
+  onRead,
+}: {
+  n: WebSocketNotification;
+  onOpen?: (n: WebSocketNotification) => void;
+  onRead?: (id: string) => void;
+}) {
+  const color = n.type === 'error' ? 'error' : n.type === 'warning' ? 'warning' : 'info';
+
+  const diffs = useMemo(() => {
+    // Handle multiple change types from notification data
+    const changes: string[] = [];
+
+    // Quantity changes (existing)
+    if (
+      typeof n.quantityPrev === 'number' &&
+      typeof n.quantityNew === 'number' &&
+      n.quantityPrev !== n.quantityNew
+    ) {
+      changes.push(`Quantité : ${n.quantityPrev} → ${n.quantityNew}`);
+    }
+
+    // Stock changes (existing)
+    if (
+      typeof n.stockPrev === 'number' &&
+      typeof n.stockNew === 'number' &&
+      n.stockPrev !== n.stockNew
+    ) {
+      changes.push(`Stock : ${n.stockPrev} → ${n.stockNew}`);
+    }
+
+    // Multiple changes from data.changes array (preferred)
+    if (n.data?.changes && Array.isArray(n.data.changes)) {
+      changes.push(...n.data.changes);
+    } else if (n.data?.changesSummary && Array.isArray(n.data.changesSummary)) {
+      // Fallback: some APIs send changesSummary (array of strings)
+      changes.push(...n.data.changesSummary);
+    } else if (n.data?.changes && typeof n.data.changes === 'object') {
+      // Fallback: some APIs send raw _changes object; transform to strings
+      try {
+        const entries = Object.entries(n.data.changes as Record<string, any>);
+        for (const [field, change] of entries) {
+          const before = (change || {}).before ?? (change || {}).old;
+          const after = (change || {}).after ?? (change || {}).new;
+          const labelMap: Record<string, string> = {
+            quantity: 'Quantité',
+            stock: 'Stock',
+            minStock: 'Stock min',
+            unit: 'Unité',
+            salle: 'Salle',
+            salleId: 'Salle',
+            localisation: 'Localisation',
+            localisationId: 'Localisation',
+            category: 'Catégorie',
+            categoryId: 'Catégorie',
+            supplier: 'Fournisseur',
+            supplierName: 'Fournisseur',
+            supplierId: 'Fournisseur',
+            purchaseDate: "Date d'achat",
+            expirationDate: "Date d'expiration",
+            notes: 'Notes',
+            name: 'Nom',
+            model: 'Modèle',
+            serialNumber: 'N° série',
+          };
+          const label = labelMap[field] || field;
+          const fmt = (v: any, emptyLabel = '(vide)') =>
+            v == null || v === '' ? emptyLabel : String(v);
+          const emptyNone = (v: any) => (v == null || v === '' ? '(aucune)' : String(v));
+          if (label === 'Salle' || label === 'Localisation' || label === 'Catégorie') {
+            changes.push(`${label} : ${emptyNone(before)} → ${emptyNone(after)}`);
+          } else {
+            changes.push(`${label} : ${fmt(before)} → ${fmt(after)}`);
+          }
+        }
+      } catch {}
+    }
+    // Dedupe to avoid double entries (e.g., from quantityPrev and object changes)
+    return Array.from(new Set(changes));
+  }, [n.quantityPrev, n.quantityNew, n.stockPrev, n.stockNew, n.data]);
+
+  const safeMessage = useMemo(() => {
+    const raw = n.message || '';
+    // Remove any trailing line breaks / "Modifications:" suffix; we'll render detailed chips instead
+    let base = raw;
+    if (base.includes('<br')) base = base.split('<br')[0];
+    else {
+      const idx = base.indexOf('Modifications');
+      if (idx >= 0) base = base.slice(0, idx);
+    }
+    return sanitize(base);
+  }, [n.message]);
+
+  // Format a DB timestamp as "wall time" without timezone transposition
+  const formatWallTime = (value: unknown): string => {
+    try {
+      if (typeof value === 'string') {
+        // Normalize: replace space with T, drop trailing Z; keep milliseconds optional
+        const s = value.replace(' ', 'T').replace(/Z$/i, '');
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) {
+          const hh = m[4];
+          const mm = m[5];
+          const ss = m[6];
+          // Return HH:MM (keep seconds only if present)
+          return ss ? `${hh} : ${mm} : ${ss}` : `${hh} : ${mm}`;
+        }
+      }
+      if (value instanceof Date) {
+        // Assume already local wall time
+        return value.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (typeof value === 'number') {
+        // Epoch fallback (cannot avoid TZ shift reliably) – display HH:MM in local
+        return new Date(value).toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+    } catch {}
+    // Fallback: string cast
+    return String(value ?? '');
+  };
+
+  // Prefer the original createdAt string to avoid timezone transposition (e.g., '+2h')
+  const tsLabel = formatWallTime((n as any).createdAt ?? (n as any).ts);
   return (
-    <Card 
-      sx={{ 
-        mb: 1,
-        border: notification.isRead ? 'none' : '2px solid',
-        borderColor: notification.isRead ? 'divider' : 'primary.main',
-        bgcolor: notification.isRead ? 'background.paper' : 'action.hover'
+    <Box
+      sx={{
+        p: 1.25,
+        borderRadius: 1,
+        bgcolor: n.isRead ? 'background.paper' : 'action.hover',
+        border: '1px solid',
+        borderColor: 'divider',
       }}
     >
-      <CardContent sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-          <Avatar sx={{ bgcolor: `${severityColor.color}.main`, fontSize: '1.2rem' }}>
-            {icon}
-          </Avatar>
-          
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography 
-                variant="subtitle1" 
-                component="div"
-                sx={{ 
-                  // fontWeight: notification.isRead ? 500 : 600,
-                  color: notification.isRead ? 'text.primary' : 'primary.main',
-                  '& strong': {
-                    fontWeight: 600
-                  },
-                  '& span': {
-                    fontStyle: 'inherit'
-                  }
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: String(notification.message || displayData.displayMessage || '')
-                }}
-              />
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {!notification.isRead && (
-                  <Circle sx={{ fontSize: 8, color: 'primary.main' }} />
-                )}
-                <IconButton 
-                  size="small" 
-                  onClick={handleExpandClick}
-                  sx={{ ml: 1 }}
-                >
-                  {expanded ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-              </Box>
-            </Box>
-
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <Chip 
-                label={notification.module} 
-                size="small" 
-                color={severityColor.color}
-                variant="outlined"
-              />
-              <Chip 
-                label={notification.actionType} 
-                size="small" 
-                variant="outlined"
-              />
-              <Chip 
-                label={notification.severity.toUpperCase()} 
-                size="small" 
-                color={severityColor.color}
-              />
-            </Stack>
-
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <AccessTime sx={{ fontSize: 12 }} />
-              {formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: fr })}
-              {timestamp && (
-                <> • {new Date(timestamp).toLocaleString('fr-FR')}</>
-              )}
+      <Stack direction="row" spacing={1} alignItems="center">
+        {n.isRead ? (
+          <CheckCircle fontSize="small" color="disabled" />
+        ) : (
+          <Circle fontSize="small" color="primary" />
+        )}
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            flexDirection: 'column',
+          }}
+        >
+          <Typography
+            variant="body2"
+            noWrap
+            sx={{ fontWeight: n.isRead ? 400 : 600 }}
+            dangerouslySetInnerHTML={{ __html: safeMessage }}
+          />
+          {/* {diff && (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              Changements : {diff}
             </Typography>
-
-            <Collapse in={expanded} timeout="auto" unmountOnExit>
-              <Divider sx={{ my: 1 }} />
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  <strong>Description complète:</strong>
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    whiteSpace: 'pre-line',
-                    bgcolor: 'action.hover',
-                    p: 1,
-                    borderRadius: 1,
-                    fontFamily: 'monospace'
-                  }}
-                >
-                  {detailedDescription}
-                </Typography>
-
-                <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 1 }}>
-                  {notification.entityType && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Category sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="caption">
-                        <strong>Type:</strong> {notification.entityType}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {notification.entityId && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Timeline sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="caption">
-                        <strong>ID:</strong> {notification.entityId}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {notification.triggeredBy && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Person sx={{ fontSize: 16, color: 'text.secondary' }} />
-                      <Typography variant="caption">
-                        <strong>Par:</strong> {notification.triggeredBy}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  <strong>Message technique:</strong> {displayData.logMessage}
-                </Typography>
-              </Box>
-            </Collapse>
-
-            {/* Actions */}
-            {showActions && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                {!notification.isRead && onMarkRead && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkRead();
-                    }}
-                    title="Marquer comme lue"
-                    color="primary"
-                  >
-                    <DoneAll />
-                  </IconButton>
-                )}
-                {onDelete && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                    }}
-                    title="Supprimer"
-                    color="error"
-                  >
-                    <Delete />
-                  </IconButton>
-                )}
-              </Box>
+          )} */}
+          <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {/* {n.module && (
+              <Chip size="small" label={n.module} color={color as any} variant="outlined" />
             )}
+            {n.actionType && <Chip size="small" label={n.actionType} variant="outlined" />}
+            {n.severity && n.severity !== 'low' && (
+              <Chip size="small" label={n.severity} variant="outlined" />
+            )} */}
+            {n.entityId && <Chip size="small" label={`#${n.entityId}`} variant="outlined" />}
+            {Array.isArray(diffs) &&
+              diffs.map((c, i) => <Chip size="small" key={`chg-${i}`} label={c} color="primary" />)}
           </Box>
         </Box>
-      </CardContent>
-    </Card>
+        <Stack
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+          }}
+        >
+          <Chip
+            size="small"
+            label={tsLabel}
+            variant="outlined"
+            sx={{
+              fontWeight: n.isRead ? 400 : 800,
+            }}
+          />
+          <Stack direction="row" spacing={0.5}>
+            {!!onOpen && (
+              <Tooltip title="Ouvrir">
+                <IconButton size="small" onClick={() => onOpen(n)}>
+                  <OpenInNew fontSize="inherit" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {!!onRead && (
+              <Tooltip title="Marquer comme lu">
+                <IconButton size="small" onClick={() => onRead(n.id)}>
+                  <CheckCircle fontSize="inherit" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+          {n.triggeredBy && (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              Par : {n.triggeredBy}.
+            </Typography>
+          )}
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

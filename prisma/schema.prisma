@@ -3,519 +3,601 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String          @id @default(cuid())
-  email             String          @unique
-  password          String
-  name              String
-  role              Role            @default(STUDENT)
-  class             String?
-  isActive          Boolean         @default(true)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  auditLogs         AuditLog[]
-  createdNotebooks  NotebookEntry[] @relation("CreatedBy")
-  orders            Order[]
-  assignedNotebooks NotebookEntry[] @relation("AssignedTo")
-  customClasses     UserClass[]
-  createdTPPresets  TpPreset[]
-
-  @@map("users")
+model Utilisateur {
+  id                    Int                    @id @default(autoincrement())
+  email                 String                 @unique
+  name                  String?
+  password              String?
+  role                  Role                   @default(ELEVE)
+  lockedUntil           DateTime?
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  classes               ClasseUtilisateur[]
+  events                Evenement[]            @relation("EvenementsDuProprietaire")
+  eventPresets          EvenementPreset[]      @relation("EvenementPresetsDuProprietaire")
+  notifications         NotificationTarget[]
+  salles                Salle[]                @relation("SalleProprietaire")
+  materielEventRequests MaterielEventRequest[]
+  reactifEventRequests  ReactifEventRequest[]
+  emailChangeRequests   EmailChangeRequest[]
 }
 
-model UserClass {
-  id       String @id @default(cuid())
-  userId   String
-  className String
-  createdAt DateTime @default(now())
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, className])
-  @@map("user_classes")
+model Classe {
+  id        Int                 @id @default(autoincrement())
+  name      String
+  system    Boolean             @default(false)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  users     ClasseUtilisateur[]
 }
 
-model SecurityEvent {
-  id        Int      @id @default(autoincrement())
-  eventType String
-  timestamp DateTime @default(now())
+model ClasseUtilisateur {
+  userId  Int
+  classId Int
+  class   Classe      @relation(fields: [classId], references: [id])
+  user    Utilisateur @relation(fields: [userId], references: [id])
+
+  @@id([userId, classId])
+  @@index([classId], map: "ClasseUtilisateur_classId_fkey")
 }
 
-model Chemical {
-  id              String             @id @default(cuid())
-  name            String
-  formula         String?
-  molfile         String?
-  casNumber       String?
-  barcode         String?            @unique
-  quantity        Float
-  unit            Unit
-  minQuantity     Float?
-  concentration   Float?
-  purity          Float?
+model Evenement {
+  id                     Int                    @id @default(autoincrement())
+  title                  String
+  discipline             String
+  ownerId                Int
+  notes                  String?
+  type                   String?                @db.VarChar(32)
+  // Stored as JSON arrays of Int IDs (MySQL doesn't support native int[])
+  classIds               Json? // Int[]
+  salleIds               Json? // Int[]
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  timeslots              Creneau[]
+  owner                  Utilisateur            @relation("EvenementsDuProprietaire", fields: [ownerId], references: [id])
+  materiels              EvenementMateriel[]
+  reactifs               EvenementReactif[]
+  documents              EvenementDocument[]
+  customMaterielRequests MaterielEventRequest[] @relation("EvenementCustomMaterielRequests")
+  customReactifRequests  ReactifEventRequest[]  @relation("EvenementCustomReactifRequests")
+
+  @@index([ownerId], map: "Evenement_ownerId_fkey")
+}
+
+model Creneau {
+  id                   Int       @id @default(autoincrement())
+  eventId              Int
+  discipline           String
+  userId               Int?
+  eventOwner           Int?
+  timeslotParent       Int?
+  state                String    @default("created")
+  startDate            DateTime
+  endDate              DateTime
+  timeslotDate         DateTime?
+  // Proposed alternative schedule (when state = counter_proposed)
+  proposedStartDate    DateTime?
+  proposedEndDate      DateTime?
+  proposedTimeslotDate DateTime?
+  proposedNotes        String?
+  proposedUserId       Int?
+  // Multi-association arrays (IDs) – nouvelle fonctionnalité
+  salleIds             Json? // tableau d'IDs de salles (Int[] sérialisé)
+  classIds             Json? // tableau d'IDs de classes (Int[] sérialisé)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  event                Evenement @relation(fields: [eventId], references: [id])
+  // Removed per-timeslot custom requests (moved to event-level)
+
+  @@index([eventId], map: "Creneau_eventId_fkey")
+}
+
+model Salle {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @unique
+  description        String?
+  batiment           String?
+  placesDisponibles  Int?
+  userOwnerId        Int?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  consommables       Consommable[]
+  localisations      Localisation[]
+  materiels          MaterielInventaire[]
+  reactifInventaires ReactifInventaire[]
+  userOwner          Utilisateur?         @relation("SalleProprietaire", fields: [userOwnerId], references: [id])
+
+  @@index([userOwnerId], map: "Salle_userOwnerId_fkey")
+}
+
+model Localisation {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  description        String?
+  salleId            Int
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  consommables       Consommable[]
+  salle              Salle                @relation(fields: [salleId], references: [id], onDelete: Cascade)
+  materiels          MaterielInventaire[]
+  reactifInventaires ReactifInventaire[]
+
+  @@unique([salleId, name])
+}
+
+model MaterielInventaire {
+  id               Int       @id @default(autoincrement())
+  name             String
+  categoryId       Int?
+  quantity         Int       @default(0)
+  minStock         Int?
+  model            String?
+  serialNumber     String?
+  supplier         String?
+  purchaseDate     DateTime?
+  notes            String?
+  discipline       String    @default("Aucune")
+  salleId          Int?
+  localisationId   Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  materielPersoId  Int?
+  materielPresetId Int?
+
+  salle           Salle?                    @relation(fields: [salleId], references: [id])
+  localisation    Localisation?             @relation(fields: [localisationId], references: [id])
+  materielPerso   MaterielPerso?            @relation(fields: [materielPersoId], references: [id])
+  materielPreset  MaterielPreset?           @relation(fields: [materielPresetId], references: [id])
+  category        MaterielCategorie?        @relation(fields: [categoryId], references: [id])
+  eventMateriels  EvenementMateriel[]
+  presetMateriels EvenementPresetMateriel[]
+
+  @@map("MaterielInventaire")
+}
+
+model ReactifInventaire {
+  id              Int                      @id @default(autoincrement())
+  reactifPresetId Int
+  stock           Float                    @default(0)
+  salleId         Int?
+  localisationId  Int?
+  unit            String?                  @db.VarChar(32)
+  minStock        Float?
   purchaseDate    DateTime?
   expirationDate  DateTime?
-  openedDate      DateTime?
-  storage         String?
-  room            String?
-  cabinet         String?
-  shelf           String?
-  hazardClass     HazardClass?
-  sdsFileUrl      String?
-  supplierId      String?
-  batchNumber     String?
-  orderReference  String?
-  status          ChemicalStatus     @default(IN_STOCK)
   notes           String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  supplier        Supplier?          @relation(fields: [supplierId], references: [id])
-  usedInNotebooks NotebookChemical[]
-  orderItems      OrderItem[]
-  tpPresets       TpPresetChemical[]
+  supplierId      Int?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  localisation    Localisation?            @relation(fields: [localisationId], references: [id])
+  reactifPreset   ReactifPreset            @relation(fields: [reactifPresetId], references: [id])
+  salle           Salle?                   @relation(fields: [salleId], references: [id])
+  supplier        Supplier?                @relation(fields: [supplierId], references: [id])
+  eventReactifs   EvenementReactif[]
+  presetReactifs  EvenementPresetReactif[]
 
-  @@map("chemicals")
+  @@index([reactifPresetId])
+  @@index([salleId])
+  @@index([localisationId])
+  @@index([supplierId])
 }
 
-model Materiel {
-  id               String              @id @default(cuid())
-  name             String
-  type             EquipmentType
-  model            String?
-  serialNumber     String?             @unique
-  barcode          String?             @unique
-  quantity         Int
-  status           EquipmentStatus     @default(AVAILABLE)
-  location         String?
-  room             String?
-  cabinet          String?
-  lastMaintenance  DateTime?
-  nextMaintenance  DateTime?
-  maintenanceNotes String?
-  supplierId       String?
-  purchaseDate     DateTime?
-  warrantyEnd      DateTime?
-  notes            String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  supplier         Supplier?           @relation(fields: [supplierId], references: [id])
-  maintenanceLogs  MaintenanceLog[]
-  usedInNotebooks  NotebookEquipment[]
-  orderItems       OrderItem[]
-  tpPresets        TpPresetMaterial[]
+model Consommable {
+  id             Int           @id @default(autoincrement())
+  name           String
+  stock          Int           @default(0)
+  unit           String?
+  salleId        Int?
+  localisationId Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  localisation   Localisation? @relation(fields: [localisationId], references: [id])
+  salle          Salle?        @relation(fields: [salleId], references: [id])
 
-  @@map("materiel")
+  @@index([localisationId], map: "Consommable_localisationId_fkey")
+  @@index([salleId], map: "Consommable_salleId_fkey")
 }
 
-model MaintenanceLog {
-  id          String          @id @default(cuid())
-  equipmentId String
-  date        DateTime
-  type        MaintenanceType
-  description String
-  cost        Float?
-  performedBy String
-  createdAt   DateTime        @default(now())
-  materiel   Materiel       @relation(fields: [equipmentId], references: [id])
-
-  @@map("maintenance_logs")
+model Notification {
+  id         Int                  @id @default(autoincrement())
+  uuid       String               @unique
+  module     String               @db.VarChar(64)
+  actionType String               @db.VarChar(64)
+  type       String               @db.VarChar(64)
+  severity   String               @default("low")
+  title      String?
+  message    String
+  data       Json?
+  createdAt  DateTime             @default(now())
+  targets    NotificationTarget[]
 }
 
-model Supplier {
-  id        String      @id @default(cuid())
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  website   String?
-  notes     String?
-  isActive  Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  chemicals Chemical[]
-  materiel Materiel[]
-  orders    Order[]
+model NotificationTarget {
+  id             Int          @id @default(autoincrement())
+  notificationId Int
+  userId         Int
+  readAt         DateTime?
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           Utilisateur  @relation(fields: [userId], references: [id])
 
-  @@map("suppliers")
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
 }
 
-model Order {
-  id           String      @id @default(cuid())
-  orderNumber  String      @unique
-  supplierId   String
-  userId       String
-  status       OrderStatus @default(DRAFT)
-  orderDate    DateTime?
-  deliveryDate DateTime?
-  totalAmount  Float?
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  items        OrderItem[]
-  supplier     Supplier    @relation(fields: [supplierId], references: [id])
-  user         User        @relation(fields: [userId], references: [id])
-
-  @@map("orders")
-}
-
-model OrderItem {
-  id          String     @id @default(cuid())
-  orderId     String
-  chemicalId  String?
-  equipmentId String?
-  quantity    Float
-  unitPrice   Float?
-  totalPrice  Float?
-  notes       String?
-  chemical    Chemical?  @relation(fields: [chemicalId], references: [id])
-  materiel   Materiel? @relation(fields: [equipmentId], references: [id])
-  order       Order      @relation(fields: [orderId], references: [id])
-
-  @@map("order_items")
-}
-
-model NotebookEntry {
-  id              String              @id @default(cuid())
-  title           String
-  description     String?
-  protocolFileUrl String?
-  scheduledDate   DateTime
-  duration        Int?
-  class           String
-  groups          String[]
-  createdById     String
-  objectives      String?
-  procedure       String?
-  observations    String?
-  results         String?
-  calculations    String?
-  conclusions     String?
-  images          String[]
-  attachments     String[]
-  studentSigned   Boolean             @default(false)
-  teacherSigned   Boolean             @default(false)
-  signedAt        DateTime?
-  status          NotebookStatus      @default(DRAFT)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  chemicals       NotebookChemical[]
-  createdBy       User                @relation("CreatedBy", fields: [createdById], references: [id])
-  materiel       NotebookEquipment[]
-  assignedTo      User[]              @relation("AssignedTo")
-
-  @@map("notebook_entries")
-}
-
-model NotebookChemical {
-  id           String        @id @default(cuid())
-  notebookId   String
-  chemicalId   String
-  quantityUsed Float
-  unit         Unit
-  notes        String?
-  chemical     Chemical      @relation(fields: [chemicalId], references: [id])
-  notebook     NotebookEntry @relation(fields: [notebookId], references: [id])
-
-  @@map("notebook_chemicals")
-}
-
-model NotebookEquipment {
-  id          String        @id @default(cuid())
-  notebookId  String
-  equipmentId String
-  quantity    Int           @default(1)
-  notes       String?
-  materiel   Materiel     @relation(fields: [equipmentId], references: [id])
-  notebook    NotebookEntry @relation(fields: [notebookId], references: [id])
-
-  @@map("notebook_equipment")
-}
-
-model Calendar {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  class       String?
-  room        String?
-  type        CalendarType
-  notebookId  String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@map("calendar_events")
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  action     String
-  entityType String
-  entityId   String
-  oldData    Json?
-  newData    Json?
-  timestamp  DateTime @default(now())
-  ipAddress  String?
-  userAgent  String?
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@map("audit_logs")
-}
-
-model Location {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  room      String?
-  cabinet   String?
-  shelf     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("locations")
-}
-
-model ConfigurableList {
-  id         String   @id @default(cuid())
-  type       String   // 'hazard_class', 'storage_condition', 'room', etc.
-  value      String
-  isActive   Boolean  @default(true)
-  sortOrder  Int?
+model NotificationPreference {
+  id         Int      @id @default(autoincrement())
+  role       Role
+  module     String   @db.VarChar(64)
+  actionType String   @db.VarChar(64)
+  enabled    Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([type, value])
-  @@map("configurable_lists")
+  @@unique([role, module, actionType])
 }
 
-model Room {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  description String?
-  isActive    Boolean    @default(true)
-  locations   RoomLocation[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@map("rooms")
-}
-
-model RoomLocation {
-  id          String   @id @default(cuid())
-  roomId      String
-  name        String   // "Armoire A", "Étagère 1", etc.
-  description String?
-  isActive    Boolean  @default(true)
-  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+model NotificationConfig {
+  id          Int      @id @default(autoincrement())
+  module      String   @db.VarChar(64)
+  actionType  String   @db.VarChar(64)
+  name        String
+  description String?  @db.VarChar(255)
+  severity    String   @default("low")
+  enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([roomId, name])
-  @@map("room_locations")
+  @@unique([module, actionType])
 }
 
-model TpPreset {
-  id               String                @id @default(cuid())
-  title            String
-  description      String?
-  objectives       String?
-  procedure        String?
-  duration         Int?                  // Durée en minutes
-  level            String?               // Niveau scolaire
-  subject          String?               // Matière
-  isActive         Boolean               @default(true)
-  createdById      String
-  attachments      String[]              // URLs des fichiers joints
-  chemicals        TpPresetChemical[]
-  materials        TpPresetMaterial[]
-  createdBy        User                  @relation(fields: [createdById], references: [id])
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+model ReactifPreset {
+  id            Int                 @id @default(autoincrement())
+  name          String
+  formula       String?
+  casNumber     String?
+  category      String?
+  hazardClass   String?
+  molarMass     Float?
+  density       Float?              // g/mL ou g/cm3
+  boilingPointC Float?
+  meltingPointC Float?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  inventories   ReactifInventaire[]
 
-  @@map("tp_presets")
+  @@unique([name, casNumber])
+  @@unique([casNumber])
 }
 
-model TpPresetChemical {
-  id           String        @id @default(cuid())
-  tpPresetId   String
-  chemicalId   String
-  quantityUsed Float
-  unit         Unit
+model Supplier {
+  id           Int                 @id @default(autoincrement())
+  name         String              @unique
+  contactEmail String?             @db.VarChar(191)
+  phone        String?             @db.VarChar(64)
+  address      String?             @db.VarChar(255)
   notes        String?
-  chemical     Chemical      @relation(fields: [chemicalId], references: [id])
-  tpPreset     TpPreset      @relation(fields: [tpPresetId], references: [id], onDelete: Cascade)
-
-  @@map("tp_preset_chemicals")
+  kind         String              @default("NORMAL") @db.VarChar(16) // NORMAL | CUSTOM
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  chemicals    ReactifInventaire[]
 }
 
-model TpPresetMaterial {
-  id          String        @id @default(cuid())
-  tpPresetId  String
-  materialId  String
-  quantity    Int           @default(1)
-  notes       String?
-  material    Materiel      @relation(fields: [materialId], references: [id])
-  tpPreset    TpPreset      @relation(fields: [tpPresetId], references: [id], onDelete: Cascade)
+model MaterielPreset {
+  id          Int                  @id @default(autoincrement())
+  name        String
+  category    String?
+  discipline  String               @db.VarChar(64)
+  description String?              @db.VarChar(255)
+  defaultQty  Int?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  categoryId  Int?
+  categorie   MaterielCategorie?   @relation(fields: [categoryId], references: [id])
+  materiels   MaterielInventaire[]
 
-  @@map("tp_preset_materials")
+  @@unique([name, discipline])
+}
+
+model MaterielCategorie {
+  id              Int                  @id @default(autoincrement())
+  name            String
+  discipline      String               @db.VarChar(64)
+  description     String?              @db.VarChar(255)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  materielPersons MaterielPerso[]
+  presets         MaterielPreset[]
+  materiels       MaterielInventaire[]
+
+  @@unique([name, discipline])
+}
+
+model MaterielPerso {
+  id               Int                  @id @default(autoincrement())
+  name             String
+  discipline       String               @db.VarChar(64)
+  description      String?              @db.VarChar(255)
+  caracteristiques Json?
+  defaultQty       Int?
+  volumes          Json?
+  categorieId      Int?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  categorie        MaterielCategorie?   @relation(fields: [categorieId], references: [id])
+  materiels        MaterielInventaire[]
+
+  @@index([categorieId], map: "MaterielPerso_categorieId_fkey")
 }
 
 enum Role {
   ADMIN
-  TEACHER
   ADMINLABO
-  LABORANTIN
-  STUDENT
+  ENSEIGNANT
+  LABORANTIN_PHYSIQUE
+  LABORANTIN_CHIMIE
+  ELEVE
 }
 
-enum Unit {
-  mL
-  L
-  g
-  kg
-  mg
-  mol
-  piece
+model EvenementMateriel {
+  id           Int                 @id @default(autoincrement())
+  eventId      Int
+  materielId   Int?
+  materielName String
+  quantity     Int                 @default(1)
+  isCustom     Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  event        Evenement           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  materiel     MaterielInventaire? @relation(fields: [materielId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([materielId])
 }
 
-enum ChemicalStatus {
-  IN_STOCK
-  LOW_STOCK
-  OPENED
-  EXPIRED
-  EMPTY
-  QUARANTINE
+model EvenementReactif {
+  id                Int                @id @default(autoincrement())
+  eventId           Int
+  reactifId         Int?
+  reactifName       String
+  requestedQuantity Decimal            @default(0) @db.Decimal(10, 3)
+  unit              String?            @default("g") @db.VarChar(32)
+  isCustom          Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  event             Evenement          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  reactif           ReactifInventaire? @relation(fields: [reactifId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([reactifId])
 }
 
-enum HazardClass {
-  EXPLOSIVE
-  FLAMMABLE
-  OXIDIZING
-  TOXIC
-  CORROSIVE
-  IRRITANT
-  CARCINOGENIC
-  ENVIRONMENTAL
+model EvenementDocument {
+  id         Int       @id @default(autoincrement())
+  eventId    Int
+  fileName   String
+  fileUrl    String    @db.VarChar(500)
+  fileSize   Int?
+  fileType   String?   @db.VarChar(100)
+  uploadedAt DateTime  @default(now())
+  event      Evenement @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, fileUrl])
+  @@index([eventId])
 }
 
-enum EquipmentType {
-  GLASSWARE
-  HEATING
-  MEASURING
-  SAFETY
-  MIXING
-  FILTRATION
-  OPTICAL
-  ELECTRONIC
-  OTHER
+// === PRESETS (TP pré-configurés) ===
+model EvenementPreset {
+  id         Int                       @id @default(autoincrement())
+  title      String
+  discipline String
+  notes      String?
+  ownerId    Int
+  sharedIds  Json?
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  owner      Utilisateur               @relation("EvenementPresetsDuProprietaire", fields: [ownerId], references: [id])
+  materiels  EvenementPresetMateriel[]
+  reactifs   EvenementPresetReactif[]
+  documents  EvenementPresetDocument[]
+  creneaux   EvenementPresetCreneau[]
+
+  @@index([ownerId])
 }
 
-enum EquipmentStatus {
-  AVAILABLE
-  IN_USE
-  MAINTENANCE
-  BROKEN
-  RETIRED
+model EvenementPresetCreneau {
+  id             Int               @id @default(autoincrement())
+  presetId       Int
+  discipline     String
+  userId         Int?
+  eventOwner     Int?
+  timeslotParent Int?
+  state          String            @default("created")
+  startDate      DateTime
+  endDate        DateTime
+  timeslotDate   DateTime?
+  // No proposed* fields for presets
+  proposedNotes  String?
+  salleIds       Json?
+  classIds       Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  preset         EvenementPreset   @relation(fields: [presetId], references: [id], onDelete: Cascade)
+
+  @@index([presetId])
 }
 
-enum MaintenanceType {
-  PREVENTIVE
-  CORRECTIVE
-  CALIBRATION
-  CLEANING
+model EvenementPresetMateriel {
+  id           Int                 @id @default(autoincrement())
+  presetId     Int
+  materielId   Int?
+  materielName String
+  quantity     Int                 @default(1)
+  isCustom     Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  preset       EvenementPreset     @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  materiel     MaterielInventaire? @relation(fields: [materielId], references: [id], onDelete: SetNull)
+
+  @@index([presetId])
+  @@index([materielId])
 }
 
-enum OrderStatus {
-  DRAFT
-  SENT
-  CONFIRMED
-  RECEIVED
-  CANCELLED
+model EvenementPresetReactif {
+  id                Int                @id @default(autoincrement())
+  presetId          Int
+  reactifId         Int?
+  reactifName       String
+  requestedQuantity Decimal            @default(0) @db.Decimal(10, 3)
+  unit              String?            @default("g") @db.VarChar(32)
+  isCustom          Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  preset            EvenementPreset    @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  reactif           ReactifInventaire? @relation(fields: [reactifId], references: [id], onDelete: SetNull)
+
+  @@index([presetId])
+  @@index([reactifId])
 }
 
-enum NotebookStatus {
-  DRAFT
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+model EvenementPresetDocument {
+  id         Int             @id @default(autoincrement())
+  presetId   Int
+  fileName   String
+  fileUrl    String          @db.VarChar(500)
+  fileSize   Int?
+  fileType   String?         @db.VarChar(100)
+  uploadedAt DateTime        @default(now())
+  preset     EvenementPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+
+  @@unique([presetId, fileUrl])
+  @@index([presetId])
 }
 
-model PresetChemical {
-  id               String   @id @default(cuid())
-  name             String
-  formula          String?
-  casNumber        String?  @unique
-  molarMass        Float?   // g/mol
-  boilingPoint     Float?   // °C
-  meltingPoint     Float?   // °C
-  density          Float?   // g/cm³
-  hazardClass      HazardClass?
-  categories       ChemicalCategory[]
-  physicalState    PhysicalState @default(LIQUID)
-  safetyNotes      String?
-  commonUses       String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+// Event-level custom material request
+model MaterielEventRequest {
+  id         Int         @id @default(autoincrement())
+  eventId    Int
+  userId     Int
+  name       String
+  quantity   Int         @default(1)
+  discipline String?
+  isCustom   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  event      Evenement   @relation("EvenementCustomMaterielRequests", fields: [eventId], references: [id], onDelete: Cascade)
+  user       Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("preset_chemicals")
+  @@index([eventId])
+  @@index([userId])
 }
 
-model ChemicalCategory {
-  id               String          @id @default(cuid())
-  name             String          @unique
-  description      String?
-  color            String?         // Couleur hex pour l'affichage
-  sortOrder        Int?
-  isActive         Boolean         @default(true)
-  presetChemicals  PresetChemical[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+// Event-level custom chemical request
+model ReactifEventRequest {
+  id                Int         @id @default(autoincrement())
+  eventId           Int
+  userId            Int
+  name              String
+  requestedQuantity Decimal     @default(0) @db.Decimal(10, 3)
+  unit              String?     @default("g") @db.VarChar(32)
+  discipline        String?
+  isCustom          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  event             Evenement   @relation("EvenementCustomReactifRequests", fields: [eventId], references: [id], onDelete: Cascade)
+  user              Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("chemical_categories")
+  @@index([eventId])
+  @@index([userId])
 }
 
-enum CalendarType {
-  TP
-  MAINTENANCE
-  INVENTORY
-  OTHER
+// Application-wide key/value settings
+model AppSetting {
+  key       String   @id @db.VarChar(64)
+  value     String?  @db.VarChar(255)
+  jsonValue Json?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
-enum PhysicalState {
-  SOLID
-  LIQUID
-  GAS
-  PLASMA
+// Authentication attempt logs (basic security visibility)
+model AuthLog {
+  id        Int      @id @default(autoincrement())
+  email     String?  @db.VarChar(191)
+  userId    Int?
+  ip        String?  @db.VarChar(64)
+  success   Boolean
+  kind      String   @default("LOGIN") @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt, kind])
+  @@index([createdAt])
 }
 
-model Notification {
-  id           Int      @id @default(autoincrement())
-  targetRoles  String[] // Rôles ciblés (JSON array)
-  userId       Int?     // Utilisateur spécifique (optionnel)
-  module       String   // Module d'origine (CHEMICALS, EQUIPMENT, etc.)
-  actionType   String   // Type d'action (LOW_STOCK_ALERT, MAINTENANCE_SCHEDULED, etc.)
-  message      String   // Message de la notification
-  details      String?  // Détails supplémentaires
-  severity     NotificationSeverity @default(LOW)
-  entityType   String?  // Type d'entité liée
-  entityId     String?  // ID de l'entité liée
-  triggeredBy  String?  // ID de l'utilisateur qui a déclenché
-  readBy       Int[]    // IDs des utilisateurs qui ont lu (JSON array)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  email     String    @db.VarChar(191)
+  token     String    @db.VarChar(191)
+  expiresAt DateTime
+  usedAt    DateTime?
+  isOTP     Boolean   @default(false)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
 
-  @@map("notifications")
+  @@unique([email, token])
+  @@index([email])
+  @@index([createdAt])
 }
 
-enum NotificationSeverity {
-  LOW      @map("low")
-  MEDIUM   @map("medium")
-  HIGH     @map("high")
-  CRITICAL @map("critical")
+// Account activation tokens
+model ActivationToken {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(191)
+  token     String   @db.VarChar(191) @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Pending email change verification tokens
+model EmailChangeRequest {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  oldEmail  String
+  newEmail  String
+  token     String      @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime    @default(now())
+  user      Utilisateur @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([newEmail])
+}
+
+// Generic API logs (auditing of API calls)
+model ApiLog {
+  id         Int      @id @default(autoincrement())
+  timestamp  DateTime @default(now())
+  method     String   @db.VarChar(10)
+  path       String   @db.VarChar(255)
+  userId     Int?
+  role       Role?
+  status     Int
+  ip         String?  @db.VarChar(64)
+  userAgent  String?  @db.VarChar(255)
+  module     String?  @db.VarChar(64)
+  action     String?  @db.VarChar(64)
+  message    String?  @db.VarChar(255)
+  meta       Json?
+
+  @@index([timestamp])
+  @@index([path])
 }

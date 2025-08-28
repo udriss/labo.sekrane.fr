@@ -1,209 +1,102 @@
-import { useEquipmentDataChimie } from '@/lib/hooks/useEquipmentDataChimie';
-import { useEquipmentForm } from '@/lib/hooks/useEquipmentForm';
-import { useEquipmentDialogs } from '@/lib/hooks/useEquipmentDialogs';
-import { useEquipmentQuantity } from '@/lib/hooks/useEquipmentQuantity';
-import { equipmentServiceChimie } from '@/lib/services/equipmentServiceChimie';
+import { useState, useCallback } from 'react';
+import { EquipmentService, Equipement } from '@/lib/services/equipmentServiceChimie';
 
-export const useEquipmentHandlersChimie = () => {
-  const equipmentData = useEquipmentDataChimie();
-  const form = useEquipmentForm();
-  const dialogs = useEquipmentDialogs();
-  const quantity = useEquipmentQuantity(equipmentData.fetchEquipment);
+export function useEquipmentHandlers() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
-    try {
-      const newEquipment = await equipmentServiceChimie.submitEquipment(
-        form.formData,
-        form.selectedCategory,
-        form.selectedItem,
-        equipmentData.getAllEquipmentTypes
-      );
+  const handleCreate = useCallback(
+    async (equipmentData: Omit<Equipement, 'id' | 'createdAt' | 'updatedAt'>) => {
+      setLoading(true);
+      setError(null);
 
-      console.log('Équipement ajouté avec succès:', newEquipment);
-      
-      // Actualiser les données
-      await equipmentData.fetchEquipment();
-      await equipmentData.loadEquipmentTypes();
-      
-      // Si c'est un équipement personnalisé, ouvrir le dialogue de continuation
-      if (form.selectedItem?.name === 'Équipement personnalisé') {
-        dialogs.setNewlyCreatedItem(newEquipment);
-        dialogs.setContinueDialog(true);
-        return { switchToInventory: false }; // Rester sur l'onglet actuel pour le dialogue
-      } else {
-        form.handleReset();
-        // Retourner l'indication de basculer vers l'onglet inventaire
-        return { switchToInventory: true };
+      try {
+        const newEquipment = await EquipmentService.create(equipmentData);
+        return newEquipment;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create equipement';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de l'ajout");
-      return { switchToInventory: false }; // Rester sur l'onglet actuel en cas d'erreur
-    }
-  };
+    },
+    [],
+  );
 
-  const handleSaveEdit = async () => {
-    try {
-      await equipmentServiceChimie.editEquipment(dialogs.editingEquipment.id, dialogs.editingEquipment);
-      
-      await equipmentData.fetchEquipment();
-      dialogs.setOpenEditDialog(false);
-      dialogs.setEditingEquipment(null);
-    } catch (error) {
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de la modification");
-    }
-  };
+  const handleUpdate = useCallback(
+    async (id: number, updates: Partial<Omit<Equipement, 'id' | 'createdAt' | 'updatedAt'>>) => {
+      setLoading(true);
+      setError(null);
 
-  const confirmDeleteEquipment = async () => {
-    if (!dialogs.equipmentToDelete || !dialogs.equipmentToDelete.id) {
-      equipmentData.setError("Impossible de supprimer l'équipement : ID manquant.");
-      dialogs.setDeleteDialog(false);
-      dialogs.setEquipmentToDelete(null);
-      return;
-    }
-
-    try {
-      dialogs.setDeletingItems(prev => new Set([...prev, dialogs.equipmentToDelete.id]));
-      dialogs.setDeleteDialog(false);
-
-      await equipmentServiceChimie.deleteEquipment(dialogs.equipmentToDelete.id);
-      
-      setTimeout(async () => {
-        await equipmentData.fetchEquipment();
-        dialogs.setDeletingItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(dialogs.equipmentToDelete.id);
-          return newSet;
-        });
-        dialogs.setEquipmentToDelete(null);
-      }, 500);
-
-    } catch (error) {
-      equipmentData.setError(error instanceof Error ? error.message : "Erreur lors de la suppression");
-      dialogs.setDeletingItems(prev => {
-        const newSet = new Set(prev);
-        if (dialogs.equipmentToDelete) {
-          newSet.delete(dialogs.equipmentToDelete.id);
-        }
-        return newSet;
-      });
-      dialogs.setEquipmentToDelete(null);
-    }
-  };
-
-  const handleCreateCustomCategory = async () => {
-    if (!dialogs.newCategoryName.trim()) {
-      alert('Veuillez entrer un nom pour la catégorie');
-      return;
-    }
-
-    try {
-      await equipmentServiceChimie.createCustomCategory(dialogs.newCategoryName);
-      
-      await equipmentData.loadEquipmentTypes();
-      dialogs.setCustomCategories(prev => [...prev, { name: dialogs.newCategoryName }]);
-      dialogs.setNewCategoryName('');
-      dialogs.setNewCategoryDialog(false);
-      alert('Catégorie créée avec succès !');
-    } catch (error) {
-      console.error('Erreur lors de la création de la catégorie:', error);
-      alert('Erreur lors de la création de la catégorie');
-    }
-  };
-
-  const handleSaveCustomEquipment = async () => {
-    if (!dialogs.customEquipmentData.name.trim()) {
-      alert('Veuillez entrer un nom pour l\'équipement');
-      return;
-    }
-
-    if (!dialogs.customEquipmentData.category) {
-      alert('Veuillez sélectionner une catégorie');
-      return;
-    }
-
-    try {
-      await equipmentServiceChimie.saveCustomEquipment(dialogs.customEquipmentData);
-      
-      await equipmentData.loadEquipmentTypes();
-      
-      dialogs.setAddCustomEquipmentDialog(false);
-      dialogs.setNewlyCreatedItem({
-        name: dialogs.customEquipmentData.name,
-        category: dialogs.customEquipmentData.category,
-        volumes: dialogs.customEquipmentData.volumes
-      });
-      dialogs.setContinueDialog(true);
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de l\'équipement personnalisé:', error);
-      alert('Erreur lors de l\'ajout de l\'équipement');
-    }
-  };
-
-  const handleSaveEditedItem = async () => {
-    if (!dialogs.selectedManagementItem || !dialogs.selectedManagementCategory) return;
-
-    try {
-      const result = await equipmentServiceChimie.saveEditedItem(
-        dialogs.selectedManagementCategory,
-        dialogs.selectedManagementItem,
-        dialogs.editingItemData
-      );
-
-      await equipmentData.loadEquipmentTypes();
-      
-      dialogs.setEditItemDialog(false);
-      dialogs.setSelectedManagementItem(null);
-      
-      if (result.targetCategory) {
-        dialogs.setSelectedManagementCategory(result.targetCategory);
-        alert('Équipement déplacé avec succès vers la nouvelle catégorie !');
-      } else {
-        alert('Équipement mis à jour avec succès !');
+      try {
+        const updatedEquipment = await EquipmentService.update(id, updates);
+        return updatedEquipment;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update equipement';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'équipement:', error);
-      alert('Erreur lors de la mise à jour de l\'équipement');
-    }
-  };
+    },
+    [],
+  );
 
-  const handleFinishWithoutContinue = () => {
-    dialogs.setContinueDialog(false);
-    dialogs.setNewlyCreatedItem(null);
-    form.handleReset();
-    return { switchToInventory: true };
-  };
+  const handleDelete = useCallback(async (id: number) => {
+    setLoading(true);
+    setError(null);
 
-  const handleContinueToInventory = () => {
-    dialogs.setContinueDialog(false);
-    if (dialogs.newlyCreatedItem) {
-      form.setSelectedItem({
-        name: dialogs.newlyCreatedItem.name,
-        svg: '/svg/default.svg',
-        volumes: dialogs.newlyCreatedItem.volumes || ['N/A']
-      });
-      form.setFormData(prev => ({
-        ...prev,
-        name: dialogs.newlyCreatedItem.name,
-        type: dialogs.newlyCreatedItem.category
-      }));
-      form.setActiveStep(2);
-      return { switchToAddTab: true };
+    try {
+      await EquipmentService.delete(id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete equipement';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
     }
-    dialogs.setNewlyCreatedItem(null);
-  };
+  }, []);
+
+  const handleGetAll = useCallback(async (discipline?: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const equipement = await EquipmentService.getAll(discipline);
+      return equipement;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch equipement';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleGetLowStock = useCallback(async (threshold?: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const equipement = await EquipmentService.getLowStock(threshold);
+      return equipement;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch low stock equipement';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
-    ...equipmentData,
-    ...form,
-    ...dialogs,
-    ...quantity,
-    handleSubmit,
-    handleSaveEdit,
-    confirmDeleteEquipment,
-    handleCreateCustomCategory,
-    handleSaveCustomEquipment,
-    handleSaveEditedItem,
-    handleFinishWithoutContinue,
-    handleContinueToInventory
+    loading,
+    error,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+    handleGetAll,
+    handleGetLowStock,
   };
-};
+}

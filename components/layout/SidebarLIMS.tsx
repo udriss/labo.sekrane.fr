@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   List,
@@ -11,7 +11,7 @@ import {
   Divider,
   Typography,
   Collapse,
-  Chip
+  Chip,
 } from '@mui/material';
 import {
   Dashboard,
@@ -24,23 +24,24 @@ import {
   Security,
   Settings,
   AdminPanelSettings,
-  Assessment,
-  Inventory,
+  Handyman,
   ExpandLess,
   ExpandMore,
   Notifications,
   History,
-  GroupAdd
+  GroupAdd,
+  DocumentScanner,
 } from '@mui/icons-material';
+import { SiMoleculer } from 'react-icons/si';
+import { TbTruckDelivery } from 'react-icons/tb';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useImpersonation } from '@/lib/contexts/ImpersonationContext';
 
 interface SidebarProps {
   onClose?: () => void;
 }
-
 interface MenuItem {
   id: string;
   label: string;
@@ -57,142 +58,158 @@ const menuItems: MenuItem[] = [
     label: 'Accueil',
     icon: <Dashboard />,
     path: '/',
-    roles: ['ADMIN', 'ADMINLABO']
-  },
-  {
-    id: 'users',
-    label: 'Utilisateurs',
-    icon: <People />,
-    path: '/utilisateurs',
-    roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
-  },
-  {
-    id: 'laboratory',
-    label: 'Laboratoire',
-    icon: <Science />,
-    children: [
-      {
-        id: 'chemicals',
-        label: 'Réactifs',
-        icon: <Biotech />,
-        path: '/chemicals',
-        roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
-      },
-      {
-        id: 'equipment',
-        label: 'Matériel',
-        icon: <Inventory />,
-        path: '/materiel',
-        roles: ['ADMIN', 'ADMINLABO', 'TEACHER', 'LABORANTIN'],
-      },
-      {
-        id: 'rooms',
-        label: 'Salles',
-        icon: <Room />,
-        path: '/admin/salles',
-        roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
-      },
-      {
-        id: 'classes',
-        label: 'Classes',
-        icon: <GroupAdd />,
-        path: '/classes',
-        roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
-      }
-    ],
-    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
+    roles: ['ADMIN', 'ADMINLABO'],
   },
   {
     id: 'calendar',
     label: 'Calendrier',
     icon: <CalendarMonth />,
     path: '/calendrier',
-    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE', 'ENSEIGNANT'],
   },
   {
-    id: 'orders',
-    label: 'Commandes',
-    icon: <ShoppingCart />,
-    path: '/orders',
-    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN'],
+    id: 'notebook',
+    label: 'Cahier TP',
+    icon: <DocumentScanner />,
+    path: '/cahier',
+    roles: ['ADMIN', 'ENSEIGNANT'],
+  },
+  {
+    id: 'users',
+    label: 'Mon profil',
+    icon: <People />,
+    path: '/profil',
+    roles: ['ADMIN', 'ADMINLABO', 'ENSEIGNANT', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'],
+  },
+  {
+    id: 'rooms',
+    label: 'Salles',
+    icon: <Room />,
+    path: '/salles',
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE', 'ENSEIGNANT'],
+  },
+  {
+    id: 'classes',
+    label: 'Classes',
+    icon: <GroupAdd />,
+    path: '/classes',
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE', 'ENSEIGNANT'],
+  },
+  {
+    id: 'laboratory',
+    label: 'Laboratoire',
+    icon: <Science />,
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE', 'ENSEIGNANT'],
+    children: [
+      {
+        id: 'chemicals',
+        label: 'Réactifs',
+        icon: <SiMoleculer fontSize={25} />,
+        path: '/reactifs',
+        roles: ['ADMIN', 'ADMINLABO', 'ENSEIGNANT', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'],
+      },
+      {
+        id: 'equipement',
+        label: 'Matériel',
+        icon: <Handyman />,
+        path: '/materiel',
+        roles: ['ADMIN', 'ADMINLABO', 'ENSEIGNANT', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'],
+      },
+      {
+        id: 'suppliers',
+        label: 'Fournisseurs',
+        icon: <TbTruckDelivery fontSize={25} />,
+        path: '/fournisseurs',
+        roles: ['ADMIN', 'ADMINLABO', 'ENSEIGNANT', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'],
+      },
+      {
+        id: 'orders',
+        label: 'Commandes',
+        icon: <ShoppingCart />,
+        path: '/orders',
+        roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'],
+      },
+    ],
   },
   {
     id: 'notifications',
     label: 'Notifications',
     icon: <Notifications />,
     path: '/notifications',
-    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN', 'TEACHER'],
-  },
-  {
-    id: 'logs',
-    label: 'Journaux',
-    icon: <History />,
-    path: '/logs',
-    roles: ['ADMIN']
+    roles: ['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE', 'ENSEIGNANT'],
   },
   {
     id: 'admin',
     label: 'Administration',
     icon: <AdminPanelSettings />,
+    roles: ['ADMIN'],
     children: [
       {
         id: 'admin-notifications',
         label: 'Gestion notifications',
         icon: <Notifications />,
         path: '/admin/notifications',
-        roles: ['ADMIN']
+        roles: ['ADMIN'],
       },
       {
         id: 'admin-security',
         label: 'Sécurité',
         icon: <Security />,
-        path: '/securite',
-        roles: ['ADMIN']
+        path: '/admin/securite',
+        roles: ['ADMIN'],
       },
       {
         id: 'admin-settings',
         label: 'Paramètres système',
         icon: <Settings />,
-        path: '/reglages',
-        roles: ['ADMIN']
-      }
+        path: '/admin/reglages',
+        roles: ['ADMIN'],
+      },
+      {
+        id: 'admin-users',
+        label: 'Utilisateurs (admin)',
+        icon: <People />,
+        path: '/admin/utilisateurs',
+        roles: ['ADMIN'],
+      },
+      {
+        id: 'admin-tokens',
+        label: "Tokens d'activation",
+        icon: <Security />,
+        path: '/admin/activation-tokens',
+        roles: ['ADMIN'],
+      },
+      {
+        id: 'logs',
+        label: 'Journaux',
+        icon: <History />,
+        path: '/admin/logs',
+        roles: ['ADMIN'],
+      },
     ],
-    roles: ['ADMIN']
-  }
+  },
 ];
 
-export function SidebarLIMS({ onClose }: SidebarProps) {
+export default function SidebarLIMS({ onClose }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [openItems, setOpenItems] = useState<string[]>(['laboratory', 'admin']);
+  const { impersonatedUser } = useImpersonation();
+  const sessionRole = (session?.user as any)?.role || 'GUEST';
+  const userRole =
+    sessionRole === 'ADMIN' && impersonatedUser ? impersonatedUser.role : sessionRole;
 
-  const userRole = (session?.user as any)?.role || 'GUEST';
+  const handleItemClick = (id: string) =>
+    setOpenItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  const hasPermission = (roles?: string[]) =>
+    !roles || roles.length === 0 || roles.includes(userRole);
+  const isActive = (path?: string) =>
+    !!path && (pathname === path || (path !== '/' && pathname.startsWith(path)));
 
-  const handleItemClick = (itemId: string) => {
-    if (openItems.includes(itemId)) {
-      setOpenItems(openItems.filter(id => id !== itemId));
-    } else {
-      setOpenItems([...openItems, itemId]);
-    }
-  };
-
-  const hasPermission = (roles?: string[]) => {
-    if (!roles || roles.length === 0) return true;
-    return roles.includes(userRole);
-  };
-
-  const isActive = (path?: string) => {
-    if (!path) return false;
-    return pathname === path || (path !== '/' && pathname.startsWith(path));
-  };
-
-  const renderMenuItem = (item: MenuItem, level: number = 0) => {
-    if (!hasPermission(item.roles)) {
-      return null;
-    }
-
-    const hasChildren = item.children && item.children.length > 0;
-    const isItemOpen = openItems.includes(item.id);
+  const renderMenuItem = (item: MenuItem, level = 0) => {
+    if (!hasPermission(item.roles)) return null;
+    const hasChildren = !!item.children?.length;
+    const open = openItems.includes(item.id);
     const active = isActive(item.path);
 
     if (hasChildren) {
@@ -201,78 +218,63 @@ export function SidebarLIMS({ onClose }: SidebarProps) {
           <ListItem disablePadding>
             <ListItemButton
               onClick={() => handleItemClick(item.id)}
-              sx={{
-                pl: 2 + level * 2,
-                bgcolor: active ? 'action.selected' : undefined,
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
+              sx={{ pl: 2 + level * 2, bgcolor: active ? 'action.selected' : undefined }}
             >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText 
+              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemText
                 primary={item.label}
-                primaryTypographyProps={{
-                  fontSize: level > 0 ? '0.875rem' : '1rem',
-                  fontWeight: active ? 600 : 400
+                slotProps={{
+                  primary: {
+                    fontSize: level > 0 ? '0.875rem' : '1rem',
+                    fontWeight: active ? 600 : 400,
+                  },
                 }}
               />
               {item.badge && (
-                <Chip 
-                  label={item.badge} 
-                  size="small" 
-                  color="primary"
-                  sx={{ mr: 1 }}
-                />
+                <Chip label={item.badge} size="small" color="primary" sx={{ mr: 1 }} />
               )}
-              {isItemOpen ? <ExpandLess /> : <ExpandMore />}
+              {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
           </ListItem>
-          <Collapse in={isItemOpen} timeout="auto" unmountOnExit>
+          <Collapse in={open} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
-              {item.children?.map(child => renderMenuItem(child, level + 1))}
+              {item.children!.map((child) => renderMenuItem(child, level + 1))}
             </List>
           </Collapse>
         </React.Fragment>
       );
     }
 
+    const disabled = item.id === 'orders';
+
     return (
       <ListItem key={item.id} disablePadding>
         <ListItemButton
-          component={Link}
-          href={item.path || '#'}
+          component={!disabled ? Link : 'div'}
+          href={!disabled ? item.path || '#' : undefined}
           onClick={onClose}
+          disabled={disabled}
           sx={{
             pl: 2 + level * 2,
             bgcolor: active ? 'action.selected' : undefined,
-            '&:hover': {
-              bgcolor: 'action.hover',
-            },
             borderRight: active ? 3 : 0,
             borderColor: 'primary.main',
+            opacity: disabled ? 0.55 : undefined,
+            pointerEvents: disabled ? 'none' : undefined,
           }}
         >
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            {item.icon}
-          </ListItemIcon>
-          <ListItemText 
+          <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+          <ListItemText
             primary={item.label}
-            primaryTypographyProps={{
-              fontSize: level > 0 ? '0.875rem' : '1rem',
-              fontWeight: active ? 600 : 400,
-              color: active ? 'primary.main' : undefined
+            slotProps={{
+              primary: {
+                fontSize: level > 0 ? '0.875rem' : '1rem',
+                fontWeight: active ? 600 : 400,
+                color: active ? 'primary.main' : undefined,
+              },
             }}
           />
-          {item.badge && (
-            <Chip 
-              label={item.badge} 
-              size="small" 
-              color="primary"
-            />
-          )}
+          {item.badge && <Chip label={item.badge} size="small" color="primary" />}
         </ListItemButton>
       </ListItem>
     );
@@ -280,38 +282,51 @@ export function SidebarLIMS({ onClose }: SidebarProps) {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
           Paul VALÉRY
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Gestion d'Information du Laboratoire
+          Gestion d&apos;Information du Laboratoire
         </Typography>
       </Box>
-
-      {/* Menu principal */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <List>
-          {menuItems.map(item => renderMenuItem(item))}
-        </List>
+        <List>{menuItems.map((item) => renderMenuItem(item))}</List>
       </Box>
-
-      {/* Footer */}
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-        <Typography variant="caption" color="text.secondary" display="block">
-          Connecté en tant que
-        </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {session?.user?.name || 'Utilisateur'}
-        </Typography>
-        <Chip 
-          label={userRole} 
-          size="small" 
-          color="primary" 
-          variant="outlined"
-          sx={{ mt: 0.5 }}
-        />
+        {!impersonatedUser ? (
+          <>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Connecté en tant que
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {session?.user?.name || 'Utilisateur'}
+            </Typography>
+            <Chip
+              label={userRole}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ mt: 0.5 }}
+            />
+          </>
+        ) : (
+          <>
+            <Typography variant="caption" color="warning.main" display="block">
+              Sous le rôle inspecté de
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {impersonatedUser.name || impersonatedUser.email}
+            </Typography>
+            <Chip
+              label={impersonatedUser.role}
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ mt: 0.5 }}
+            />
+          </>
+        )}
       </Box>
     </Box>
   );

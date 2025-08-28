@@ -1,215 +1,197 @@
-// app/api/orders/route.ts
+// api/orders/route.ts
 
-export const runtime = 'nodejs';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/services/db';
+import { auth } from '@/auth';
+import { notificationService } from '@/lib/services/notification-service';
 
-import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { withAudit } from '@/lib/api/with-audit';
+// ORDERS config requires CREATE, UPDATE, STATUS, ALERT (no DELETE), and all are now covered by routes.
+// DELETE for orders is still unimplemented (501), which matches current design.
+// next steps
+// Optional: add a tiny test to exercise PUT /api/orders UPDATE vs STATUS branches.
+// When orders module is fully implemented, replace mock objects with real Prisma writes and keep the same notification calls.
 
-const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json')
+type OrderStatus = 'PENDING' | 'APPROVED' | 'ORDERED' | 'DELIVERED' | 'CANCELLED';
 
-// Fonction pour lire le fichier commandes
-async function readOrdersFile() {
+export async function GET(req: NextRequest) {
+  return NextResponse.json(
+    {
+      error: 'En cours de développement',
+      message:
+        "Le module de commandes n'est pas encore implémenté. Cette fonctionnalité sera disponible prochainement.",
+      status: 'under_construction',
+    },
+    { status: 501 },
+  );
+}
+
+export async function POST(req: NextRequest) {
   try {
-    const data = await fs.readFile(ORDERS_FILE, 'utf-8')
-    return JSON.parse(data)
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { items, priority = 'normal', notes } = body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Order items are required' }, { status: 400 });
+    }
+
+    // Simuler la création d'une commande (en attente de l'implémentation complète)
+    const mockOrder = {
+      id: Date.now(), // Mock ID
+      status: 'PENDING' as OrderStatus,
+      priority,
+      items,
+      notes,
+      createdBy: Number(session.user.id),
+      createdAt: new Date(),
+    };
+
+    // Envoyer notification en fonction de la priorité
+    const severity = priority === 'urgent' ? 'high' : priority === 'high' ? 'medium' : 'low';
+    const emoji = priority === 'urgent' ? '🚨' : priority === 'high' ? '⚡' : '📦';
+
+    if (priority === 'urgent') {
+      notificationService
+        .createAndDispatch({
+          module: 'ORDERS',
+          actionType: 'ALERT',
+          message: `${emoji} Commande urgente ajoutée: ${items.length} article(s)`,
+          severity: 'high',
+          data: {
+            orderId: mockOrder.id,
+            priority,
+            itemCount: items.length,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+        })
+        .catch(() => {});
+    } else {
+      notificationService
+        .createAndDispatch({
+          module: 'ORDERS',
+          actionType: 'CREATE',
+          message: `${emoji} Nouvelle commande ajoutée: ${items.length} article(s)`,
+          severity,
+          data: {
+            orderId: mockOrder.id,
+            priority,
+            itemCount: items.length,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+        })
+        .catch(() => {});
+    }
+
+    return NextResponse.json(
+      {
+        order: mockOrder,
+        message: 'Commande simulée ajoutée avec succès (module en développement)',
+      },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error('Erreur lecture fichier orders:', error)
-    return { orders: [] }
+    console.error('Erreur lors de la création de la commande:', error);
+    return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }
 }
 
-// Fonction pour écrire dans le fichier commandes
-async function writeOrdersFile(data: any) {
+export async function PUT(req: NextRequest) {
   try {
-    await fs.writeFile(ORDERS_FILE, JSON.stringify(data, null, 2))
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, status, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+    }
+
+    // Simuler la mise à jour du statut
+    const mockOrder = {
+      id: Number(id),
+      status: status as OrderStatus,
+      updatedAt: new Date(),
+      ...updateData,
+    };
+
+    // Notification: STATUS si le statut change, sinon UPDATE pour autres modifications
+    if (typeof status !== 'undefined' && status !== null && String(status).length > 0) {
+      const statusLabels: Record<OrderStatus, string> = {
+        PENDING: 'En attente',
+        APPROVED: 'Approuvée',
+        ORDERED: 'Commandée',
+        DELIVERED: 'Livrée',
+        CANCELLED: 'Annulée',
+      };
+      const statusKey = status as OrderStatus;
+      notificationService
+        .createAndDispatch({
+          module: 'ORDERS',
+          actionType: 'STATUS',
+          message: `Statut commande modifié: <strong>#${id}</strong> → ${statusLabels[statusKey] || status}`,
+          data: {
+            orderId: id,
+            newStatus: status,
+            statusLabel: statusLabels[statusKey] || status,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+        })
+        .catch(() => {});
+    } else {
+      // Changement hors statut → UPDATE
+      const changedFields = Object.keys(updateData);
+      const priority = (updateData as any).priority;
+      const items = (updateData as any).items;
+      const severity = priority === 'urgent' ? 'high' : priority === 'high' ? 'medium' : 'low';
+
+      notificationService
+        .createAndDispatch({
+          module: 'ORDERS',
+          actionType: 'UPDATE',
+          message: `Commande mise à jour: <strong>#${id}</strong>${
+            changedFields.length ? ` (champs: ${changedFields.join(', ')})` : ''
+          }`,
+          severity,
+          data: {
+            orderId: Number(id),
+            updated: changedFields,
+            priority,
+            itemCount: Array.isArray(items) ? items.length : undefined,
+            triggeredBy: session?.user?.name || session?.user?.email || 'système',
+          },
+        })
+        .catch(() => {});
+    }
+
+    const responseMessage =
+      typeof status !== 'undefined' && status !== null && String(status).length > 0
+        ? 'Statut de commande simulé mis à jour (module en développement)'
+        : 'Commande simulée mise à jour (module en développement)';
+
+    return NextResponse.json({
+      order: mockOrder,
+      message: responseMessage,
+    });
   } catch (error) {
-    console.error('Erreur écriture fichier orders:', error)
-    throw error
+    console.error('Erreur lors de la mise à jour de la commande:', error);
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const ordersData = await readOrdersFile()
-    return NextResponse.json(ordersData.orders || [])
-  } catch (error) {
-    console.error('Erreur API orders:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors du chargement des commandes' },
-      { status: 500 }
-    )
-  }
+export async function DELETE(req: NextRequest) {
+  return NextResponse.json(
+    {
+      error: 'En cours de développement',
+      message: "La suppression de commandes n'est pas encore implémentée.",
+      status: 'under_construction',
+    },
+    { status: 501 },
+  );
 }
-
-export const POST = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const body = await request.json()
-    const { 
-      title,
-      description,
-      supplier,
-      totalAmount,
-      currency = 'EUR',
-      items = []
-    } = body
-
-    // Validation des données
-    if (!title || !supplier) {
-      return NextResponse.json(
-        { error: 'Le titre et le fournisseur sont requis' },
-        { status: 400 }
-      )
-    }
-
-    // Créer la nouvelle commande
-    const newOrder = {
-      id: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      title,
-      description: description || null,
-      status: 'PENDING',
-      totalAmount: totalAmount || 0,
-      currency,
-      supplier,
-      createdAt: new Date().toISOString(),
-      deliveredAt: null,
-      items
-    }
-
-    // Lire le fichier existant et ajouter la nouvelle commande
-    const ordersData = await readOrdersFile()
-    ordersData.orders.push(newOrder)
-    
-    // Sauvegarder le fichier
-    await writeOrdersFile(ordersData)
-    
-    return NextResponse.json(newOrder, { status: 201 })
-  } catch (error) {
-    console.error('Erreur création order:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la création' },
-      { status: 500 }
-    )
-  }
-},
-  {
-    module: 'ORDERS',
-    entity: 'order',
-    action: 'CREATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      orderTitle: response?.title,
-      supplier: response?.supplier,
-      totalAmount: response?.totalAmount,
-      currency: response?.currency
-    })
-  }
-);
-
-
-export const PUT = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const { searchParams } = new URL(request.url)
-    const orderId = searchParams.get('id')
-    
-    if (!orderId) {
-      return NextResponse.json(
-        { error: 'ID de la commande requis' },
-        { status: 400 }
-      )
-    }
-
-    const body = await request.json()
-    const ordersData = await readOrdersFile()
-    
-    const orderIndex = ordersData.orders.findIndex((order: any) => order.id === orderId)
-    if (orderIndex === -1) {
-      return NextResponse.json(
-        { error: 'Commande non trouvée' },
-        { status: 404 }
-      )
-    }
-
-    // Mettre à jour la commande
-    const updatedOrder = {
-      ...ordersData.orders[orderIndex],
-      ...body,
-      updatedAt: new Date().toISOString()
-    }
-    
-    ordersData.orders[orderIndex] = updatedOrder
-    await writeOrdersFile(ordersData)
-    
-    return NextResponse.json(updatedOrder)
-  } catch (error) {
-    console.error('Erreur mise à jour order:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour' },
-      { status: 500 }
-    )
-  }
-},
-  {
-    module: 'ORDERS',
-    entity: 'order',
-    action: 'UPDATE',
-    extractEntityIdFromResponse: (response) => response?.id,
-    customDetails: (req, response) => ({
-      orderTitle: response?.title,
-      status: response?.status
-    })
-  }
-);
-
-
-export const DELETE = withAudit(
-  async (request: NextRequest) => {
-  try {
-    const { searchParams } = new URL(request.url)
-    const orderId = searchParams.get('id')
-    
-    if (!orderId) {
-      return NextResponse.json(
-        { error: 'ID de la commande requis' },
-        { status: 400 }
-      )
-    }
-
-    const ordersData = await readOrdersFile()
-    const orderIndex = ordersData.orders.findIndex((order: any) => order.id === orderId)
-    
-    if (orderIndex === -1) {
-      return NextResponse.json(
-        { error: 'Commande non trouvée' },
-        { status: 404 }
-      )
-    }
-
-    // Supprimer la commande
-    const deletedOrder = ordersData.orders.splice(orderIndex, 1)[0]
-    await writeOrdersFile(ordersData)
-    
-    return NextResponse.json({ message: 'Commande supprimée', order: deletedOrder })
-  } catch (error) {
-    console.error('Erreur suppression order:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de la suppression' },
-      { status: 500 }
-    )
-  }
-},
-  {
-    module: 'ORDERS',
-    entity: 'order',
-    action: 'DELETE',
-    extractEntityIdFromResponse: (response) => response?.order?.id,
-    customDetails: (req, response) => ({
-      orderTitle: response?.order?.title,
-      orderStatus: response?.order?.status
-    })
-  }
-);
-

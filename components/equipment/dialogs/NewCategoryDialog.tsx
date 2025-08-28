@@ -1,5 +1,3 @@
-// components/equipment/dialogs/NewCategoryDialog.tsx
-
 import {
   Dialog,
   DialogTitle,
@@ -7,13 +5,21 @@ import {
   DialogActions,
   Button,
   TextField,
-} from "@mui/material";
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Box,
+  Typography,
+} from '@mui/material';
 
 interface NewCategoryDialogProps {
   open: boolean;
   onClose: () => void;
   categoryName: string;
   setCategoryName: (name: string) => void;
+  discipline: string;
+  setDiscipline: (discipline: string) => void;
   onCreateCategory: () => void;
 }
 
@@ -22,10 +28,12 @@ export const NewCategoryDialog = ({
   onClose,
   categoryName,
   setCategoryName,
-  onCreateCategory
+  discipline,
+  setDiscipline,
+  onCreateCategory,
 }: NewCategoryDialogProps) => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && categoryName.trim() && discipline) {
       onCreateCategory();
     }
   };
@@ -41,33 +49,61 @@ export const NewCategoryDialog = ({
           sx: {
             borderRadius: 3,
             padding: 2,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
-          }
-        }
+            color: 'primary.contrastText',
+          },
+        },
       }}
     >
-      <DialogTitle>Nouvelle catégorie de matériel</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography variant="h6" fontWeight="bold">
+            Nouvelle catégorie de matériel
+          </Typography>
+        </Box>
+      </DialogTitle>
+
       <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Nom de la catégorie"
-          fullWidth
-          variant="outlined"
-          value={categoryName}
-          onChange={(e) => setCategoryName(e.target.value)}
-          onKeyDown={handleKeyPress}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+          <FormControl fullWidth>
+            <InputLabel>Discipline</InputLabel>
+            <Select
+              value={discipline}
+              label="Discipline"
+              onChange={(e) => setDiscipline(e.target.value)}
+            >
+              <MenuItem value="chimie">Chimie</MenuItem>
+              <MenuItem value="physique">Physique</MenuItem>
+              <MenuItem value="commun">Commun</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nom de la catégorie"
+            fullWidth
+            variant="outlined"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="Ex: Verrerie, Instruments de mesure..."
+            color="primary"
+          />
+        </Box>
       </DialogContent>
+
       <DialogActions>
-        <Button onClick={onClose}>
-          Annuler
-        </Button>
-        <Button 
+        <Button onClick={onClose}>Annuler</Button>
+        <Button
           onClick={onCreateCategory}
           variant="contained"
-          disabled={!categoryName.trim()}
+          disabled={!categoryName.trim() || !discipline}
+          sx={{
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            color: 'primary.contrastText',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' },
+            fontWeight: 'bold',
+          }}
         >
           Ajouter
         </Button>

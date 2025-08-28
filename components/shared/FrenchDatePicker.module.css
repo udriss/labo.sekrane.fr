@@ -1,0 +1,32 @@
+/* Styles personnalisés pour FrenchDatePicker */
+
+/* Surcharge des contraintes de largeur du DatePicker */
+.datepicker-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+
+.datepicker-wrapper :global(.react-datepicker-wrapper) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+
+.datepicker-wrapper :global(.react-datepicker__input-container) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+
+.datepicker-wrapper :global(.react-datepicker__input-container input) {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Assurer que le popper s'affiche au-dessus */
+.datepicker-wrapper :global(.react-datepicker-popper) {
+  z-index: 9999 !important;
+}

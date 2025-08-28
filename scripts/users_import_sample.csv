@@ -1,0 +1,7 @@
+email,name,role,password
+sekidr@outlook.com,Alice Prof,ENSEIGNANT,secret123
+sekidr@gmail.com,Bob Lab,LABORANTIN,
+charlie.admin@example.com,Charlie Admin,ADMIN,adminpass
+diane.student@example.com,Diane Student,ELEVE,
+edouard.adminlabo@example.com,Edouard AdminLabo,ADMINLABO,passw0rd
+francois.invalid_email,François Invalide,ENSEIGNANT,

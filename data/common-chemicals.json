@@ -6,7 +6,7 @@
       "casNumber": "7647-01-0",
       "aliases": ["Chlorure d'hydrogène", "Acide muriatique"],
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H290, H314, H331, H335",
       "molarMass": 36.46
     },
     {
@@ -15,7 +15,7 @@
       "casNumber": "7664-93-9",
       "aliases": ["Huile de vitriol"],
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H290, H314, H335",
       "molarMass": 98.08
     },
     {
@@ -24,7 +24,7 @@
       "casNumber": "7697-37-2",
       "aliases": ["Eau forte"],
       "category": "Acide",
-      "hazardClass": "Corrosif, Oxydant",
+      "hazardClass": "H272, H290, H314, H331",
       "molarMass": 63.01
     },
     {
@@ -33,7 +33,7 @@
       "casNumber": "64-19-7",
       "aliases": ["Acide éthanoïque", "Vinaigre blanc"],
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H226, H314",
       "molarMass": 60.05
     },
     {
@@ -41,7 +41,7 @@
       "formula": "H₃PO₄",
       "casNumber": "7664-38-2",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H290, H314",
       "molarMass": 97.99
     },
     {
@@ -50,7 +50,7 @@
       "casNumber": "1310-73-2",
       "aliases": ["Soude caustique", "Lessive de soude"],
       "category": "Base",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H290, H314",
       "molarMass": 39.997
     },
     {
@@ -59,7 +59,7 @@
       "casNumber": "1310-58-3",
       "aliases": ["Potasse caustique"],
       "category": "Base",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H290, H314",
       "molarMass": 56.11
     },
     {
@@ -68,7 +68,7 @@
       "casNumber": "1305-62-0",
       "aliases": ["Chaux éteinte", "Lait de chaux"],
       "category": "Base",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H318, H335",
       "molarMass": 74.09
     },
     {
@@ -77,7 +77,7 @@
       "casNumber": "7664-41-7",
       "aliases": ["Ammoniac"],
       "category": "Base",
-      "hazardClass": "Toxique, Corrosif",
+      "hazardClass": "H221, H314, H331, H335, H400, H411",
       "molarMass": 17.03
     },
     {
@@ -94,7 +94,7 @@
       "casNumber": "7758-99-8",
       "aliases": ["Vitriol bleu"],
       "category": "Sel métallique",
-      "hazardClass": "Nocif",
+      "hazardClass": "H302, H400, H410",
       "molarMass": 249.68
     },
     {
@@ -102,7 +102,7 @@
       "formula": "AgNO₃",
       "casNumber": "7761-88-8",
       "category": "Sel métallique",
-      "hazardClass": "Corrosif, Oxydant",
+      "hazardClass": "H272, H302, H314, H400, H410",
       "molarMass": 169.87
     },
     {
@@ -111,7 +111,7 @@
       "casNumber": "7705-08-0",
       "aliases": ["Perchlorure de fer"],
       "category": "Sel métallique",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 162.2
     },
     {
@@ -120,7 +120,7 @@
       "casNumber": "64-17-5",
       "aliases": ["Alcool éthylique", "Esprit-de-vin"],
       "category": "Alcool",
-      "hazardClass": "Inflammable",
+      "hazardClass": "H225, H319",
       "molarMass": 46.07
     },
     {
@@ -129,7 +129,7 @@
       "casNumber": "67-56-1",
       "aliases": ["Alcool méthylique", "Esprit-de-bois"],
       "category": "Alcool",
-      "hazardClass": "Toxique, Inflammable",
+      "hazardClass": "H225, H301, H311, H331, H370",
       "molarMass": 32.04
     },
     {
@@ -138,7 +138,7 @@
       "casNumber": "67-64-1",
       "aliases": ["Propanone"],
       "category": "Cétone",
-      "hazardClass": "Inflammable",
+      "hazardClass": "H225, H319, H336",
       "molarMass": 58.08
     },
     {
@@ -147,7 +147,7 @@
       "casNumber": "75-09-2",
       "aliases": ["Chlorure de méthylène"],
       "category": "Solvant halogéné",
-      "hazardClass": "Toxique",
+      "hazardClass": "H351, H315, H332, H336",
       "molarMass": 84.93
     },
     {
@@ -155,7 +155,7 @@
       "formula": "C₆H₁₄",
       "casNumber": "110-54-3",
       "category": "Alcane",
-      "hazardClass": "Inflammable, Toxique",
+      "hazardClass": "H225, H304, H315, H336, H361, H373, H411",
       "molarMass": 86.18
     },
     {
@@ -185,7 +185,7 @@
       "formula": "KMnO₄",
       "casNumber": "7722-64-7",
       "category": "Oxydant",
-      "hazardClass": "Oxydant",
+      "hazardClass": "H272, H302, H314, H410",
       "molarMass": 158.03
     },
     {
@@ -193,7 +193,7 @@
       "formula": "K₂Cr₂O₇",
       "casNumber": "7778-50-9",
       "category": "Oxydant",
-      "hazardClass": "Cancérogène, Oxydant",
+      "hazardClass": "H272, H301, H310, H314, H317, H330, H334, H340, H350, H360, H372, H400, H410",
       "molarMass": 294.18
     },
     {
@@ -202,7 +202,7 @@
       "casNumber": "7722-84-1",
       "aliases": ["Eau oxygénée"],
       "category": "Oxydant",
-      "hazardClass": "Oxydant, Corrosif",
+      "hazardClass": "H271, H302, H314, H318, H332",
       "molarMass": 34.01
     },
     {
@@ -243,7 +243,7 @@
       "casNumber": "1333-74-0",
       "aliases": ["Hydrogène"],
       "category": "Gaz",
-      "hazardClass": "Inflammable",
+      "hazardClass": "H220",
       "molarMass": 2.02
     },
     {
@@ -252,15 +252,15 @@
       "casNumber": "7782-44-7",
       "aliases": ["Oxygène"],
       "category": "Gaz",
-      "hazardClass": "Comburant",
-      "molarMass": 32.00
+      "hazardClass": "H270",
+      "molarMass": 32.0
     },
     {
       "name": "Chlorure de magnésium",
       "formula": "MgCl₂",
       "casNumber": "7786-30-3",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 95.21
     },
     {
@@ -269,7 +269,7 @@
       "casNumber": "7487-88-9",
       "aliases": ["Sel d'Epsom"],
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 120.37
     },
     {
@@ -277,7 +277,7 @@
       "formula": "H₃BO₃",
       "casNumber": "10043-35-3",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H360FD",
       "molarMass": 61.83
     },
     {
@@ -285,7 +285,7 @@
       "formula": "CCl₄",
       "casNumber": "56-23-5",
       "category": "Solvant halogéné",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H315, H319, H331, H351, H411",
       "molarMass": 153.82
     },
     {
@@ -293,15 +293,15 @@
       "formula": "ZnCl₂",
       "casNumber": "7646-85-7",
       "category": "Sel métallique",
-      "hazardClass": "Corrosif",
-      "molarMass": 136.30
+      "hazardClass": "H302, H314, H332, H412",
+      "molarMass": 136.3
     },
     {
       "name": "Acide oxalique",
       "formula": "C₂H₂O₄",
       "casNumber": "144-62-7",
       "category": "Acide",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H312, H315, H318, H332",
       "molarMass": 90.03
     },
     {
@@ -324,7 +324,7 @@
       "formula": "NH₄Cl",
       "casNumber": "12125-02-9",
       "category": "Sel",
-      "hazardClass": "Irritant",
+      "hazardClass": "H302, H315, H319, H335",
       "molarMass": 53.49
     },
     {
@@ -333,7 +333,7 @@
       "casNumber": "77-92-9",
       "aliases": ["Citrate de sodium"],
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 192.12
     },
     {
@@ -341,7 +341,7 @@
       "formula": "CoCl₂",
       "casNumber": "7646-79-9",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332, H350, H351, H360FD, H372",
       "molarMass": 129.84
     },
     {
@@ -349,7 +349,7 @@
       "formula": "KNO₃",
       "casNumber": "7757-79-1",
       "category": "Sel",
-      "hazardClass": "Oxydant",
+      "hazardClass": "H272",
       "molarMass": 101.1
     },
     {
@@ -357,7 +357,7 @@
       "formula": "CaCl₂",
       "casNumber": "10043-52-4",
       "category": "Sel",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 110.98
     },
     {
@@ -365,7 +365,7 @@
       "formula": "C₄H₆O₅",
       "casNumber": "6915-15-7",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 134.09
     },
     {
@@ -373,7 +373,7 @@
       "formula": "C₄H₆O₆",
       "casNumber": "87-69-4",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 150.09
     },
     {
@@ -381,7 +381,7 @@
       "formula": "C₃H₆O₃",
       "casNumber": "50-21-5",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H314",
       "molarMass": 90.08
     },
     {
@@ -389,7 +389,7 @@
       "formula": "BaCl₂",
       "casNumber": "10361-37-2",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 208.23
     },
     {
@@ -404,7 +404,7 @@
       "formula": "NiCl₂",
       "casNumber": "7718-54-9",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 129.6
     },
     {
@@ -412,7 +412,7 @@
       "formula": "NiSO₄",
       "casNumber": "7786-81-4",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 154.75
     },
     {
@@ -420,7 +420,7 @@
       "formula": "MnCl₂",
       "casNumber": "7773-01-5",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H302, H315, H319, H332",
       "molarMass": 125.84
     },
     {
@@ -428,7 +428,7 @@
       "formula": "MnSO₄",
       "casNumber": "7785-87-7",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H302, H332",
       "molarMass": 151.0
     },
     {
@@ -436,7 +436,7 @@
       "formula": "SrCl₂",
       "casNumber": "10476-85-4",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 158.53
     },
     {
@@ -451,7 +451,7 @@
       "formula": "LiCl",
       "casNumber": "7447-41-8",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 42.39
     },
     {
@@ -466,7 +466,7 @@
       "formula": "AlCl₃",
       "casNumber": "7446-70-0",
       "category": "Sel métallique",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 133.34
     },
     {
@@ -474,7 +474,7 @@
       "formula": "Al₂(SO₄)₃",
       "casNumber": "10043-01-3",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 342.15
     },
     {
@@ -482,7 +482,7 @@
       "formula": "CuCl",
       "casNumber": "7758-89-6",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 98.99
     },
     {
@@ -490,7 +490,7 @@
       "formula": "Cu₂SO₄",
       "casNumber": "1317-39-1",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 223.15
     },
     {
@@ -498,7 +498,7 @@
       "formula": "Hg₂Cl₂",
       "casNumber": "10112-91-1",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 472.09
     },
     {
@@ -506,7 +506,7 @@
       "formula": "Hg₂SO₄",
       "casNumber": "7783-36-0",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 497.18
     },
     {
@@ -514,7 +514,7 @@
       "formula": "HgCl₂",
       "casNumber": "7487-94-7",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 271.5
     },
     {
@@ -522,7 +522,7 @@
       "formula": "HgSO₄",
       "casNumber": "7783-35-9",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H300, H310, H330, H373, H410",
       "molarMass": 296.65
     },
     {
@@ -530,7 +530,7 @@
       "formula": "PbCl₂",
       "casNumber": "7758-95-4",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332, H360FD, H373, H410",
       "molarMass": 278.1
     },
     {
@@ -538,7 +538,7 @@
       "formula": "PbSO₄",
       "casNumber": "7446-14-2",
       "category": "Sel métallique",
-      "hazardClass": "Toxique",
+      "hazardClass": "H332, H360FD, H373, H410",
       "molarMass": 303.26
     },
     {
@@ -546,7 +546,7 @@
       "formula": "ZnSO₄",
       "casNumber": "7733-02-0",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 161.44
     },
     {
@@ -554,7 +554,7 @@
       "formula": "FeCl₂",
       "casNumber": "7758-94-3",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 126.75
     },
     {
@@ -562,7 +562,7 @@
       "formula": "FeSO₄",
       "casNumber": "7720-78-7",
       "category": "Sel métallique",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 151.91
     },
     {
@@ -570,7 +570,7 @@
       "formula": "HCOOH",
       "casNumber": "64-18-6",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 46.03
     },
     {
@@ -578,7 +578,7 @@
       "formula": "C₇H₆O₂",
       "casNumber": "65-85-0",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 122.12
     },
     {
@@ -587,7 +587,7 @@
       "casNumber": "50-81-7",
       "aliases": ["Vitamine C"],
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 176.12
     },
     {
@@ -595,7 +595,7 @@
       "formula": "C₇H₆O₃",
       "casNumber": "69-72-7",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319, H335",
       "molarMass": 138.12
     },
     {
@@ -603,7 +603,7 @@
       "formula": "C₆H₃N₃O₇",
       "casNumber": "88-89-1",
       "category": "Acide",
-      "hazardClass": "Explosif, Toxique",
+      "hazardClass": "H202, H301",
       "molarMass": 229.1
     },
     {
@@ -611,7 +611,7 @@
       "formula": "HF",
       "casNumber": "7664-39-3",
       "category": "Acide",
-      "hazardClass": "Corrosif, Toxique",
+      "hazardClass": "H300, H310, H314, H330",
       "molarMass": 20.01
     },
     {
@@ -619,7 +619,7 @@
       "formula": "H₂CrO₄",
       "casNumber": "7738-94-5",
       "category": "Acide",
-      "hazardClass": "Corrosif, Cancérogène",
+      "hazardClass": "H301, H314, H350, H372",
       "molarMass": 118.01
     },
     {
@@ -627,7 +627,7 @@
       "formula": "HMnO₄",
       "casNumber": "13465-60-6",
       "category": "Acide",
-      "hazardClass": "Oxydant, Corrosif",
+      "hazardClass": "H271, H314",
       "molarMass": 119.01
     },
     {
@@ -635,7 +635,7 @@
       "formula": "HClO₄",
       "casNumber": "7601-90-3",
       "category": "Acide",
-      "hazardClass": "Oxydant, Corrosif",
+      "hazardClass": "H271, H314",
       "molarMass": 100.46
     },
     {
@@ -643,7 +643,7 @@
       "formula": "HClO",
       "casNumber": "7790-92-3",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H272, H314",
       "molarMass": 52.46
     },
     {
@@ -651,7 +651,7 @@
       "formula": "H₂SO₄ + SO₃",
       "casNumber": "8014-95-7",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 98.08
     },
     {
@@ -659,7 +659,7 @@
       "formula": "H₃PO₃",
       "casNumber": "13598-36-2",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 82.0
     },
     {
@@ -667,7 +667,7 @@
       "formula": "B₂O₃",
       "casNumber": "1303-86-2",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 69.62
     },
     {
@@ -675,7 +675,7 @@
       "formula": "HNO₂",
       "casNumber": "7782-77-6",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 47.01
     },
     {
@@ -683,7 +683,7 @@
       "formula": "C₃H₃N₃O₃",
       "casNumber": "108-80-5",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 129.07
     },
     {
@@ -691,7 +691,7 @@
       "formula": "C₆H₁₀O₄",
       "casNumber": "124-04-9",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 146.14
     },
     {
@@ -699,7 +699,7 @@
       "formula": "C₄H₆O₄",
       "casNumber": "110-15-6",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 118.09
     },
     {
@@ -707,7 +707,7 @@
       "formula": "C₅H₉NO₄",
       "casNumber": "56-86-0",
       "category": "Acide aminé",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 147.13
     },
     {
@@ -715,7 +715,7 @@
       "formula": "C₄H₇NO₄",
       "casNumber": "56-84-8",
       "category": "Acide aminé",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 133.1
     },
     {
@@ -723,7 +723,7 @@
       "formula": "C₅H₈O₅",
       "casNumber": "617-48-1",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 148.11
     },
     {
@@ -731,7 +731,7 @@
       "formula": "CH₄O₃S",
       "casNumber": "75-75-2",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 96.11
     },
     {
@@ -739,7 +739,7 @@
       "formula": "C₂HF₃O₂",
       "casNumber": "76-05-1",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 114.02
     },
     {
@@ -747,7 +747,7 @@
       "formula": "C₂H₂Cl₂O₂",
       "casNumber": "79-43-6",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 128.94
     },
     {
@@ -755,7 +755,7 @@
       "formula": "C₂HCl₃O₂",
       "casNumber": "76-03-9",
       "category": "Acide",
-      "hazardClass": "Corrosif",
+      "hazardClass": "H314",
       "molarMass": 163.39
     },
     {
@@ -763,7 +763,7 @@
       "formula": "C₂H₂O₄·2H₂O",
       "casNumber": "6153-56-6",
       "category": "Acide",
-      "hazardClass": "Toxique",
+      "hazardClass": "H302, H332",
       "molarMass": 126.07
     },
     {
@@ -771,7 +771,7 @@
       "formula": "C₃H₄O₄",
       "casNumber": "141-82-2",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 104.06
     },
     {
@@ -779,7 +779,7 @@
       "formula": "C₇H₁₂O₄",
       "casNumber": "111-16-0",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 160.17
     },
     {
@@ -787,7 +787,7 @@
       "formula": "C₈H₁₄O₄",
       "casNumber": "505-48-6",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 174.2
     },
     {
@@ -795,7 +795,7 @@
       "formula": "C₉H₁₆O₄",
       "casNumber": "123-99-9",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 188.22
     },
     {
@@ -803,7 +803,7 @@
       "formula": "C₁₀H₁₈O₄",
       "casNumber": "111-20-6",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 202.25
     },
     {
@@ -811,7 +811,7 @@
       "formula": "C₁₁H₂₂O₂",
       "casNumber": "112-37-8",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 186.29
     },
     {
@@ -819,7 +819,7 @@
       "formula": "C₁₂H₂₄O₂",
       "casNumber": "143-07-7",
       "category": "Acide",
-      "hazardClass": "Irritant",
+      "hazardClass": "H315, H319",
       "molarMass": 200.32
     }
   ]

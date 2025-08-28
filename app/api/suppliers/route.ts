@@ -1,104 +1,231 @@
-import { NextRequest, NextResponse } from "next/server";
-import { withConnection } from "@/lib/db";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/services/db';
+import { z } from 'zod';
+import { auth } from '@/auth';
 
-export const runtime = 'nodejs';
-
-// GET - Récupérer tous les fournisseurs
-export async function GET() {
+// GET /api/suppliers?q=partial&limit=10
+// Note: Prisma "mode: 'insensitive'" is not available in current client for MySQL; relies on DB collation for case-insensitive matching.
+export async function GET(req: NextRequest) {
   try {
-    return withConnection(async (connection) => {
-      const [rows] = await connection.execute(`
-        SELECT 
-          id,
-          name,
-          email,
-          phone,
-          address,
-          website,
-          contactPerson,
-          isActive,
-          createdAt,
-          updatedAt
-        FROM suppliers 
-        WHERE isActive = 1 
-        ORDER BY name ASC
-      `);
+    const { searchParams } = new URL(req.url);
+    const q = searchParams.get('q')?.trim();
+    const pageParam = searchParams.get('page');
+    const pageSizeParam = searchParams.get('pageSize');
+    const sortByParam = searchParams.get('sortBy') || 'name';
+    const sortDirParam =
+      (searchParams.get('sortDir') || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
+    const limitParam = searchParams.get('limit'); // backward compat
 
-      return NextResponse.json({
-        suppliers: rows,
-        total: (rows as any[]).length
-      });
+    const where = q ? { name: { contains: q } } : {};
+
+    // If explicit pagination requested (page/pageSize) use skip/take & total
+    if (pageParam || pageSizeParam) {
+      const page = Math.max(1, parseInt(pageParam || '1', 10));
+      const pageSize = Math.min(100, Math.max(1, parseInt(pageSizeParam || '24', 10)));
+      const allowedSort: Record<string, true> = { name: true, createdAt: true, updatedAt: true };
+      const sortBy = allowedSort[sortByParam] ? sortByParam : 'name';
+      const [total, suppliers] = await Promise.all([
+        prisma.supplier.count({ where }),
+        prisma.supplier.findMany({
+          where,
+          orderBy: { [sortBy]: sortDirParam },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            name: true,
+            kind: true,
+            contactEmail: true,
+            phone: true,
+            address: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+      ]);
+      return NextResponse.json({ suppliers, total, page, pageSize });
+    }
+
+    // Legacy simple list (limit)
+    const limit = Math.min(parseInt(limitParam || '15', 10), 100);
+    const suppliers = await prisma.supplier.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      take: limit,
+      select: { id: true, name: true, kind: true },
     });
-  } catch (error) {
-    console.error("Erreur lors de la récupération des fournisseurs:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération des fournisseurs" },
-      { status: 500 }
-    );
+    return NextResponse.json({ suppliers, total: suppliers.length });
+  } catch (e) {
+    console.error('[suppliers][GET] error', e);
+    return NextResponse.json({ error: 'Failed to fetch suppliers' }, { status: 500 });
   }
 }
 
-// POST - Créer un nouveau fournisseur
-export async function POST(request: NextRequest) {
+const BaseSupplierSchema = z.object({
+  name: z.string().min(1).max(191),
+  contactEmail: z
+    .string()
+    .email()
+    .max(191)
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => v || undefined),
+  phone: z
+    .string()
+    .max(64)
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => v || undefined),
+  address: z
+    .string()
+    .max(255)
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => v || undefined),
+  notes: z
+    .string()
+    .max(1000)
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => v || undefined),
+  kind: z.enum(['NORMAL', 'CUSTOM']).default('CUSTOM'),
+});
+const CreateSupplierSchema = BaseSupplierSchema;
+const UpdateSupplierSchema = BaseSupplierSchema.partial();
+
+// POST /api/suppliers  { name, kind? }
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
-    const { name, email, phone, address, website, contactPerson } = data;
-
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { error: "Le nom du fournisseur est requis" },
-        { status: 400 }
-      );
+    const session = await auth();
+    const role = (session?.user as any)?.role;
+    if (
+      !session ||
+      !['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'].includes(role)
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    return withConnection(async (connection) => {
-      // Vérifier si le nom existe déjà
-      const [existingRows] = await connection.execute(
-        'SELECT id FROM suppliers WHERE name = ? AND isActive = 1',
-        [name.trim()]
-      );
-
-      if ((existingRows as any[]).length > 0) {
-        return NextResponse.json(
-          { error: "Un fournisseur avec ce nom existe déjà" },
-          { status: 400 }
-        );
-      }
-
-      // Générer un ID unique
-      const supplierId = `SUPP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Insérer le nouveau fournisseur
-      await connection.execute(`
-        INSERT INTO suppliers (
-          id, name, email, phone, address, website, contactPerson, isActive, createdAt, updatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
-      `, [
-        supplierId,
-        name.trim(),
-        email?.trim() || null,
-        phone?.trim() || null,
-        address?.trim() || null,
-        website?.trim() || null,
-        contactPerson?.trim() || null
-      ]);
-
-      // Récupérer le fournisseur créé
-      const [newRows] = await connection.execute(
-        'SELECT * FROM suppliers WHERE id = ?',
-        [supplierId]
-      );
-
-      return NextResponse.json({
-        supplier: (newRows as any[])[0],
-        message: "Fournisseur créé avec succès"
+    const body = await req.json();
+    const data = CreateSupplierSchema.parse(body);
+    // Try create directly; rely on unique index + collation for case-insensitive duplicates
+    try {
+      const created = await prisma.supplier.create({
+        data: {
+          name: data.name,
+          kind: data.kind,
+          contactEmail: data.contactEmail,
+          phone: data.phone,
+          address: data.address,
+          notes: data.notes,
+        },
+        select: {
+          id: true,
+          name: true,
+          kind: true,
+          contactEmail: true,
+          phone: true,
+          address: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
+      return NextResponse.json({ supplier: created }, { status: 201 });
+    } catch (err: any) {
+      // Unique constraint violation -> fetch existing supplier and return it
+      if (err?.code === 'P2002') {
+        const existing = await prisma.supplier.findFirst({
+          where: { name: data.name },
+          select: {
+            id: true,
+            name: true,
+            kind: true,
+            contactEmail: true,
+            phone: true,
+            address: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+        if (existing)
+          return NextResponse.json({ supplier: existing, duplicated: true }, { status: 200 });
+      }
+      throw err;
+    }
+  } catch (e: any) {
+    if (e instanceof z.ZodError)
+      return NextResponse.json({ error: 'Invalid data', details: e.issues }, { status: 400 });
+    console.error('[suppliers][POST] error', e);
+    return NextResponse.json({ error: 'Failed to create supplier' }, { status: 500 });
+  }
+}
+
+// PUT /api/suppliers?id=123  { name?, contactEmail?, ... }
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await auth();
+    const role = (session?.user as any)?.role;
+    if (
+      !session ||
+      !['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'].includes(role)
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const { searchParams } = new URL(req.url);
+    const id = parseInt(searchParams.get('id') || '0', 10);
+    if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    const body = await req.json();
+    const data = UpdateSupplierSchema.parse(body);
+    const updated = await prisma.supplier.update({
+      where: { id },
+      data: data,
+      select: {
+        id: true,
+        name: true,
+        kind: true,
+        contactEmail: true,
+        phone: true,
+        address: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
-  } catch (error) {
-    console.error("Erreur lors de la création du fournisseur:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la création du fournisseur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ supplier: updated });
+  } catch (e: any) {
+    if (e instanceof z.ZodError)
+      return NextResponse.json({ error: 'Invalid data', details: e.issues }, { status: 400 });
+    console.error('[suppliers][PUT] error', e);
+    return NextResponse.json({ error: 'Failed to update supplier' }, { status: 500 });
+  }
+}
+
+// DELETE /api/suppliers?id=123
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth();
+    const role = (session?.user as any)?.role;
+    if (
+      !session ||
+      !['ADMIN', 'ADMINLABO', 'LABORANTIN_PHYSIQUE', 'LABORANTIN_CHIMIE'].includes(role)
+    ) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const { searchParams } = new URL(req.url);
+    const id = parseInt(searchParams.get('id') || '0', 10);
+    if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    // Refus si utilisé par un inventaire
+    const count = await (prisma as any).reactifInventaire.count({ where: { supplierId: id } });
+    if (count > 0)
+      return NextResponse.json(
+        { error: 'Impossible de supprimer: fournisseur référencé par des réactifs.' },
+        { status: 400 },
+      );
+    await prisma.supplier.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error('[suppliers][DELETE] error', e);
+    return NextResponse.json({ error: 'Failed to delete supplier' }, { status: 500 });
   }
 }

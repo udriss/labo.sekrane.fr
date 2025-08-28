@@ -1,198 +1,219 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from 'react';
 import {
-  Box,
   Container,
   Typography,
   Tabs,
   Tab,
-  Paper,
-  Badge,
-  Alert
-} from "@mui/material"
-import {
-  Add,
-  Inventory,
-  Science,
-  Category
-} from "@mui/icons-material"
-
-// Composants similaires à ceux de chimie mais adaptés pour la physique
-import PhysicsConsumableAddTab from "@/components/physics/physics-consumable-add-tab"
-import PhysicsConsumableInventoryTab from "@/components/physics/physics-consumable-inventory-tab"
-import PhysicsEquipmentAddTab from "@/components/physics/physics-equipment-add-tab"
-import PhysicsEquipmentInventoryTab from "@/components/physics/physics-equipment-inventory-tab"
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  TextField,
+  Button,
+  Chip,
+  Alert,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import { Add, Warning, Psychology } from '@mui/icons-material';
 
 interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
+  children?: React.ReactNode;
+  index: number;
+  value: number;
 }
 
-function TabPanel({ children, value, index }: TabPanelProps) {
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`physics-tabpanel-${index}`}
-      aria-labelledby={`physics-tab-${index}`}
-    >
-      {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
+    <div role="tabpanel" hidden={value !== index} {...other}>
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
     </div>
-  )
+  );
 }
 
-export default function PhysicsPage() {
-  const [activeTab, setActiveTab] = useState(0)
-  const [consumableStats, setConsumableStats] = useState({
-    total: 0,
-    inStock: 0,
-    lowStock: 0,
-    outOfStock: 0
-  })
-  const [equipmentStats, setEquipmentStats] = useState({
-    total: 0,
-    available: 0,
-    maintenance: 0,
-    outOfOrder: 0
-  })
-  const [error, setError] = useState<string | null>(null)
+interface Equipement {
+  id: number;
+  name: string;
+  category?: string | null;
+  location?: string | null;
+  quantity: number;
+}
 
-  // Charger les statistiques
-  const loadStats = async () => {
+interface Consumable {
+  id: number;
+  name: string;
+  stock: number;
+  unit?: string | null;
+  location?: string | null;
+}
+
+export default function PhysiquePage() {
+  const [tabValue, setTabValue] = useState(0);
+  const [equipement, setEquipment] = useState<Equipement[]>([]);
+  const [consommables, setConsommables] = useState<Consumable[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const theme = useTheme();
+  const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const fetchEquipment = async () => {
+    setLoading(true);
     try {
-      const [consumablesRes, equipmentRes] = await Promise.all([
-        fetch('/api/physique/consommables'),
-        fetch('/api/physique/equipment')
-      ])
-
-      if (consumablesRes.ok) {
-        const consumablesData = await consumablesRes.json()
-        setConsumableStats(consumablesData.stats || {})
-      }
-
-      if (equipmentRes.ok) {
-        const equipmentData = await equipmentRes.json()
-        setEquipmentStats(equipmentData.stats || {})
-      }
+      const response = await fetch('/api/equipement?discipline=physique');
+      const data = await response.json();
+      setEquipment(data.equipement || []);
     } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error)
-      setError('Erreur lors du chargement des statistiques')
+      console.error('Failed to fetch equipement:', error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const fetchConsommables = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/consommables');
+      const data = await response.json();
+      setConsommables(data.consommables || []);
+    } catch (error) {
+      console.error('Failed to fetch consommables:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadStats()
-  }, [])
+    if (tabValue === 0) fetchEquipment();
+    if (tabValue === 1) fetchConsommables();
+  }, [tabValue]);
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-    setError(null)
-  }
+  const filteredEquipment = equipement.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
-  // Gérer le changement d'onglet après ajout
-  const handleConsumableAdded = () => {
-    loadStats()
-    setActiveTab(1) // Basculer vers l'inventaire des consommables
-  }
-
-  const handleEquipmentAdded = () => {
-    loadStats()
-    setActiveTab(3) // Basculer vers l'inventaire des équipements
-  }
+  const filteredConsommables = consommables.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box mb={3}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Gestion Physique
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Gestion des consommables et équipements de laboratoire de physique
+    <Container maxWidth="lg">
+      <Box className="flex items-center gap-3 mb-6">
+        <Psychology fontSize="large" color="secondary" />
+        <Typography variant="h3" component="h1">
+          Laboratoire de Physique
         </Typography>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      <Paper sx={{ width: '100%' }}>
+      <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={activeTab} 
+          <Tabs
+            value={tabValue}
             onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: 72,
-                textTransform: 'none',
-                fontSize: '1rem',
-                fontWeight: 500
-              }
-            }}
+            variant={isMobileSmall ? 'scrollable' : 'standard'}
+            scrollButtons={isMobileSmall ? 'auto' : false}
+            allowScrollButtonsMobile
           >
-            <Tab
-              icon={<Add />}
-              label="Ajouter Consommable"
-              iconPosition="start"
-              sx={{ gap: 1 }}
-            />
-            <Tab
-              icon={
-                <Badge 
-                  badgeContent={consumableStats.lowStock || 0} 
-                  color="warning"
-                  invisible={!consumableStats.lowStock}
-                >
-                  <Inventory />
-                </Badge>
-              }
-              label={`Inventaire Consommables (${consumableStats.total || 0})`}
-              iconPosition="start"
-              sx={{ gap: 1 }}
-            />
-            <Tab
-              icon={<Science />}
-              label="Ajouter Équipement"
-              iconPosition="start"
-              sx={{ gap: 1 }}
-            />
-            <Tab
-              icon={
-                <Badge 
-                  badgeContent={equipmentStats.maintenance || 0} 
-                  color="error"
-                  invisible={!equipmentStats.maintenance}
-                >
-                  <Category />
-                </Badge>
-              }
-              label={`Inventaire Équipements (${equipmentStats.total || 0})`}
-              iconPosition="start"
-              sx={{ gap: 1 }}
-            />
+            <Tab label="Équipements" />
+            <Tab label="Consommables" />
           </Tabs>
         </Box>
 
-        <TabPanel value={activeTab} index={0}>
-          <PhysicsConsumableAddTab onConsumableAdded={handleConsumableAdded} />
-        </TabPanel>
+        <CardContent>
+          <Box className="flex justify-between items-center mb-4">
+            <TextField
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              sx={{ width: 300 }}
+            />
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => {
+                /* TODO: Open create dialog */
+              }}
+            >
+              Ajouter
+            </Button>
+          </Box>
 
-        <TabPanel value={activeTab} index={1}>
-          <PhysicsConsumableInventoryTab onStatsUpdate={loadStats} />
-        </TabPanel>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress size={34} />
+            </Box>
+          ) : (
+            <>
+              <TabPanel value={tabValue} index={0}>
+                <Grid container spacing={3}>
+                  {filteredEquipment.map((item) => (
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>
+                            {item.name}
+                          </Typography>
+                          {item.category && (
+                            <Chip label={item.category} size="small" sx={{ mb: 1 }} />
+                          )}
+                          <Typography color="text.secondary" gutterBottom>
+                            Quantité : {item.quantity}
+                          </Typography>
+                          {item.location && (
+                            <Typography variant="body2">📍 {item.location}</Typography>
+                          )}
+                          {item.quantity <= 5 && (
+                            <Alert severity="warning" sx={{ mt: 1 }}>
+                              <Warning fontSize="small" /> Stock bas
+                            </Alert>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </TabPanel>
 
-        <TabPanel value={activeTab} index={2}>
-          <PhysicsEquipmentAddTab onEquipmentAdded={handleEquipmentAdded} />
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={3}>
-          <PhysicsEquipmentInventoryTab onStatsUpdate={loadStats} />
-        </TabPanel>
-      </Paper>
+              <TabPanel value={tabValue} index={1}>
+                <Grid container spacing={3}>
+                  {filteredConsommables.map((item) => (
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>
+                            {item.name}
+                          </Typography>
+                          <Typography color="text.secondary" gutterBottom>
+                            Stock: {item.stock} {item.unit && `(${item.unit})`}
+                          </Typography>
+                          {item.location && (
+                            <Typography variant="body2">📍 {item.location}</Typography>
+                          )}
+                          {item.stock <= 5 && (
+                            <Alert severity="warning" sx={{ mt: 1 }}>
+                              <Warning fontSize="small" /> Stock bas
+                            </Alert>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </TabPanel>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </Container>
-  )
+  );
 }

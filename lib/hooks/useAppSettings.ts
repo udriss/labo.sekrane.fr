@@ -1,20 +1,12 @@
-// lib/hooks/useAppSettings.ts
-import { createContext, useContext } from 'react';
+'use client';
+import { useAppSettingsContext } from '@/lib/contexts/AppSettingsContext';
 
-// Context pour les paramètres de l'application
-interface AppSettingsContextType {
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-}
-
-export const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
-
+// Consumer hook for AppSettings context
 export function useAppSettings() {
-  const context = useContext(AppSettingsContext);
-  if (!context) {
-    throw new Error('useAppSettings must be used within AppSettingsProvider');
+  const ctx = useAppSettingsContext();
+  if (!ctx) {
+    // Fallback in case used outside provider; defaults to light
+    return { theme: 'light' as const, toggleTheme: () => {} };
   }
-  return context;
+  return ctx;
 }

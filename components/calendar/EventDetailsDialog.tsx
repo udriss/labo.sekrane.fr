@@ -1,1807 +1,1694 @@
-// components/calendar/EventDetailsDialog.tsx
+'use client';
 
-"use client"
+import React, { useEffect, useState } from 'react';
+import 'react-datepicker/dist/react-datepicker.css';
+import FrenchDatePicker, {
+  FrenchDateOnly,
+  FrenchTimeOnly,
+} from '@/components/shared/FrenchDatePicker';
 
-import React, { useState, useEffect } from 'react'
-import { format } from "date-fns"
-import { fr, is } from "date-fns/locale"
-import { 
-  Dialog, DialogTitle, DialogContent, DialogActions, 
-  Button, Box, Grid, Typography, Chip, Stack, Divider,
-  IconButton, Skeleton, Table, TableBody, TableCell, 
-  TableContainer, TableHead, TableRow, Avatar,
-  Card,
-  CardActionArea,
-  CardContent,
-  CardMedia,
-  Tooltip,
-  Snackbar,
-  TextField,
-  Alert as MuiAlert,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
-} from '@mui/material'
 import {
-  Timeline, TimelineItem, TimelineSeparator,
-  TimelineDot, TimelineConnector, TimelineContent,
-  TimelineOppositeContent,
-} from '@mui/lab'
-import { 
-  Science, Schedule, Assignment, EventAvailable,
-  History, Person, PictureAsPdf, Description, Image, Build,
-  InsertDriveFile, OpenInNew, Download, Add, Edit, Delete,
-  HourglassEmpty, CalendarToday, AccessTime, Room, School, HourglassTop,
-  InfoOutlined, SwapHoriz, CheckCircle, Cancel, ManageHistory
-} from '@mui/icons-material'
-import { CalendarEvent, EventType, EventState, Chemical } from '@/types/calendar'
-import { UserRole } from "@/types/global";
-import { normalizeClassField, getClassNameFromClassData } from '@/lib/class-data-utils'
-import { getRoomDisplayName } from '@/lib/calendar-utils-client-room'
-import { SiMoleculer } from "react-icons/si";
-import { getActiveTimeSlots, hasPendingChanges } from '@/lib/timeslots-utils'
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  IconButton,
+  Chip,
+  Stack,
+  TextField,
+  Tooltip,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Snackbar,
+  Alert,
+  Collapse,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import {
+  Cancel as CancelIcon,
+  Science as ScienceIcon,
+  Build as BuildIcon,
+  Class as ClassIcon,
+  MeetingRoom as MeetingRoomIcon,
+  AttachFile as AttachFileIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
+  SwapHoriz as SwapHorizIcon,
+  Event as EventIcon,
+  Download as DownloadIcon,
+  CloudUpload as CloudUploadIcon,
+} from '@mui/icons-material';
+import MultiAssignDialog, { MultiAssignOption } from '@/components/shared/MultiAssignDialog';
+import { useEntityNames } from '@/components/providers/EntityNamesProvider';
+import AddResourcesDialog, { AddResourcesDialogChange } from './AddResourcesDialog';
+import { buildResourceSignature, buildCustomResourceSignature } from './resourceSignatures';
+import { syncCustomResources } from '@/lib/services/customResourcesService';
+import { FileUploadSection } from '@components/calendar/FileUploadSection';
+import type { FileWithMetadata } from '@/types/global';
+import SlotDisplay from './SlotDisplay';
+import type { RawTimeslotLike } from './TimeslotPlanningDialog';
+import { formatLocalIsoNoZ } from '@/lib/utils/datetime';
 
-
-interface DocumentFile {
-  fileName: string
-  fileUrl?: string
-  fileType?: string
-  fileSize?: number
-  uploadedAt?: string
-}
-
-interface TimeSlotFormData {
-  id: string
-  date: string
-  startTime: string
-  endTime: string
-  userIDAdding: string
-  createdBy: string
-  modifiedBy: Array<{
-    userId: string
-    date: string
-    action: 'created' | 'modified' | 'deleted' | 'invalidated' | 'approved' | 'rejected'
-    note?: string
-  }>
+interface Event {
+  id: number;
+  title: string;
+  discipline: string;
+  ownerId: number;
+  owner: { id: number; name: string; email: string };
+  timeslots: any[];
+  classIds?: number[] | any;
+  salleIds?: number[] | any;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface EventDetailsDialogProps {
-  open: boolean
-  event: CalendarEvent | null
-  onClose: () => void
-  onEdit?: (event: CalendarEvent) => void
-  onDelete?: (event: CalendarEvent) => void
-  onStateChange?: (event: CalendarEvent, newState: EventState, reason?: string, timeSlots?: any[]) => void
-  onMoveDate?: (event: CalendarEvent, timeSlots: any[], reason?: string) => void
-  onConfirmModification?: (event: CalendarEvent, modificationId: string, action: 'confirm' | 'reject') => void
-  onApproveTimeSlotChanges?: (event: CalendarEvent) => void // NOUVEAU: approuver les créneaux proposés
-  onRejectTimeSlotChanges?: (event: CalendarEvent) => void // NOUVEAU: rejeter les créneaux proposés
-  userRole?: UserRole
-  currentUserId?: string
-  isMobile?: boolean
-  isTablet?: boolean
+  open: boolean;
+  event: Event | null;
+  onClose: () => void;
+  onEdit?: (event: Event) => void;
+  onCopy?: (event: Event) => void;
+  onDelete?: (event: Event) => void;
+  onApproveTimeSlots?: (event: Event) => void;
+  onRejectTimeSlots?: (event: Event) => void;
+  onApproveSlot?: (slotId: number) => void;
+  onRejectSlot?: (slotId: number) => void;
+  onCounterPropose?: (
+    slotId: number,
+    payload: {
+      startDate?: string;
+      endDate?: string;
+      timeslotDate?: string;
+      salleIds?: number[];
+      classIds?: number[];
+      notes?: string;
+    },
+  ) => void;
+  canEdit: boolean;
+  canValidate: boolean;
+  isOwner?: boolean;
+  onEventUpdate?: (eventId: number) => void; // Callback pour notifier les modifications
 }
 
-// Définition corrigée de EVENT_TYPES
-const EVENT_TYPES = {
-  TP: { label: "Travaux Pratiques", color: "#1976d2", icon: <Science /> },
-  MAINTENANCE: { label: "Maintenance", color: "#f57c00", icon: <Schedule /> },
-  INVENTORY: { label: "Inventaire", color: "#388e3c", icon: <Assignment /> },
-  OTHER: { label: "Autre", color: "#7b1fa2", icon: <EventAvailable /> }
-}
-
-// Fonction helper pour les labels de changement d'état
-const getStateChangeLabel = (fromState: string, toState: string): string => {
-  const stateLabels: Record<string, string> = {
-    'PENDING': 'À valider',
-    'VALIDATED': 'Validé',
-    'CANCELLED': 'Annulé',
-    'MOVED': 'Déplacé',
-    'IN_PROGRESS': 'En préparation'
-  }
-  
-  return `${stateLabels[fromState] || fromState} → ${stateLabels[toState] || toState}`
-}
-// Fonction pour déterminer le type de fichier
-const getFileType = (fileName: string): string => {
-  const extension = fileName.split('.').pop()?.toLowerCase() || ''
-  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
-    return 'image'
-  } else if (extension === 'pdf') {
-    return 'pdf'
-  } else if (['doc', 'docx'].includes(extension)) {
-    return 'doc'
-  } else {
-    return 'other'
-  }
-}
-
-// Fonction pour obtenir l'icône et la couleur selon le type
-const getFileTypeInfo = (fileType: string) => {
-  if (fileType.includes('image')) {
-    return { icon: <Image sx={{ fontSize: 40 }} />, color: '#4caf50', label: 'Image' }
-  }
-  if (fileType === 'pdf') {
-    return { icon: <PictureAsPdf sx={{ fontSize: 40 }} />, color: '#f44336', label: 'PDF' }
-  }
-  if (fileType.includes('doc')) {
-    return { icon: <Description sx={{ fontSize: 40 }} />, color: '#2196f3', label: 'Document' }
-  }
-  return { icon: <InsertDriveFile sx={{ fontSize: 40 }} />, color: '#757575', label: 'Fichier' }
-}
-
-const formatDateTime = (date: Date | string) => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  return format(dateObj, "dd/MM/yyyy HH:mm", { locale: fr })
-}
-
-const formatTime = (date: Date | string) => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  return format(dateObj, "HH:mm", { locale: fr })
-}
-
-// Fonction pour formater la taille du fichier
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return ''
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
-}
-
-
-
-
-// Composant pour afficher une carte de document - VERSION CORRIGÉE
-const DocumentCard: React.FC<{ 
-  document: DocumentFile,
-  onOpenError?: (error: string) => void
-}> = ({ document, onOpenError }) => {
-  const fileType = document.fileType || getFileType(document.fileName)
-  const fileInfo = getFileTypeInfo(fileType)
-  const [isHovered, setIsHovered] = useState(false)
-  // Ajout d'un état pour gérer les créneaux horaires lors du déplacement
-
-
-
-    // Construire l'URL une seule fois
-  const documentUrl = document.fileUrl 
-    ? (document.fileUrl.startsWith('/uploads/') 
-        ? `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
-        : document.fileUrl)
-    : null
-
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    
-    if (document.fileUrl) {
-      try {
-        let urlToOpen = document.fileUrl
-        
-        // Si c'est un fichier local, construire l'URL complète via l'API
-        if (document.fileUrl.startsWith('/uploads/')) {
-          urlToOpen = `/api/calendrier/files?path=${encodeURIComponent(document.fileUrl)}`
-        }
-        
-        // Ouvrir dans un nouvel onglet
-        window.open(urlToOpen, '_blank', 'noopener,noreferrer')
-        
-        // Ne pas vérifier si la fenêtre est bloquée car cela donne des faux positifs
-        // La plupart des navigateurs modernes permettent window.open() sur un événement de clic
-        
-      } catch (error) {
-        console.error('Erreur lors de l\'ouverture du document:', error)
-        if (onOpenError) {
-          onOpenError('Impossible d\'ouvrir le document. Veuillez réessayer.')
-        }
-      }
-    } else {
-      if (onOpenError) {
-        onOpenError('L\'URL du document n\'est pas disponible.')
-      }
-    }
-  }
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.preventDefault() // Important pour empêcher la navigation
-    e.stopPropagation()
-    
-    if (document.fileUrl) {
-      try {
-        // Si c'est un chemin local (commence par /uploads/)
-        if (document.fileUrl.startsWith('/uploads/')) {
-          const response = await fetch('/api/calendrier/files', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              filePath: document.fileUrl,
-              fileName: document.fileName
-            })
-          })
-
-          if (!response.ok) {
-            throw new Error('Erreur lors du téléchargement')
-          }
-
-          // Récupérer le blob
-          const blob = await response.blob()
-          
-          // Créer un lien de téléchargement
-          const url = window.URL.createObjectURL(blob)
-          const link = window.document.createElement('a')
-          link.href = url
-          link.download = document.fileName
-          window.document.body.appendChild(link)
-          link.click()
-          
-          // Nettoyer
-          window.URL.revokeObjectURL(url)
-          window.document.body.removeChild(link)
-        } else {
-          // Si c'est une URL externe, utiliser l'ancienne méthode
-          const link = window.document.createElement('a')
-          link.href = document.fileUrl
-          link.download = document.fileName
-          window.document.body.appendChild(link)
-          link.click()
-          window.document.body.removeChild(link)
-        }
-      } catch (error) {
-        console.error('Erreur lors du téléchargement:', error)
-        if (onOpenError) {
-          onOpenError('Impossible de télécharger le document.')
-        }
-      }
-    }
-  }
-
-  return (
-    <Tooltip 
-      title={document.fileUrl ? "Cliquez pour ouvrir dans un nouvel onglet" : "Document non disponible"} 
-      arrow
-      placement="top"
-    >
-      <Card 
-        sx={{ 
-          maxWidth: 200, 
-          boxShadow: 2,
-          transition: 'all 0.3s',
-          '&:hover': {
-            boxShadow: 4,
-            transform: 'translateY(-2px)'
-          },
-          opacity: document.fileUrl ? 1 : 0.7
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Retirer CardActionArea et utiliser un Box cliquable */}
-        <Box
-          onClick={handleClick}
-          sx={{
-            cursor: document.fileUrl ? 'pointer' : 'default',
-            '&:focus': {
-              outlineColor: 'primary.main',
-              outlineOffset: -2,
-            },
-            // Garder l'outline uniquement pour la navigation au clavier
-            '&:focus-visible': {
-              outline: '2px solid',
-              outlineColor: 'primary.main',
-              outlineOffset: -2,
-            }
-            }}
-            tabIndex={document.fileUrl ? 0 : -1}
-            role={document.fileUrl ? "button" : undefined}
-            onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleClick(e as any)
-            }
-            }}
-          >
-          <Box
-            sx={{
-              height: 120,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: `${fileInfo.color}15`,
-              position: 'relative'
-            }}
-          >
-            <Box sx={{ color: fileInfo.color }}>
-              {fileInfo.icon}
-            </Box>
-            {document.fileUrl && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  display: 'flex',
-                  gap: 0.5,
-                  opacity: isHovered ? 1 : 0.8,
-                  transition: 'opacity 0.2s'
-                }}
-              >
-                <Box
-                  sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: '50%',
-                    padding: 0.5,
-                    boxShadow: 1,
-                    width: 28,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <OpenInNew fontSize="small" sx={{ fontSize: 16, color: 'primary.main' }} />
-                </Box>
-                <Tooltip title="Télécharger" arrow>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation() // Empêcher le clic de se propager au Box parent
-                      handleDownload(e)
-                    }}
-                    sx={{
-                      bgcolor: 'background.paper',
-                      boxShadow: 1,
-                      width: 28,
-                      height: 28,
-                      '&:hover': {
-                        bgcolor: 'primary.light',
-                        color: 'primary.contrastText'
-                      }
-                    }}
-                  >
-                    <Download fontSize="small" sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            )}
-          </Box>
-          <CardContent sx={{ p: 1.5 }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              {fileInfo.label}
-              {document.fileSize && ` • ${formatFileSize(document.fileSize)}`}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                fontWeight: 500,
-                color: document.fileUrl ? 'text.primary' : 'text.disabled'
-              }}
-              title={document.fileName}
-            >
-              {document.fileName}
-            </Typography>
-            {document.uploadedAt && (
-              <Typography 
-                variant="caption" 
-                color="text.secondary" 
-                sx={{ fontSize: '0.65rem' }}
-              >
-                {formatDateTime(document.uploadedAt)}
-              </Typography>
-            )}
-          </CardContent>
-        </Box>
-      </Card>
-    </Tooltip>
-  )
-}
-
-const EventDetailsDialog: React.FC<EventDetailsDialogProps> = ({ 
-  open, 
-  event, 
+export default function EventDetailsDialog({
+  open,
+  event,
   onClose,
   onEdit,
-  onDelete, 
-  onStateChange,
-  onMoveDate,
-  onConfirmModification,
-  onApproveTimeSlotChanges,
-  onRejectTimeSlotChanges,
-  userRole,
-  currentUserId,
-  isMobile = false,
-  isTablet = false,
-}) => {
+  onCopy,
+  onDelete,
+  onApproveTimeSlots,
+  onRejectTimeSlots,
+  onApproveSlot,
+  onRejectSlot,
+  onCounterPropose,
+  canEdit,
+  canValidate,
+  isOwner = false,
+  onEventUpdate,
+}: EventDetailsDialogProps) {
+  const { classes: classMap, salles: salleMap } = useEntityNames();
 
-  const [usersInfo, setUsersInfo] = useState<Record<string, {id: string, name: string, email: string}>>({})
-  const [loadingUsers, setLoadingUsers] = useState(false)
-  const [creatorInfo, setCreatorInfo] = useState<{id: string, name: string, email: string} | null>(null)
-  const [timelineData, setTimelineData] = useState<Array<{
-    userId: string,
-    userName: string,
-    date: string,
-    isConsecutive: boolean
-  }>>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  
-  // États pour gérer le chargement des boutons de timeslot
-  const [loadingTimeslotActions, setLoadingTimeslotActions] = useState<Record<string, 'approve' | 'reject' | null>>({})
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  
-  // Normaliser les données de classe pour l'affichage
-  const normalizedClassData = normalizeClassField(event?.class_data)
-  const className = getClassNameFromClassData(normalizedClassData)
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  
-  const [unifiedDialog, setUnifiedDialog] = useState<{
-    open: boolean
-    action: 'cancel' | 'move' | 'validate' | 'in-progress' | null
-    step: 'confirmation' | 'timeSlots'
-  }>({ open: false, action: null, step: 'confirmation' })
+  const [cpNotes, setCpNotes] = React.useState('');
+  const [cpDateObj, setCpDateObj] = React.useState<Date | null>(null);
+  const [cpStartObj, setCpStartObj] = React.useState<Date | null>(null);
+  const [cpEndObj, setCpEndObj] = React.useState<Date | null>(null);
+  const [showBulkCounter, setShowBulkCounter] = React.useState(false);
+  const [dialogType, setDialogType] = React.useState<null | 'salles' | 'classes'>(null);
+  const [targetSlot, setTargetSlot] = React.useState<any | null>(null);
+  const [, forceRerender] = React.useState(0);
+  const [loadingSlotIds, setLoadingSlotIds] = React.useState<Set<number>>(new Set());
+  const [resourcesDialogOpen, setResourcesDialogOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity?: 'success' | 'info' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
+  const [localDocuments, setLocalDocuments] = useState<any[]>([]);
+  const [uploadingDocs, setUploadingDocs] = useState<FileWithMetadata[]>([]);
+  const [addingDocs, setAddingDocs] = useState(false);
+  const [docActionLoading, setDocActionLoading] = useState<string | null>(null);
+  const [uploadingOne, setUploadingOne] = useState(false);
+  const [localMateriels, setLocalMateriels] = useState<any[]>([]);
+  const [localReactifs, setLocalReactifs] = useState<any[]>([]);
+  const [localCustomMats, setLocalCustomMats] = useState<any[]>([]);
+  const [localCustomChems, setLocalCustomChems] = useState<any[]>([]);
+  const [eventSalleIds, setEventSalleIds] = useState<number[]>([]);
+  const [eventClassIds, setEventClassIds] = useState<number[]>([]);
+  const [localTimeslots, setLocalTimeslots] = useState<any[]>([]);
 
+  // Reset sticky UI state when dialog opens/closes or event changes
+  useEffect(() => {
+    if (!open) {
+      setTargetSlot(null);
+      setShowBulkCounter(false);
+      setCpDateObj(null);
+      setCpStartObj(null);
+      setCpEndObj(null);
+      setCpNotes('');
+      setResourcesDialogOpen(false);
+      setAddingDocs(false);
+      setUploadingDocs([]);
+    }
+  }, [open]);
+  useEffect(() => {
+    // on event id change, clear per-event transient toggles
+    setTargetSlot(null);
+    setShowBulkCounter(false);
+    setCpDateObj(null);
+    setCpStartObj(null);
+    setCpEndObj(null);
+    setCpNotes('');
+    setResourcesDialogOpen(false);
+    setAddingDocs(false);
+    setUploadingDocs([]);
+  }, [event?.id]);
 
-  const [formData, setFormData] = useState<{
-      timeSlots: TimeSlotFormData[]
-      slotStates: { [key: number]: 'initial' | 'replaced' | 'kept' }
-    }>({
-      timeSlots: [{ 
-        id: `TS_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`, 
-        date: '', 
-        startTime: '', 
-        endTime: '', 
-        userIDAdding: 'INDISPONIBLE',
-        createdBy: '',
-        modifiedBy: []
-      }],
-      slotStates: {}
-    })
+  // Entering focus mode (counter-propose) should close other subdialogs
+  useEffect(() => {
+    if (targetSlot) {
+      setResourcesDialogOpen(false);
+      setAddingDocs(false);
+    }
+  }, [targetSlot]);
 
-
-  const [stateChangeCompleted, setStateChangeCompleted] = useState(false)
-
-  // Initialiser les créneaux avec les créneaux actuels de l'événement
-    const initializeWithCurrentSlots = () => {
+  useEffect(() => {
+    setUploadingDocs([]);
+    setAddingDocs(false);
+  }, [event?.id]);
+  useEffect(() => {
+    if (!open) {
+      setUploadingDocs([]);
+      setAddingDocs(false);
+    }
+  }, [open]);
+  useEffect(() => {
     if (!event) return;
-    const currentSlots = event.actuelTimeSlots || event.timeSlots?.filter((slot: any) => slot.status === 'active') || []
-    const initialSlots = currentSlots.map((slot: any) => ({
-      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`,
-      date: '',
-      startTime: '',
-      endTime: '',
-      userIDAdding: 'INDISPONIBLE',
-      createdBy: '',
-      modifiedBy: []
-    }))
-    
-    const initialStates: { [key: number]: 'initial' | 'replaced' | 'kept' } = {}
-    currentSlots.forEach((_: any, index: number) => {
-      initialStates[index] = 'initial'
-    })
-    
-    setFormData({ 
-      timeSlots: initialSlots.length > 0 ? initialSlots : formData.timeSlots, 
-      slotStates: initialStates 
-    })
-  }
+    setLocalTimeslots([...(event.timeslots || [])]);
+    setLocalMateriels([...((event as any).materiels || [])]);
+    setLocalReactifs([...((event as any).reactifs || [])]);
+    setLocalCustomMats([...((event as any).customMaterielRequests || [])]);
+    setLocalCustomChems([...((event as any).customReactifRequests || [])]);
+    setLocalDocuments([...((event as any).documents || [])]);
 
-    
-  const openUnifiedDialog = (action: 'cancel' | 'move' | 'validate' | 'in-progress') => {
-    setUnifiedDialog({ open: true, action, step: 'confirmation' })
-    setStateChangeCompleted(false)
-    
-    // Initialiser avec les créneaux actuels si on va gérer les créneaux
-    if (action === 'move' || action === 'validate') {
-      initializeWithCurrentSlots()
-    }
-  }
-
-
-
-  // Fonctions pour gérer les actions de timeslot avec optimisme
-  const handleApproveTimeslot = async (slotIndex: number, slotId: string) => {
-    if (!event) return
-    
-    const slotKey = `${event.id}-${slotId}`
-    setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'approve' }))
-    
-    try {
-      const apiEndpoint = '/api/calendrier/chimie'
-      const response = await fetch(`${apiEndpoint}/approve-single-timeslot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: event.id,
-          slotId: slotId
-        })
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSuccessMessage('Créneau approuvé avec succès')
-        // Mise à jour avec les données de l'API
-        if (onApproveTimeSlotChanges && data.event) {
-          onApproveTimeSlotChanges(data.event)
-        }
-        setTimeout(() => setSuccessMessage(null), 3000)
-      } else {
-        const errorData = await response.json()
-        setErrorMessage(errorData.error || 'Erreur lors de l\'approbation du créneau')
-        setTimeout(() => setErrorMessage(null), 3000)
+    // Mettre à jour les IDs de salles et classes
+    const parseIds = (raw: any): number[] => {
+      if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
+      if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'number');
+        } catch {}
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      setErrorMessage('Erreur de connexion')
-      setTimeout(() => setErrorMessage(null), 3000)
-    } finally {
-      setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: null }))
-    }
-  }
+      return [];
+    };
+    setEventSalleIds(parseIds(event.salleIds));
+    setEventClassIds(parseIds(event.classIds));
+  }, [event]);
 
-  const handleRejectTimeslot = async (slotIndex: number, slotId: string) => {
-    if (!event) return
-    
-    const slotKey = `${event.id}-${slotId}`
-    setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: 'reject' }))
-    
+  // Refetch event on external updates (edits) and update local state to reflect changes dynamically
+  useEffect(() => {
+    if (!event?.id) return;
+    let cancelled = false;
+    const refetchEvent = async () => {
+      try {
+        const res = await fetch(`/api/events/${event.id}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const ev = json?.event || {};
+        if (cancelled) return;
+        setLocalTimeslots([...(ev.timeslots || [])]);
+        setLocalMateriels([...(ev.materiels || [])]);
+        setLocalReactifs([...(ev.reactifs || [])]);
+        setLocalCustomMats([...(ev.customMaterielRequests || [])]);
+        setLocalCustomChems([...(ev.customReactifRequests || [])]);
+        setLocalDocuments([...(ev.documents || [])]);
+        const parseIds = (raw: any): number[] => {
+          if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
+          if (typeof raw === 'string') {
+            try {
+              const p = JSON.parse(raw);
+              if (Array.isArray(p)) return p.filter((x) => typeof x === 'number');
+            } catch {}
+          }
+          return [];
+        };
+        setEventSalleIds(parseIds(ev.salleIds));
+        setEventClassIds(parseIds(ev.classIds));
+      } catch {}
+    };
+    const onEnd = (e: any) => {
+      try {
+        const id = e?.detail?.eventId;
+        if (!id || id !== event.id) return;
+        refetchEvent();
+      } catch {}
+    };
+    window.addEventListener('event-update:end', onEnd as any);
+    window.addEventListener('event:refetch', onEnd as any);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('event-update:end', onEnd as any);
+      window.removeEventListener('event:refetch', onEnd as any);
+    };
+  }, [event?.id]);
+
+  const hasPendingSlots = (event?.timeslots || []).some(
+    (slot) =>
+      ['created', 'modified'].includes(slot.state) ||
+      (isOwner && slot.state === 'counter_proposed'),
+  );
+
+  const parseDateSafe = (value: string | Date | null | undefined) => {
+    if (!value) return null;
     try {
-      const apiEndpoint = '/api/calendrier/chimie'
-      const response = await fetch(`${apiEndpoint}/reject-single-timeslot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: event.id,
-          slotId: slotId
-        })
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSuccessMessage('Créneau rejeté avec succès')
-        // Mise à jour avec les données de l'API
-        if (onRejectTimeSlotChanges && data.event) {
-          onRejectTimeSlotChanges(data.event)
-        }
-        setTimeout(() => setSuccessMessage(null), 3000)
-      } else {
-        const errorData = await response.json()
-        setErrorMessage(errorData.error || 'Erreur lors du rejet du créneau')
-        setTimeout(() => setErrorMessage(null), 3000)
+      if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+      let str = String(value).trim();
+      if (!str) return null;
+      // Normalize space to 'T'
+      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) str = str.replace(' ', 'T');
+      // If local-like ISO without Z, parse as local wall time
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
+        const [date, time] = str.split('T');
+        const [Y, M, D] = date.split('-').map(Number);
+        const [h, m] = time.split(':').map(Number);
+        return new Date(Y, (M as any) - 1, D, h, m, 0, 0);
       }
-    } catch (error) {
-      console.error('Erreur:', error)
-      setErrorMessage('Erreur de connexion')
-      setTimeout(() => setErrorMessage(null), 3000)
-    } finally {
-      setLoadingTimeslotActions(prev => ({ ...prev, [slotKey]: null }))
-    }
-  }
-
-  // Fonction pour trouver le créneau actuel correspondant à un créneau proposé
-  // Nouvelle version : utilise referentActuelTimeID pour la correspondance directe
-  const findCorrespondingActualSlot = (proposedSlot: any, actualSlots: any[]) => {
-    if (!actualSlots || actualSlots.length === 0) {
+      const parsed = new Date(str);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    } catch {
       return null;
     }
-
-    // Correspondance directe par referentActuelTimeID si présent
-    if (proposedSlot.referentActuelTimeID) {
-      const byRef = actualSlots.find(slot => slot.id === proposedSlot.referentActuelTimeID);
-      if (byRef) return byRef;
-    }
-
-    // Sinon, correspondance par ID (créneau inchangé)
-    const byId = actualSlots.find(slot => slot.id === proposedSlot.id);
-    if (byId) return byId;
-
-    // Si aucune correspondance, retourner null (plus de matching heuristique)
-    return null;
+  };
+  const formatDate = (dateInput: string) => {
+    const date = parseDateSafe(dateInput);
+    if (!date) return 'Date invalide';
+    return date.toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+  const formatDateHeader = (key: string) => {
+    const d = parseDateSafe(key);
+    if (!d) return key;
+    return d.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
-  // Fonction pour vérifier si un créneau proposé est différent du créneau actuel
-  const isSlotChanged = (proposedSlot: any, event: CalendarEvent) => {
-    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-    
-    if (!correspondingActual) {
-      // Nouveau créneau proposé
+  // Helpers to format local dates without timezone shifts
+  const toLocalIsoNoZ = (d: Date) => formatLocalIsoNoZ(d);
+  const toDateOnly = (d: Date) => {
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  if (!event) return null;
+
+  const openAssignDialog = (slot: any, type: 'salles' | 'classes') => {
+    setTargetSlot(slot);
+    setDialogType(type);
+  };
+  const loadSalles = async (): Promise<MultiAssignOption[]> => {
+    const res = await fetch('/api/salles');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data?.salles || []).map((s: any) => ({ id: s.id, name: s.name }));
+  };
+  const loadClasses = async (): Promise<MultiAssignOption[]> => {
+    const res = await fetch('/api/classes');
+    if (!res.ok) return [];
+    const data = await res.json();
+    const predefined = (data?.predefinedClasses || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      isCustom: false,
+      group: 'Classes système',
+    }));
+    const custom = (data?.customClasses || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      isCustom: false === c.system ? true : !c.system,
+      group: 'Mes classes',
+    }));
+    return [...custom, ...predefined];
+  };
+  const saveAssign = async (ids: number[]) => {
+    if (!targetSlot || !dialogType) return;
+    const currentRaw: number[] =
+      (dialogType === 'salles' ? targetSlot.salleIds : targetSlot.classIds) || [];
+    const current = (Array.isArray(currentRaw) ? currentRaw : []).filter(
+      (x: any) => typeof x === 'number',
+    );
+    const next = (Array.isArray(ids) ? ids : []).filter((x: any) => typeof x === 'number');
+    const sameSet = (a: number[], b: number[]) => {
+      if (a.length !== b.length) return false;
+      const s = new Set(a);
+      for (const v of b) if (!s.has(v)) return false;
       return true;
+    };
+    if (sameSet(current, next)) {
+      setSnackbar({ open: true, message: 'Aucune modification à enregistrer', severity: 'info' });
+      return;
     }
-    
-    // Comparer les dates
-    return correspondingActual.startDate !== proposedSlot.startDate || 
-           correspondingActual.endDate !== proposedSlot.endDate;
-  };
 
-  // Fonction pour obtenir l'état d'un créneau (validé, en attente, nouveau)
-  const getSlotStatus = (proposedSlot: any, event: CalendarEvent) => {
-    const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-    
-    if (!correspondingActual) {
-      return 'new'; // Nouveau créneau
-    }
-    
-    // Vérifier d'abord si c'est une correspondance par ID (créneau inchangé)
-    const isExactMatch = correspondingActual.id === proposedSlot.id;
-    const isSameDate = correspondingActual.startDate === proposedSlot.startDate && 
-                      correspondingActual.endDate === proposedSlot.endDate;
-    
-    if (isSameDate) {
-      return 'approved'; // Créneau validé (identique)
-    }
-    
-    return 'pending'; // Créneau modifié en attente (remplace le créneau correspondingActual)
-  };
-
-  // NOUVEAU: Fonction pour détecter s'il y a des changements en attente
-  const hasPendingChanges = (event: CalendarEvent) => {
-    if (!event.actuelTimeSlots || !event.timeSlots) return false
-    
-    // Prendre seulement les créneaux actifs pour la comparaison (exclure les "invalid")
-    const activeTimeSlots = event.timeSlots.filter(slot => slot.status === 'active')
-    
-    // Si l'événement est PENDING et que c'est le propriétaire qui a fait les modifications,
-    // ne pas considérer comme ayant des changements en attente
-    if (event.state === 'PENDING' && event.createdBy === currentUserId) {
-      return false;
-    }
-    
-    // Vérifier si chaque créneau proposé valide a été modifié
-    return activeTimeSlots.some(proposedSlot => isSlotChanged(proposedSlot, event));
-  }
-
-    // Vérifier si l'utilisateur peut valider
-  const canValidate = userRole === 'LABORANTIN' || userRole === 'ADMINLABO'
-
-  const getEventTypeInfo = (type: EventType) => {
-    return EVENT_TYPES[type] || EVENT_TYPES.OTHER
-  }
-
-  const calculateDuration = () => {
-    if (!event) return 0
-    const activeSlots = getActiveTimeSlots(event.timeSlots || []);
-    const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
-
-    const startDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
-    const endDate = firstSlot ? new Date(firstSlot.endDate) : new Date();
-    const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-    return hours
-  }
-
-  // Fonction pour préparer les documents
-  const getDocuments = (): DocumentFile[] => {
-    if (!event) return []
-    
-    const documents: DocumentFile[] = []
-    
-    // Nouveau format avec array files
-    if (event.files && Array.isArray(event.files) && event.files.length > 0) {
-      event.files.forEach((file) => {
-        documents.push({
-          fileName: file.fileName,
-          fileUrl: file.fileUrl,
-          fileType: file.fileType,
-          fileSize: file.fileSize,
-          uploadedAt: file.uploadedAt
-        })
-      })
-    } 
-
-
-    
-    return documents
-  }
-
-  // Fonction pour gérer le changement d'état
-  const handleStateChange = (event: CalendarEvent, newState: EventState, reason?: string) => {
-    if (onStateChange) {
-      onStateChange(event, newState, reason);
-    }
-    onClose();
-  };
-useEffect(() => {
-  const fetchUsersAndPrepareTimeline = async () => {
-    if (!event) return
-    
-
-    setLoadingUsers(true)
+    const body: any = dialogType === 'salles' ? { salleIds: next } : { classIds: next };
     try {
-      // Collecter tous les userIds (modificateurs + créateur)
-      const userIds: string[] = []
-      
-      // Toujours ajouter l'ID du créateur s'il existe
-      if (event.createdBy) {
-        userIds.push(event.createdBy)
-      }
-      
-      // Ajouter les IDs des modificateurs s'il y en a
-      if (event.modifiedBy && event.modifiedBy.length > 0) {
-        event.modifiedBy.forEach(entry => userIds.push(entry[0]))
-      }
-
-      
-      // Récupérer les infos de tous les utilisateurs (y compris le créateur)
-      if (userIds.length > 0) {
-        const response = await fetch('/api/utilisateurs/info', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userIds: [...new Set(userIds)] }) // Enlever les doublons
-        })
-
-        if (response.ok) {
-          const users = await response.json()
-          setUsersInfo(users)
-          
-          // Stocker les infos du créateur
-          if (event.createdBy && users[event.createdBy]) {
-            setCreatorInfo(users[event.createdBy])
-          }
-          
-          // Préparer les données pour la timeline des modifications
-          if (event.modifiedBy && event.modifiedBy.length > 0) {
-            const allModifications: Array<{
-              userId: string, 
-              userName: string,
-              date: string,
-              isConsecutive: boolean
-            }> = []
-            
-            // Créer une entrée pour chaque modification
-            event.modifiedBy.forEach(([userId, ...dates]) => {
-              const userName = users[userId]?.name || 
-                              users[userId]?.email || 
-                              `Utilisateur ${userId}`
-              
-              dates.forEach(date => {
-                // Vérifier si la date est valide
-                try {
-                  const d = new Date(date)
-                  if (!isNaN(d.getTime())) {
-                    allModifications.push({ userId, userName, date, isConsecutive: false })
-                  }
-                } catch {
-                  // Ignorer les dates invalides
-                }
-              })
-            })
-            
-            // Trier par date
-            allModifications.sort((a, b) => 
-              new Date(a.date).getTime() - new Date(b.date).getTime()
-            )
-            
-            // Marquer les modifications consécutives du même utilisateur
-            for (let i = 1; i < allModifications.length; i++) {
-              if (allModifications[i].userId === allModifications[i - 1].userId) {
-                allModifications[i].isConsecutive = true
-              }
+      try {
+        if (event)
+          window.dispatchEvent(
+            new CustomEvent('event-update:start', { detail: { eventId: event.id } }),
+          );
+      } catch {}
+      const res = await fetch(`/api/timeslots/${targetSlot.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.event && event && json.event.id === event.id) {
+          // Mettre à jour les states locaux avec les nouvelles valeurs
+          const parseIds = (raw: any): number[] => {
+            if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
+            if (typeof raw === 'string') {
+              try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'number');
+              } catch {}
             }
-            
-            setTimelineData(allModifications)
-          } else {
-            // Pas de modifications, mais on a quand même récupéré les infos du créateur
-            setTimelineData([])
-          }
-        } else {
-          console.error('Erreur lors de la récupération des utilisateurs')
-          setTimelineData([])
+            return [];
+          };
+          setEventSalleIds(parseIds(json.event.salleIds));
+          setEventClassIds(parseIds(json.event.classIds));
+          (event as any).salleIds = json.event.salleIds ?? event.salleIds;
+          (event as any).classIds = json.event.classIds ?? event.classIds;
+        } else if (event) {
+          const salleSet = new Set<number>();
+          (event.timeslots || []).forEach((ts: any) => {
+            (ts.salleIds || []).forEach((id: number) => {
+              if (typeof id === 'number') salleSet.add(id);
+            });
+          });
+          const classSet = new Set<number>();
+          (event.timeslots || []).forEach((ts: any) => {
+            (ts.classIds || []).forEach((id: number) => {
+              if (typeof id === 'number') classSet.add(id);
+            });
+          });
+          const newSalleIds = Array.from(salleSet.values());
+          const newClassIds = Array.from(classSet.values());
+          setEventSalleIds(newSalleIds);
+          setEventClassIds(newClassIds);
+          (event as any).salleIds = newSalleIds;
+          (event as any).classIds = newClassIds;
         }
+        // Reflect selection on the targeted slot after success
+        if (dialogType === 'salles') targetSlot.salleIds = next;
+        else targetSlot.classIds = next;
+        forceRerender((x) => x + 1);
+
+        // Notifier la modification
+        if (onEventUpdate && event) {
+          onEventUpdate(event.id);
+        }
+        setSnackbar({
+          open: true,
+          message: dialogType === 'salles' ? 'Salles mises à jour !' : 'Classes mises à jour !',
+          severity: 'success',
+        });
       } else {
-        // Pas d'utilisateurs à récupérer
-        setTimelineData([])
+        setSnackbar({ open: true, message: 'Échec de la mise à jour', severity: 'error' });
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des utilisateurs:', error)
-      setTimelineData([])
+    } catch {
+      setSnackbar({ open: true, message: 'Erreur lors de la mise à jour', severity: 'error' });
     } finally {
-      setLoadingUsers(false)
+      try {
+        if (event)
+          window.dispatchEvent(
+            new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
+          );
+      } catch {}
     }
-  }
+  };
 
-  if (open && event) {
-    fetchUsersAndPrepareTimeline()
-  }
-}, [event, open])
-
-  // Fonction helper pour formater les dates en toute sécurité
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) {
-        return 'Date invalide'
-      }
-      return format(date, 'dd MMM yyyy HH:mm', { locale: fr })
-    } catch (error) {
-      return 'Date invalide'
-    }
-  }
-
-  if (!event) return null
-
-  const documents = getDocuments()
-
-  const activeSlots = getActiveTimeSlots(event.timeSlots || []);
-  const firstSlot = activeSlots[0]; // Prendre le premier créneau actif pour l'affichage principal
-  const eventDate = firstSlot ? new Date(firstSlot.startDate) : new Date();
-  const eventStartTime = firstSlot ? new Date(firstSlot.startDate) : new Date();
-  const eventEndTime = firstSlot ? new Date(firstSlot.endDate) : new Date();
+  const actionableStates = ['created', 'modified'];
+  const eligibleSlots = (event?.timeslots || []).filter(
+    (s) => actionableStates.includes(s.state) || (isOwner && s.state === 'counter_proposed'),
+  );
 
   return (
-    <>
-    <Dialog 
-    fullScreen={isMobile}
-    open={open} 
-    onClose={onClose} 
-    maxWidth="md"
-    fullWidth
-    sx ={{
-      p: isMobile ? 0 : 2,
-    }}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          bgcolor: 'background.paper',
+          backdropFilter: 'blur(10px)',
+        },
+      }}
     >
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box 
-          sx ={{
-            display: 'flex',
-            alignItems: !isMobile ? 'center' : 'flex-start',
-            gap: 1,
-            flexDirection: isMobile ? 'column' : 'row',
-            width: isMobile ? '100%' : 'auto'
-          }}
-          >
-              <Typography variant="h5" component="h3" >Détails de la séance</Typography>
-              <Chip 
-                label={getEventTypeInfo(event.type).label} 
-                color="primary" 
-                size="small"
-                sx= {{ 
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                  }}
-              />
-              {event?.state && (
-                <Chip
-                  label={
-                    event.state === 'PENDING' ? 'À valider' :
-                    event.state === 'VALIDATED' ? 'Validé' :
-                    event.state === 'CANCELLED' ? 'Annulé' :
-                    event.state === 'IN_PROGRESS' ? 'En préparation' :
-                    event.state === 'MOVED' ? 'Déplacé' : event.state
-                  }
-                  color={
-                    event.state === 'PENDING' ? 'warning' :
-                    event.state === 'VALIDATED' ? 'success' :
-                    event.state === 'CANCELLED' ? 'error' :
-                    event.state === 'IN_PROGRESS' ? 'info' :
-                    event.state === 'MOVED' ? 'secondary' :
-                    'default'
-                  }
-                  size="small"
-                  icon={
-                    event.state === 'VALIDATED' ? <CheckCircle /> :
-                    event.state === 'CANCELLED' ? <Cancel /> :
-                    event.state === 'MOVED' ? <SwapHoriz /> :
-                    event.state === 'IN_PROGRESS' ? <ManageHistory /> :
-                    event.state === 'PENDING' ? <History /> :
-                    undefined
-                  }
-                  sx= {{ 
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                  }}
-                />
-              )}
-            </Box>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3}>
-          {/* Titre et informations principales */}
-          <Box>
-            <Typography variant="h6" gutterBottom>
+      <DialogTitle
+        sx={(theme) => ({
+          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+          color: theme.palette.primary.contrastText,
+          fontWeight: 700,
+        })}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.contrastText' }}>
+              {event.owner?.name || '—'}
+            </Typography>
+            <Chip
+              label={event.discipline || '—'}
+              size="small"
+              sx={{
+                backgroundColor: 'primary.light',
+                color: 'primary.contrastText',
+                fontWeight: 600,
+                height: 22,
+              }}
+            />
+          </Box>
+          {event.title ? (
+            <Typography
+              variant="caption"
+              sx={{ color: 'primary.contrastText', fontSize: '0.85rem' }}
+            >
               {event.title}
             </Typography>
-            {event.description && (
-              <Typography variant="body1" color="text.secondary">
-                {event.description}
+          ) : (
+            <Typography
+              variant="caption"
+              sx={{ color: 'primary.contrastText', fontSize: '0.85rem', fontStyle: 'italic' }}
+            >
+              Aucun titre fourni
+            </Typography>
+          )}
+        </Box>
+      </DialogTitle>
+      <DialogContent sx={{ mt: 2, pb: 1 }}>
+        <Box>
+          <Box sx={{ mb: 3 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
+            >
+              <Typography
+                component="div"
+                variant="subtitle1"
+                sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <EventIcon fontSize="small" />{' '}
+                {localTimeslots.length === 1 ? 'Créneau' : 'Créneaux'}
               </Typography>
-            )}
-          </Box>
-
-          <Divider />
-
-          {/* Informations temporelles avec modifications en attente intégrées */}
-          <Grid container spacing={2}>
-            {/* Modifications en attente - affichage en haut si owner ET des changements valides */}
-            {event.createdBy === currentUserId && hasPendingChanges(event) && (
-              <Grid size={{ xs: 12 }}>
-                <MuiAlert 
-                  severity="warning" 
-                  sx={{ mb: 2 }}
-                  icon={<ManageHistory />}
-                >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Modifications en attente de votre validation
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Des utilisateurs ont proposé des modifications pour les créneaux de cet événement. 
-                    Veuillez les examiner et les approuver ou les rejeter.
-                  </Typography>
-                </MuiAlert>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Comparaison des créneaux :
-                  </Typography>
-                  
-                  {/* Tableau de comparaison des créneaux - exclure les créneaux invalid */}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {event.timeSlots?.filter(slot => slot.status === 'active').map((proposedSlot) => {
-                      const correspondingActual = findCorrespondingActualSlot(proposedSlot, event.actuelTimeSlots || []);
-                      const slotStatus = getSlotStatus(proposedSlot, event);
-                      const slotKey = `${event.id}-${proposedSlot.id}`;
-                      
-                      return (
-                        <Box key={proposedSlot.id} sx={{ 
-                          p: 2, 
-                          border: '1px solid', 
-                          borderColor: slotStatus === 'approved' ? 'success.main' : 
-                                      slotStatus === 'new' ? 'info.main' : 'warning.main',
-                          borderRadius: 1,
-                          bgcolor: slotStatus === 'approved' ? 'success.50' : 
-                                  slotStatus === 'new' ? 'info.50' : 'warning.50'
-                        }}>
-                          <Grid container spacing={2} alignItems="center">
-                            <Grid size={{ xs: 12, md: 4 }}>
-                              <Typography variant="body2" color="text.secondary" gutterBottom>
-                                <strong>Actuel :</strong>
-                              </Typography>
-                              <Typography variant="body2">
-                                {correspondingActual ? 
-                                  `${format(new Date(correspondingActual.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - ${format(new Date(correspondingActual.endDate), 'HH:mm', { locale: fr })}` :
-                                  'Aucun créneau correspondant'
-                                }
-                              </Typography>
-                              {correspondingActual && correspondingActual.id !== proposedSlot.id && (
-                                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                  (sera remplacé)
-                                </Typography>
-                              )}
-                            </Grid>
-                            
-                            <Grid size={{ xs: 12, md: 4 }}>
-                              <Typography variant="body2" color="primary.main" gutterBottom>
-                                <strong>Proposé :</strong>
-                              </Typography>
-                              <Typography variant="body2" color="primary.main">
-                                {format(new Date(proposedSlot.startDate), 'dd/MM/yyyy HH:mm', { locale: fr })} - 
-                                {format(new Date(proposedSlot.endDate), 'HH:mm', { locale: fr })}
-                              </Typography>
-                            </Grid>
-
-                            <Grid size={{ xs: 12, md: 4 }}>
-                              {slotStatus === 'approved' ? (
-                                <Chip 
-                                  label="✓ Validé" 
-                                  color="success" 
-                                  size="small" 
-                                  variant="outlined"
-                                />
-                              ) : (
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    startIcon={loadingTimeslotActions[slotKey] === 'approve' ? 
-                                      <CircularProgress size={16} color="inherit" /> : 
-                                      <CheckCircle />
-                                    }
-                                    disabled={!!loadingTimeslotActions[slotKey]}
-                                    onClick={() => handleApproveTimeslot(0, proposedSlot.id)}
-                                  >
-                                    {loadingTimeslotActions[slotKey] === 'approve' ? 'Validation...' : 
-                                      slotStatus === 'new' ? 'Valider nouveau' : 'Valider modif'}
-                                  </Button>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="error"
-                                    startIcon={loadingTimeslotActions[slotKey] === 'reject' ? 
-                                      <CircularProgress size={16} color="inherit" /> : 
-                                      <Cancel />
-                                    }
-                                    disabled={!!loadingTimeslotActions[slotKey]}
-                                    onClick={() => handleRejectTimeslot(0, proposedSlot.id)}
-                                  >
-                                    {loadingTimeslotActions[slotKey] === 'reject' ? 'Rejet...' : 'Rejeter'}
-                                  </Button>
-                                </Box>
-                              )}
-                            </Grid>
-                          </Grid>
-                          
-                          {/* Indicateur de statut */}
-                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Statut: 
-                            </Typography>
-                            <Chip
-                              size="small"
-                              label={
-                                slotStatus === 'approved' ? 'Validé' :
-                                slotStatus === 'new' ? 'Nouveau créneau' : 
-                                'Modification en attente'
-                              }
-                              color={
-                                slotStatus === 'approved' ? 'success' :
-                                slotStatus === 'new' ? 'info' : 'warning'
-                              }
-                              variant="outlined"
-                            />
-                          </Box>
-                        </Box>
-                      )
-                    })}
-                  </Box>
-                </Box>
-
-                {/* Boutons d'action pour approuver/rejeter les changements */}
-                <Box sx={{ display: 'flex', gap: 1, mt: 2, mb: 2, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="small"
-                    startIcon={<CheckCircle />}
-                    onClick={async () => {
-                      try {
-                        const apiEndpoint = '/api/calendrier/chimie'
-                        const response = await fetch(`${apiEndpoint}/approve-timeslots`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ eventId: event.id })
-                        });
-                        
-                        if (response.ok) {
-                          const data = await response.json();
-                          if (onApproveTimeSlotChanges && data.event) {
-                            onApproveTimeSlotChanges(data.event);
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Erreur lors de l\'approbation:', error);
-                      }
-                    }}
-                  >
-                    Approuver tous les créneaux
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    startIcon={<Cancel />}
-                    onClick={async () => {
-                      try {
-                        const apiEndpoint = '/api/calendrier/chimie'
-                        const response = await fetch(`${apiEndpoint}/reject-timeslots`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ eventId: event.id })
-                        });
-                        
-                        if (response.ok) {
-                          const data = await response.json();
-                          if (onRejectTimeSlotChanges && data.event) {
-                            onRejectTimeSlotChanges(data.event);
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Erreur lors du rejet:', error);
-                      }
-                    }}
-                  >
-                    Rejeter tous les créneaux
-                  </Button>
-                </Box>
-              </Grid>
-            )}
-            
-            <Grid size = {{ xs: 12, sm: 12 }}>
-            {/* Option 1 - Avec icônes et mise en page alignée */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: isMobile ? 'flex-start' : 'center', 
-              gap: isMobile ? 1 : 2,
-              py: 0.5,
-              borderLeft: 3,
-              borderColor: 'primary.main',
-              flexDirection: isMobile ? 'column' : 'row',
-              pl: 1.5,
-              mb: 1,
-              width: '100%',
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-                  {format(eventDate, 'EEEE d MMMM', { locale: fr })}
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography color="text.secondary" sx= {{ fontWeight: 500, textTransform: 'uppercase' }}>
-                  {format(eventStartTime, 'HH:mm')} - {format(eventEndTime, 'HH:mm')}
-                </Typography>
-              </Box>
+              {canValidate && hasPendingSlots && (
+                <Stack direction="row" spacing={1}>
+                  {onApproveTimeSlots && (
+                    <Tooltip title="Approuver tous les créneaux en attente">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="success"
+                          onClick={() => onApproveTimeSlots(event)}
+                        >
+                          <CheckIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                  {onRejectTimeSlots && (
+                    <Tooltip title="Rejeter tous les créneaux en attente">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => onRejectTimeSlots(event)}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                  {onCounterPropose && eligibleSlots.length > 0 && (
+                    <Tooltip title="Contre‑proposition groupée">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color={showBulkCounter ? 'warning' : 'default'}
+                          onClick={() => setShowBulkCounter((v) => !v)}
+                        >
+                          <SwapHorizIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                </Stack>
+              )}
             </Box>
-            </Grid>
-            <Grid size = {{ xs: 12, sm: 12 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Durée
-              </Typography>
-              <Typography variant="body1">
-                <HourglassTop sx={{ fontSize: 16, color: 'text.secondary' }} /> {calculateDuration()} heure{calculateDuration() > 1 ? 's' : ''}
-              </Typography>
-            </Grid>
-          </Grid>
-
-          {/* Informations de localisation */}
-          {(normalizedClassData || getRoomDisplayName(event.room)) && (
-            <>
-
-              <Grid container spacing={2}>
-                {normalizedClassData && (
-                  <Grid size = {{ xs: 12, sm: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Classe
-                    </Typography>
-                    <Typography variant="body1">
-                      <School sx={{ fontSize: 16, color: 'text.secondary' }} /> {className}
-                    </Typography>
-                  </Grid>
-                )}
-                {getRoomDisplayName(event.room) && (
-                  <Grid size = {{ xs: 12, sm: 6 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Salle
-                    </Typography>
-                    <Typography variant="body1">
-                      <Room sx={{ fontSize: 16, color: 'text.secondary' }} /> {getRoomDisplayName(event.room)}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-            </>
-          )}
-
-{/* Matériel et réactifs */}
-{((event.materials && event.materials.length > 0) || 
-  (event.chemicals && event.chemicals.length > 0)) && (
-  <>
-    <Divider />
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Ressources nécessaires
-      </Typography>
-      <Box 
-      sx ={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        mt: 1,
-        width: '100%',
-      }}
-      >
-        {/* Table combinée pour Matériel et Réactifs chimiques */}
-        <TableContainer 
-          sx={{ mt: 2,
-            maxWidth: 600,
-            margin: '0 auto',
-          }}>
-          <Table size="small" sx={{ minWidth: 300 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 'bold',
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
-                    color: 'primary.main'
-                  }}
-                >
-                  Type / Nom
-                </TableCell>
-                <TableCell 
-                  align="right"
-                  sx={{ 
-                    fontWeight: 'bold',
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
-                    color: 'primary.main'
-                  }}
-                >
-                  Quantité
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {/* Section Matériel */}
-              {event.materials && event.materials.length > 0 && (
-                <>
-                  <TableRow>
-                    <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
-                      Matériel
-                    </TableCell>
-                  </TableRow>
-                  {event.materials.map((material, index) => (
-                    <TableRow key={`material-${index}`}>
-                      <TableCell>
-                        {typeof material === 'object' ? material.name || material.itemName : material}
-                      </TableCell>
-                      <TableCell align="right">
-                        {typeof material === 'object' && material.quantity ? `${material.quantity} ${material.unit || ''}`.trim() : 'N/A'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
-              )}
-
-              {/* Section Réactifs chimiques */}
-              {event.chemicals && event.chemicals.length > 0 && (
-                <>
-                  <TableRow>
-                    <TableCell colSpan={2} sx={{ fontWeight: 'bold', bgcolor: 'grey.100' }}>
-                      Réactifs Chimiques
-                    </TableCell>
-                  </TableRow>
-                  {event.chemicals.map((chemical, index) => (
-                    <TableRow key={`chemical-${index}`}>
-                      <TableCell>
-                        <Typography variant="body2">{chemical.name}</Typography>
-                        {chemical.formula && (
-                          <Typography variant="caption" color="text.secondary">
-                            {chemical.formula}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {chemical.requestedQuantity || chemical.quantity} {chemical.unit}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-        {/* Alert pour les réactifs personnalisés */}
-        {(event.chemicals?.some(c => typeof c === 'object' && c.isCustom)) && (
-          <MuiAlert
-            severity="info" 
-            sx={{
-              mt: 2,
-              width: 'auto',
-              maxWidth: 600,
-              margin: '16px auto 0'
-            }}
-            icon={<InfoOutlined />}
-          >
-            {(() => {
-              const customItems = (event.chemicals || []).filter(c => typeof c === 'object' && c.isCustom);
-              const customNames = customItems.map(c => typeof c === 'object' ? c.name : '').filter(Boolean);
-
-              if (customNames.length === 1) {
-                return (
-                  <>
-                    Le réactif <strong>{customNames[0]}</strong> est une demande personnalisée et n'est pas dans l'inventaire.
-                  </>
-                );
-              } else {
-                return (
-                  <>
-                    Les réactifs suivants sont des demandes personnalisées : <strong>{customNames.join(', ')}</strong>.
-                  </>
-                );
-              }
-            })()}
-          </MuiAlert>
-        )}
-    </Box>
-  </>
-)}
-
-          {/* Remarques */}
-          {event.remarks && (
-            <>
-              <Divider />
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Remarques
+            {showBulkCounter && onCounterPropose && (
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: '1px dashed',
+                  borderColor: 'warning.main',
+                  borderRadius: 2,
+                  backgroundColor: 'warning.light',
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Contre‑proposition groupée ({eligibleSlots.length} créneau(x))
                 </Typography>
-                <Box 
-                  sx={{ 
-                    p: 2, 
-                    bgcolor: 'grey.50', 
-                    borderRadius: 1,
-                    '& p': { margin: 0 },
-                    '& ul, & ol': { marginTop: 0, marginBottom: 0 }
-                  }}
-                  dangerouslySetInnerHTML={{ __html: event.remarks }}
-                />
-              </Box>
-            </>
-          )}
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+                  <Box>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      Date (optionnelle)
+                    </Typography>
+                    <FrenchDateOnly
+                      selected={cpDateObj}
+                      onChange={(d: Date | null) => setCpDateObj(d)}
+                      customInput={<TextField size="medium" />}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      Début (hh:mm)
+                    </Typography>
+                    <FrenchTimeOnly
+                      selected={cpStartObj}
+                      onChange={(d: Date | null) => setCpStartObj(d)}
+                      timeIntervals={5}
+                      customInput={<TextField size="medium" />}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      Fin (hh:mm)
+                    </Typography>
+                    <FrenchTimeOnly
+                      selected={cpEndObj}
+                      onChange={(d: Date | null) => setCpEndObj(d)}
+                      timeIntervals={5}
+                      customInput={<TextField size="medium" />}
+                    />
+                  </Box>
+                  <TextField
+                    size="small"
+                    label="Notes"
+                    value={cpNotes}
+                    onChange={(e) => setCpNotes(e.target.value)}
+                    sx={{ minWidth: { xs: '100%', sm: 200 } }}
+                  />
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<SwapHorizIcon fontSize="small" />}
+                    disabled={eligibleSlots.some((slot) => loadingSlotIds.has(slot.id))}
+                    onClick={async () => {
+                      const payload: any = {};
+                      if (cpDateObj) payload.timeslotDate = toDateOnly(cpDateObj);
+                      if (cpStartObj) payload.startDate = toLocalIsoNoZ(cpStartObj);
+                      if (cpEndObj) payload.endDate = toLocalIsoNoZ(cpEndObj);
+                      if (cpNotes) payload.notes = cpNotes.trim();
 
-          {/* Documents joints - Section améliorée */}
-          {documents.length > 0 && (
-            <>
-              <Divider />
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  {documents.length > 1
-                    ? `Documents joints (${documents.length})`
-                    : 'Document joint'}
-                </Typography>
-                <Stack 
-                  direction="row" 
-                  spacing={2} 
-                  sx={{ 
-                    overflowX: 'auto',
-                    pb: 1,
-                    '&::-webkit-scrollbar': {
-                      height: 8,
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      backgroundColor: 'rgba(0,0,0,0.1)',
-                      borderRadius: 4,
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      backgroundColor: 'rgba(0,0,0,0.3)',
-                      borderRadius: 4,
-                    }
-                  }}
-                >
-                  {documents.map((doc, index) => (
-                    <Box key={index} sx={{ flexShrink: 0 }}>
-                      <DocumentCard 
-                        document={doc} 
-                        onOpenError={setErrorMessage}
-                      />
-                    </Box>
-                  ))}
+                      // Add all eligible slots to loading state
+                      setLoadingSlotIds(
+                        (prev) => new Set([...prev, ...eligibleSlots.map((s) => s.id)]),
+                      );
+                      try {
+                        try {
+                          if (event)
+                            window.dispatchEvent(
+                              new CustomEvent('event-update:start', {
+                                detail: { eventId: event.id },
+                              }),
+                            );
+                        } catch {}
+                        await Promise.all(
+                          eligibleSlots.map((s) => onCounterPropose?.(s.id, payload)),
+                        );
+                        // Optimistic local update: mark proposed fields on each eligible slot
+                        try {
+                          (event.timeslots || []).forEach((s: any) => {
+                            if (!eligibleSlots.find((e) => e.id === s.id)) return;
+                            if (payload.startDate) s.proposedStartDate = payload.startDate;
+                            if (payload.endDate) s.proposedEndDate = payload.endDate;
+                            if (payload.timeslotDate) s.proposedTimeslotDate = payload.timeslotDate;
+                            if (payload.notes) s.proposedNotes = payload.notes;
+                            s.state = 'counter_proposed';
+                          });
+                          forceRerender((x) => x + 1);
+                        } catch {}
+                        // Notify parent for fine-grained rerender in lists
+                        if (onEventUpdate && event) {
+                          onEventUpdate(event.id);
+                        }
+                        setShowBulkCounter(false);
+                        setCpDateObj(null);
+                        setCpStartObj(null);
+                        setCpEndObj(null);
+                        setCpNotes('');
+                      } finally {
+                        // Remove all eligible slots from loading state
+                        setLoadingSlotIds((prev) => {
+                          const next = new Set(prev);
+                          eligibleSlots.forEach((s) => next.delete(s.id));
+                          return next;
+                        });
+                      }
+                    }}
+                  >
+                    Appliquer
+                  </Button>
                 </Stack>
               </Box>
-            </>
-          )}
-
-          {/* Métadonnées */}
-          <Divider sx={{ my: 2 }} />
-          
-          {/* Historique des modifications */}
-{/* Historique des modifications */}
-{(timelineData.length > 0 || event.createdAt) && (
-  <>
-    <Box>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <History /> Historique
-      </Typography>
-      
-      {loadingUsers ? (
-        <Stack spacing={2}>
-          <Skeleton variant="circular" width={40} height={40} />
-          <Skeleton variant="text" width="60%" />
-          <Skeleton variant="text" width="40%" />
-          <Skeleton variant="text" width="50%" />
-        </Stack>
-      ) : (
-        <Timeline position="alternate" sx={{ mt: 0, pt: 0 }}>
-          {/* Date d'ajout en premier */}
-          {event.createdAt && (
-            <TimelineItem 
-              sx={{
-                minHeight: 60,
-                '&::before': {
-                  flex: 0,
-                  padding: 0,
+            )}
+            {/* Focus mode: dim other sections when counter-proposing a specific slot */}
+            <SlotDisplay
+              slots={(targetSlot ? [targetSlot] : localTimeslots || []) as any}
+              salleMap={salleMap as any}
+              classMap={classMap as any}
+              showAssignButtons
+              onAssignSalle={(slot) => openAssignDialog(slot, 'salles')}
+              onAssignClasses={(slot) => openAssignDialog(slot, 'classes')}
+              onEventUpdate={onEventUpdate}
+              loadingSlotIds={loadingSlotIds}
+              canValidate={canValidate}
+              isOwner={isOwner}
+              eventId={event.id}
+              onSlotUpdate={() => {
+                // Refresh event data
+                if (onEventUpdate) {
+                  onEventUpdate(event.id);
                 }
               }}
-            >
-              <TimelineOppositeContent
-                sx={{ 
-                  m: 'auto 0',
-                  py: 0.5
+            />
+            {targetSlot && canValidate && onCounterPropose && (
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 1.5,
+                  border: '1px dashed',
+                  borderColor: 'warning.main',
+                  borderRadius: 1.5,
+                  backgroundColor: 'background.paper',
+                  boxShadow: 3,
+                  transition: 'all .25s ease',
                 }}
-                align="right"
-                variant="body2"
-                color="text.secondary"
               >
-                {formatDate(event.createdAt)}
-              </TimelineOppositeContent>
-              
-              <TimelineSeparator>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Avatar
-                    sx={{ 
-                      bgcolor: 'success.main', 
-                      width: 24, 
-                      height: 24, 
-                      fontSize: '0.75rem' 
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
+                  Contre‑proposition pour le créneau sélectionné
+                </Typography>
+                <Stack
+                  direction={{ xs: 'column', sm: 'column' }}
+                  spacing={1.5}
+                  alignItems="flex-start"
+                >
+                  <Stack
+                    sx={{
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1.5,
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <Person sx={{ fontSize: 16, color: 'white' }} />
-                  </Avatar>
-                </Box>
-                {timelineData.length > 0 && <TimelineConnector sx={{ bgcolor: 'grey.400', height: '20px' }} />}
-              </TimelineSeparator>
-              
-              <TimelineContent sx={{ py: 0.5, px: 2 }}>
-                <Typography variant="body2" component="span" fontWeight="medium">
-                  {creatorInfo ? (creatorInfo.name || creatorInfo.email) : 'Utilisateur'}
-                </Typography>
-                <Typography variant="caption" display="block" color="text.secondary">
-                  a ajouté l'événement
-                </Typography>
-              </TimelineContent>
-            </TimelineItem>
-          )}
+                    <FrenchDateOnly
+                      selected={cpDateObj}
+                      onChange={(d: Date | null) => setCpDateObj(d)}
+                      customInput={<TextField size="medium" label="Date" />}
+                    />
+                    <FrenchTimeOnly
+                      selected={cpStartObj}
+                      onChange={(d: Date | null) => setCpStartObj(d)}
+                      timeIntervals={5}
+                      customInput={<TextField size="medium" label="Début" />}
+                    />
+                    <FrenchTimeOnly
+                      selected={cpEndObj}
+                      onChange={(d: Date | null) => setCpEndObj(d)}
+                      timeIntervals={5}
+                      customInput={<TextField size="medium" label="Fin" />}
+                    />
+                  </Stack>
+                  <Stack
+                    sx={{
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1.5,
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <TextField
+                      size="medium"
+                      label="Notes"
+                      value={cpNotes}
+                      onChange={(e) => setCpNotes(e.target.value)}
+                      sx={{
+                        minWidth: 160,
+                        flexGrow: 2,
+                        maxWidth: '100%',
+                      }}
+                    />
+                    <Stack
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 1.5,
+                        justifyContent: 'space-around',
+                        flexGrow: 1,
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<SwapHorizIcon fontSize="small" />}
+                        disabled={loadingSlotIds.has(targetSlot?.id)}
+                        onClick={async () => {
+                          if (!targetSlot) return;
+                          const payload: any = {};
+                          if (cpDateObj) payload.timeslotDate = toDateOnly(cpDateObj);
+                          if (cpStartObj) payload.startDate = toLocalIsoNoZ(cpStartObj);
+                          if (cpEndObj) payload.endDate = toLocalIsoNoZ(cpEndObj);
+                          if (cpNotes) payload.notes = cpNotes.trim();
 
-          {/* Modifications suivantes */}
-          {timelineData.map((item, index) => {
-            const isAlternate = (event.createdAt ? index + 1 : index) % 2 === 0
-            const previousUserId = index > 0 ? timelineData[index - 1].userId : event.createdBy
-            const isSameUserAsPrevious = item.userId === previousUserId
-            
-            return (
-              <TimelineItem 
-                key={index}
+                          setLoadingSlotIds((prev) => new Set([...prev, targetSlot.id]));
+                          try {
+                            if (event)
+                              window.dispatchEvent(
+                                new CustomEvent('event-update:start', {
+                                  detail: { eventId: event.id },
+                                }),
+                              );
+                            await onCounterPropose(targetSlot.id, payload);
+                            // Optimistic local update: reflect proposed fields on the targeted slot
+                            try {
+                              const s = (event.timeslots || []).find(
+                                (ts: any) => ts.id === targetSlot.id,
+                              );
+                              if (s) {
+                                if (payload.startDate) s.proposedStartDate = payload.startDate;
+                                if (payload.endDate) s.proposedEndDate = payload.endDate;
+                                if (payload.timeslotDate)
+                                  s.proposedTimeslotDate = payload.timeslotDate;
+                                if (payload.notes) s.proposedNotes = payload.notes;
+                                s.state = 'counter_proposed';
+                              }
+                              forceRerender((x) => x + 1);
+                            } catch {}
+                            // Notify parent for fine-grained rerender in lists
+                            if (onEventUpdate && event) {
+                              onEventUpdate(event.id);
+                            }
+                            // After sending, clear focus and inputs
+                            setTargetSlot(null);
+                            setCpDateObj(null);
+                            setCpStartObj(null);
+                            setCpEndObj(null);
+                            setCpNotes('');
+                            try {
+                              if (event)
+                                window.dispatchEvent(
+                                  new CustomEvent('event-update:end', {
+                                    detail: { eventId: event.id },
+                                  }),
+                                );
+                            } catch {}
+                          } finally {
+                            setLoadingSlotIds((prev) => {
+                              const next = new Set(prev);
+                              next.delete(targetSlot.id);
+                              return next;
+                            });
+                          }
+                        }}
+                      >
+                        Envoyer
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setTargetSlot(null);
+                          setCpDateObj(null);
+                          setCpStartObj(null);
+                          setCpEndObj(null);
+                          setCpNotes('');
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Box>
+            )}
+            {/* Proposed variants are shown inline by SlotDisplay when proposed* fields are present */}
+          </Box>
+          <Collapse in={!targetSlot} timeout={250} unmountOnExit>
+            <Box>
+              <Box
                 sx={{
-                  minHeight: isSameUserAsPrevious ? 40 : 60,
-                  '&::before': {
-                    flex: 0,
-                    padding: 0,
-                  }
+                  my: 2,
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                  gap: 2,
                 }}
               >
-                <TimelineOppositeContent
-                  sx={{ 
-                    m: 'auto 0',
-                    py: isSameUserAsPrevious ? 0.1 : 0.5
-                  }}
-                  align={isAlternate ? "right" : "left"}
-                  variant="body2"
-                  color="text.secondary"
+                <Box>
+                  <Typography
+                    component="div"
+                    variant="subtitle1"
+                    sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    <MeetingRoomIcon fontSize="small" />{' '}
+                    {eventSalleIds.length === 1 ? 'Salle' : 'Salles'}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
+                    {eventSalleIds.length > 0 ? (
+                      eventSalleIds.map((id: number) => (
+                        <Chip key={id} label={salleMap[id] || `Salle ${id}`} size="small" />
+                      ))
+                    ) : (
+                      <Chip label="Aucune" size="small" variant="outlined" />
+                    )}
+                  </Stack>
+                </Box>
+                <Box>
+                  <Typography
+                    component="div"
+                    variant="subtitle1"
+                    sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    <ClassIcon fontSize="small" />{' '}
+                    {eventClassIds.length === 1 ? 'Classe' : 'Classes'}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
+                    {eventClassIds.length > 0 ? (
+                      eventClassIds.map((id: number) => (
+                        <Chip key={id} label={classMap[id] || `Classe ${id}`} size="small" />
+                      ))
+                    ) : (
+                      <Chip label="Aucune" size="small" variant="outlined" />
+                    )}
+                  </Stack>
+                </Box>
+              </Box>
+              <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 600, margin: '0 auto' }}>
+                <Table size="small" sx={{ minWidth: 300 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: 'bold',
+                          borderBottom: '2px solid',
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                        }}
+                      >
+                        Type / Nom
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{
+                          fontWeight: 'bold',
+                          borderBottom: '2px solid',
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                        }}
+                      >
+                        Quantité
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell
+                          align="center"
+                          sx={{
+                            fontWeight: 'bold',
+                            borderBottom: '2px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                          }}
+                        >
+                          Actions
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell
+                        colSpan={canEdit ? 3 : 2}
+                        sx={{
+                          fontWeight: 'bold',
+                          bgcolor: 'grey.100',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <BuildIcon fontSize="small" /> Matériel
+                      </TableCell>
+                    </TableRow>
+                    {localMateriels.map((m: any) => (
+                      <TableRow key={`ev-mat-preset-${m.id}`}>
+                        <TableCell>
+                          <Typography variant="body2">{m.materielName}</Typography>
+                        </TableCell>
+                        <TableCell align="right">{m.quantity ? `${m.quantity}` : 'N/A'}</TableCell>
+                        {canEdit && (
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={async () => {
+                                const backup = [...localMateriels];
+                                setLocalMateriels((prev) => prev.filter((x) => x.id !== m.id));
+                                try {
+                                  const remaining = backup
+                                    .filter((x) => x.id !== m.id)
+                                    .map((x) => ({
+                                      materielId: x.materielId,
+                                      name: x.materielName,
+                                      quantity: x.quantity ?? 1,
+                                      isCustom: false,
+                                    }));
+                                  await fetch(`/api/events/${event.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ materiels: remaining }),
+                                  });
+                                } catch {
+                                  setLocalMateriels(backup);
+                                }
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                    {localCustomMats.map((rm: any) => (
+                      <TableRow key={`ev-mat-custom-${rm.id}`}>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            component="span"
+                            sx={{ display: 'flex', alignItems: 'center' }}
+                          >
+                            {rm.name}
+                            <Chip
+                              label="PERSO"
+                              size="small"
+                              color="warning"
+                              variant="filled"
+                              sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
+                            />
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          {rm.quantity ? `${rm.quantity}` : 'N/A'}
+                        </TableCell>
+                        {canEdit && (
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={async () => {
+                                const backup = [...localCustomMats];
+                                setLocalCustomMats((prev) => prev.filter((x) => x.id !== rm.id));
+                                try {
+                                  await fetch(
+                                    `/api/events/${event.id}/requests/materiels?requestId=${rm.id}`,
+                                    { method: 'DELETE' },
+                                  );
+                                } catch {
+                                  setLocalCustomMats(backup);
+                                }
+                              }}
+                            >
+                              <CancelIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                    {!(localMateriels.length || localCustomMats.length) && (
+                      <TableRow>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            Aucun matériel
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">-</TableCell>
+                        {canEdit && <TableCell align="center">-</TableCell>}
+                      </TableRow>
+                    )}
+                    {event.discipline === 'chimie' ? (
+                      <>
+                        <TableRow>
+                          <TableCell
+                            colSpan={canEdit ? 3 : 2}
+                            sx={{
+                              fontWeight: 'bold',
+                              bgcolor: 'grey.100',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                          </TableCell>
+                        </TableRow>
+                        {localReactifs.map((r: any) => (
+                          <TableRow key={`ev-react-preset-${r.id}`}>
+                            <TableCell>
+                              <Typography variant="body2">{r.reactifName}</Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              {r.requestedQuantity || r.requestedQuantity === 0
+                                ? `${r.requestedQuantity} ${r.unit || 'g'}`.trim()
+                                : 'N/A'}
+                            </TableCell>
+                            {canEdit && (
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={async () => {
+                                    const backup = [...localReactifs];
+                                    setLocalReactifs((prev) => prev.filter((x) => x.id !== r.id));
+                                    try {
+                                      const remaining = backup
+                                        .filter((x) => x.id !== r.id)
+                                        .map((x) => ({
+                                          reactifId: x.reactifId,
+                                          name: x.reactifName,
+                                          requestedQuantity: x.requestedQuantity ?? 0,
+                                          unit: x.unit || 'g',
+                                          isCustom: false,
+                                        }));
+                                      await fetch(`/api/events/${event.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ reactifs: remaining }),
+                                      });
+                                    } catch {
+                                      setLocalReactifs(backup);
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                        {localCustomChems.map((rr: any) => (
+                          <TableRow key={`ev-react-custom-${rr.id}`}>
+                            <TableCell>
+                              <Typography
+                                variant="body2"
+                                component="span"
+                                sx={{ display: 'flex', alignItems: 'center' }}
+                              >
+                                {rr.name}
+                                <Chip
+                                  label="PERSO"
+                                  size="small"
+                                  color="warning"
+                                  variant="filled"
+                                  sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
+                                />
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              {rr.requestedQuantity || rr.requestedQuantity === 0
+                                ? `${rr.requestedQuantity} ${rr.unit || 'g'}`.trim()
+                                : 'N/A'}
+                            </TableCell>
+                            {canEdit && (
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={async () => {
+                                    const backup = [...localCustomChems];
+                                    setLocalCustomChems((prev) =>
+                                      prev.filter((x) => x.id !== rr.id),
+                                    );
+                                    try {
+                                      await fetch(
+                                        `/api/events/${event.id}/requests/reactifs?requestId=${rr.id}`,
+                                        { method: 'DELETE' },
+                                      );
+                                    } catch {
+                                      setLocalCustomChems(backup);
+                                    }
+                                  }}
+                                >
+                                  <CancelIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                        {!(localReactifs.length || localCustomChems.length) && (
+                          <TableRow>
+                            <TableCell>
+                              <Typography variant="body2" color="text.secondary">
+                                Aucun réactif
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">-</TableCell>
+                            {canEdit && <TableCell align="center">-</TableCell>}
+                          </TableRow>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <TableRow>
+                          <TableCell
+                            colSpan={canEdit ? 3 : 2}
+                            sx={{
+                              fontWeight: 'bold',
+                              bgcolor: 'grey.100',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              Non applicable (Physique)
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">-</TableCell>
+                          {canEdit && <TableCell align="center">-</TableCell>}
+                        </TableRow>
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              {canEdit && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    variant="contained"
+                    onClick={() => setResourcesDialogOpen(true)}
+                  >
+                    Gérer Matériel & Réactifs
+                  </Button>
+                </Box>
+              )}
+              <Box sx={{ mt: 2 }}>
+                <Typography
+                  component="div"
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
                 >
-                  {formatDate(item.date)}
-                </TimelineOppositeContent>
-                
-                <TimelineSeparator>
-                  <TimelineConnector sx={{ 
-                    bgcolor: isSameUserAsPrevious ? 'grey.300' : 'grey.400',
-                    height: isSameUserAsPrevious ? '10px' : '20px'
-                  }} />
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {!isSameUserAsPrevious && (
-                      <Avatar
-                        sx={{ 
-                          bgcolor: 'primary.main', 
-                          width: 24, 
-                          height: 24, 
-                          fontSize: '0.75rem' 
-                        }}
-                      >
-                        <Person sx={{ fontSize: 16, color: 'white' }} />
-                      </Avatar>
-                    )}
-                    {isSameUserAsPrevious && (
-                      <TimelineDot 
-                        color={index === timelineData.length - 1 ? "primary" : "grey"}
-                        variant="outlined"
-                        sx={{ 
-                          width: 10,
-                          height: 10,
-                          margin: 0,
-                          transition: 'all 0.3s'
-                        }}
-                      />
-                    )}
-                  </Box>
-                  
-                  {index < timelineData.length - 1 && (
-                    <TimelineConnector sx={{ 
-                      bgcolor: timelineData[index + 1]?.userId === item.userId ? 'grey.300' : 'grey.400',
-                      height: timelineData[index + 1]?.userId === item.userId ? '5px' : '20px'
-                    }} />
-                  )}
-                </TimelineSeparator>
-                
-                <TimelineContent sx={{ 
-                  py: isSameUserAsPrevious ? 0.1 : 0.5,
-                  px: 2 
-                }}>
-                  {!isSameUserAsPrevious ? (
-                    <Typography variant="body2" component="span" fontWeight="medium">
-                      {item.userName}
-                    </Typography>
-                  ) : (
-                    <Typography 
-                      variant="caption" 
-                      color="text.secondary" 
-                      sx={{ fontStyle: 'italic' }}
-                    >
-                      Modification supplémentaire
-                    </Typography>
-                  )}
-                </TimelineContent>
-              </TimelineItem>
-            )
-          })}
-        </Timeline>
-      )}
-    </Box>
-  </>
-)}
-
-
-{/* Ajouter dans la section historique, après l'historique des modifications */}
-{/* Historique des modifications de créneaux */}
-{event.timeSlots && event.timeSlots.some(slot => slot.modifiedBy && slot.modifiedBy.length > 0) && (
-  <>
-    <Divider sx={{ my: 2 }} />
-    <Box>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Schedule /> Historique des créneaux
-      </Typography>
-      
-      {event.timeSlots.map((slot, slotIndex) => {
-        if (!slot.modifiedBy || slot.modifiedBy.length === 0) return null;
-        
-        const slotStart = new Date(slot.startDate);
-        const slotEnd = new Date(slot.endDate);
-        
-        return (
-          <Box key={slot.id+"_"+slotIndex} sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" gutterBottom sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              color: 'primary.main'
-            }}>
-              <CalendarToday fontSize="small" />
-              Créneau {slotIndex + 1}: {format(slotStart, 'dd/MM/yyyy HH:mm')} - {format(slotEnd, 'HH:mm')}
-            </Typography>
-            
-            <Timeline position="right" sx={{ mt: 1, pl: 2 }}>
-              {slot.modifiedBy.map((change, changeIndex) => {
-                const userInfo = usersInfo[change.userId];
-                const userName = userInfo?.name || userInfo?.email || `Utilisateur ${change.userId}`;
-                
-                return (
-                  <TimelineItem key={changeIndex} sx={{ minHeight: 50 }}>
-                    <TimelineSeparator>
-                      {changeIndex > 0 && <TimelineConnector sx={{ height: 10 }} />}
-                      <TimelineDot 
-                        variant="outlined"
-                        color={
-                          change.action === 'created' ? 'success' :
-                          change.action === 'modified' ? 'info' :
-                          change.action === 'deleted' ? 'error' : 'grey'
+                  <AttachFileIcon fontSize="small" /> Documents
+                </Typography>
+                {localDocuments.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Aucun document
+                  </Typography>
+                )}
+                {localDocuments.length > 0 && (
+                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+                    {localDocuments.map((doc: any) => {
+                      const effectiveName =
+                        doc.fileName ||
+                        (() => {
+                          try {
+                            const raw = decodeURIComponent(String(doc.fileUrl || '')).split('?')[0];
+                            const parts = raw.split('/');
+                            return parts[parts.length - 1] || 'Document';
+                          } catch {
+                            return 'Document';
+                          }
+                        })();
+                      const sizeLabel = doc.fileSize
+                        ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                        : '';
+                      const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
+                      const buildDownloadUrl = (rawUrl: string) => {
+                        if (!rawUrl) return rawUrl;
+                        // In production, serve via proxy API for auth and headers
+                        if (process.env.NODE_ENV === 'production') {
+                          const enc = encodeURIComponent(rawUrl);
+                          return `/api/documents/proxy?fileUrl=${enc}`;
                         }
-                        sx={{ width: 24, height: 24 }}
+                        return rawUrl;
+                      };
+                      const openUrl = buildDownloadUrl(doc.fileUrl);
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Tooltip key={doc.id || doc.fileUrl} title={tooltip} arrow>
+                            <Chip
+                              label={effectiveName}
+                              size="small"
+                              variant="outlined"
+                              onClick={() => openUrl && window.open(openUrl, '_blank')}
+                              icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                            />
+                          </Tooltip>
+                          <Tooltip title="Télécharger">
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={() => openUrl && window.open(openUrl, '_blank')}
+                              >
+                                <DownloadIcon fontSize="inherit" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          {canEdit && (
+                            <Tooltip title="Supprimer (archiver)">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  disabled={docActionLoading === doc.fileUrl}
+                                  onClick={async () => {
+                                    const remaining = localDocuments.filter((d: any) => d !== doc);
+                                    setLocalDocuments(remaining);
+                                    if (event) (event as any).documents = remaining;
+                                    forceRerender((x) => x + 1);
+                                    try {
+                                      setDocActionLoading(doc.fileUrl);
+                                      const res = await fetch(
+                                        `/api/events/${event.id}/documents?fileUrl=${encodeURIComponent(doc.fileUrl)}`,
+                                        { method: 'DELETE' },
+                                      );
+                                      if (!res.ok) throw new Error('delete failed');
+                                      setSnackbar({
+                                        open: true,
+                                        message: 'Document supprimé',
+                                        severity: 'success',
+                                      });
+                                    } catch (e) {
+                                      setLocalDocuments((prev) => [...prev, doc]);
+                                      setSnackbar({
+                                        open: true,
+                                        message: 'Échec suppression',
+                                        severity: 'error',
+                                      });
+                                    } finally {
+                                      setDocActionLoading(null);
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="inherit" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          )}{' '}
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                )}
+                {canEdit && !addingDocs && (
+                  <Box sx={{ mt: 1 }}>
+                    <Button
+                      size="small"
+                      startIcon={<CloudUploadIcon fontSize="small" />}
+                      onClick={() => setAddingDocs(true)}
+                    >
+                      Ajouter des documents
+                    </Button>
+                  </Box>
+                )}
+                {canEdit && addingDocs && (
+                  <Box sx={{ mt: 2 }}>
+                    <FileUploadSection
+                      files={uploadingDocs}
+                      onFilesChange={setUploadingDocs}
+                      maxFiles={5}
+                      eventId={event.id}
+                      onFileUploaded={async (_fileId, uploaded) => {
+                        setLocalDocuments((prev) => {
+                          if (prev.some((d) => d.fileUrl === uploaded.fileUrl)) return prev;
+                          return [
+                            ...prev,
+                            {
+                              id: uploaded.documentId || `temp-${Date.now()}`,
+                              fileName: uploaded.fileName,
+                              fileUrl: uploaded.fileUrl,
+                              fileSize: uploaded.fileSize,
+                              fileType: uploaded.fileType,
+                            },
+                          ];
+                        });
+                        setSnackbar({
+                          open: true,
+                          message: uploaded.duplicate
+                            ? 'Document déjà présent (non ré-ajouté)'
+                            : 'Document ajouté',
+                          severity: uploaded.duplicate ? 'info' : 'success',
+                        });
+                      }}
+                      onFileDeleted={(fileUrl) => {
+                        setLocalDocuments((prev) => prev.filter((d: any) => d.fileUrl !== fileUrl));
+                        try {
+                          if (event)
+                            window.dispatchEvent(
+                              new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
+                            );
+                        } catch {}
+                      }}
+                    />
+                    <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                      <Button
+                        size="small"
+                        disabled={uploadingOne}
+                        onClick={() => {
+                          setAddingDocs(false);
+                          setUploadingDocs([]);
+                        }}
                       >
-                        {change.action === 'created' && <Add sx={{ fontSize: 14 }} />}
-                        {change.action === 'modified' && <Edit sx={{ fontSize: 14 }} />}
-                        {change.action === 'deleted' && <Delete sx={{ fontSize: 14 }} />}
-                      </TimelineDot>
-                      {changeIndex < (slot.modifiedBy?.length ?? 0) - 1 && <TimelineConnector sx={{ height: 10 }} />}
-                    </TimelineSeparator>
-                    
-                    <TimelineContent sx={{ py: 0.5, px: 2 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDate(change.date)}
-                      </Typography>
-                      <Typography variant="body2" component="div">
-                        <strong>{userName}</strong>
-                      </Typography>
-                      <Typography variant="caption" component="div" sx={{ 
-                        fontWeight: 'bold', 
-                        textTransform: 'uppercase',
-                        color: 
-                          change.action === 'created' ? 'success.main' :
-                          change.action === 'modified' ? 'info.main' :
-                          change.action === 'deleted' ? 'error.main' : 'text.primary'
-                      }}>
-                        {change.action === 'created' ? 'Créneau créé' :
-                         change.action === 'modified' ? 'Créneau modifié' :
-                         change.action === 'deleted' ? 'Créneau supprimé' : change.action}
-                      </Typography>
-                    </TimelineContent>
-                  </TimelineItem>
-                );
-              })}
-            </Timeline>
-          </Box>
-        );
-      })}
-    </Box>
-  </>
-)}
-        </Stack>
+                        {uploadingOne ? 'Patientez…' : 'Terminer'}
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+              {resourcesDialogOpen && event && (
+                <AddResourcesDialog
+                  discipline={event.discipline === 'chimie' ? 'chimie' : 'physique'}
+                  open={resourcesDialogOpen}
+                  mode="dialog"
+                  onClose={() => setResourcesDialogOpen(false)}
+                  presetMaterials={localMateriels.map((m) => ({
+                    id: m.materielId || m.id,
+                    name: m.materielName,
+                    quantity: m.quantity,
+                  }))}
+                  customMaterials={localCustomMats.map((m) => ({
+                    id: m.id,
+                    name: m.name,
+                    quantity: m.quantity,
+                  }))}
+                  presetChemicals={localReactifs.map((r) => ({
+                    id: r.reactifId || r.id,
+                    name: r.reactifName,
+                    requestedQuantity: r.requestedQuantity,
+                    unit: r.unit,
+                  }))}
+                  customChemicals={localCustomChems.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    requestedQuantity: c.requestedQuantity,
+                    unit: c.unit,
+                  }))}
+                  onChange={() => {}}
+                  onSave={async (data: AddResourcesDialogChange) => {
+                    const toNumber = (v: any, def: number) => {
+                      if (v === '' || v === null || v === undefined) return def;
+                      const n = Number(v);
+                      return Number.isFinite(n) ? n : def;
+                    };
+                    const clampMin = (v: number, min: number) => (v < min ? min : v);
+                    const newMateriels = data.presetMaterials
+                      .filter((m) => m.name && m.name.trim())
+                      .map((m) => ({
+                        materielId: m.id,
+                        name: m.name.trim(),
+                        quantity: clampMin(toNumber(m.quantity, 1), 1),
+                        isCustom: false,
+                      }));
+                    const newReactifs = data.presetChemicals
+                      .filter((c) => c.name && c.name.trim())
+                      .map((c) => ({
+                        reactifId: c.id,
+                        name: c.name.trim(),
+                        requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
+                        unit: (c.unit && c.unit.trim()) || 'g',
+                        isCustom: false,
+                      }));
+                    const currentSig = buildResourceSignature({
+                      materiels: localMateriels,
+                      reactifs: localReactifs,
+                    });
+                    const nextSig = buildResourceSignature({
+                      materiels: newMateriels,
+                      reactifs: newReactifs,
+                    });
+                    const presetChanged = currentSig !== nextSig;
+                    const currentCustomSig = buildCustomResourceSignature({
+                      customMateriels: localCustomMats.map((m) => ({
+                        name: m.name,
+                        quantity: m.quantity,
+                      })),
+                      customReactifs: localCustomChems.map((c) => ({
+                        name: c.name,
+                        requestedQuantity: c.requestedQuantity,
+                        unit: c.unit,
+                      })),
+                    });
+                    const nextCustomSig = buildCustomResourceSignature({
+                      customMateriels: data.customMaterials.map((m) => ({
+                        name: m.name,
+                        quantity: m.quantity,
+                      })),
+                      customReactifs: data.customChemicals.map((c) => ({
+                        name: c.name,
+                        requestedQuantity: c.requestedQuantity,
+                        unit: c.unit,
+                      })),
+                    });
+                    const customChangedPlanned = currentCustomSig !== nextCustomSig;
+                    if (presetChanged) {
+                      try {
+                        await fetch(`/api/events/${event.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ materiels: newMateriels, reactifs: newReactifs }),
+                        });
+                      } catch (e) {
+                        setSnackbar({
+                          open: true,
+                          message: 'Erreur lors de la mise à jour des ressources prédéfinies',
+                          severity: 'error',
+                        });
+                        return;
+                      }
+                    }
+                    let customChanged = false;
+                    if (customChangedPlanned) {
+                      try {
+                        const syncResult = await syncCustomResources(event.id, {
+                          materials: data.customMaterials.map((m) => ({
+                            name: m.name,
+                            quantity: m.quantity,
+                          })),
+                          chemicals: data.customChemicals.map((c) => ({
+                            name: c.name,
+                            requestedQuantity: c.requestedQuantity,
+                            unit: c.unit,
+                          })),
+                        });
+                        customChanged = syncResult.changed;
+                        if (!syncResult.success) {
+                          console.error(
+                            '[EventDetailsDialog][customSync] errors',
+                            syncResult.errors,
+                          );
+                        }
+                      } catch (err) {
+                        setSnackbar({
+                          open: true,
+                          message: 'Erreur lors de la synchronisation des ressources perso',
+                          severity: 'error',
+                        });
+                        return;
+                      }
+                    }
+                    if (presetChanged || customChanged) {
+                      try {
+                        const refreshed = await fetch(`/api/events/${event.id}`);
+                        if (refreshed.ok) {
+                          const json = await refreshed.json();
+                          const ev = json.event || {};
+                          setLocalMateriels([...(ev.materiels || [])]);
+                          setLocalReactifs([...(ev.reactifs || [])]);
+                          setLocalCustomMats([...(ev.customMaterielRequests || [])]);
+                          setLocalCustomChems([...(ev.customReactifRequests || [])]);
+                        } else {
+                          setLocalMateriels(
+                            newMateriels.map((m, idx) => ({
+                              id: `mat-${idx}`,
+                              materielId: m.materielId,
+                              materielName: m.name,
+                              quantity: m.quantity,
+                            })),
+                          );
+                          setLocalReactifs(
+                            newReactifs.map((r, idx) => ({
+                              id: `chem-${idx}`,
+                              reactifId: r.reactifId,
+                              reactifName: r.name,
+                              requestedQuantity: r.requestedQuantity,
+                              unit: r.unit,
+                            })),
+                          );
+                          setLocalCustomMats(
+                            data.customMaterials.map((m, idx) => ({
+                              id: m.id || `c-m-${idx}`,
+                              name: m.name,
+                              quantity: m.quantity,
+                            })),
+                          );
+                          setLocalCustomChems(
+                            data.customChemicals.map((c, idx) => ({
+                              id: c.id || `c-c-${idx}`,
+                              name: c.name,
+                              requestedQuantity: c.requestedQuantity,
+                              unit: c.unit,
+                            })),
+                          );
+                        }
+                      } catch {
+                        setLocalMateriels(
+                          newMateriels.map((m, idx) => ({
+                            id: `mat-${idx}`,
+                            materielId: m.materielId,
+                            materielName: m.name,
+                            quantity: m.quantity,
+                          })),
+                        );
+                        setLocalReactifs(
+                          newReactifs.map((r, idx) => ({
+                            id: `chem-${idx}`,
+                            reactifId: r.reactifId,
+                            reactifName: r.name,
+                            requestedQuantity: r.requestedQuantity,
+                            unit: r.unit,
+                          })),
+                        );
+                        setLocalCustomMats(
+                          data.customMaterials.map((m, idx) => ({
+                            id: m.id || `c-m-${idx}`,
+                            name: m.name,
+                            quantity: m.quantity,
+                          })),
+                        );
+                        setLocalCustomChems(
+                          data.customChemicals.map((c, idx) => ({
+                            id: c.id || `c-c-${idx}`,
+                            name: c.name,
+                            requestedQuantity: c.requestedQuantity,
+                            unit: c.unit,
+                          })),
+                        );
+                      }
+                    } else {
+                      setLocalMateriels(localMateriels);
+                      setLocalReactifs(localReactifs);
+                    }
+                    if (presetChanged || customChanged) {
+                      setSnackbar({
+                        open: true,
+                        message: 'Ressources mises à jour',
+                        severity: 'success',
+                      });
+                    } else {
+                      setSnackbar({
+                        open: true,
+                        message: 'Aucune modification à enregistrer',
+                        severity: 'info',
+                      });
+                    }
+                  }}
+                />
+              )}
+              <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              >
+                <Alert
+                  onClose={() => setSnackbar({ ...snackbar, open: false })}
+                  severity={snackbar.severity}
+                >
+                  {snackbar.message}
+                </Alert>
+              </Snackbar>
+              <Divider sx={{ mt: 3, mb: 1 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Ajouté le {formatDate(event.createdAt)} • Modifié le {formatDate(event.updatedAt)}
+              </Typography>
+            </Box>
+          </Collapse>
+        </Box>
       </DialogContent>
-      
-        <DialogActions>
-<Box sx={{ 
-  display: 'flex',
-  flexDirection: isTablet || isMobile ? 'column' : 'row',
-  width: '100%',
-  gap:isTablet || isMobile ? 1 : 2,
-   }}>
-  {/* Bloc 1 : 4 boutons d'état (2x2 sur grand écran, 4x1 sur mobile/tablette) */}
-  {canValidate && (
-    <Grid
-      container
-      spacing={1}
-      sx={{
-        mb: 1,
-        width: '100%',
-        minWidth: isMobile || isTablet ? 300 : '40%',
-        maxWidth: isMobile || isTablet ? 400 : '40%',
-        margin: isMobile ? '0 auto' : '0 auto',
-      }}
-    >
-      {[
-        {
-          label: 'En préparation',
-          onClick: () => openUnifiedDialog('in-progress'),
-          variant: 'outlined',
-          color: 'primary',
-          icon: <ManageHistory />,
-          disabled: event.state === 'IN_PROGRESS',
-        },
-        {
-          label: 'Déplacer TP',
-          onClick: () => openUnifiedDialog('move'),
-          variant: 'outlined',
-          color: 'inherit',
-          icon: <SwapHoriz />,
-          disabled: event.state === 'MOVED',
-        },
-        {
-          label: 'Annuler TP',
-          onClick: () => openUnifiedDialog('cancel'),
-          variant: 'outlined',
-          color: 'error',
-          icon: <Cancel />,
-          disabled: event.state === 'CANCELLED',
-        },
-        {
-          label: 'Valider TP',
-          onClick: () => openUnifiedDialog('validate'),
-          variant: 'contained',
-          color: 'success',
-          icon: <CheckCircle />,
-          disabled: event.state === 'VALIDATED',
-        },
-      ].map((btn, idx) => (
-        <Grid
-          key={btn.label}
-          size={{ xs: 12, sm: 6 }} // Responsive sizing
-        >
-          <Button
-            onClick={btn.onClick}
-            variant={btn.variant as any}
-            color={btn.color as any}
-            startIcon={btn.icon}
-            fullWidth
-            disabled={btn.disabled}
-            sx={{ minWidth: 120 }}
-          >
-            {btn.label}
-          </Button>
-        </Grid>
-      ))}
-    </Grid>
-  )}
-
-  {/* Bloc 2 : Modifier/Supprimer (1x2 sur grand écran, 2x1 sur mobile/tablette) */}
-  {(onEdit || (onEdit && onDelete)) && (
-    <Grid
-      container
-      spacing={1}
-      sx={{
-        mb: 1,
-        width: '100%',
-        minWidth: isMobile || isTablet ? 300 : '40%',
-        maxWidth: isMobile || isTablet ? 400 : '40%',
-        margin: isMobile ? '0 auto' : '0 auto',
-      }}
-    >
-      {onEdit && (
-        <Grid size={{ xs: 12,  sm: 6 }} >
-          <Button
-            onClick={() => onEdit(event)}
-            variant="outlined"
-            startIcon={<Edit />}
-            fullWidth
-            sx={{ minWidth: 120 }}
-          >
-            Modifier
-          </Button>
-        </Grid>
-      )}
-      {onDelete && (
-        <Grid size={{ xs: 12, sm: 6 }} >
-          <Button
-            onClick={() => onDelete(event)}
-            variant="outlined"
-            color="error"
-            startIcon={<Delete />}
-            fullWidth
-            sx={{ minWidth: 120 }}
-          >
+      <DialogActions>
+        <Button onClick={onClose}>Fermer</Button>
+        {canEdit && onEdit && <Button onClick={() => onEdit(event)}>Éditer</Button>}
+        {onCopy && <Button onClick={() => onCopy(event)}>Copier</Button>}
+        {canEdit && onDelete && (
+          <Button color="error" onClick={() => onDelete(event)}>
             Supprimer
           </Button>
-        </Grid>
+        )}
+      </DialogActions>
+      {dialogType && targetSlot && (
+        <MultiAssignDialog
+          dialogType={dialogType || undefined}
+          open={!!dialogType}
+          title={dialogType === 'salles' ? 'Associer des salles' : 'Associer des classes'}
+          description={
+            dialogType === 'salles'
+              ? 'Sélectionnez une ou plusieurs salles pour ce créneau.'
+              : 'Sélectionnez une ou plusieurs classes pour ce créneau.'
+          }
+          loadOptions={dialogType === 'salles' ? loadSalles : loadClasses}
+          initialSelectedIds={
+            (dialogType === 'salles' ? targetSlot.salleIds : targetSlot.classIds) || []
+          }
+          onSave={saveAssign}
+          onClose={() => {
+            setDialogType(null);
+            setTargetSlot(null);
+          }}
+          saveLabel="Enregistrer"
+        />
       )}
-    </Grid>
-  )}
-
-  {/* Bloc 3 : Fermer */}
-  <Box
-    sx={{
-      display: 'flex',
-      gap: 1,
-      flexDirection: isMobile ? 'column' : 'row',
-      justifyContent: isMobile || isTablet ? 'center' : 'flex-end',
-      alignContent: 'center',
-      minWidth: (isMobile || isTablet) && (onEdit && canValidate) ? 100 : '15%',
-      maxWidth: (isMobile || isTablet) && (onEdit && canValidate) ? 100 : '15%',
-      width: 'auto',
-      margin: isMobile ? '0 auto' : '0 auto',
-    }}
-  >
-    <Button 
-    variant='contained'
-    fullWidth
-    onClick={onClose}>Fermer</Button>
-  </Box>
-</Box>
-        </DialogActions>
-  </Dialog>
-
-      {/* Snackbar pour les messages d'erreur */}
-      <Snackbar
-        open={!!errorMessage}
-        autoHideDuration={6000}
-        onClose={() => setErrorMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <MuiAlert 
-          onClose={() => setErrorMessage(null)} 
-          severity="error" 
-          variant="filled"
-        >
-          {errorMessage}
-        </MuiAlert>
-      </Snackbar>
-
-      {/* Snackbar pour les messages de succès */}
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <MuiAlert 
-          onClose={() => setSuccessMessage(null)} 
-          severity="success" 
-          variant="filled"
-        >
-          {successMessage}
-        </MuiAlert>
-      </Snackbar>
-  </>
-  )
+    </Dialog>
+  );
 }
-
-export default EventDetailsDialog
