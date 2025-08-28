@@ -101,7 +101,7 @@ function CalendrierContent() {
     chemicals: [],
     uploads: [],
   });
-  // Draft créneaux en attente avant création de l'événement.
+  // Draft créneaux en attente avant ajout de l'événement.
   // Utilise désormais les tableaux salleIds / classIds (migration depuis l'ancien champ salleId unique)
   const [pendingSlotDrafts, setPendingSlotDrafts] = useState<
     Array<
@@ -372,7 +372,7 @@ function CalendrierContent() {
     );
   };
 
-  // 6. Ouvre les dialogues de création d'événement TP ou Laborantin
+  // 6. Ouvre les dialogues d'ajout d'événement TP ou Laborantin
   const handleCreateTPEvent = () => {
     setCreateType('tp');
     setCreateDialogOpen(true);
@@ -490,13 +490,13 @@ function CalendrierContent() {
     setEditDialogOpen(true);
   };
 
-  // 8. Prépare la copie d'un événement pour le dialogue de création
+  // 8. Prépare la copie d'un événement pour le dialogue d'ajout
   const handleEventCopy = (event: Event) => {
     setEventToCopy(event);
     setCreateDialogOpen(true);
   };
 
-  // 9. Ferme le dialogue de création et réinitialise l'événement à copier
+  // 9. Ferme le dialogue d'ajout et réinitialise l'événement à copier
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
     setEventToCopy(null);
@@ -510,7 +510,7 @@ function CalendrierContent() {
     }
   };
 
-  // Handler pour la création d'événement
+  // Handler pour l\'ajout d'événement
   const handleCreateEvent = useCallback(async () => {
     // Give React a microtask to flush any pending meta updates before reading drafts
     await Promise.resolve();
@@ -619,7 +619,7 @@ function CalendrierContent() {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      showSnackbar("Erreur lors de la création de l'événement", 'error');
+      showSnackbar("Erreur lors de l'ajout de l'événement", 'error');
       return;
     }
     const created = await res.json();
@@ -1288,7 +1288,7 @@ function CalendrierContent() {
           onEventUpdate={handleEventRefresh}
         />
 
-        {/* Dialogue de création d'événement */}
+        {/* Dialogue d'ajout d'événement */}
         <CreateEventDialogWrapper
           open={createDialogOpen}
           onClose={handleCreateDialogClose}

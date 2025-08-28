@@ -96,7 +96,7 @@ sequenceDiagram
 ## Tests
 
 ### Scénario 1 : CreateEventDialog → EventDetailsDialog
-1. Créer un événement via `CreateEventDialog` avec fichiers
+1. Ajouter un événement via `CreateEventDialog` avec fichiers
 2. Ouvrir `EventDetailsDialog` pour cet événement
 3. ✅ Vérifier que les documents sont visibles immédiatement
 

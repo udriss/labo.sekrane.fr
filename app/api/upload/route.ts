@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(
     {
       error:
-        'Endpoint obsolète. Utilisez /api/events/:id/documents (multipart) avec eventId ou implémentez la création de brouillon.',
+        'Endpoint obsolète. Utilisez /api/events/:id/documents (multipart) avec eventId ou implémentez l\'ajout de brouillon.',
     },
     { status: 410 },
   );

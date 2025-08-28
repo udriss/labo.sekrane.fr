@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       name: data.name || null,
       role: data.role,
       password: passwordHash,
-      // Politique: toujours inactif à la création, même si un mot de passe est défini
+      // Politique: toujours inactif à l\'ajout, même si un mot de passe est défini
       isActive: false,
     },
   });

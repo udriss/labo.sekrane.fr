@@ -20,7 +20,7 @@ async function runSeed() {
     {
       module: 'MATERIEL',
       actionType: 'CREATE',
-      name: 'Création matériel',
+      name: 'Ajout matériel',
       description: 'Un matériel a été ajouté',
     },
     {
@@ -38,7 +38,7 @@ async function runSeed() {
     {
       module: 'CHEMICALS',
       actionType: 'CREATE',
-      name: 'Création réactif',
+      name: 'Ajout réactif',
       description: 'Un réactif a été ajouté',
     },
     {

@@ -598,7 +598,7 @@ export function AddMaterialStepper({
           materielPersoId = createdMaterielPerso.id;
         } else {
           const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de la création du matériel personnalisé');
+          throw new Error(error.error || 'Erreur lors de l\'ajout du matériel personnalisé');
         }
       } else {
         // Pas modifié: relier à la source sélectionnée
@@ -624,7 +624,7 @@ export function AddMaterialStepper({
       }
       onComplete(finalFormData);
     } catch (error) {
-      console.error('Erreur lors de la création du matériel:', error);
+      console.error('Erreur lors de l\'ajout du matériel:', error);
       showSnackbar(
         `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
         'error',
@@ -740,7 +740,7 @@ export function AddMaterialStepper({
               onClick={handleSubmit}
               disabled={!canProceed() || isLoading}
             >
-              {isLoading ? 'Création...' : 'Ajouter le matériel'}
+              {isLoading ? 'Ajout...' : 'Ajouter le matériel'}
             </Button>
           )}
         </Box>

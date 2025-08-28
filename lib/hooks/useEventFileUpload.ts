@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { FileWithMetadata } from '@/types/global';
 
 /**
- * Hook pour gérer l'upload de fichiers lors de la création d'événements
+ * Hook pour gérer l'upload de fichiers lors de l\'ajout d'événements
  * Permet l'upload différé des fichiers et le nettoyage en cas d'annulation
  */
 export function useEventFileUpload() {

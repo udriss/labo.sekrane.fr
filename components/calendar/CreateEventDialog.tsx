@@ -595,7 +595,7 @@ export default function CreateEventDialog({
                 >
                   <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
                     <AssignmentIcon color={uploadMethod === 'manual' ? 'primary' : 'inherit'} />
-                    <Typography>Création manuelle</Typography>
+                    <Typography>Ajout manuelle</Typography>
                   </Box>
                 </Card>
                 <Card

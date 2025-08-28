@@ -476,7 +476,7 @@ export function ChemicalsList({
         return newSupplier.id;
       }
     } catch (error) {
-      console.error('Erreur lors de la création du fournisseur:', error);
+      console.error('Erreur lors de l\'ajout du fournisseur:', error);
     }
 
     return null;

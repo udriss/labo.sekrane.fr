@@ -1903,7 +1903,7 @@ const NOTIFICATION_CONFIGS = [
     module: 'USERS',
     actionType: 'CREATE',
     name: 'Nouvel utilisateur',
-    description: "Notification lors de la création d'un nouvel utilisateur",
+    description: "Notification lors de l\'ajout d'un nouvel utilisateur",
     severity: 'medium',
   },
   {
@@ -2002,7 +2002,7 @@ const NOTIFICATION_CONFIGS = [
     module: 'ROOMS',
     actionType: 'CREATE',
     name: 'Nouvelle salle',
-    description: "Notification lors de la création d'une nouvelle salle",
+    description: "Notification lors de l\'ajout d'une nouvelle salle",
     severity: 'low',
   },
   {
@@ -2030,7 +2030,7 @@ const NOTIFICATION_CONFIGS = [
     module: 'EVENTS_GLOBAL',
     actionType: 'CREATE',
     name: 'Nouvel événement',
-    description: "Notification lors de la création d'un nouvel événement",
+    description: "Notification lors de l\'ajout d'un nouvel événement",
     severity: 'medium',
   },
   {
@@ -2058,7 +2058,7 @@ const NOTIFICATION_CONFIGS = [
     module: 'ORDERS',
     actionType: 'CREATE',
     name: 'Nouvelle commande',
-    description: "Notification lors de la création d'une nouvelle commande",
+    description: "Notification lors de l\'ajout d'une nouvelle commande",
     severity: 'medium',
   },
   {

@@ -249,7 +249,7 @@ export const TimeslotPlanningDialog: React.FC<TimeslotPlanningDialogProps> = ({
       <DialogTitle>{title}</DialogTitle>
       <DialogContent dividers sx={{ pt: 2 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Gérez les créneaux, salles et classes comme dans l'étape de création d'événement.
+          Gérez les créneaux, salles et classes comme dans l'étape d'ajout d'événement.
         </Typography>
         <Box display="flex" flexDirection="column" gap={3}>
           <Box>

@@ -1,19 +1,19 @@
-# Fix: Upload Fichiers Manquant après Création Preset
+# Fix: Upload Fichiers Manquant après Ajout Preset
 
 ## Problème Identifié
 
-Après la correction du POST 400, la création de preset fonctionnait (POST 201) mais les fichiers n'étaient pas uploadés vers la table `EvenementPresetDocument`.
+Après la correction du POST 400, l\'ajout de preset fonctionnait (POST 201) mais les fichiers n'étaient pas uploadés vers la table `EvenementPresetDocument`.
 
 ## Analyse du Flux
 
 ### ✅ État Précédent
-- POST `/api/event-presets` → 201 (création preset)
+- POST `/api/event-presets` → 201 (ajout preset)
 - POST `/api/event-presets/{id}/creneaux` → 201 (ajout créneaux)
 - ❌ **Manquant** : POST `/api/event-presets/{id}/documents` → upload fichiers
 
 ### 🔍 Cause Racine
 
-Dans `PresetWizard.handleFinish()`, après création du preset avec `presetId`, la fonction d'upload `uploadFilesToEventWizard` n'était pas appelée.
+Dans `PresetWizard.handleFinish()`, après ajout du preset avec `presetId`, la fonction d'upload `uploadFilesToEventWizard` n'était pas appelée.
 
 ## Solution Implémentée
 
@@ -111,13 +111,13 @@ if (presetId && (window as any).uploadFilesToEventWizard) {
 - Upload non-bloquant (le preset reste créé même si upload échoue)
 
 ### ✅ **UX Améliorée**
-- Fichiers uploadés automatiquement après création preset
+- Fichiers uploadés automatiquement après ajout preset
 - Feedback visuel via console logs
 - Processus transparent pour l'utilisateur
 
 ## Logs Attendus
 
-Après création d'un preset avec fichiers :
+Après ajout d'un preset avec fichiers :
 ```
 POST /api/event-presets 201 in 45ms
 POST /api/event-presets/123/creneaux 201 in 20ms (si créneaux)
@@ -134,7 +134,7 @@ POST /api/event-presets/123/documents 201 in 35ms (par fichier)
 
 ## Statut
 
-- ✅ **Code Ajouté** : Appel `uploadFilesToEventWizard` après création preset
+- ✅ **Code Ajouté** : Appel `uploadFilesToEventWizard` après ajout preset
 - ✅ **Compilation** : Aucune erreur TypeScript
 - ✅ **Réutilisation** : Pattern identique à `CreateEventDialog`
 - ✅ **Logs** : Messages de debug pour traçabilité

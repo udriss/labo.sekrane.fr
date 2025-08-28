@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order items are required' }, { status: 400 });
     }
 
-    // Simuler la création d'une commande (en attente de l'implémentation complète)
+    // Simuler l\'ajout d'une commande (en attente de l'implémentation complète)
     const mockOrder = {
       id: Date.now(), // Mock ID
       status: 'PENDING' as OrderStatus,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Erreur lors de la création de la commande:', error);
+    console.error('Erreur lors de l\'ajout de la commande:', error);
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }
 }

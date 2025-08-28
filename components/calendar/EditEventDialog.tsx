@@ -662,7 +662,7 @@ const EditEventDialog = React.forwardRef<
     };
   }, [eventId, updateMeta]);
 
-  // Note: persistNewClass supprimée – création de classes custom hors du dialogue d'édition.
+  // Note: persistNewClass supprimée – ajout de classes custom hors du dialogue d'édition.
 
   // Load data
   useEffect(() => {
@@ -789,6 +789,7 @@ const EditEventDialog = React.forwardRef<
       })()}
       {(() => {
         const steps: GenericWizardStep[] = [
+          /* 
           {
             key: 'method',
             label: "Méthode d'ajout",
@@ -977,7 +978,8 @@ const EditEventDialog = React.forwardRef<
                 </Box>
               </>
             ),
-          },
+          },*/
+
           {
             key: 'description',
             label: 'Description & remarques',

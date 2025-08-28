@@ -53,7 +53,7 @@ documents: [...],
 // ✅ Créneaux supprimés du payload JSON
 ```
 
-### 2. Ajout de Créneaux Après Création
+### 2. Ajout de Créneaux Après Ajout
 
 **Avant** (logique incorrecte) :
 ```tsx
@@ -84,7 +84,7 @@ const creneaux = drafts.map(/* conversion non utilisée */);
 
 **Après** :
 ```tsx
-// Récupérer les créneaux s'ils existent pour les ajouter après création
+// Récupérer les créneaux s'ils existent pour les ajouter après ajout
 const drafts: any[] = (meta as any).timeSlotsDrafts || [];
 ```
 
@@ -113,7 +113,7 @@ sequenceDiagram
 ## Avantages de l'Approche
 
 ### ✅ **Flexibilité Utilisateur**
-- Création de presets sans créneaux obligatoires
+- Ajout de presets sans créneaux obligatoires
 - Ajout de créneaux ultérieur possible
 - Interface plus intuitive
 
@@ -129,8 +129,8 @@ sequenceDiagram
 
 ## Tests Recommandés
 
-1. **Création Preset Sans Créneaux** : POST `/api/event-presets` → 201 ✅
-2. **Création Preset Avec Créneaux** : POST preset → POST créneaux → 201 ✅  
+1. **Ajout Preset Sans Créneaux** : POST `/api/event-presets` → 201 ✅
+2. **Ajout Preset Avec Créneaux** : POST preset → POST créneaux → 201 ✅  
 3. **Gestion Échec Créneaux** : Si ajout créneaux échoue, preset reste valide ✅
 
 ## Statut

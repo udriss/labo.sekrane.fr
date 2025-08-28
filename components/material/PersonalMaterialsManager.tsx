@@ -349,7 +349,7 @@ export function PersonalMaterialsManager({ discipline, materielPersoFocusId }: P
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la création');
+        throw new Error(errorData.error || 'Erreur lors de l\'ajout');
       }
 
       const created = await response.json();
@@ -361,7 +361,7 @@ export function PersonalMaterialsManager({ discipline, materielPersoFocusId }: P
       showSnackbar('Matériel perso ajouté', 'success');
       setMaterielPersos((prev) => [formattedCreated, ...prev]);
     } catch (e: any) {
-      showSnackbar(e.message || 'Erreur création', 'error');
+      showSnackbar(e.message || 'Erreur ajout', 'error');
       return;
     }
     setCreating(null);

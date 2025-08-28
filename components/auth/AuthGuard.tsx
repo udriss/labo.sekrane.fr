@@ -41,7 +41,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }, []);
 
   // Pages publiques qui ne nécessitent pas d'authentification
-  const publicPages = ['/signin', '/activate', '/maintenance', '/newpass'];
+  const publicPages = ['/signin', '/activate', '/maintenance', '/newpass', '/docs', '/mentions'];
   const isPublicPage = publicPages.includes(pathname);
 
   // Charger et surveiller le mode maintenance (public settings)

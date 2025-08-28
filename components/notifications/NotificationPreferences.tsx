@@ -100,10 +100,10 @@ const MODULES = [
 const ACTION_TYPES = [
   {
     value: 'CREATE',
-    label: 'Création',
+    label: 'Ajout',
     icon: AddIcon,
     color: '#4caf50',
-    description: "Lors de la création d'éléments",
+    description: "Lors de l\'ajout d'éléments",
   },
   {
     value: 'UPDATE',

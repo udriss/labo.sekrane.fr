@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ room }, { status: 201 });
   } catch (error) {
-    console.error('Erreur lors de la création de la salle:', error);
+    console.error('Erreur lors de l\'ajout de la salle:', error);
     return NextResponse.json({ error: 'Failed to create room' }, { status: 500 });
   }
 }

@@ -637,7 +637,7 @@ export function MaterielManagement({
         body: JSON.stringify({ name: name.trim(), discipline: disciplineCat.toLowerCase() }),
       });
       const data = await res.json();
-      if (!res.ok && res.status !== 409) throw new Error(data.error || 'Création impossible');
+      if (!res.ok && res.status !== 409) throw new Error(data.error || 'Ajout impossible');
 
       let id: number | null = null;
       if (res.ok) {

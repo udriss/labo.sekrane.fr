@@ -33,7 +33,7 @@ export const modules: DocsModule[] = [
           'Ajouter / éditer des équipements et leurs catégories',
           'Renseigner les quantités et localisations',
           'Utiliser la recherche et les filtres (discipline, catégorie)',
-          'Associer le matériel lors de la création d’un TP',
+          'Associer le matériel lors de l\'ajout d’un TP',
         ],
       },
     ],
@@ -43,7 +43,7 @@ export const modules: DocsModule[] = [
     title: 'Calendrier & Planification',
     keywords: ['calendrier', 'planning', 'planification', 'événement', 'evenement', 'slots'],
     summary:
-      'Création, édition, diff et synchronisation des séances avec ressources et créneaux multi-classes/salles.',
+      'Ajout, édition, diff et synchronisation des séances avec ressources et créneaux multi-classes/salles.',
     sections: [
       {
         heading: 'Objectifs clés',
@@ -57,7 +57,7 @@ export const modules: DocsModule[] = [
         ],
       },
       {
-        heading: 'Flux de création',
+        heading: 'Flux d'ajout',
         points: [
           'Méthode (file | manual | preset)',
           'Description & remarques (éditeur riche)',

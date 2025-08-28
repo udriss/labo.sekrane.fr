@@ -1436,7 +1436,7 @@ export default function AdminUsersPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog de création d'utilisateur */}
+      {/* Dialog d'ajout d'utilisateur */}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Ajouter un utilisateur</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
@@ -1495,7 +1495,7 @@ export default function AdminUsersPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(newUser),
                 });
-                if (!res.ok) throw new Error('Erreur création');
+                if (!res.ok) throw new Error('Erreur d\'ajout');
                 setCreateOpen(false);
                 setNewUser({ email: '', name: '', role: 'ENSEIGNANT', password: '' });
                 await load();
@@ -1508,7 +1508,7 @@ export default function AdminUsersPage() {
             disabled={saving || !newUser.email || !newUser.password}
             variant="contained"
           >
-            {saving ? 'Création…' : 'Ajouter'}
+            {saving ? 'Ajout…' : 'Ajouter'}
           </Button>
         </DialogActions>
       </Dialog>

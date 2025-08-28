@@ -102,7 +102,7 @@ const handleMaterielPersoSelect = (materielPerso: any) => {
 
 ## 🚀 Prochaines améliorations possibles
 
-- Tri par date de création/modification
+- Tri par date d'ajout/modification
 - Favoris pour les matériels fréquemment utilisés
 - Aperçu détaillé en popup avant sélection
 - Duplication rapide de matériels existants

@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    console.error('Erreur lors de la création du réactif:', error);
+    console.error('Erreur lors de l\'ajout du réactif:', error);
     return NextResponse.json({ error: "Erreur lors de l'ajout du réactif" }, { status: 500 });
   }
 }

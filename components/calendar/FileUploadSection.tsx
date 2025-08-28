@@ -26,7 +26,7 @@ interface FileUploadSectionProps {
   autoUpload?: boolean; // Pour déclencher l'upload automatiquement
   eventId?: number;
   presetId?: number;
-  draftId?: string; // ID réservé pour uploads avant création (évite undefined)
+  draftId?: string; // ID réservé pour uploads avant ajout (évite undefined)
   onFileUploaded?: (
     fileId: string,
     uploadedFile: {

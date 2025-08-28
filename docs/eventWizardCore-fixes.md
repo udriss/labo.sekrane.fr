@@ -102,7 +102,7 @@ documents: (meta.uploads || [])
 - `useEffect` pour mise à jour meta (lignes ~1363-1400)
 
 ### app/cahier/page.tsx
-- `handleFinish()` - Création de preset (ligne ~974)
+- `handleFinish()` - Ajout de preset (ligne ~974)
 - `handleSave()` - Mise à jour de preset (ligne ~694)
 
 ## Résultats
@@ -114,8 +114,8 @@ documents: (meta.uploads || [])
 
 ### ✅ Tests Recommandés
 1. **EventWizardCore** : Vérifier qu'il n'y a plus d'erreur "Maximum update depth"
-2. **Création Preset** : Vérifier que POST `/api/event-presets` retourne 200/201 au lieu de 400
-3. **Upload Fichiers** : Confirmer que les fichiers s'uploadent après création du preset
+2. **Ajout Preset** : Vérifier que POST `/api/event-presets` retourne 200/201 au lieu de 400
+3. **Upload Fichiers** : Confirmer que les fichiers s'uploadent après ajout du preset
 
 ### 📋 Pattern pour Éviter le Problème
 

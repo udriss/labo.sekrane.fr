@@ -986,7 +986,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
     setSaving(true);
     
     try {
-      // Récupérer les créneaux s'ils existent pour les ajouter après création
+      // Récupérer les créneaux s'ils existent pour les ajouter après ajout
       const drafts: any[] = (meta as any).timeSlotsDrafts || [];
       const uploads = meta.uploads || [];
       
@@ -1030,7 +1030,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       });
       
       if (!res.ok) {
-        throw new Error(`Échec création TP: ${form.title || 'TP'}`);
+        throw new Error(`Échec ajout TP: ${form.title || 'TP'}`);
       }
       
       const created = await res.json();
@@ -1055,7 +1055,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       // Update progress to documents phase
       setSingleProgress(prev => prev ? { ...prev, status: 'documents' } : null);
 
-      // ✅ Uploader les fichiers après création du preset
+      // ✅ Uploader les fichiers après ajout du preset
       if ((window as any).uploadFilesToEventWizard && uploads.length > 0) {
         try {
           await (window as any).uploadFilesToEventWizard(presetId);
@@ -1589,7 +1589,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
           }),
         });
 
-        if (!r.ok) throw new Error(`Échec création TP ${i + 1}: ${title}`);
+        if (!r.ok) throw new Error(`Échec ajout TP ${i + 1}: ${title}`);
         const created = await r.json();
         const presetId = created?.preset?.id;
 
@@ -2517,7 +2517,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                             documents: [],
                           }),
                         });
-                        if (!r.ok) throw new Error(`Échec création TP ${i + 1}: ${title}`);
+                        if (!r.ok) throw new Error(`Échec ajout TP ${i + 1}: ${title}`);
                         const created = await r.json();
                         const presetId = created?.preset?.id;
 

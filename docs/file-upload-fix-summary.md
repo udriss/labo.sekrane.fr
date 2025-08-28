@@ -6,7 +6,7 @@
 - Aucun enregistrement dans les tables `EvenementDocument` ou `EvenementPresetDocument`
 
 ## Cause Racine Identifiée
-Les fonctions d'upload `uploadFilesToEvent` et `uploadFilesToEventWizard` étaient bien exposées via `window` mais **jamais appelées** par les composants parents après création des entités.
+Les fonctions d'upload `uploadFilesToEvent` et `uploadFilesToEventWizard` étaient bien exposées via `window` mais **jamais appelées** par les composants parents après ajout des entités.
 
 ## Solution Implémentée
 
@@ -115,7 +115,7 @@ meta.uploads = uploads;
 Le parent `handleCreateEvent` attend des fichiers avec `isLocal: true` et `fileData`, format maintenant fourni par CreateEventDialog.
 
 ### EventWizardCore ← → app/cahier/page.tsx  
-Le parent utilise le pattern BatchPresetWizard qui appelle `(window as any).uploadFilesToEventWizard(presetId)` après création du preset.
+Le parent utilise le pattern BatchPresetWizard qui appelle `(window as any).uploadFilesToEventWizard(presetId)` après ajout du preset.
 
 ## Statut Final
 - ✅ **CreateEventDialog** : Upload automatique + format parent correct
@@ -124,8 +124,8 @@ Le parent utilise le pattern BatchPresetWizard qui appelle `(window as any).uplo
 - ✅ **Logs** : Messages explicites de debug pour traçabilité
 
 ## Tests Recommandés
-1. **CreateEventDialog** : Vérifier POST `/api/events/{id}/documents` après création event
-2. **EventWizardCore** : Vérifier POST `/api/event-presets/{id}/documents` après création preset
+1. **CreateEventDialog** : Vérifier POST `/api/events/{id}/documents` après ajout event
+2. **EventWizardCore** : Vérifier POST `/api/event-presets/{id}/documents` après ajout preset
 3. **Base de données** : Confirmer enregistrements dans tables `EvenementDocument` et `EvenementPresetDocument`
 
-Les fichiers ne devront plus rester en "En attente" - ils s'uploaderont automatiquement après création des entités.
+Les fichiers ne devront plus rester en "En attente" - ils s'uploaderont automatiquement après ajout des entités.

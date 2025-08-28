@@ -45,7 +45,7 @@ interface Supplier {
   updatedAt?: string;
 }
 
-// Draft cache pour conserver un formulaire en cours (création)
+// Draft cache pour conserver un formulaire en cours (ajout)
 const supplierDraftCache: { form?: Partial<Supplier> } = {} as any;
 
 export default function FournisseurPage() {

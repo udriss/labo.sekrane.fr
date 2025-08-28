@@ -9,7 +9,7 @@ export const chemicalCreateSchema = z.object({
   localisationId: z.number().int().positive().optional(),
 });
 
-// Nouveau schéma pour création inventaire + éventuelle création preset
+// Nouveau schéma pour ajout inventaire + éventuelle ajout preset
 export const chemicalInventoryCreateSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
   formula: z.string().optional().or(z.literal('')),
@@ -29,7 +29,7 @@ export const chemicalInventoryCreateSchema = z.object({
   expirationDate: z.preprocess((v) => (v ? new Date(v as any) : undefined), z.date().optional()),
   notes: z.string().optional(),
   supplierId: z.number().int().positive().optional(),
-  supplierName: z.string().optional(), // fallback pour création fournisseur à la volée
+  supplierName: z.string().optional(), // fallback pour ajout fournisseur à la volée
 });
 
 export const chemicalInventoryUpdateSchema = chemicalInventoryCreateSchema

@@ -100,7 +100,10 @@ const PROTECTED_API: Record<string, Role[]> = {
 };
 
 // Pages publiques qui n'ont pas besoin d'authentification
-const PUBLIC_PAGES = ['/signin', '/maintenance', '/api/auth', '/api/health', '/health', '/newpass'];
+const PUBLIC_PAGES = ['/signin', '/maintenance', '/api/auth',
+   '/api/health', '/health', '/newpass',
+  '/docs', '/api/public', '/mentions'
+  ];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

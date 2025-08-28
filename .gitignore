@@ -43,3 +43,14 @@ public/
 
 # scripts
 sync_labo2_vers_labo.sh
+
+# env files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# scripts
+deploy.sh
+dev.sh

@@ -200,7 +200,7 @@ export function MaterialPresetsManager({ discipline, presetFocusId }: Props) {
       showSnackbar('Preset ajouté', 'success');
       setPresets((ps) => [created, ...ps]);
     } catch (e: any) {
-      showSnackbar(e.message || 'Erreur création', 'error');
+      showSnackbar(e.message || 'Erreur ajout', 'error');
       return;
     }
     setCreating(null);

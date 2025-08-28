@@ -754,34 +754,23 @@ export default function SignInPage() {
                 }
               >
                 <Link
-                  href="#"
+                  href="/docs"
                   underline="hover"
                   sx={{
-                    color: 'inherit',
-                    fontSize: 13,
-                    '&:hover': { color: 'white' },
+                  color: 'inherit',
+                  fontSize: 13,
+                  '&:hover': { color: 'white' },
                   }}
                 >
                   Guide d&apos;utilisation
                 </Link>
                 <Link
-                  href="#"
+                  href="/mentions"
                   underline="hover"
                   sx={{
-                    color: 'inherit',
-                    fontSize: 13,
-                    '&:hover': { color: 'white' },
-                  }}
-                >
-                  Support technique
-                </Link>
-                <Link
-                  href="#"
-                  underline="hover"
-                  sx={{
-                    color: 'inherit',
-                    fontSize: 13,
-                    '&:hover': { color: 'white' },
+                  color: 'inherit',
+                  fontSize: 13,
+                  '&:hover': { color: 'white' },
                   }}
                 >
                   Mentions légales

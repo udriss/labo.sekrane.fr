@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 
 // Endpoint unifié pour ajouter OU téléverser + ajouter un document lié à un événement.
 // Deux modes:
-// 1) POST multipart/form-data avec champ 'file' -> upload + création DB.
+// 1) POST multipart/form-data avec champ 'file' -> upload + ajout DB.
 // 2) POST JSON { fileName,fileUrl,fileSize?,fileType? } (cas où fichier déjà upload via /api/upload).
 // DELETE ?fileUrl=... -> suppression (archive physique) d'un document.
 

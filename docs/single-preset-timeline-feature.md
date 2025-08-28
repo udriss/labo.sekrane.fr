@@ -1,9 +1,9 @@
-# Feature: Timeline pour Création TP Individuel
+# Feature: Timeline pour Ajout TP Individuel
 
 ## Implémentation Ajoutée
 
 ### 🎯 **Objectif**
-Ajouter une timeline de progression pour la création d'un TP individuel, similaire à celle du batch, et éviter le changement de tab immédiat pour permettre à l'utilisateur de vérifier la validation.
+Ajouter une timeline de progression pour l\'ajout d'un TP individuel, similaire à celle du batch, et éviter le changement de tab immédiat pour permettre à l'utilisateur de vérifier la validation.
 
 ### ✨ **Nouvelles Fonctionnalités**
 
@@ -27,8 +27,8 @@ const [creationComplete, setCreationComplete] = useState(false);
 - **Statut Documents** : Cercle vert/orange selon nombre / gris si aucun
 - **Spinner** : Indicateur d'activité pendant chaque phase
 
-#### 3. **Phases de Création Trackées**
-1. **'creating'** : POST `/api/event-presets` → Création TP
+#### 3. **Phases de Ajout Trackées**
+1. **'creating'** : POST `/api/event-presets` → Ajout TP
 2. **'slots'** : POST `/api/event-presets/{id}/creneaux` → Ajout créneaux
 3. **'documents'** : Upload fichiers via `uploadFilesToEventWizard`
 4. **'completed'** : Toutes les étapes terminées
@@ -172,7 +172,7 @@ catch (error) {
 ### 📊 **Avantages UX**
 
 #### ✅ **Visibilité du Processus**
-- L'utilisateur voit chaque étape de création
+- L'utilisateur voit chaque étape d'ajout
 - Animation et feedback visuel en temps réel
 - Indicateurs spécifiques pour TP/créneaux/documents
 
@@ -199,7 +199,7 @@ catch (error) {
 - Délai configurable dans `setTimeout()`
 
 #### **Phases Trackées**
-- **creating**: Création TP principal
+- **creating**: Ajout TP principal
 - **slots**: Ajout des créneaux (si existants)
 - **documents**: Upload des fichiers (si existants)
 - **completed**: Tout terminé avec succès
@@ -209,4 +209,4 @@ catch (error) {
 - Compatible avec `EventWizardCore`
 - S'intègre dans le flux `handleCreated` → `tab 0`
 
-Cette implémentation offre une expérience utilisateur cohérente et informative pour la création de TP individuels ! 🎉
+Cette implémentation offre une expérience utilisateur cohérente et informative pour l\'ajout de TP individuels ! 🎉

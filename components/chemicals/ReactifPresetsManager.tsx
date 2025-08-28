@@ -274,7 +274,7 @@ export function ReactifPresetsManager({ presetFocusId }: Props) {
       showSnackbar('Preset ajouté', 'success');
       setPresets((ps) => [preset, ...ps]);
     } catch (e: any) {
-      const msg = e?.message || 'Erreur création';
+      const msg = e?.message || 'Erreur ajout';
       setCreateError(msg);
       showSnackbar(msg, 'error');
       return;

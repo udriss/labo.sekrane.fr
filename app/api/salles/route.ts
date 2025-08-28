@@ -4,7 +4,7 @@ import { prisma } from '@/lib/services/db';
 import { z } from 'zod';
 import { auth } from '@/auth';
 
-// Sous-schéma localisation pour création / mise à jour
+// Sous-schéma localisation pour ajout / mise à jour
 const LocalisationPatchSchema = z.object({
   id: z.number().int().optional(), // présent => update ou delete
   name: z.string().min(1),
@@ -12,7 +12,7 @@ const LocalisationPatchSchema = z.object({
   _delete: z.boolean().optional(),
 });
 
-// Schéma de validation pour une salle (création / update partiel)
+// Schéma de validation pour une salle (ajout / update partiel)
 const SalleSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   description: z.string().optional(),
@@ -91,8 +91,8 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    console.error('Erreur lors de la création de la salle:', error);
-    return NextResponse.json({ error: 'Erreur lors de la création de la salle' }, { status: 500 });
+    console.error('Erreur lors de l\'ajout de la salle:', error);
+    return NextResponse.json({ error: 'Erreur lors de l\'ajout de la salle' }, { status: 500 });
   }
 }
 

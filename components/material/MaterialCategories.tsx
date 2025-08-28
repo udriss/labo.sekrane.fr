@@ -198,7 +198,7 @@ export function MaterialCategories({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Création impossible');
+      if (!res.ok) throw new Error(data.error || 'Ajout impossible');
 
       setGlobalCatDialogOpen(false);
       setGlobalCatName('');

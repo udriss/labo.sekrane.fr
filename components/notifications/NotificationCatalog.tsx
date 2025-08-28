@@ -32,7 +32,7 @@ const MODULES = [
 ];
 
 const ACTION_TYPES = [
-  { value: 'CREATE', label: 'Création', color: '#4caf50' },
+  { value: 'CREATE', label: 'Ajout', color: '#4caf50' },
   { value: 'UPDATE', label: 'Modification', color: '#ff9800' },
   { value: 'DELETE', label: 'Suppression', color: '#f44336' },
   { value: 'SYNC', label: 'Synchronisation', color: '#2196f3' },

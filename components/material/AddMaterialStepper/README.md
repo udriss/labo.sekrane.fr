@@ -30,7 +30,7 @@ Ce dossier contient la version refactorisée du composant `AddMaterialStepper`, 
 
 - Première étape : Sélection de catégorie et preset
 - Gestion des presets existants
-- Création/édition de nouveaux presets
+- Ajout/édition de nouveaux presets
 
 #### `Step2.tsx`
 
@@ -70,7 +70,7 @@ Ce dossier contient la version refactorisée du composant `AddMaterialStepper`, 
 - ✅ Extraction des types dans un fichier dédié
 - ✅ Séparation des trois étapes en composants distincts
 - ✅ Extraction du dialog des caractéristiques
-- ✅ Création d'un point d'entrée centralisé
+- ✅ Ajout d'un point d'entrée centralisé
 - ✅ Maintien de toutes les fonctionnalités existantes
 - ✅ Correction des erreurs de compilation
 - ✅ Validation par compilation réussie

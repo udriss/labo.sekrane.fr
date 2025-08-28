@@ -49,7 +49,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   }
 
   // Pages qui utilisent un layout sans navbar/sidebar
-  const fullPageLayouts = ['/signin', '/maintenance', '/newpass', '/pdf-open'];
+  const fullPageLayouts = ['/signin', '/maintenance', '/newpass', '/pdf-open', '/docs', '/mentions'];
 
   // Si on est sur une page avec layout complet (signin)
   if (fullPageLayouts.includes(pathname)) {

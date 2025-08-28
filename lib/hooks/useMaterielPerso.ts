@@ -73,7 +73,7 @@ export function useMaterielPerso(): UseMaterielPersoResult {
 
       // Autres erreurs
       const error = await response.json();
-      throw new Error(error.message || 'Erreur lors de la création du matériel personnalisé');
+      throw new Error(error.message || 'Erreur lors de l\'ajout du matériel personnalisé');
     } finally {
       setIsCreating(false);
     }
@@ -105,7 +105,7 @@ export function useMaterielPerso(): UseMaterielPersoResult {
     setDuplicateDialogOpen(false);
 
     try {
-      // Ajouter un timestamp pour forcer la création d'un nouveau matériel
+      // Ajouter un timestamp pour forcer l\'ajout d'un nouveau matériel
       const modifiedData = {
         ...pendingData,
         name: `${pendingData.name} (${new Date().toLocaleTimeString()})`,
@@ -129,7 +129,7 @@ export function useMaterielPerso(): UseMaterielPersoResult {
         return createdMaterielPerso.id;
       } else {
         const error = await response.json();
-        throw new Error(error.message || 'Erreur lors de la création forcée');
+        throw new Error(error.message || 'Erreur lors de l\'ajout forcée');
       }
     } catch (error) {
       const resolver = (window as any).__materielPersoResolver;

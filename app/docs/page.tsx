@@ -57,7 +57,26 @@ import {
 } from '@mui/lab';
 
 export default function DocsPage() {
-  const theme = useTheme();
+      const theme = useTheme();
+  
+    const primaryColor =
+      theme.palette.mode === 'light' ? theme.palette.primary.light : theme.palette.primary.dark;
+    const secondaryColor =
+      theme.palette.mode === 'light' ? theme.palette.secondary.light : theme.palette.secondary.dark;
+    const primaryTransparent = alpha(primaryColor, 0.12);
+    const secondaryTransparent = alpha(secondaryColor, 0.08);
+const innerPanelStyles = {
+    background: `linear-gradient(135deg, ${primaryTransparent} 0%, ${secondaryTransparent} 100%)`,
+    p: { xs: 2, md: 4 },
+    borderRadius: 4,
+    width: '90%',
+    display: 'flex',
+    flexDirection: 'column',
+    mx: 'auto',
+    height: '90%',
+    mt: 4,
+  } as const;
+  
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -69,153 +88,134 @@ export default function DocsPage() {
         id: 'calendrier',
         title: 'Calendrier & Planification',
         keywords: ['calendrier', 'planning', 'planification', 'événement', 'evenement', 'slots'],
-        summary:
-          'Création, édition, diff et synchronisation des séances avec ressources et créneaux multi-classes/salles.',
+        summary: 'Ajouter, planifier et suivre vos séances (TP ou Laborantin).',
         sections: [
           {
-            heading: 'Objectifs clés',
+            heading: 'Ce que vous pouvez faire',
             points: [
-              'Assistant multi-étapes (CreateEventDialog / EditEventDialog)',
-              'Ressources unifiées via AddResourcesDialog (catalogue + perso)',
-              'Diff + signatures pour éviter faux positifs',
-              'Undo sur éléments retirés',
-              'Synchronisation PUT + fallback',
-              'Sanitisation des entrées',
+              'Ajouter une séance (TP ou Laborantin)',
+              'Ajouter des créneaux avec classes et salles',
+              "Utiliser un modèle (TP preset) pour pré-remplir ressources et documents",
+              'Joindre des documents (PDF, images, texte)',
+              'Modifier, dupliquer, supprimer une séance',
             ],
           },
           {
-            heading: 'Flux de création',
-            points: [
-              'Méthode (file | manual | preset)',
-              'Description & remarques (éditeur riche)',
-              'Créneaux: agrégation classes & salles',
-              'Ressources: matériel + réactifs',
-              'Documents: upload multi-fichiers',
-            ],
-          },
-          {
-            heading: 'Signatures',
-            points: [
-              'Structure JSON triée',
-              'Comparaison déterministe',
-              'Ignorer re-renders neutres',
-            ],
-          },
-          {
-            heading: 'Undo & Persistance visuelle',
-            points: [
-              'Caches meta pour preset supprimés',
-              'Tracking par nom pour custom',
-              'Chips barrées réintégrables',
-            ],
-          },
-          {
-            heading: 'Edge cases',
-            points: [
-              'Quantités invalides => valeur par défaut',
-              'Unités vides => g',
-              'Duplication noms custom évitée',
-              'Mode Physique sans réactifs',
-            ],
-          },
-        ],
-      },
-      {
-        id: 'reactifs',
-        title: 'Réactifs (Inventaire & Utilisation)',
-        keywords: ['reactifs', 'réactifs', 'chimie', 'inventory', 'stock', 'hazard'],
-        summary:
-          'Gestion des réactifs chimiques: catalogue, unités, quantités demandées par séance, différenciation preset vs custom.',
-        sections: [
-          {
-            heading: 'Concepts',
-            points: [
-              'Preset: lié à un identifiant existant (reactifId)',
-              'Custom: spécifique à un événement (ReactifEventRequest)',
-              'Unités normalisées (g par défaut)',
-              'Quantité demandée != stock réel',
-            ],
-          },
-          {
-            heading: 'Interactions UI',
-            points: [
-              'Autocomplete catalogue',
-              'Chips (preset) + champs quantité/unité',
-              'Ajout custom rapide (nom, quantité, unité)',
-              'Undo sur suppressions',
-            ],
-          },
-          {
-            heading: 'Synchronisation',
-            points: [
-              'Preset via update PUT /api/events/:id',
-              'Custom via service diff (create/update/delete)',
-              'Fallback delete+recreate si PUT indisponible',
-            ],
+            heading: 'Accès rapide',
+            points: ['/calendrier', '/cahier', '/api/events', '/api/timeslots'],
           },
         ],
       },
       {
         id: 'materiel',
-        title: 'Matériel (Équipement de laboratoire)',
+        title: 'Matériel (Équipement)',
         keywords: ['materiel', 'équipement', 'equipment', 'physique', 'chimie'],
-        summary:
-          'Catalogue du matériel avec filtrage par discipline, quantités demandées par séance et ajouts custom.',
+        summary: 'Choisir le matériel nécessaire et ajouter des éléments personnalisés.',
         sections: [
           {
-            heading: 'Sélection',
+            heading: 'Ce que vous pouvez faire',
             points: [
-              'Autocomplete multi-sélection',
-              'Quantité min = 1',
-              'Préservation quantités lors du re-select',
+              'Rechercher et sélectionner du matériel',
+              'Définir les quantités (minimum 1)',
+              'Ajouter du matériel personnalisé',
+              'Filtrer par discipline (Chimie/Physique)',
+            ],
+          },
+          { heading: 'Accès rapide', points: ['/materiel', '/api/materiel', '/api/equipement'] },
+        ],
+      },
+      {
+        id: 'reactifs',
+        title: 'Réactifs (Chimie)',
+        keywords: ['reactifs', 'réactifs', 'chimie', 'inventory', 'stock', 'unité'],
+        summary: 'Demander des réactifs avec quantité et unité (g par défaut).',
+        sections: [
+          {
+            heading: 'Ce que vous pouvez faire',
+            points: [
+              'Rechercher un réactif du catalogue',
+              'Saisir une quantité et une unité (g par défaut)',
+              'Ajouter un réactif personnalisé si besoin',
+              'Visualiser vos demandes par séance',
+            ],
+          },
+          { heading: 'Accès rapide', points: ['/reactifs', '/api/chemicals'] },
+        ],
+      },
+      {
+        id: 'documents',
+        title: 'Cahiers / Documents',
+        keywords: ['cahier', 'documents', 'upload', 'protocoles'],
+        summary: 'Joindre des documents aux séances ou réutiliser ceux des modèles.',
+        sections: [
+          {
+            heading: 'Ce que vous pouvez faire',
+            points: [
+              'Importer PDF, images, texte (max 10 Mo)',
+              'Supprimer un document inutile',
+              'Réutiliser les documents d’un modèle (preset)',
             ],
           },
           {
-            heading: 'Custom',
-            points: [
-              'Ajout rapide (nom + quantité)',
-              'Remplacement si même nom',
-              'Undo persistant',
-            ],
+            heading: 'Accès rapide',
+            points: ['/cahier', '/api/events/[id]/documents', '/api/upload'],
           },
         ],
       },
       {
-        id: 'notebook',
-        title: 'Cahiers / Documents',
-        keywords: ['cahier', 'notebook', 'documents', 'upload', 'protocoles'],
-        summary:
-          'Gestion des pièces jointes (protocoles, fiches sécurité) via FileUploadSection avec métadonnées simples.',
+        id: 'salles-classes',
+        title: 'Salles & Classes',
+        keywords: ['salles', 'classes', 'rooms'],
+        summary: 'Associer des salles et classes à vos créneaux pour une planification claire.',
         sections: [
           {
-            heading: 'Upload',
+            heading: 'Ce que vous pouvez faire',
             points: [
-              'Multi-fichiers (5)',
-              'Types restreints (PDF, images, texte)',
-              'Extraction URL pour stockage',
+              'Choisir une ou plusieurs salles',
+              'Associer les classes concernées',
+              'Filtrer vos vues par salle ou classe',
             ],
           },
-          {
-            heading: 'Persistance',
-            points: ['Documents envoyés dans payload event', 'Suppression via chip onDelete'],
-          },
+          { heading: 'Accès rapide', points: ['/salles', '/classes', '/api/salles', '/api/classes'] },
         ],
       },
       {
         id: 'notifications',
-        title: 'Notifications & Changements',
-        keywords: ['notifications', 'snackbar', 'ressources mises à jour', 'signatures'],
-        summary:
-          'Stratégie de réduction du bruit: snackbar seulement sur modifications réelles détectées par signature.',
+        title: 'Notifications',
+        keywords: ['notifications', 'alerts'],
+        summary: 'Recevoir des alertes utiles lors des changements importants.',
         sections: [
           {
-            heading: 'Mécanisme',
+            heading: 'Ce que vous pouvez faire',
             points: [
-              'Signature avant/après diff',
-              'Emission snackbar conditionnelle',
-              'Message spécifique (succès / aucune modification)',
+              "Être averti quand un document est ajouté à votre séance",
+              'Être notifié sur les modifications validées',
             ],
           },
+          { heading: 'Accès rapide', points: ['/notifications', '/api/notifications'] },
+        ],
+      },
+      {
+        id: 'fournisseurs',
+        title: 'Fournisseurs & Commandes',
+        keywords: ['fournisseurs', 'suppliers', 'commandes'],
+        summary: 'Gérer vos fournisseurs et préparer vos commandes.',
+        sections: [
+          {
+            heading: 'Ce que vous pouvez faire',
+            points: ['Lister/éditer vos fournisseurs', 'Préparer vos commandes'],
+          },
+          { heading: 'Accès rapide', points: ['/fournisseurs', '/api/suppliers', '/api/orders'] },
+        ],
+      },
+      {
+        id: 'consommables',
+        title: 'Consommables',
+        keywords: ['consommables', 'consumables'],
+        summary: 'Suivre vos consommables et besoins au quotidien.',
+        sections: [
+          { heading: 'Ce que vous pouvez faire', points: ['Suivre et mettre à jour les consommables'] },
+          { heading: 'Accès rapide', points: ['/consommables', '/api/consumables'] },
         ],
       },
     ],
@@ -253,7 +253,7 @@ export default function DocsPage() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={innerPanelStyles}>
       <DocsHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       <QuickNavChips value={tabValue} onChange={setTabValue} />
       <Paper elevation={2} sx={{ borderRadius: 2 }}>
@@ -301,7 +301,7 @@ export default function DocsPage() {
                         {idx === 1 && "Vue d'ensemble avec statistiques, alertes et accès rapide."}
                         {idx === 2 && "Créez / ajustez vos catégories et types d'équipements."}
                         {idx === 3 &&
-                          'Assistant de création pour planifier vos séances (fichier, manuel ou modèle).'}
+                          'Assistant d\'ajout pour planifier vos séances (fichier, manuel ou modèle).'}
                         {idx === 4 && 'Organisez vos séances dans le calendrier interactif.'}
                       </Typography>
                       <Stack direction="row" spacing={1}>
@@ -613,7 +613,7 @@ export default function DocsPage() {
                       <Divider />
                       <List dense>
                         {[
-                          'Création TP',
+                          'Ajout TP',
                           'Matériel',
                           'Planification',
                           'Inventaire chimique',
@@ -675,7 +675,67 @@ export default function DocsPage() {
             <Typography variant="h4" gutterBottom fontWeight="bold">
               ✨ Bonnes pratiques
             </Typography>
-            <Alert severity="success">Conseils d'utilisation à détailler.</Alert>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Conseils rapides pour utiliser SGIL efficacement.
+            </Alert>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <List dense>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Utilisez les modèles (TP presets) pour gagner du temps"
+                    secondary="Puis ajustez matériel, réactifs et documents au besoin."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Créez d'abord, uploadez ensuite"
+                    secondary="Ajoutez la séance, puis importez vos fichiers (meilleure traçabilité)."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Renseignez les créneaux avec classes et salles"
+                    secondary="Cela facilite le filtrage et la coordination du planning."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Privilégiez les unités normalisées"
+                    secondary="Par défaut g pour les réactifs; évitez les unités exotiques si possible."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Décrivez clairement vos remarques"
+                    secondary="Ajoutez les consignes de sécurité et les besoins spécifiques dans la description."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Nettoyez vos documents inutiles"
+                    secondary="Supprimez les pièces jointes obsolètes pour garder une base propre."
+                  />
+                </ListItem>
+              </List>
+            </Paper>
           </Box>
         </TabPanel>
         <TabPanel value={tabValue} index={4}>
@@ -683,9 +743,67 @@ export default function DocsPage() {
             <Typography variant="h4" gutterBottom fontWeight="bold">
               ❓ FAQ & Support
             </Typography>
-            <Alert severity="warning" sx={{ mb: 3 }}>
-              FAQ détaillée à intégrer progressivement.
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Retrouvez ici les réponses aux questions les plus fréquentes et les moyens de contact.
             </Alert>
+            <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Questions fréquentes
+              </Typography>
+              <Accordion disableGutters>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Mes documents restent en « En attente » après création
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" color="text.secondary">
+                    Ajoutez d'abord la séance, puis les fichiers sont téléversés et liés via
+                    /api/events/:id/documents. Si vous utilisez un modèle, les documents du modèle
+                    sont ajoutés en référence automatiquement après création.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+              <Accordion disableGutters>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Puis-je créer une séance sans créneau ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" color="text.secondary">
+                    Oui, les créneaux sont optionnels lors de la création du modèle et peuvent être
+                    ajoutés plus tard depuis le calendrier.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+              <Accordion disableGutters>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Comment réutiliser un TP existant ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" color="text.secondary">
+                    Utilisez « TP Preset » dans l'assistant de création. Les réactifs, le matériel
+                    et les documents du modèle sont pré-remplis et duplicables.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+              <Accordion disableGutters>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    Où trouver les APIs ?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" color="text.secondary">
+                    Exemple: /api/events, /api/timeslots, /api/materiel, /api/chemicals,
+                    /api/events/[id]/documents, /api/notifications.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            </Paper>
             <Paper
               variant="outlined"
               sx={{
@@ -715,8 +833,8 @@ export default function DocsPage() {
                         </Typography>
                       </Box>
                     </Box>
-                    <Button variant="outlined" startIcon={<Email />} href="mailto:support@lims.edu">
-                      support@lims.edu
+                    <Button variant="outlined" startIcon={<Email />} href="mailto:admin@sekrane.fr">
+                      Contacter le support
                     </Button>
                   </Stack>
                 </Box>
