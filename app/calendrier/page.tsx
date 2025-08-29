@@ -71,6 +71,7 @@ function CalendrierContent() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [eventToCopy, setEventToCopy] = useState<Event | null>(null);
+  const [copiedEventId, setCopiedEventId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [createType, setCreateType] = useState<'tp' | 'laborantin'>('tp');
   const [createEventForm, setCreateEventForm] = useState<{
@@ -154,6 +155,37 @@ function CalendrierContent() {
     start: null,
     end: null,
   });
+
+  // État pour déterminer si le bouton d'ajout doit être désactivé
+  const [isCreateButtonDisabled, setIsCreateButtonDisabled] = useState(false);
+
+  // Calculer si le bouton doit être désactivé
+  useEffect(() => {
+    if (!createEventForm.discipline) {
+      setIsCreateButtonDisabled(true);
+      return;
+    }
+
+    // Pour la copie d'événement, on permet la création même sans créneaux
+    if (!copiedEventId) {
+      const latestDrafts = ((createMeta as any)?.timeSlotsDrafts || pendingSlotDrafts || []);
+      if (!latestDrafts || latestDrafts.length === 0) {
+        setIsCreateButtonDisabled(true);
+        return;
+      }
+
+      // Vérifier que tous les créneaux ont les informations requises
+      const invalidSlots = latestDrafts.filter((slot: any) => 
+        !slot.startDate || !slot.endDate || !slot.timeslotDate
+      );
+      if (invalidSlots.length > 0) {
+        setIsCreateButtonDisabled(true);
+        return;
+      }
+    }
+
+    setIsCreateButtonDisabled(false);
+  }, [createEventForm.discipline, createMeta, pendingSlotDrafts, copiedEventId]);
 
   // moved roleTestConfig above to avoid hook-order issues
 
@@ -505,6 +537,17 @@ function CalendrierContent() {
 
   // 8. Prépare la copie d'un événement pour le dialogue d'ajout
   const handleEventCopy = (event: Event) => {
+    // Fermer d'abord le dialogue de détails
+    setDetailsDialogOpen(false);
+    setSelectedEvent(null);
+
+    // Récupérer l'ID stocké lors du clic sur "Copier"
+    const copiedId = (window as any).copiedEventId;
+    if (copiedId) {
+      setCopiedEventId(copiedId);
+      // Nettoyer l'ID stocké
+      delete (window as any).copiedEventId;
+    }
     setEventToCopy(event);
     setCreateDialogOpen(true);
   };
@@ -513,6 +556,7 @@ function CalendrierContent() {
   const handleCreateDialogClose = () => {
     setCreateDialogOpen(false);
     setEventToCopy(null);
+    setCopiedEventId(null);
   };
 
   // 14. Met à jour la liste locale des événements et l'événement sélectionné
@@ -525,6 +569,11 @@ function CalendrierContent() {
 
   // Handler pour l\'ajout d'événement
   const handleCreateEvent = useCallback(async () => {
+    // Validation: vérifier qu'il y a une discipline et au moins un créneau
+    if (!createEventForm.discipline) {
+      return;
+    }
+
     // Give React a microtask to flush any pending meta updates before reading drafts
     await Promise.resolve();
     // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
@@ -534,6 +583,20 @@ function CalendrierContent() {
         'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
       >
     >;
+
+    // Validation: vérifier qu'il y a au moins un créneau valide
+    // Pour la copie d'événement, on permet la création même sans créneaux (ils seront copiés)
+    if (!copiedEventId && (!latestDrafts || latestDrafts.length === 0)) {
+      return;
+    }
+
+    // Vérifier que tous les créneaux ont les informations requises
+    const invalidSlots = latestDrafts.filter(slot => 
+      !slot.startDate || !slot.endDate || !slot.timeslotDate
+    );
+    if (invalidSlots.length > 0) {
+      return;
+    }
 
     // Create the event first
     const slotSalleIds = (latestDrafts || [])
@@ -559,9 +622,15 @@ function CalendrierContent() {
     const payload = {
       title:
         createEventForm.title && createEventForm.title.trim().length > 0
-          ? createEventForm.title
-          : undefined,
-      discipline: createEventForm.discipline ?? ((eventToCopy?.discipline as any) || 'chimie'),
+          ? createEventForm.title.trim()
+          : eventToCopy?.title
+            ? `Copie de ${eventToCopy.title}`
+            : `Événement ${Date.now()}`,
+      discipline: (createEventForm.discipline === 'chimie' || createEventForm.discipline === 'physique')
+        ? createEventForm.discipline
+        : ((eventToCopy?.discipline as any) === 'chimie' || (eventToCopy?.discipline as any) === 'physique')
+          ? (eventToCopy?.discipline as any)
+          : 'chimie',
       notes: createEventForm.notes ?? '',
       salleIds: uniqueSalleIds.length > 0 ? uniqueSalleIds : undefined,
       classIds: uniqueClassIds.length > 0 ? uniqueClassIds : undefined,
@@ -574,25 +643,34 @@ function CalendrierContent() {
           : 'TP',
       // Add materials, chemicals, and documents from createMeta
       // Utiliser la clé 'name' pour correspondre au schéma d'update; la route POST accepte encore materielName/reactifName mais on unifie.
-      materiels: ((createMeta as any)?.materialsDetailed || []).map((m: any) => ({
-        materielId: typeof m.id === 'number' ? m.id : undefined,
-        name: m.name,
-        quantity: Number(m.quantity) > 0 ? Number(m.quantity) : 1,
-        isCustom: !!m.isCustom,
-      })),
-      reactifs: ((createMeta as any)?.chemicalsDetailed || []).map((c: any) => ({
-        reactifId: typeof c.id === 'number' ? c.id : undefined,
-        name: c.name,
-        requestedQuantity: typeof c.requestedQuantity === 'number' ? c.requestedQuantity : 0,
-        unit: c.unit || 'g',
-        isCustom: !!c.isCustom,
-      })),
+      materiels: ((createMeta as any)?.materialsDetailed || [])
+        .filter((m: any) => m && m.name && m.name.trim())
+        .map((m: any) => ({
+          materielId: typeof m.id === 'number' ? m.id : undefined,
+          name: m.name.trim(),
+          quantity: Number(m.quantity) > 0 ? Number(m.quantity) : 1,
+          isCustom: !!m.isCustom,
+        })),
+      reactifs: ((createMeta as any)?.chemicalsDetailed || [])
+        .filter((c: any) => c && c.name && c.name.trim())
+        .map((c: any) => ({
+          reactifId: typeof c.id === 'number' ? c.id : undefined,
+          name: c.name.trim(),
+          requestedQuantity: typeof c.requestedQuantity === 'number' ? c.requestedQuantity : 0,
+          unit: c.unit || 'g',
+          isCustom: !!c.isCustom,
+        })),
       documents: ((createMeta as any)?.uploads || [])
         .filter((u: any) => {
           if (!u) return false;
           const isLocal = !!(u as any).isLocal;
           // Exclude only local files (they will be uploaded via multipart after creation)
           return !isLocal;
+        })
+        .filter((u: any) => {
+          // Ensure document has required fields
+          const fileUrl = typeof u === 'string' ? u : (u.fileUrl || u.existingFile?.fileUrl || '');
+          return fileUrl && fileUrl.trim();
         })
         .map((u: any) => {
           const fileUrl = typeof u === 'string' ? u : (u.fileUrl || u.existingFile?.fileUrl || '');
@@ -609,11 +687,13 @@ function CalendrierContent() {
                   }
                 })();
           if (!fileName) fileName = 'Document';
+          const isCopied = typeof u === 'object' && u.id && u.id.startsWith('copied_');
           return {
-            fileName,
-            fileUrl,
+            fileName: fileName.trim(),
+            fileUrl: fileUrl.trim(),
             fileSize: typeof u === 'object' ? u.fileSize : undefined,
             fileType: typeof u === 'object' ? u.fileType : undefined,
+            isCopied,
           };
         })
         .filter(
@@ -636,7 +716,16 @@ function CalendrierContent() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+    console.log('[handleCreateEvent] Sending payload:', JSON.stringify(payload, null, 2));
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[handleCreateEvent] API error response:', res.status, errorText);
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('[handleCreateEvent] Parsed error:', errorJson);
+      } catch (e) {
+        console.error('[handleCreateEvent] Could not parse error response');
+      }
       showSnackbar("Erreur lors de l'ajout de l'événement", 'error');
       return;
     }
@@ -719,6 +808,7 @@ function CalendrierContent() {
     proposeTimeslots,
     showSnackbar,
     createType,
+    copiedEventId,
   ]);
 
   // Handler pour l'édition d'événement
@@ -1316,6 +1406,7 @@ function CalendrierContent() {
           onClose={handleCreateDialogClose}
           createType={createType}
           eventToCopy={eventToCopy}
+          copiedEventId={copiedEventId}
           createEventForm={createEventForm}
           onCreateEventFormChange={setCreateEventForm}
           createMeta={createMeta}
@@ -1323,6 +1414,7 @@ function CalendrierContent() {
           pendingSlotDrafts={pendingSlotDrafts}
           onPendingSlotDraftsChange={setPendingSlotDrafts}
           onCreateEvent={handleCreateEvent}
+          isCreateButtonDisabled={isCreateButtonDisabled}
         />
 
         {/* Dialogue d'édition d'événement */}

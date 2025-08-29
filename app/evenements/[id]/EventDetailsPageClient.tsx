@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Box,
   Typography,
@@ -21,7 +21,7 @@ import {
   Alert,
   IconButton,
   Button,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Cancel as CancelIcon,
   Science as ScienceIcon,
@@ -38,32 +38,34 @@ import {
   Download as DownloadIcon,
   CloudUpload as CloudUploadIcon,
   ArrowBack as ArrowBackIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-import MultiAssignDialog, { MultiAssignOption } from '@/components/shared/MultiAssignDialog';
-import { useEntityNames } from '@/components/providers/EntityNamesProvider';
+import MultiAssignDialog, {
+  MultiAssignOption,
+} from "@/components/shared/MultiAssignDialog";
+import { useEntityNames } from "@/components/providers/EntityNamesProvider";
 import AddResourcesDialog, {
   AddResourcesDialogChange,
-} from '@/components/calendar/AddResourcesDialog';
+} from "@/components/calendar/AddResourcesDialog";
 import {
   buildResourceSignature,
   buildCustomResourceSignature,
-} from '@/components/calendar/resourceSignatures';
-import { syncCustomResources } from '@/lib/services/customResourcesService';
-import { FileUploadSection } from '@components/calendar/FileUploadSection';
-import type { FileWithMetadata } from '@/types/global';
-import SlotDisplay from '@/components/calendar/SlotDisplay';
-import { formatLocalIsoNoZ } from '@/lib/utils/datetime';
-import { useEventActions } from '@/lib/hooks/useEventActions';
+} from "@/components/calendar/resourceSignatures";
+import { syncCustomResources } from "@/lib/services/customResourcesService";
+import { FileUploadSection } from "@components/calendar/FileUploadSection";
+import type { FileWithMetadata } from "@/types/global";
+import SlotDisplay from "@/components/calendar/SlotDisplay";
+import { formatLocalIsoNoZ } from "@/lib/utils/datetime";
+import { useEventActions } from "@/lib/hooks/useEventActions";
 import FrenchDatePicker, {
   FrenchDateOnly,
   FrenchTimeOnly,
-} from '@/components/shared/FrenchDatePicker';
+} from "@/components/shared/FrenchDatePicker";
 
 interface EventLike {
   id: number;
   title?: string;
-  discipline: 'chimie' | 'physique' | string;
+  discipline: "chimie" | "physique" | string;
   ownerId: number;
   owner: { id: number; name: string; email: string } | null;
   timeslots: any[];
@@ -85,11 +87,11 @@ function parseDateSafe(value: string | Date | null | undefined) {
     if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
     let str = String(value).trim();
     if (!str) return null;
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) str = str.replace(' ', 'T');
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) str = str.replace(" ", "T");
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
-      const [date, time] = str.split('T');
-      const [Y, M, D] = date.split('-').map(Number);
-      const [h, m] = time.split(':').map(Number);
+      const [date, time] = str.split("T");
+      const [Y, M, D] = date.split("-").map(Number);
+      const [h, m] = time.split(":").map(Number);
       return new Date(Y, (M as any) - 1, D, h, m, 0, 0);
     }
     const parsed = new Date(str);
@@ -101,13 +103,13 @@ function parseDateSafe(value: string | Date | null | undefined) {
 
 const formatDate = (dateInput: string) => {
   const date = parseDateSafe(dateInput);
-  if (!date) return 'Date invalide';
-  return date.toLocaleString('fr-FR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+  if (!date) return "Date invalide";
+  return date.toLocaleString("fr-FR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -117,7 +119,11 @@ const toDateOnly = (d: Date) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-export default function EventDetailsPageClient({ initialEvent }: { initialEvent: EventLike }) {
+export default function EventDetailsPageClient({
+  initialEvent,
+}: {
+  initialEvent: EventLike;
+}) {
   const { classes: classMap, salles: salleMap } = useEntityNames();
   const [event, setEvent] = useState<EventLike>(initialEvent);
 
@@ -129,16 +135,21 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
     canValidateEvent: canValidateEventFn,
   } = useEventActions({ fetchEvents: noop });
   const isOwner = useMemo(() => isCreator(event as any), [event, isCreator]);
-  const canEdit = useMemo(() => canEditEventFn(event as any), [event, canEditEventFn]);
+  const canEdit = useMemo(
+    () => canEditEventFn(event as any),
+    [event, canEditEventFn]
+  );
   const canValidate = useMemo(() => canValidateEventFn(), [canValidateEventFn]);
 
   // Local UI state copied from EventDetailsDialog
-  const [cpNotes, setCpNotes] = useState('');
+  const [cpNotes, setCpNotes] = useState("");
   const [cpDateObj, setCpDateObj] = useState<Date | null>(null);
   const [cpStartObj, setCpStartObj] = useState<Date | null>(null);
   const [cpEndObj, setCpEndObj] = useState<Date | null>(null);
   const [showBulkCounter, setShowBulkCounter] = useState(false);
-  const [dialogType, setDialogType] = useState<null | 'salles' | 'classes'>(null);
+  const [dialogType, setDialogType] = useState<null | "salles" | "classes">(
+    null
+  );
   const [targetSlot, setTargetSlot] = useState<any | null>(null);
   const [, forceRerender] = useState(0);
   const [loadingSlotIds, setLoadingSlotIds] = useState<Set<number>>(new Set());
@@ -146,18 +157,26 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    severity?: 'success' | 'info' | 'error';
-  }>({ open: false, message: '', severity: 'success' });
-  const [localDocuments, setLocalDocuments] = useState<any[]>(event.documents || []);
+    severity?: "success" | "info" | "error";
+  }>({ open: false, message: "", severity: "success" });
+  const [localDocuments, setLocalDocuments] = useState<any[]>(
+    event.documents || []
+  );
   const [uploadingDocs, setUploadingDocs] = useState<FileWithMetadata[]>([]);
   const [addingDocs, setAddingDocs] = useState(false);
   const [docActionLoading, setDocActionLoading] = useState<string | null>(null);
   const [uploadingOne, setUploadingOne] = useState(false);
-  const [localMateriels, setLocalMateriels] = useState<any[]>(event.materiels || []);
-  const [localReactifs, setLocalReactifs] = useState<any[]>(event.reactifs || []);
-  const [localCustomMats, setLocalCustomMats] = useState<any[]>(event.customMaterielRequests || []);
+  const [localMateriels, setLocalMateriels] = useState<any[]>(
+    event.materiels || []
+  );
+  const [localReactifs, setLocalReactifs] = useState<any[]>(
+    event.reactifs || []
+  );
+  const [localCustomMats, setLocalCustomMats] = useState<any[]>(
+    event.customMaterielRequests || []
+  );
   const [localCustomChems, setLocalCustomChems] = useState<any[]>(
-    event.customReactifRequests || [],
+    event.customReactifRequests || []
   );
   const [eventSalleIds, setEventSalleIds] = useState<number[]>([]);
   const [eventClassIds, setEventClassIds] = useState<number[]>([]);
@@ -165,11 +184,12 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
   // Parse salleIds/classIds once
   useEffect(() => {
     const parseIds = (raw: any): number[] => {
-      if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
-      if (typeof raw === 'string') {
+      if (Array.isArray(raw)) return raw.filter((x) => typeof x === "number");
+      if (typeof raw === "string") {
         try {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'number');
+          if (Array.isArray(parsed))
+            return parsed.filter((x) => typeof x === "number");
         } catch {}
       }
       return [];
@@ -180,8 +200,8 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
 
   const hasPendingSlots = (event?.timeslots || []).some(
     (slot) =>
-      ['created', 'modified'].includes(slot.state) ||
-      (isOwner && slot.state === 'counter_proposed'),
+      ["created", "modified"].includes(slot.state) ||
+      (isOwner && slot.state === "counter_proposed")
   );
 
   const onEventUpdate = async (eventId: number) => {
@@ -202,31 +222,31 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
     } catch {}
   };
 
-  const openAssignDialog = (slot: any, type: 'salles' | 'classes') => {
+  const openAssignDialog = (slot: any, type: "salles" | "classes") => {
     setTargetSlot(slot);
     setDialogType(type);
   };
   const loadSalles = async (): Promise<MultiAssignOption[]> => {
-    const res = await fetch('/api/salles');
+    const res = await fetch("/api/salles");
     if (!res.ok) return [];
     const data = await res.json();
     return (data?.salles || []).map((s: any) => ({ id: s.id, name: s.name }));
   };
   const loadClasses = async (): Promise<MultiAssignOption[]> => {
-    const res = await fetch('/api/classes');
+    const res = await fetch("/api/classes");
     if (!res.ok) return [];
     const data = await res.json();
     const predefined = (data?.predefinedClasses || []).map((c: any) => ({
       id: c.id,
       name: c.name,
       isCustom: false,
-      group: 'Classes système',
+      group: "Classes système",
     }));
     const custom = (data?.customClasses || []).map((c: any) => ({
       id: c.id,
       name: c.name,
       isCustom: false === c.system ? true : !c.system,
-      group: 'Mes classes',
+      group: "Mes classes",
     }));
     return [...custom, ...predefined];
   };
@@ -235,11 +255,14 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
 
     // Compare as sets (ignore order) to detect no-op
     const currentRaw: number[] =
-      (dialogType === 'salles' ? targetSlot.salleIds : targetSlot.classIds) || [];
+      (dialogType === "salles" ? targetSlot.salleIds : targetSlot.classIds) ||
+      [];
     const current = (Array.isArray(currentRaw) ? currentRaw : []).filter(
-      (x) => typeof x === 'number',
+      (x) => typeof x === "number"
     );
-    const next = (Array.isArray(ids) ? ids : []).filter((x) => typeof x === 'number');
+    const next = (Array.isArray(ids) ? ids : []).filter(
+      (x) => typeof x === "number"
+    );
     const sameSet = (a: number[], b: number[]) => {
       if (a.length !== b.length) return false;
       const s = new Set(a);
@@ -247,32 +270,41 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
       return true;
     };
     if (sameSet(current, next)) {
-      setSnackbar({ open: true, message: 'Aucune modification à enregistrer', severity: 'info' });
+      setSnackbar({
+        open: true,
+        message: "Aucune modification à enregistrer",
+        severity: "info",
+      });
       return;
     }
 
-    const body: any = dialogType === 'salles' ? { salleIds: next } : { classIds: next };
+    const body: any =
+      dialogType === "salles" ? { salleIds: next } : { classIds: next };
     try {
       try {
         if (event)
           window.dispatchEvent(
-            new CustomEvent('event-update:start', { detail: { eventId: event.id } }),
+            new CustomEvent("event-update:start", {
+              detail: { eventId: event.id },
+            })
           );
       } catch {}
       const res = await fetch(`/api/timeslots/${targetSlot.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       if (res.ok) {
         const json = await res.json();
         if (json?.event && event && json.event.id === event.id) {
           const parseIds = (raw: any): number[] => {
-            if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
-            if (typeof raw === 'string') {
+            if (Array.isArray(raw))
+              return raw.filter((x) => typeof x === "number");
+            if (typeof raw === "string") {
               try {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'number');
+                if (Array.isArray(parsed))
+                  return parsed.filter((x) => typeof x === "number");
               } catch {}
             }
             return [];
@@ -285,13 +317,13 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           const salleSet = new Set<number>();
           (event.timeslots || []).forEach((ts: any) => {
             (ts.salleIds || []).forEach((id: number) => {
-              if (typeof id === 'number') salleSet.add(id);
+              if (typeof id === "number") salleSet.add(id);
             });
           });
           const classSet = new Set<number>();
           (event.timeslots || []).forEach((ts: any) => {
             (ts.classIds || []).forEach((id: number) => {
-              if (typeof id === 'number') classSet.add(id);
+              if (typeof id === "number") classSet.add(id);
             });
           });
           const newSalleIds = Array.from(salleSet.values());
@@ -302,37 +334,52 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           (event as any).classIds = newClassIds;
         }
         // Optimistically reflect selection on the targeted slot
-        if (dialogType === 'salles') targetSlot.salleIds = next;
+        if (dialogType === "salles") targetSlot.salleIds = next;
         else targetSlot.classIds = next;
         forceRerender((x) => x + 1);
         if (event) onEventUpdate(event.id);
         setSnackbar({
           open: true,
-          message: dialogType === 'salles' ? 'Salles mises à jour !' : 'Classes mises à jour !',
-          severity: 'success',
+          message:
+            dialogType === "salles"
+              ? "Salles mises à jour !"
+              : "Classes mises à jour !",
+          severity: "success",
         });
       } else {
-        setSnackbar({ open: true, message: 'Échec de la mise à jour', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: "Échec de la mise à jour",
+          severity: "error",
+        });
       }
     } catch {
-      setSnackbar({ open: true, message: 'Erreur lors de la mise à jour', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: "Erreur lors de la mise à jour",
+        severity: "error",
+      });
     } finally {
       try {
         if (event)
           window.dispatchEvent(
-            new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
+            new CustomEvent("event-update:end", {
+              detail: { eventId: event.id },
+            })
           );
       } catch {}
     }
   };
 
-  const actionableStates = ['created', 'modified'];
+  const actionableStates = ["created", "modified"];
   const eligibleSlots = (event?.timeslots || []).filter(
-    (s) => actionableStates.includes(s.state) || (isOwner && s.state === 'counter_proposed'),
+    (s) =>
+      actionableStates.includes(s.state) ||
+      (isOwner && s.state === "counter_proposed")
   );
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 }, mx: 'auto', width: '100%' }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, mx: "auto", width: "100%" }}>
       <Stack direction="row" spacing={1} mb={2} alignItems="center">
         <Link href="/evenements">
           <Button variant="outlined" size="small" startIcon={<ArrowBackIcon />}>
@@ -356,17 +403,20 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           mb: 2,
         })}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.contrastText' }}>
-              {event.owner?.name || event.owner?.email || '—'}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 900, color: "primary.contrastText" }}
+            >
+              {event.owner?.name || event.owner?.email || "—"}
             </Typography>
             <Chip
-              label={event.discipline || '—'}
+              label={event.discipline || "—"}
               size="small"
               sx={{
-                backgroundColor: 'primary.light',
-                color: 'primary.contrastText',
+                backgroundColor: "primary.light",
+                color: "primary.contrastText",
                 fontWeight: 600,
                 height: 22,
               }}
@@ -375,14 +425,18 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           {event.title ? (
             <Typography
               variant="caption"
-              sx={{ color: 'primary.contrastText', fontSize: '0.85rem' }}
+              sx={{ color: "primary.contrastText", fontSize: "0.85rem" }}
             >
               {event.title}
             </Typography>
           ) : (
             <Typography
               variant="caption"
-              sx={{ color: 'primary.contrastText', fontSize: '0.85rem', fontStyle: 'italic' }}
+              sx={{
+                color: "primary.contrastText",
+                fontSize: "0.85rem",
+                fontStyle: "italic",
+              }}
             >
               Aucun titre fourni
             </Typography>
@@ -392,13 +446,26 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
 
       {/* Timeslots section with bulk actions */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+          }}
+        >
           <Typography
             component="div"
             variant="subtitle1"
-            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+            sx={{
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
           >
-            <EventIcon fontSize="small" /> {event.timeslots.length === 1 ? 'Créneau' : 'Créneaux'}
+            <EventIcon fontSize="small" />{" "}
+            {event.timeslots.length === 1 ? "Créneau" : "Créneaux"}
           </Typography>
           {canValidate && hasPendingSlots && (
             <Stack direction="row" spacing={1}>
@@ -409,15 +476,15 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                     color="success"
                     onClick={async () => {
                       try {
-                        await fetch('/api/timeslots', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
+                        await fetch("/api/timeslots", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
                             timeslotIds: event.timeslots
                               .filter(
                                 (s) =>
-                                  ['created', 'modified'].includes(s.state) ||
-                                  (isOwner && s.state === 'counter_proposed'),
+                                  ["created", "modified"].includes(s.state) ||
+                                  (isOwner && s.state === "counter_proposed")
                               )
                               .map((s: any) => s.id),
                             approve: true,
@@ -438,15 +505,15 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                     color="error"
                     onClick={async () => {
                       try {
-                        await fetch('/api/timeslots', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
+                        await fetch("/api/timeslots", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
                             timeslotIds: event.timeslots
                               .filter(
                                 (s) =>
-                                  ['created', 'modified'].includes(s.state) ||
-                                  (isOwner && s.state === 'counter_proposed'),
+                                  ["created", "modified"].includes(s.state) ||
+                                  (isOwner && s.state === "counter_proposed")
                               )
                               .map((s: any) => s.id),
                             approve: false,
@@ -465,7 +532,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                   <span>
                     <IconButton
                       size="small"
-                      color={showBulkCounter ? 'warning' : 'default'}
+                      color={showBulkCounter ? "warning" : "default"}
                       onClick={() => setShowBulkCounter((v) => !v)}
                     >
                       <SwapHorizIcon fontSize="small" />
@@ -481,18 +548,25 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             sx={{
               mb: 2,
               p: 2,
-              border: '1px dashed',
-              borderColor: 'warning.main',
+              border: "1px dashed",
+              borderColor: "warning.main",
               borderRadius: 2,
-              backgroundColor: 'warning.light',
+              backgroundColor: "warning.light",
             }}
           >
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Contre‑proposition groupée ({eligibleSlots.length} créneau(x))
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              alignItems="flex-start"
+            >
               <Box>
-                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ display: "block", mb: 0.5 }}
+                >
                   Date (optionnelle)
                 </Typography>
                 <FrenchDateOnly
@@ -502,7 +576,10 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 />
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ display: "block", mb: 0.5 }}
+                >
                   Début (hh:mm)
                 </Typography>
                 <FrenchTimeOnly
@@ -513,7 +590,10 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 />
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ display: "block", mb: 0.5 }}
+                >
                   Fin (hh:mm)
                 </Typography>
                 <FrenchTimeOnly
@@ -528,13 +608,15 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 label="Notes"
                 value={cpNotes}
                 onChange={(e) => setCpNotes(e.target.value)}
-                sx={{ minWidth: { xs: '100%', sm: 200 } }}
+                sx={{ minWidth: { xs: "100%", sm: 200 } }}
               />
               <Button
                 size="small"
                 variant="contained"
                 startIcon={<SwapHorizIcon fontSize="small" />}
-                disabled={eligibleSlots.some((slot) => loadingSlotIds.has(slot.id))}
+                disabled={eligibleSlots.some((slot) =>
+                  loadingSlotIds.has(slot.id)
+                )}
                 onClick={async () => {
                   const payload: any = {};
                   if (cpDateObj) payload.timeslotDate = toDateOnly(cpDateObj);
@@ -542,24 +624,28 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                   if (cpEndObj) payload.endDate = toLocalIsoNoZ(cpEndObj);
                   if (cpNotes) payload.notes = cpNotes.trim();
                   setLoadingSlotIds(
-                    (prev) => new Set([...prev, ...eligibleSlots.map((s) => s.id)]),
+                    (prev) =>
+                      new Set([...prev, ...eligibleSlots.map((s) => s.id)])
                   );
                   try {
                     await Promise.all(
                       eligibleSlots.map((s) =>
                         fetch(`/api/timeslots/${s.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ state: 'counter_proposed', ...payload }),
-                        }),
-                      ),
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            state: "counter_proposed",
+                            ...payload,
+                          }),
+                        })
+                      )
                     );
                     await onEventUpdate(event.id);
                     setShowBulkCounter(false);
                     setCpDateObj(null);
                     setCpStartObj(null);
                     setCpEndObj(null);
-                    setCpNotes('');
+                    setCpNotes("");
                   } finally {
                     setLoadingSlotIds((prev) => {
                       const next = new Set(prev);
@@ -580,8 +666,8 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           salleMap={salleMap as any}
           classMap={classMap as any}
           showAssignButtons
-          onAssignSalle={(slot) => openAssignDialog(slot, 'salles')}
-          onAssignClasses={(slot) => openAssignDialog(slot, 'classes')}
+          onAssignSalle={(slot) => openAssignDialog(slot, "salles")}
+          onAssignClasses={(slot) => openAssignDialog(slot, "classes")}
           onEventUpdate={onEventUpdate}
           loadingSlotIds={loadingSlotIds}
           canValidate={canValidate}
@@ -597,25 +683,32 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             sx={{
               mt: 2,
               p: 1.5,
-              border: '1px dashed',
-              borderColor: 'warning.main',
+              border: "1px dashed",
+              borderColor: "warning.main",
               borderRadius: 1.5,
-              backgroundColor: 'background.paper',
+              backgroundColor: "background.paper",
               boxShadow: 3,
-              transition: 'all .25s ease',
+              transition: "all .25s ease",
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, mb: 1, display: "block" }}
+            >
               Contre‑proposition pour le créneau sélectionné
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'column' }} spacing={1.5} alignItems="flex-start">
+            <Stack
+              direction={{ xs: "column", sm: "column" }}
+              spacing={1.5}
+              alignItems="flex-start"
+            >
               <Stack
                 sx={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
                   gap: 1.5,
-                  justifyContent: 'space-between',
+                  justifyContent: "space-between",
                 }}
               >
                 <FrenchDateOnly
@@ -638,11 +731,11 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
               </Stack>
               <Stack
                 sx={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
                   gap: 1.5,
-                  justifyContent: 'space-between',
+                  justifyContent: "space-between",
                 }}
               >
                 <TextField
@@ -650,14 +743,14 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                   label="Notes"
                   value={cpNotes}
                   onChange={(e) => setCpNotes(e.target.value)}
-                  sx={{ minWidth: 160, flexGrow: 2, maxWidth: '100%' }}
+                  sx={{ minWidth: 160, flexGrow: 2, maxWidth: "100%" }}
                 />
                 <Stack
                   sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
                     gap: 1.5,
-                    justifyContent: 'space-around',
+                    justifyContent: "space-around",
                     flexGrow: 1,
                   }}
                 >
@@ -669,23 +762,30 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                     onClick={async () => {
                       if (!targetSlot) return;
                       const payload: any = {};
-                      if (cpDateObj) payload.timeslotDate = toDateOnly(cpDateObj);
-                      if (cpStartObj) payload.startDate = toLocalIsoNoZ(cpStartObj);
+                      if (cpDateObj)
+                        payload.timeslotDate = toDateOnly(cpDateObj);
+                      if (cpStartObj)
+                        payload.startDate = toLocalIsoNoZ(cpStartObj);
                       if (cpEndObj) payload.endDate = toLocalIsoNoZ(cpEndObj);
                       if (cpNotes) payload.notes = cpNotes.trim();
-                      setLoadingSlotIds((prev) => new Set([...prev, targetSlot.id]));
+                      setLoadingSlotIds(
+                        (prev) => new Set([...prev, targetSlot.id])
+                      );
                       try {
                         await fetch(`/api/timeslots/${targetSlot.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ state: 'counter_proposed', ...payload }),
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            state: "counter_proposed",
+                            ...payload,
+                          }),
                         });
                         await onEventUpdate(event.id);
                         setTargetSlot(null);
                         setCpDateObj(null);
                         setCpStartObj(null);
                         setCpEndObj(null);
-                        setCpNotes('');
+                        setCpNotes("");
                       } finally {
                         setLoadingSlotIds((prev) => {
                           const next = new Set(prev);
@@ -704,7 +804,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                       setCpDateObj(null);
                       setCpStartObj(null);
                       setCpEndObj(null);
-                      setCpNotes('');
+                      setCpNotes("");
                     }}
                   >
                     Annuler
@@ -719,20 +819,35 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
       {/* Salles & Classes summary and Resources */}
       <Box>
         <Box
-          sx={{ my: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}
+          sx={{
+            my: 2,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
         >
           <Box>
             <Typography
               component="div"
               variant="subtitle1"
-              sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+              sx={{
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
             >
-              <MeetingRoomIcon fontSize="small" /> {eventSalleIds.length === 1 ? 'Salle' : 'Salles'}
+              <MeetingRoomIcon fontSize="small" />{" "}
+              {eventSalleIds.length === 1 ? "Salle" : "Salles"}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
               {eventSalleIds.length > 0 ? (
                 eventSalleIds.map((id: number) => (
-                  <Chip key={id} label={salleMap[id] || `Salle ${id}`} size="small" />
+                  <Chip
+                    key={id}
+                    label={salleMap[id] || `Salle ${id}`}
+                    size="small"
+                  />
                 ))
               ) : (
                 <Chip label="Aucune" size="small" variant="outlined" />
@@ -743,14 +858,24 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             <Typography
               component="div"
               variant="subtitle1"
-              sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+              sx={{
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
             >
-              <ClassIcon fontSize="small" /> {eventClassIds.length === 1 ? 'Classe' : 'Classes'}
+              <ClassIcon fontSize="small" />{" "}
+              {eventClassIds.length === 1 ? "Classe" : "Classes"}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
               {eventClassIds.length > 0 ? (
                 eventClassIds.map((id: number) => (
-                  <Chip key={id} label={classMap[id] || `Classe ${id}`} size="small" />
+                  <Chip
+                    key={id}
+                    label={classMap[id] || `Classe ${id}`}
+                    size="small"
+                  />
                 ))
               ) : (
                 <Chip label="Aucune" size="small" variant="outlined" />
@@ -758,306 +883,332 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             </Stack>
           </Box>
         </Box>
-
-        <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 600, margin: '0 auto' }}>
-          <Table size="small" sx={{ minWidth: 300 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{
-                    fontWeight: 'bold',
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                  }}
-                >
-                  Type / Nom
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    fontWeight: 'bold',
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                  }}
-                >
-                  Quantité
-                </TableCell>
-                {canEdit && (
+        {(localMateriels.length > 0 ||
+          localCustomMats.length > 0 ||
+          ((event.discipline === "chimie" || event.discipline === "Chimie") &&
+            (localReactifs.length > 0 || localCustomChems.length > 0))) && (
+          <TableContainer
+            component={Paper}
+            sx={{ mt: 2, maxWidth: 600, margin: "0 auto" }}
+          >
+            <Table size="small" sx={{ minWidth: 300 }}>
+              <TableHead>
+                <TableRow>
                   <TableCell
-                    align="center"
                     sx={{
-                      fontWeight: 'bold',
-                      borderBottom: '2px solid',
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
+                      fontWeight: "bold",
+                      borderBottom: "2px solid",
+                      borderColor: "primary.main",
+                      color: "primary.main",
                     }}
                   >
-                    Actions
+                    Type / Nom
                   </TableCell>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell
-                  colSpan={canEdit ? 3 : 2}
-                  sx={{
-                    fontWeight: 'bold',
-                    bgcolor: 'grey.100',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
-                >
-                  <BuildIcon fontSize="small" /> Matériel
-                </TableCell>
-              </TableRow>
-              {localMateriels.map((m: any) => (
-                <TableRow key={`ev-mat-preset-${m.id}`}>
-                  <TableCell>
-                    <Typography variant="body2">{m.materielName}</Typography>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      fontWeight: "bold",
+                      borderBottom: "2px solid",
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                    }}
+                  >
+                    Quantité
                   </TableCell>
-                  <TableCell align="right">{m.quantity ? `${m.quantity}` : 'N/A'}</TableCell>
                   {canEdit && (
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={async () => {
-                          const backup = [...localMateriels];
-                          setLocalMateriels((prev) => prev.filter((x) => x.id !== m.id));
-                          try {
-                            const remaining = backup
-                              .filter((x) => x.id !== m.id)
-                              .map((x) => ({
-                                materielId: x.materielId,
-                                name: x.materielName,
-                                quantity: x.quantity ?? 1,
-                                isCustom: false,
-                              }));
-                            await fetch(`/api/events/${event.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ materiels: remaining }),
-                            });
-                          } catch {
-                            setLocalMateriels(backup);
-                          }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-              {localCustomMats.map((rm: any) => (
-                <TableRow key={`ev-mat-custom-${rm.id}`}>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      component="span"
-                      sx={{ display: 'flex', alignItems: 'center' }}
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: "bold",
+                        borderBottom: "2px solid",
+                        borderColor: "primary.main",
+                        color: "primary.main",
+                      }}
                     >
-                      {rm.name}
-                      <Chip
-                        label="PERSO"
-                        size="small"
-                        color="warning"
-                        variant="filled"
-                        sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
-                      />
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">{rm.quantity ? `${rm.quantity}` : 'N/A'}</TableCell>
-                  {canEdit && (
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={async () => {
-                          const backup = [...localCustomMats];
-                          setLocalCustomMats((prev) => prev.filter((x) => x.id !== rm.id));
-                          try {
-                            await fetch(
-                              `/api/events/${event.id}/requests/materiels?requestId=${rm.id}`,
-                              { method: 'DELETE' },
-                            );
-                          } catch {
-                            setLocalCustomMats(backup);
-                          }
-                        }}
-                      >
-                        <CancelIcon fontSize="small" />
-                      </IconButton>
+                      Actions
                     </TableCell>
                   )}
                 </TableRow>
-              ))}
-              {!(localMateriels.length || localCustomMats.length) && (
+              </TableHead>
+              <TableBody>
                 <TableRow>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      Aucun matériel
-                    </Typography>
+                  <TableCell
+                    colSpan={canEdit ? 3 : 2}
+                    sx={{
+                      fontWeight: "bold",
+                      bgcolor: "grey.100",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <BuildIcon fontSize="small" /> Matériel
                   </TableCell>
-                  <TableCell align="right">-</TableCell>
-                  {canEdit && <TableCell align="center">-</TableCell>}
                 </TableRow>
-              )}
-              {event.discipline === 'chimie' ? (
-                <>
-                  <TableRow>
-                    <TableCell
-                      colSpan={canEdit ? 3 : 2}
-                      sx={{
-                        fontWeight: 'bold',
-                        bgcolor: 'grey.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                {localMateriels.map((m: any) => (
+                  <TableRow key={`ev-mat-preset-${m.id}`}>
+                    <TableCell>
+                      <Typography variant="body2">{m.materielName}</Typography>
                     </TableCell>
-                  </TableRow>
-                  {localReactifs.map((r: any) => (
-                    <TableRow key={`ev-react-preset-${r.id}`}>
-                      <TableCell>
-                        <Typography variant="body2">{r.reactifName}</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        {r.requestedQuantity || r.requestedQuantity === 0
-                          ? `${r.requestedQuantity} ${r.unit || 'g'}`.trim()
-                          : 'N/A'}
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={async () => {
-                              const backup = [...localReactifs];
-                              setLocalReactifs((prev) => prev.filter((x) => x.id !== r.id));
-                              try {
-                                const remaining = backup
-                                  .filter((x) => x.id !== r.id)
-                                  .map((x) => ({
-                                    reactifId: x.reactifId,
-                                    name: x.reactifName,
-                                    requestedQuantity: x.requestedQuantity ?? 0,
-                                    unit: x.unit || 'g',
-                                    isCustom: false,
-                                  }));
-                                await fetch(`/api/events/${event.id}`, {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ reactifs: remaining }),
-                                });
-                              } catch {
-                                setLocalReactifs(backup);
-                              }
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                  {localCustomChems.map((rr: any) => (
-                    <TableRow key={`ev-react-custom-${rr.id}`}>
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          component="span"
-                          sx={{ display: 'flex', alignItems: 'center' }}
+                    <TableCell align="right">
+                      {m.quantity ? `${m.quantity}` : "N/A"}
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell align="center">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={async () => {
+                            const backup = [...localMateriels];
+                            setLocalMateriels((prev) =>
+                              prev.filter((x) => x.id !== m.id)
+                            );
+                            try {
+                              const remaining = backup
+                                .filter((x) => x.id !== m.id)
+                                .map((x) => ({
+                                  materielId: x.materielId,
+                                  name: x.materielName,
+                                  quantity: x.quantity ?? 1,
+                                  isCustom: false,
+                                }));
+                              await fetch(`/api/events/${event.id}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ materiels: remaining }),
+                              });
+                            } catch {
+                              setLocalMateriels(backup);
+                            }
+                          }}
                         >
-                          {rr.name}
-                          <Chip
-                            label="PERSO"
-                            size="small"
-                            color="warning"
-                            variant="filled"
-                            sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
-                          />
-                        </Typography>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </TableCell>
-                      <TableCell align="right">
-                        {rr.requestedQuantity || rr.requestedQuantity === 0
-                          ? `${rr.requestedQuantity} ${rr.unit || 'g'}`.trim()
-                          : 'N/A'}
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={async () => {
-                              const backup = [...localCustomChems];
-                              setLocalCustomChems((prev) => prev.filter((x) => x.id !== rr.id));
-                              try {
-                                await fetch(
-                                  `/api/events/${event.id}/requests/reactifs?requestId=${rr.id}`,
-                                  { method: 'DELETE' },
-                                );
-                              } catch {
-                                setLocalCustomChems(backup);
-                              }
-                            }}
-                          >
-                            <CancelIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                  {!(localReactifs.length || localCustomChems.length) && (
-                    <TableRow>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          Aucun réactif
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">-</TableCell>
-                      {canEdit && <TableCell align="center">-</TableCell>}
-                    </TableRow>
-                  )}
-                </>
-              ) : (
-                <>
-                  <TableRow>
-                    <TableCell
-                      colSpan={canEdit ? 3 : 2}
-                      sx={{
-                        fontWeight: 'bold',
-                        bgcolor: 'grey.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <ScienceIcon fontSize="small" /> Réactifs Chimiques
-                    </TableCell>
+                    )}
                   </TableRow>
+                ))}
+                {localCustomMats.map((rm: any) => (
+                  <TableRow key={`ev-mat-custom-${rm.id}`}>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ display: "flex", alignItems: "center" }}
+                      >
+                        {rm.name}
+                        <Chip
+                          label="PERSO"
+                          size="small"
+                          color="warning"
+                          variant="filled"
+                          sx={{ ml: 1, fontSize: "0.7rem", height: "18px" }}
+                        />
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      {rm.quantity ? `${rm.quantity}` : "N/A"}
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell align="center">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={async () => {
+                            const backup = [...localCustomMats];
+                            setLocalCustomMats((prev) =>
+                              prev.filter((x) => x.id !== rm.id)
+                            );
+                            try {
+                              await fetch(
+                                `/api/events/${event.id}/requests/materiels?requestId=${rm.id}`,
+                                { method: "DELETE" }
+                              );
+                            } catch {
+                              setLocalCustomMats(backup);
+                            }
+                          }}
+                        >
+                          <CancelIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+                {!(localMateriels.length || localCustomMats.length) && (
                   <TableRow>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        Non applicable (Physique)
+                        Aucun matériel
                       </Typography>
                     </TableCell>
                     <TableCell align="right">-</TableCell>
                     {canEdit && <TableCell align="center">-</TableCell>}
                   </TableRow>
-                </>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                )}
+                {event.discipline === "chimie" ? (
+                  <>
+                    <TableRow>
+                      <TableCell
+                        colSpan={canEdit ? 3 : 2}
+                        sx={{
+                          fontWeight: "bold",
+                          bgcolor: "grey.100",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                      </TableCell>
+                    </TableRow>
+                    {localReactifs.map((r: any) => (
+                      <TableRow key={`ev-react-preset-${r.id}`}>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {r.reactifName}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          {r.requestedQuantity || r.requestedQuantity === 0
+                            ? `${r.requestedQuantity} ${r.unit || "g"}`.trim()
+                            : "N/A"}
+                        </TableCell>
+                        {canEdit && (
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={async () => {
+                                const backup = [...localReactifs];
+                                setLocalReactifs((prev) =>
+                                  prev.filter((x) => x.id !== r.id)
+                                );
+                                try {
+                                  const remaining = backup
+                                    .filter((x) => x.id !== r.id)
+                                    .map((x) => ({
+                                      reactifId: x.reactifId,
+                                      name: x.reactifName,
+                                      requestedQuantity:
+                                        x.requestedQuantity ?? 0,
+                                      unit: x.unit || "g",
+                                      isCustom: false,
+                                    }));
+                                  await fetch(`/api/events/${event.id}`, {
+                                    method: "PUT",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      reactifs: remaining,
+                                    }),
+                                  });
+                                } catch {
+                                  setLocalReactifs(backup);
+                                }
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                    {localCustomChems.map((rr: any) => (
+                      <TableRow key={`ev-react-custom-${rr.id}`}>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            component="span"
+                            sx={{ display: "flex", alignItems: "center" }}
+                          >
+                            {rr.name}
+                            <Chip
+                              label="PERSO"
+                              size="small"
+                              color="warning"
+                              variant="filled"
+                              sx={{ ml: 1, fontSize: "0.7rem", height: "18px" }}
+                            />
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          {rr.requestedQuantity || rr.requestedQuantity === 0
+                            ? `${rr.requestedQuantity} ${rr.unit || "g"}`.trim()
+                            : "N/A"}
+                        </TableCell>
+                        {canEdit && (
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={async () => {
+                                const backup = [...localCustomChems];
+                                setLocalCustomChems((prev) =>
+                                  prev.filter((x) => x.id !== rr.id)
+                                );
+                                try {
+                                  await fetch(
+                                    `/api/events/${event.id}/requests/reactifs?requestId=${rr.id}`,
+                                    { method: "DELETE" }
+                                  );
+                                } catch {
+                                  setLocalCustomChems(backup);
+                                }
+                              }}
+                            >
+                              <CancelIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                    {!(localReactifs.length || localCustomChems.length) && (
+                      <TableRow>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            Aucun réactif
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">-</TableCell>
+                        {canEdit && <TableCell align="center">-</TableCell>}
+                      </TableRow>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <TableRow>
+                      <TableCell
+                        colSpan={canEdit ? 3 : 2}
+                        sx={{
+                          fontWeight: "bold",
+                          bgcolor: "grey.100",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          Non applicable (Physique)
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">-</TableCell>
+                      {canEdit && <TableCell align="center">-</TableCell>}
+                    </TableRow>
+                  </>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
         {canEdit && (
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
             <Button
               size="small"
               startIcon={<AddIcon />}
@@ -1074,7 +1225,12 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           <Typography
             component="div"
             variant="subtitle1"
-            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+            sx={{
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
           >
             <AttachFileIcon fontSize="small" /> Documents
           </Typography>
@@ -1085,26 +1241,34 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           )}
           {localDocuments.length > 0 && (
             <Stack
-              sx={{ mt: 1,
-                display: 'flex',
-                flexDirection: 'column',
+              sx={{
+                mt: 1,
+                display: "flex",
+                flexDirection: "column",
                 gap: 1,
                 maxWidth: 400,
-                }}>
+              }}
+            >
               {localDocuments.map((doc: any) => {
                 const effectiveName =
                   doc.fileName ||
                   (() => {
                     try {
-                      const raw = decodeURIComponent(String(doc.fileUrl || '')).split('?')[0];
-                      const parts = raw.split('/');
-                      return parts[parts.length - 1] || 'Document';
+                      const raw = decodeURIComponent(
+                        String(doc.fileUrl || "")
+                      ).split("?")[0];
+                      const parts = raw.split("/");
+                      return parts[parts.length - 1] || "Document";
                     } catch {
-                      return 'Document';
+                      return "Document";
                     }
                   })();
-                const sizeLabel = doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : '';
-                const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
+                const sizeLabel = doc.fileSize
+                  ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                  : "";
+                const tooltip = `${effectiveName}${
+                  doc.fileType ? `\nType: ${doc.fileType}` : ""
+                }${sizeLabel ? `\nTaille: ${sizeLabel}` : ""}`;
                 const buildDownloadUrl = (rawUrl: string) => {
                   if (!rawUrl) return rawUrl;
                   // Always serve via proxy API for auth and consistent behavior
@@ -1113,97 +1277,106 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 };
                 const openUrl = buildDownloadUrl(doc.fileUrl);
                 return (
-                  
-                    <Box 
-                    sx = {{
-                      display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexDirection: 'row',
-                        width: '100%',
-                        gap: 0.5,
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      flexDirection: "row",
+                      width: "100%",
+                      gap: 0.5,
                     }}
+                  >
+                    <Tooltip
+                      key={doc.id || doc.fileUrl}
+                      title={tooltip}
+                      arrow
+                      sx={{
+                        flexGrow: 100,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
                     >
-                        <Tooltip
-                        key={doc.id || doc.fileUrl}
-                        title={tooltip}
-                        arrow
+                      <Chip
+                        label={effectiveName}
+                        size="small"
+                        variant="outlined"
                         sx={{
-                            flexGrow: 100,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                        <Chip
-                          label={effectiveName}
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'start',
-                            flexGrow: 100,
-                            '& .MuiChip-label': {
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "start",
+                          flexGrow: 100,
+                          "& .MuiChip-label": {
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           },
-                          }}
-                          onClick={() => openUrl && window.open(openUrl, '_blank')}
-                          icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
-                        />
-                        </Tooltip>
-                      <Tooltip title="Télécharger">
+                        }}
+                        onClick={() =>
+                          openUrl && window.open(openUrl, "_blank")
+                        }
+                        icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                      />
+                    </Tooltip>
+                    <Tooltip title="Télécharger">
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            openUrl && window.open(openUrl, "_blank")
+                          }
+                        >
+                          <DownloadIcon fontSize="inherit" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    {canEdit && (
+                      <Tooltip title="Supprimer (archiver)">
                         <span>
                           <IconButton
                             size="small"
-                            onClick={() => openUrl && window.open(openUrl, '_blank')}
+                            color="error"
+                            disabled={docActionLoading === doc.fileUrl}
+                            onClick={async () => {
+                              const remaining = localDocuments.filter(
+                                (d: any) => d !== doc
+                              );
+                              setLocalDocuments(remaining);
+                              try {
+                                setDocActionLoading(doc.fileUrl);
+                                const res = await fetch(
+                                  `/api/events/${
+                                    event.id
+                                  }/documents?fileUrl=${encodeURIComponent(
+                                    doc.fileUrl
+                                  )}`,
+                                  { method: "DELETE" }
+                                );
+                                if (!res.ok) throw new Error("delete failed");
+                                setSnackbar({
+                                  open: true,
+                                  message: "Document supprimé",
+                                  severity: "success",
+                                });
+                              } catch (e) {
+                                setLocalDocuments((prev) => [...prev, doc]);
+                                setSnackbar({
+                                  open: true,
+                                  message: "Échec suppression",
+                                  severity: "error",
+                                });
+                              } finally {
+                                setDocActionLoading(null);
+                              }
+                            }}
                           >
-                            <DownloadIcon fontSize="inherit" />
+                            <DeleteIcon fontSize="inherit" />
                           </IconButton>
                         </span>
                       </Tooltip>
-                      {canEdit && (
-                        <Tooltip title="Supprimer (archiver)">
-                          <span>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              disabled={docActionLoading === doc.fileUrl}
-                              onClick={async () => {
-                                const remaining = localDocuments.filter((d: any) => d !== doc);
-                                setLocalDocuments(remaining);
-                                try {
-                                  setDocActionLoading(doc.fileUrl);
-                                  const res = await fetch(
-                                    `/api/events/${event.id}/documents?fileUrl=${encodeURIComponent(doc.fileUrl)}`,
-                                    { method: 'DELETE' },
-                                  );
-                                  if (!res.ok) throw new Error('delete failed');
-                                  setSnackbar({
-                                    open: true,
-                                    message: 'Document supprimé',
-                                    severity: 'success',
-                                  });
-                                } catch (e) {
-                                  setLocalDocuments((prev) => [...prev, doc]);
-                                  setSnackbar({
-                                    open: true,
-                                    message: 'Échec suppression',
-                                    severity: 'error',
-                                  });
-                                } finally {
-                                  setDocActionLoading(null);
-                                }
-                              }}
-                            >
-                              <DeleteIcon fontSize="inherit" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      )}{' '}
-                    </Box>
-                  
+                    )}{" "}
+                  </Box>
                 );
               })}
             </Stack>
@@ -1228,7 +1401,8 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 eventId={event.id}
                 onFileUploaded={async (_fileId, uploaded) => {
                   setLocalDocuments((prev) => {
-                    if (prev.some((d) => d.fileUrl === uploaded.fileUrl)) return prev;
+                    if (prev.some((d) => d.fileUrl === uploaded.fileUrl))
+                      return prev;
                     return [
                       ...prev,
                       {
@@ -1243,21 +1417,25 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                   setSnackbar({
                     open: true,
                     message: uploaded.duplicate
-                      ? 'Document déjà présent (non ré-ajouté)'
-                      : 'Document ajouté',
-                    severity: uploaded.duplicate ? 'info' : 'success',
+                      ? "Document déjà présent (non ré-ajouté)"
+                      : "Document ajouté",
+                    severity: uploaded.duplicate ? "info" : "success",
                   });
                 }}
                 onFileDeleted={(fileUrl) => {
-                  setLocalDocuments((prev) => prev.filter((d: any) => d.fileUrl !== fileUrl));
+                  setLocalDocuments((prev) =>
+                    prev.filter((d: any) => d.fileUrl !== fileUrl)
+                  );
                   try {
                     window.dispatchEvent(
-                      new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
+                      new CustomEvent("event-update:end", {
+                        detail: { eventId: event.id },
+                      })
                     );
                   } catch {}
                 }}
               />
-              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+              <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
                 <Button
                   size="small"
                   disabled={uploadingOne}
@@ -1266,7 +1444,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                     setUploadingDocs([]);
                   }}
                 >
-                  {uploadingOne ? 'Patientez…' : 'Terminer'}
+                  {uploadingOne ? "Patientez…" : "Terminer"}
                 </Button>
               </Box>
             </Box>
@@ -1275,7 +1453,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
 
         {resourcesDialogOpen && event && (
           <AddResourcesDialog
-            discipline={event.discipline === 'chimie' ? 'chimie' : 'physique'}
+            discipline={event.discipline === "chimie" ? "chimie" : "physique"}
             open={resourcesDialogOpen}
             mode="dialog"
             onClose={() => setResourcesDialogOpen(false)}
@@ -1304,7 +1482,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             onChange={() => {}}
             onSave={async (data: AddResourcesDialogChange) => {
               const toNumber = (v: any, def: number) => {
-                if (v === '' || v === null || v === undefined) return def;
+                if (v === "" || v === null || v === undefined) return def;
                 const n = Number(v);
                 return Number.isFinite(n) ? n : def;
               };
@@ -1322,8 +1500,11 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 .map((c) => ({
                   reactifId: c.id,
                   name: c.name.trim(),
-                  requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
-                  unit: (c.unit && c.unit.trim()) || 'g',
+                  requestedQuantity: Math.max(
+                    0,
+                    toNumber(c.requestedQuantity, 0)
+                  ),
+                  unit: (c.unit && c.unit.trim()) || "g",
                   isCustom: false,
                 }));
               const currentSig = buildResourceSignature({
@@ -1361,15 +1542,19 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
               if (presetChanged) {
                 try {
                   await fetch(`/api/events/${event.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ materiels: newMateriels, reactifs: newReactifs }),
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      materiels: newMateriels,
+                      reactifs: newReactifs,
+                    }),
                   });
                 } catch (e) {
                   setSnackbar({
                     open: true,
-                    message: 'Erreur lors de la mise à jour des ressources prédéfinies',
-                    severity: 'error',
+                    message:
+                      "Erreur lors de la mise à jour des ressources prédéfinies",
+                    severity: "error",
                   });
                   return;
                 }
@@ -1392,8 +1577,9 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 } catch (err) {
                   setSnackbar({
                     open: true,
-                    message: 'Erreur lors de la synchronisation des ressources perso',
-                    severity: 'error',
+                    message:
+                      "Erreur lors de la synchronisation des ressources perso",
+                    severity: "error",
                   });
                   return;
                 }
@@ -1415,9 +1601,9 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 open: true,
                 message:
                   presetChanged || customChanged
-                    ? 'Ressources mises à jour !'
-                    : 'Aucune modification à enregistrer',
-                severity: presetChanged || customChanged ? 'success' : 'info',
+                    ? "Ressources mises à jour !"
+                    : "Aucune modification à enregistrer",
+                severity: presetChanged || customChanged ? "success" : "info",
               });
             }}
           />
@@ -1427,7 +1613,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
           open={snackbar.open}
           autoHideDuration={3000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
           <Alert
             onClose={() => setSnackbar({ ...snackbar, open: false })}
@@ -1438,8 +1624,13 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
         </Snackbar>
 
         <Divider sx={{ mt: 3, mb: 1 }} />
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-          Ajouté le {formatDate(event.createdAt)} • Modifié le {formatDate(event.updatedAt)}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block" }}
+        >
+          Ajouté le {formatDate(event.createdAt)} • Modifié le{" "}
+          {formatDate(event.updatedAt)}
         </Typography>
       </Box>
 
@@ -1448,15 +1639,21 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
         <MultiAssignDialog
           dialogType={dialogType || undefined}
           open={!!dialogType}
-          title={dialogType === 'salles' ? 'Associer des salles' : 'Associer des classes'}
-          description={
-            dialogType === 'salles'
-              ? 'Sélectionnez une ou plusieurs salles pour ce créneau.'
-              : 'Sélectionnez une ou plusieurs classes pour ce créneau.'
+          title={
+            dialogType === "salles"
+              ? "Associer des salles"
+              : "Associer des classes"
           }
-          loadOptions={dialogType === 'salles' ? loadSalles : loadClasses}
+          description={
+            dialogType === "salles"
+              ? "Sélectionnez une ou plusieurs salles pour ce créneau."
+              : "Sélectionnez une ou plusieurs classes pour ce créneau."
+          }
+          loadOptions={dialogType === "salles" ? loadSalles : loadClasses}
           initialSelectedIds={
-            (dialogType === 'salles' ? targetSlot.salleIds : targetSlot.classIds) || []
+            (dialogType === "salles"
+              ? targetSlot.salleIds
+              : targetSlot.classIds) || []
           }
           onSave={saveAssign}
           onClose={() => {

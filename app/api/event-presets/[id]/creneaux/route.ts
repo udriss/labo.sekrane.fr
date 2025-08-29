@@ -77,6 +77,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       createdAt: toLocalLiteral(t.createdAt),
       updatedAt: toLocalLiteral(t.updatedAt),
     }));
+    console.log('🟢 Slots récupérés:', enriched);
     return NextResponse.json({ timeslots: enriched });
   } catch (e) {
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });

@@ -49,6 +49,7 @@ import {
   Event as EventIcon,
   Download as DownloadIcon,
   CloudUpload as CloudUploadIcon,
+  FolderCopy as FolderCopyIcon
 } from '@mui/icons-material';
 import MultiAssignDialog, { MultiAssignOption } from '@/components/shared/MultiAssignDialog';
 import { useEntityNames } from '@/components/providers/EntityNamesProvider';
@@ -224,21 +225,27 @@ export default function EventDetailsDialog({
 
   // Refetch event on external updates AND when dialog opens to always show fresh documents
   useEffect(() => {
-    if (!event?.id) return;
+    if (!event?.id || !open) return;
+    
     let cancelled = false;
-  const refetchEvent = async () => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const refetchEvent = async () => {
       try {
-    const res = await fetch(`/api/events/${event.id}?r=${Date.now()}`, { cache: 'no-store' });
-        if (!res.ok) return;
+        const res = await fetch(`/api/events/${event.id}?r=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok || cancelled) return;
+        
         const json = await res.json();
-        const ev = json?.event || {};
         if (cancelled) return;
+        
+        const ev = json?.event || {};
         setLocalTimeslots([...(ev.timeslots || [])]);
         setLocalMateriels([...(ev.materiels || [])]);
         setLocalReactifs([...(ev.reactifs || [])]);
         setLocalCustomMats([...(ev.customMaterielRequests || [])]);
         setLocalCustomChems([...(ev.customReactifRequests || [])]);
         setLocalDocuments([...(ev.documents || [])]);
+        
         const parseIds = (raw: any): number[] => {
           if (Array.isArray(raw)) return raw.filter((x) => typeof x === 'number');
           if (typeof raw === 'string') {
@@ -251,25 +258,37 @@ export default function EventDetailsDialog({
         };
         setEventSalleIds(parseIds(ev.salleIds));
         setEventClassIds(parseIds(ev.classIds));
-      } catch {}
+      } catch (error) {
+        // Only log if not cancelled
+        if (!cancelled) {
+          console.error('Error refetching event:', error);
+        }
+      }
     };
 
-    // Immediate refetch when the dialog opens or when the event id changes
-    if (open) {
-      refetchEvent();
-    }
+    // Debounce the refetch to prevent too frequent calls
+    const debouncedRefetch = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(refetchEvent, 100);
+    };
+
+    // Initial refetch when dialog opens
+    refetchEvent();
 
     const onEnd = (e: any) => {
       try {
         const id = e?.detail?.eventId;
-        if (!id || id !== event.id) return;
-        refetchEvent();
+        if (!id || id !== event.id || cancelled) return;
+        debouncedRefetch();
       } catch {}
     };
+    
     window.addEventListener('event-update:end', onEnd as any);
     window.addEventListener('event:refetch', onEnd as any);
+    
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
       window.removeEventListener('event-update:end', onEnd as any);
       window.removeEventListener('event:refetch', onEnd as any);
     };
@@ -522,18 +541,10 @@ export default function EventDetailsDialog({
       </DialogTitle>
       <DialogContent sx={{ mt: 2, pb: 1 }}>
         <Box>
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 1 }}>
             <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
+              sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 1 }}
             >
-              <Typography
-                component="div"
-                variant="subtitle1"
-                sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <EventIcon fontSize="small" />{' '}
-                {localTimeslots.length === 1 ? 'Créneau' : 'Créneaux'}
-              </Typography>
               {canValidate && hasPendingSlots && (
                 <Stack direction="row" spacing={1}>
                   {onApproveTimeSlots && (
@@ -590,7 +601,7 @@ export default function EventDetailsDialog({
                 }}
               >
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Contre‑proposition groupée ({eligibleSlots.length} créneau(x))
+                  Contre-proposition groupée ({eligibleSlots.length} créneau(x))
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
                   <Box>
@@ -697,25 +708,42 @@ export default function EventDetailsDialog({
               </Box>
             )}
             {/* Focus mode: dim other sections when counter-proposing a specific slot */}
-            <SlotDisplay
-              slots={(targetSlot ? [targetSlot] : localTimeslots || []) as any}
-              salleMap={salleMap as any}
-              classMap={classMap as any}
-              showAssignButtons
-              onAssignSalle={(slot) => openAssignDialog(slot, 'salles')}
-              onAssignClasses={(slot) => openAssignDialog(slot, 'classes')}
-              onEventUpdate={onEventUpdate}
-              loadingSlotIds={loadingSlotIds}
-              canValidate={canValidate}
-              isOwner={isOwner}
-              eventId={event.id}
-              onSlotUpdate={() => {
-                // Refresh event data
-                if (onEventUpdate) {
-                  onEventUpdate(event.id);
-                }
-              }}
-            />
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
+                <EventIcon fontSize="small" />{' '}
+                {localTimeslots.length === 1 ? 'Créneau' : 'Créneaux'}
+              </Typography>
+              <SlotDisplay
+                slots={(targetSlot ? [targetSlot] : localTimeslots || []) as any}
+                salleMap={salleMap as any}
+                classMap={classMap as any}
+                showAssignButtons
+                onAssignSalle={(slot) => openAssignDialog(slot, 'salles')}
+                onAssignClasses={(slot) => openAssignDialog(slot, 'classes')}
+                onEventUpdate={onEventUpdate}
+                loadingSlotIds={loadingSlotIds}
+                canValidate={canValidate}
+                isOwner={isOwner}
+                eventId={event.id}
+                onSlotUpdate={() => {
+                  // Refresh event data
+                  if (onEventUpdate) {
+                    onEventUpdate(event.id);
+                  }
+                }}
+              />
+              </Box>
+            </Paper>
             {targetSlot && canValidate && onCounterPropose && (
               <Box
                 sx={{
@@ -888,558 +916,588 @@ export default function EventDetailsDialog({
                   gap: 2,
                 }}
               >
-                <Box>
-                  <Typography
-                    component="div"
-                    variant="subtitle1"
-                    sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-                  >
-                    <MeetingRoomIcon fontSize="small" />{' '}
-                    {eventSalleIds.length === 1 ? 'Salle' : 'Salles'}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
-                    {eventSalleIds.length > 0 ? (
-                      eventSalleIds.map((id: number) => (
-                        <Chip key={id} label={salleMap[id] || `Salle ${id}`} size="small" />
-                      ))
-                    ) : (
-                      <Chip label="Aucune" size="small" variant="outlined" />
-                    )}
-                  </Stack>
-                </Box>
-                <Box>
-                  <Typography
-                    component="div"
-                    variant="subtitle1"
-                    sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-                  >
-                    <ClassIcon fontSize="small" />{' '}
-                    {eventClassIds.length === 1 ? 'Classe' : 'Classes'}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
-                    {eventClassIds.length > 0 ? (
-                      eventClassIds.map((id: number) => (
-                        <Chip key={id} label={classMap[id] || `Classe ${id}`} size="small" />
-                      ))
-                    ) : (
-                      <Chip label="Aucune" size="small" variant="outlined" />
-                    )}
-                  </Stack>
-                </Box>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <MeetingRoomIcon fontSize="small" />
+                      {eventSalleIds.length === 1 ? 'Salle' : 'Salles'}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {eventSalleIds.length > 0 ? (
+                        eventSalleIds.map((id: number) => (
+                          <Chip key={id} label={salleMap[id] || `Salle ${id}`} size="small" />
+                        ))
+                      ) : (
+                        <Chip label="Aucune" size="small" variant="outlined" />
+                      )}
+                    </Stack>
+                  </Box>
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}
+                    >
+                      <ClassIcon fontSize="small" />
+                      {eventClassIds.length === 1 ? 'Classe' : 'Classes'}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                      {eventClassIds.length > 0 ? (
+                        eventClassIds.map((id: number) => (
+                          <Chip key={id} label={classMap[id] || `Classe ${id}`} size="small" />
+                        ))
+                      ) : (
+                        <Chip label="Aucune" size="small" variant="outlined" />
+                      )}
+                    </Stack>
+                  </Box>
+                </Paper>
               </Box>
-              <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 600, margin: '0 auto' }}>
-                <Table size="small" sx={{ minWidth: 300 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        sx={{
-                          fontWeight: 'bold',
-                          borderBottom: '2px solid',
-                          borderColor: 'primary.main',
-                          color: 'primary.main',
-                        }}
-                      >
-                        Type / Nom
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          fontWeight: 'bold',
-                          borderBottom: '2px solid',
-                          borderColor: 'primary.main',
-                          color: 'primary.main',
-                        }}
-                      >
-                        Quantité
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell
-                          align="center"
+              <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    <FolderCopyIcon fontSize="small" /> Documents
+                  </Typography>
+                  {localDocuments.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      Aucun document
+                    </Typography>
+                  )}
+                  {localDocuments.length > 0 && (
+                    <Stack sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: 400 }}>
+                      {localDocuments.map((doc: any) => {
+                        const effectiveName =
+                          doc.fileName ||
+                          (() => {
+                            try {
+                              const raw = decodeURIComponent(String(doc.fileUrl || '')).split('?')[0];
+                              const parts = raw.split('/');
+                              return parts[parts.length - 1] || 'Document';
+                            } catch {
+                              return 'Document';
+                            }
+                          })();
+                        const sizeLabel = doc.fileSize
+                          ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                          : '';
+                        const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
+                        const buildDownloadUrl = (rawUrl: string) => {
+                          if (!rawUrl) return rawUrl;
+                          // Always serve via proxy API for auth and consistent behavior
+                          const enc = encodeURIComponent(rawUrl);
+                          return `/api/documents/proxy?fileUrl=${enc}`;
+                        };
+                        const openUrl = buildDownloadUrl(doc.fileUrl);
+                        const key = doc.id || doc.fileUrl || `${effectiveName}-${Math.random()}`;
+                        return (
+                          <Box key={key} 
                           sx={{
-                            fontWeight: 'bold',
-                            borderBottom: '2px solid',
-                            borderColor: 'primary.main',
-                            color: 'primary.main',
+                            display: 'flex', alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexDirection: 'row',
+                            width: '100%',
+                            gap: 0.5 }}
+                            >
+                            <Tooltip title={tooltip} arrow
+                            sx={{
+                              flexGrow: 100,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            >
+                              <Chip
+                                label={effectiveName}
+                                size="small"
+                                variant="outlined"
+                                onClick={() => openUrl && window.open(openUrl, '_blank')}
+                                icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                            sx={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'start',
+                              flexGrow: 100,
+                              '& .MuiChip-label': {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            },
+                            }}
+                              />
+                            </Tooltip>
+                            <Tooltip title="Télécharger">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => openUrl && window.open(openUrl, '_blank')}
+                                >
+                                  <DownloadIcon fontSize="inherit" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            {canEdit && (
+                              <Tooltip title="Supprimer (archiver)">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    disabled={docActionLoading === doc.fileUrl}
+                                    onClick={async () => {
+                                      const remaining = localDocuments.filter((d: any) => d !== doc);
+                                      setLocalDocuments(remaining);
+                                      if (event) (event as any).documents = remaining;
+                                      forceRerender((x) => x + 1);
+                                      try {
+                                        setDocActionLoading(doc.fileUrl);
+                                        const res = await fetch(
+                                          `/api/events/${event.id}/documents?fileUrl=${encodeURIComponent(doc.fileUrl)}`,
+                                          { method: 'DELETE' },
+                                        );
+                                        if (!res.ok) throw new Error('delete failed');
+                                        setSnackbar({
+                                          open: true,
+                                          message: 'Document supprimé',
+                                          severity: 'success',
+                                        });
+                                      } catch (e) {
+                                        setLocalDocuments((prev) => [...prev, doc]);
+                                        setSnackbar({
+                                          open: true,
+                                          message: 'Échec suppression',
+                                          severity: 'error',
+                                        });
+                                      } finally {
+                                        setDocActionLoading(null);
+                                      }
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="inherit" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}{' '}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  )}
+                  {canEdit && !addingDocs && (
+                    <Box sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      width: '100%',
+                     }}>
+                      <Button
+                        size="small"
+                        color='success'
+                        variant="outlined"
+                        startIcon={<CloudUploadIcon fontSize="small" />}
+                        onClick={() => setAddingDocs(true)}
+                      >
+                        Ajouter des documents
+                      </Button>
+                    </Box>
+                  )}
+                  {canEdit && addingDocs && (
+                    <Box sx={{ mt: 2 }}>
+                      <FileUploadSection
+                        files={uploadingDocs}
+                        onFilesChange={setUploadingDocs}
+                        maxFiles={5}
+                        eventId={event.id}
+                        onFileUploaded={async (_fileId, uploaded) => {
+                          setLocalDocuments((prev) => {
+                            if (prev.some((d) => d.fileUrl === uploaded.fileUrl)) return prev;
+                            return [
+                              ...prev,
+                              {
+                                id: uploaded.documentId || `temp-${Date.now()}`,
+                                fileName: uploaded.fileName,
+                                fileUrl: uploaded.fileUrl,
+                                fileSize: uploaded.fileSize,
+                                fileType: uploaded.fileType,
+                              },
+                            ];
+                          });
+                          setSnackbar({
+                            open: true,
+                            message: uploaded.duplicate
+                              ? 'Document déjà présent (non ré-ajouté)'
+                              : 'Document ajouté',
+                            severity: uploaded.duplicate ? 'info' : 'success',
+                          });
+                        }}
+                        onFileDeleted={(fileUrl) => {
+                          setLocalDocuments((prev) => prev.filter((d: any) => d.fileUrl !== fileUrl));
+                          try {
+                            if (event)
+                              window.dispatchEvent(
+                                new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
+                              );
+                          } catch {}
+                        }}
+                      />
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          disabled={uploadingOne}
+                          onClick={() => {
+                            setAddingDocs(false);
+                            setUploadingDocs([]);
                           }}
                         >
-                          Actions
-                        </TableCell>
-                      )}
+                          {uploadingOne ? 'Patientez…' : 'Terminer'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+
+
+                              {(localMateriels.length > 0 
+                  || localCustomMats.length > 0 
+                  || ((event.discipline === 'chimie' || event.discipline === 'Chimie') && (localReactifs.length > 0 || localCustomChems.length > 0))
+                ) 
+                  && (
+                <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 600, margin: '0 auto' }}>
+                  <Table size="small" sx={{ minWidth: 300 }}>
+                  <TableHead>
+                    <TableRow>
+                    <TableCell
+                      sx={{
+                      fontWeight: 'bold',
+                      borderBottom: '2px solid',
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      }}
+                    >
+                      Type / Nom
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                      fontWeight: 'bold',
+                      borderBottom: '2px solid',
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      }}
+                    >
+                      Quantité
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 'bold',
+                        borderBottom: '2px solid',
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                      }}
+                      >
+                      Actions
+                      </TableCell>
+                    )}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     <TableRow>
+                    <TableCell
+                      colSpan={canEdit ? 3 : 2}
+                      sx={{
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      }}
+                    >
+                      <BuildIcon fontSize="small" /> Matériel
+                    </TableCell>
+                    </TableRow>
+                    {localMateriels.map((m: any) => (
+                    <TableRow key={`ev-mat-preset-${m.id}`}>
+                      <TableCell>
+                      <Typography variant="body2">{m.materielName}</Typography>
+                      </TableCell>
+                      <TableCell align="right">{m.quantity ? `${m.quantity}` : 'N/A'}</TableCell>
+                      {canEdit && (
+                      <TableCell align="center">
+                        <IconButton
+                        size="small"
+                        color="error"
+                        onClick={async () => {
+                          const backup = [...localMateriels];
+                          setLocalMateriels((prev) => prev.filter((x) => x.id !== m.id));
+                          try {
+                          const remaining = backup
+                            .filter((x) => x.id !== m.id)
+                            .map((x) => ({
+                            materielId: x.materielId,
+                            name: x.materielName,
+                            quantity: x.quantity ?? 1,
+                            isCustom: false,
+                            }));
+                          await fetch(`/api/events/${event.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ materiels: remaining }),
+                          });
+                          } catch {
+                          setLocalMateriels(backup);
+                          }
+                        }}
+                        >
+                        <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                      )}
+                    </TableRow>
+                    ))}
+                    {localCustomMats.map((rm: any) => (
+                    <TableRow key={`ev-mat-custom-${rm.id}`}>
+                      <TableCell>
+                      <Typography
+                        variant="body2"
+                        component="span"
+                        sx={{ display: 'flex', alignItems: 'center' }}
+                      >
+                        {rm.name}
+                        <Chip
+                        label="PERSO"
+                        size="small"
+                        color="warning"
+                        variant="filled"
+                        sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
+                        />
+                      </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                      {rm.quantity ? `${rm.quantity}` : 'N/A'}
+                      </TableCell>
+                      {canEdit && (
+                      <TableCell align="center">
+                        <IconButton
+                        size="small"
+                        color="error"
+                        onClick={async () => {
+                          const backup = [...localCustomMats];
+                          setLocalCustomMats((prev) => prev.filter((x) => x.id !== rm.id));
+                          try {
+                          await fetch(
+                            `/api/events/${event.id}/requests/materiels?requestId=${rm.id}`,
+                            { method: 'DELETE' },
+                          );
+                          } catch {
+                          setLocalCustomMats(backup);
+                          }
+                        }}
+                        >
+                        <CancelIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                      )}
+                    </TableRow>
+                    ))}
+                    {!(localMateriels.length || localCustomMats.length) && (
+                    <TableRow>
+                      <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        Aucun matériel
+                      </Typography>
+                      </TableCell>
+                      <TableCell align="right">-</TableCell>
+                      {canEdit && <TableCell align="center">-</TableCell>}
+                    </TableRow>
+                    )}
+                    {event.discipline === 'chimie' || event.discipline === 'Chimie' ? (
+                    <>
+                      <TableRow>
                       <TableCell
                         colSpan={canEdit ? 3 : 2}
                         sx={{
-                          fontWeight: 'bold',
-                          bgcolor: 'grey.100',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
                         }}
                       >
-                        <BuildIcon fontSize="small" /> Matériel
+                        <ScienceIcon fontSize="small" /> Réactifs
                       </TableCell>
-                    </TableRow>
-                    {localMateriels.map((m: any) => (
-                      <TableRow key={`ev-mat-preset-${m.id}`}>
-                        <TableCell>
-                          <Typography variant="body2">{m.materielName}</Typography>
-                        </TableCell>
-                        <TableCell align="right">{m.quantity ? `${m.quantity}` : 'N/A'}</TableCell>
-                        {canEdit && (
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={async () => {
-                                const backup = [...localMateriels];
-                                setLocalMateriels((prev) => prev.filter((x) => x.id !== m.id));
-                                try {
-                                  const remaining = backup
-                                    .filter((x) => x.id !== m.id)
-                                    .map((x) => ({
-                                      materielId: x.materielId,
-                                      name: x.materielName,
-                                      quantity: x.quantity ?? 1,
-                                      isCustom: false,
-                                    }));
-                                  await fetch(`/api/events/${event.id}`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ materiels: remaining }),
-                                  });
-                                } catch {
-                                  setLocalMateriels(backup);
-                                }
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </TableCell>
-                        )}
                       </TableRow>
-                    ))}
-                    {localCustomMats.map((rm: any) => (
-                      <TableRow key={`ev-mat-custom-${rm.id}`}>
+                      {localReactifs.map((r: any) => (
+                      <TableRow key={`ev-react-preset-${r.id}`}>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            component="span"
-                            sx={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            {rm.name}
-                            <Chip
-                              label="PERSO"
-                              size="small"
-                              color="warning"
-                              variant="filled"
-                              sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
-                            />
-                          </Typography>
+                        <Typography variant="body2">{r.reactifName}</Typography>
                         </TableCell>
                         <TableCell align="right">
-                          {rm.quantity ? `${rm.quantity}` : 'N/A'}
+                        {r.requestedQuantity || r.requestedQuantity === 0
+                          ? `${r.requestedQuantity} ${r.unit || 'g'}`.trim()
+                          : 'N/A'}
                         </TableCell>
                         {canEdit && (
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={async () => {
-                                const backup = [...localCustomMats];
-                                setLocalCustomMats((prev) => prev.filter((x) => x.id !== rm.id));
-                                try {
-                                  await fetch(
-                                    `/api/events/${event.id}/requests/materiels?requestId=${rm.id}`,
-                                    { method: 'DELETE' },
-                                  );
-                                } catch {
-                                  setLocalCustomMats(backup);
-                                }
-                              }}
-                            >
-                              <CancelIcon fontSize="small" />
-                            </IconButton>
-                          </TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                          size="small"
+                          color="error"
+                          onClick={async () => {
+                            const backup = [...localReactifs];
+                            setLocalReactifs((prev) => prev.filter((x) => x.id !== r.id));
+                            try {
+                            const remaining = backup
+                              .filter((x) => x.id !== r.id)
+                              .map((x) => ({
+                              reactifId: x.reactifId,
+                              name: x.reactifName,
+                              requestedQuantity: x.requestedQuantity ?? 0,
+                              unit: x.unit || 'g',
+                              isCustom: false,
+                              }));
+                            await fetch(`/api/events/${event.id}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ reactifs: remaining }),
+                            });
+                            } catch {
+                            setLocalReactifs(backup);
+                            }
+                          }}
+                          >
+                          <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
                         )}
                       </TableRow>
-                    ))}
-                    {!(localMateriels.length || localCustomMats.length) && (
+                      ))}
+                      {localCustomChems.map((rr: any) => (
+                      <TableRow key={`ev-react-custom-${rr.id}`}>
+                        <TableCell>
+                        <Typography
+                          variant="body2"
+                          component="span"
+                          sx={{ display: 'flex', alignItems: 'center' }}
+                        >
+                          {rr.name}
+                          <Chip
+                          label="PERSO"
+                          size="small"
+                          color="warning"
+                          variant="filled"
+                          sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
+                          />
+                        </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                        {rr.requestedQuantity || rr.requestedQuantity === 0
+                          ? `${rr.requestedQuantity} ${rr.unit || 'g'}`.trim()
+                          : 'N/A'}
+                        </TableCell>
+                        {canEdit && (
+                        <TableCell align="center">
+                          <IconButton
+                          size="small"
+                          color="error"
+                          onClick={async () => {
+                            const backup = [...localCustomChems];
+                            setLocalCustomChems((prev) =>
+                            prev.filter((x) => x.id !== rr.id),
+                            );
+                            try {
+                            await fetch(
+                              `/api/events/${event.id}/requests/reactifs?requestId=${rr.id}`,
+                              { method: 'DELETE' },
+                            );
+                            } catch {
+                            setLocalCustomChems(backup);
+                            }
+                          }}
+                          >
+                          <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                        )}
+                      </TableRow>
+                      ))}
+                      {!(localReactifs.length || localCustomChems.length) && (
                       <TableRow>
                         <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            Aucun matériel
-                          </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Aucun réactif
+                        </Typography>
                         </TableCell>
                         <TableCell align="right">-</TableCell>
                         {canEdit && <TableCell align="center">-</TableCell>}
                       </TableRow>
-                    )}
-                    {event.discipline === 'chimie' ? (
-                      <>
-                        <TableRow>
-                          <TableCell
-                            colSpan={canEdit ? 3 : 2}
-                            sx={{
-                              fontWeight: 'bold',
-                              bgcolor: 'grey.100',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <ScienceIcon fontSize="small" /> Réactifs Chimiques
-                          </TableCell>
-                        </TableRow>
-                        {localReactifs.map((r: any) => (
-                          <TableRow key={`ev-react-preset-${r.id}`}>
-                            <TableCell>
-                              <Typography variant="body2">{r.reactifName}</Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              {r.requestedQuantity || r.requestedQuantity === 0
-                                ? `${r.requestedQuantity} ${r.unit || 'g'}`.trim()
-                                : 'N/A'}
-                            </TableCell>
-                            {canEdit && (
-                              <TableCell align="center">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={async () => {
-                                    const backup = [...localReactifs];
-                                    setLocalReactifs((prev) => prev.filter((x) => x.id !== r.id));
-                                    try {
-                                      const remaining = backup
-                                        .filter((x) => x.id !== r.id)
-                                        .map((x) => ({
-                                          reactifId: x.reactifId,
-                                          name: x.reactifName,
-                                          requestedQuantity: x.requestedQuantity ?? 0,
-                                          unit: x.unit || 'g',
-                                          isCustom: false,
-                                        }));
-                                      await fetch(`/api/events/${event.id}`, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ reactifs: remaining }),
-                                      });
-                                    } catch {
-                                      setLocalReactifs(backup);
-                                    }
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
-                        {localCustomChems.map((rr: any) => (
-                          <TableRow key={`ev-react-custom-${rr.id}`}>
-                            <TableCell>
-                              <Typography
-                                variant="body2"
-                                component="span"
-                                sx={{ display: 'flex', alignItems: 'center' }}
-                              >
-                                {rr.name}
-                                <Chip
-                                  label="PERSO"
-                                  size="small"
-                                  color="warning"
-                                  variant="filled"
-                                  sx={{ ml: 1, fontSize: '0.7rem', height: '18px' }}
-                                />
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              {rr.requestedQuantity || rr.requestedQuantity === 0
-                                ? `${rr.requestedQuantity} ${rr.unit || 'g'}`.trim()
-                                : 'N/A'}
-                            </TableCell>
-                            {canEdit && (
-                              <TableCell align="center">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={async () => {
-                                    const backup = [...localCustomChems];
-                                    setLocalCustomChems((prev) =>
-                                      prev.filter((x) => x.id !== rr.id),
-                                    );
-                                    try {
-                                      await fetch(
-                                        `/api/events/${event.id}/requests/reactifs?requestId=${rr.id}`,
-                                        { method: 'DELETE' },
-                                      );
-                                    } catch {
-                                      setLocalCustomChems(backup);
-                                    }
-                                  }}
-                                >
-                                  <CancelIcon fontSize="small" />
-                                </IconButton>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
-                        {!(localReactifs.length || localCustomChems.length) && (
-                          <TableRow>
-                            <TableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                Aucun réactif
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right">-</TableCell>
-                            {canEdit && <TableCell align="center">-</TableCell>}
-                          </TableRow>
-                        )}
-                      </>
+                      )}
+                    </>
                     ) : (
-                      <>
-                        <TableRow>
-                          <TableCell
-                            colSpan={canEdit ? 3 : 2}
-                            sx={{
-                              fontWeight: 'bold',
-                              bgcolor: 'grey.100',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <ScienceIcon fontSize="small" /> Réactifs Chimiques
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary">
-                              Non applicable (Physique)
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">-</TableCell>
-                          {canEdit && <TableCell align="center">-</TableCell>}
-                        </TableRow>
-                      </>
+                    <>
+                      <TableRow>
+                      <TableCell
+                        colSpan={canEdit ? 3 : 2}
+                        sx={{
+                        fontWeight: 'bold',
+                        bgcolor: 'grey.100',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        }}
+                      >
+                        <ScienceIcon fontSize="small" /> Réactifs Chimiques
+                      </TableCell>
+                      </TableRow>
+                      <TableRow>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                        Non applicable (Physique)
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">-</TableCell>
+                      {canEdit && <TableCell align="center">-</TableCell>}
+                      </TableRow>
+                    </>
                     )}
                   </TableBody>
-                </Table>
-              </TableContainer>
-              {canEdit && (
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  </Table>
+                </TableContainer>
+                )}
+              {/* {canEdit && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
                   <Button
                     size="small"
                     startIcon={<AddIcon />}
-                    variant="contained"
+                    variant="outlined"
+                    color='inherit'
                     onClick={() => setResourcesDialogOpen(true)}
                   >
-                    Gérer Matériel & Réactifs
+                    Matériel & réactifs inventaire
                   </Button>
                 </Box>
-              )}
-              <Box sx={{ mt: 2 }}>
-                <Typography
-                  component="div"
-                  variant="subtitle1"
-                  sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-                >
-                  <AttachFileIcon fontSize="small" /> Documents
-                </Typography>
-                {localDocuments.length === 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Aucun document
-                  </Typography>
-                )}
-                {localDocuments.length > 0 && (
-                  <Stack
-                  sx={{ mt: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    maxWidth: 400,
-                   }}>
-                    {localDocuments.map((doc: any) => {
-                      const effectiveName =
-                        doc.fileName ||
-                        (() => {
-                          try {
-                            const raw = decodeURIComponent(String(doc.fileUrl || '')).split('?')[0];
-                            const parts = raw.split('/');
-                            return parts[parts.length - 1] || 'Document';
-                          } catch {
-                            return 'Document';
-                          }
-                        })();
-                      const sizeLabel = doc.fileSize
-                        ? `${(doc.fileSize / 1024).toFixed(1)} KB`
-                        : '';
-                      const tooltip = `${effectiveName}${doc.fileType ? `\nType: ${doc.fileType}` : ''}${sizeLabel ? `\nTaille: ${sizeLabel}` : ''}`;
-                      const buildDownloadUrl = (rawUrl: string) => {
-                        if (!rawUrl) return rawUrl;
-                        // Always serve via proxy API for auth and consistent behavior
-                        const enc = encodeURIComponent(rawUrl);
-                        return `/api/documents/proxy?fileUrl=${enc}`;
-                      };
-                      const openUrl = buildDownloadUrl(doc.fileUrl);
-                      const key = doc.id || doc.fileUrl || `${effectiveName}-${Math.random()}`;
-                      return (
-                        <Box key={key} sx={{ 
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexDirection: 'row',
-                        width: '100%',
-                        gap: 0.5 }}>
-                          <Tooltip title={tooltip} arrow
-                          sx={{
-                            flexGrow: 100,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          >
-                            <Chip
-                              label={effectiveName}
-                              size="small"
-                              variant="outlined"
-                              onClick={() => openUrl && window.open(openUrl, '_blank')}
-                              icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
-                          sx={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            justifyContent: 'start',
-                            flexGrow: 100,
-                            '& .MuiChip-label': {
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                          },
-                          }}
-                            />
-                          </Tooltip>
-                          <Tooltip title="Télécharger">
-                            <span>
-                              <IconButton
-                                size="small"
-                                onClick={() => openUrl && window.open(openUrl, '_blank')}
-                              >
-                                <DownloadIcon fontSize="inherit" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          {canEdit && (
-                            <Tooltip title="Supprimer (archiver)">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  disabled={docActionLoading === doc.fileUrl}
-                                  onClick={async () => {
-                                    const remaining = localDocuments.filter((d: any) => d !== doc);
-                                    setLocalDocuments(remaining);
-                                    if (event) (event as any).documents = remaining;
-                                    forceRerender((x) => x + 1);
-                                    try {
-                                      setDocActionLoading(doc.fileUrl);
-                                      const res = await fetch(
-                                        `/api/events/${event.id}/documents?fileUrl=${encodeURIComponent(doc.fileUrl)}`,
-                                        { method: 'DELETE' },
-                                      );
-                                      if (!res.ok) throw new Error('delete failed');
-                                      setSnackbar({
-                                        open: true,
-                                        message: 'Document supprimé',
-                                        severity: 'success',
-                                      });
-                                    } catch (e) {
-                                      setLocalDocuments((prev) => [...prev, doc]);
-                                      setSnackbar({
-                                        open: true,
-                                        message: 'Échec suppression',
-                                        severity: 'error',
-                                      });
-                                    } finally {
-                                      setDocActionLoading(null);
-                                    }
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="inherit" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          )}{' '}
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-                )}
-                {canEdit && !addingDocs && (
-                  <Box sx={{ mt: 1 }}>
-                    <Button
-                      size="small"
-                      startIcon={<CloudUploadIcon fontSize="small" />}
-                      onClick={() => setAddingDocs(true)}
-                    >
-                      Ajouter des documents
-                    </Button>
-                  </Box>
-                )}
-                {canEdit && addingDocs && (
-                  <Box sx={{ mt: 2 }}>
-                    <FileUploadSection
-                      files={uploadingDocs}
-                      onFilesChange={setUploadingDocs}
-                      maxFiles={5}
-                      eventId={event.id}
-                      onFileUploaded={async (_fileId, uploaded) => {
-                        setLocalDocuments((prev) => {
-                          if (prev.some((d) => d.fileUrl === uploaded.fileUrl)) return prev;
-                          return [
-                            ...prev,
-                            {
-                              id: uploaded.documentId || `temp-${Date.now()}`,
-                              fileName: uploaded.fileName,
-                              fileUrl: uploaded.fileUrl,
-                              fileSize: uploaded.fileSize,
-                              fileType: uploaded.fileType,
-                            },
-                          ];
-                        });
-                        setSnackbar({
-                          open: true,
-                          message: uploaded.duplicate
-                            ? 'Document déjà présent (non ré-ajouté)'
-                            : 'Document ajouté',
-                          severity: uploaded.duplicate ? 'info' : 'success',
-                        });
-                      }}
-                      onFileDeleted={(fileUrl) => {
-                        setLocalDocuments((prev) => prev.filter((d: any) => d.fileUrl !== fileUrl));
-                        try {
-                          if (event)
-                            window.dispatchEvent(
-                              new CustomEvent('event-update:end', { detail: { eventId: event.id } }),
-                            );
-                        } catch {}
-                      }}
-                    />
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        disabled={uploadingOne}
-                        onClick={() => {
-                          setAddingDocs(false);
-                          setUploadingDocs([]);
-                        }}
-                      >
-                        {uploadingOne ? 'Patientez…' : 'Terminer'}
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
+              )} */}
               {resourcesDialogOpen && event && (
                 <AddResourcesDialog
                   discipline={event.discipline === 'chimie' ? 'chimie' : 'physique'}
@@ -1693,7 +1751,18 @@ export default function EventDetailsDialog({
       <DialogActions>
         <Button onClick={onClose}>Fermer</Button>
         {canEdit && onEdit && <Button onClick={() => onEdit(event)}>Éditer</Button>}
-        {onCopy && <Button onClick={() => onCopy(event)}>Copier</Button>}
+        {onCopy && (
+          <Button 
+            onClick={() => {
+              // Stocker seulement l'ID de l'événement pour récupération ultérieure
+              (window as any).copiedEventId = event.id;
+              
+              onCopy(event);
+            }}
+          >
+            Copier
+          </Button>
+        )}
         {canEdit && onDelete && (
           <Button color="error" onClick={() => onDelete(event)}>
             Supprimer

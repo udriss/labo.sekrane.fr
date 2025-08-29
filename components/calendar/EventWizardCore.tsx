@@ -711,10 +711,10 @@ export default function EventWizardCore({
       valid: timeSlotsValid,
       content: (
         <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Définissez les créneaux (date, heures, salles, classes). Les classes/salles perso sont
             listées en haut.
-          </Typography>
+          </Typography> */}
           <Box display="flex" justifyContent="flex-end" mb={1}>
             <Button size="small" startIcon={<AddIcon />} variant="outlined" onClick={addTimeSlot}>
               Ajouter un créneau

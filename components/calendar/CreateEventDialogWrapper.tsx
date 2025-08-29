@@ -4,6 +4,7 @@ import React from 'react';
 import { Dialog, DialogTitle, DialogActions, Button, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import CreateEventDialog, { CreateEventMeta } from './CreateEventDialog';
+import { CheckCircle } from '@mui/icons-material'
 
 interface EventData {
   id: number;
@@ -17,6 +18,7 @@ interface CreateEventDialogWrapperProps {
   onClose: () => void;
   createType: 'tp' | 'laborantin';
   eventToCopy?: EventData | null;
+  copiedEventId?: number | null;
   createEventForm: {
     title: string;
     discipline: 'chimie' | 'physique';
@@ -28,6 +30,7 @@ interface CreateEventDialogWrapperProps {
   pendingSlotDrafts: any[];
   onPendingSlotDraftsChange: (drafts: any[]) => void;
   onCreateEvent: () => Promise<void>;
+  isCreateButtonDisabled?: boolean;
 }
 
 export default function CreateEventDialogWrapper({
@@ -35,6 +38,7 @@ export default function CreateEventDialogWrapper({
   onClose,
   createType,
   eventToCopy,
+  copiedEventId,
   createEventForm,
   onCreateEventFormChange,
   createMeta,
@@ -42,6 +46,7 @@ export default function CreateEventDialogWrapper({
   pendingSlotDrafts,
   onPendingSlotDraftsChange,
   onCreateEvent,
+  isCreateButtonDisabled = false,
 }: CreateEventDialogWrapperProps) {
   const handleClose = () => {
     onPendingSlotDraftsChange([]);
@@ -71,13 +76,20 @@ export default function CreateEventDialogWrapper({
           discipline: (eventToCopy?.discipline as any) ?? 'chimie',
           notes: eventToCopy?.notes ?? '',
         }}
+        copiedEventId={copiedEventId}
         onChange={onCreateEventFormChange}
         valueMeta={createMeta}
         onMetaChange={handleMetaChange}
       />
       <DialogActions>
         <Button onClick={handleClose}>Annuler</Button>
-        <Button variant="contained" onClick={onCreateEvent}>
+        <Button 
+          variant="outlined" 
+          onClick={onCreateEvent}
+          disabled={isCreateButtonDisabled}
+          color="success"
+          startIcon={<CheckCircle />}
+        >
           Ajouter
         </Button>
       </DialogActions>

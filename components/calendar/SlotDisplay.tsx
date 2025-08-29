@@ -180,7 +180,7 @@ const internalSlotVisual = (state: string): SlotVisual => {
         borderColor: 'warning.dark',
         bg: (t: any) => t.palette.action.hover,
         chipColor: 'warning',
-        label: 'Contre‑proposé',
+        label: 'Contre-proposé',
       };
     case 'modified':
       return {
@@ -1381,13 +1381,13 @@ export const SlotDisplay: React.FC<SlotDisplayProps> = ({
                         ))}
                         {classNames.map((n) => (
                           <Chip
-                            key={`c-${slot.id}-${n}`}
-                            size="small"
-                            icon={<GroupIcon style={{ fontSize: 14 }} />}
-                            label={n}
-                            color="secondary"
-                            variant="outlined"
-                            sx={{ width: isMobileSmall ? '100%' : 'auto' }}
+                          key={`c-${slot.id}-${n}`}
+                          size="small"
+                          icon={<GroupIcon style={{ fontSize: 14, fontWeight: 800 }} />}
+                          label={n}
+                          color="secondary"
+                          variant="outlined"
+                          sx={{ width: isMobileSmall ? '100%' : 'auto', '& .MuiChip-label': { fontWeight: 800 } }}
                           />
                         ))}
                       </Stack>

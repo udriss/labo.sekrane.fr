@@ -516,7 +516,7 @@ const EditEventDialog = React.forwardRef<
     () => [
       "Méthode d'ajout",
       'Description & remarques',
-      'Planification : créneaux, classes & calles',
+      'Planification : créneaux, classes & salles',
       'Matériel & Réactifs',
       'Documents',
     ],
@@ -1025,7 +1025,7 @@ const EditEventDialog = React.forwardRef<
           },
           {
             key: 'timeslots',
-            label: 'Planification : créneaux, classes & calles',
+            label: 'Planification : créneaux, classes & salles',
             required: true,
             valid: !!(editEventDialogCache as any).validation?.timeSlots,
             content: (
@@ -1443,7 +1443,7 @@ const EditEventDialog = React.forwardRef<
                   }}
                 />
                 {(valueMeta?.uploads || []).length > 0 && (
-                  <Stack direction="column" spacing={0.75} mt={1}>
+                  <Stack sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: 400 }}>
                     {(valueMeta?.uploads || []).map((u: any) => {
                       const fileUrl = typeof u === 'string' ? u : u.fileUrl;
                       const effectiveName = 
@@ -1472,8 +1472,22 @@ const EditEventDialog = React.forwardRef<
                       const openUrl = buildDownloadUrl(fileUrl);
                       
                       return (
-                        <Box key={fileUrl} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Tooltip title={tooltip} arrow>
+                        <Box key={fileUrl} 
+                          sx={{
+                            display: 'flex', alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexDirection: 'row',
+                            width: '100%',
+                            gap: 0.5 }}
+                        >
+                          <Tooltip title={tooltip} arrow
+                            sx={{
+                              flexGrow: 100,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             <Chip
                               label={effectiveName}
                               size="small"
@@ -1481,15 +1495,16 @@ const EditEventDialog = React.forwardRef<
                               onClick={() => openUrl && window.open(openUrl, '_blank')}
                               icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
                               sx={{
-                                maxWidth: 420,
-                                '& .MuiChip-label': {
-                                  maxWidth: 380,
-                                  display: 'block',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                },
-                              }}
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'start',
+                              flexGrow: 100,
+                              '& .MuiChip-label': {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            },
+                            }}
                             />
                           </Tooltip>
                           <Tooltip title="Télécharger">
@@ -1561,7 +1576,7 @@ const EditEventDialog = React.forwardRef<
               </>
             ),
           },
-          {
+          /* {
             key: 'recap',
             label: 'Récapitulatif',
             required: true,
@@ -1633,7 +1648,7 @@ const EditEventDialog = React.forwardRef<
                 </Box>
               </>
             ),
-          },
+          }, */
         ];
         return (
           <WizardStepper

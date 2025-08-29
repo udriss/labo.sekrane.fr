@@ -47,10 +47,19 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   // Charger et surveiller le mode maintenance (public settings)
   React.useEffect(() => {
     let stop = false;
+    const controller = new AbortController();
     const load = async () => {
       try {
-        const res = await fetch('/api/public/settings', { cache: 'no-store' });
-        const json = await res.json().catch(() => ({}));
+        const res = await fetch('/api/public/settings', { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) {
+          if (!stop) setMaintenance({ enabled: false, allowedIds: [1] });
+          return;
+        }
+        const ct = res.headers.get('content-type') || '';
+        let json: any = {};
+        if (ct.includes('application/json')) {
+          json = await res.json().catch(() => ({}));
+        } // else HTML or other -> keep default {}
         if (!stop)
           setMaintenance({
             enabled: !!json.maintenanceMode,
@@ -67,6 +76,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return () => {
       stop = true;
       clearInterval(t);
+      controller.abort();
     };
   }, []);
 

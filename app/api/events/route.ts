@@ -56,6 +56,7 @@ const documentItemSchema = z.object({
   fileSize: z.number().int().optional(),
   fileType: z.string().optional(),
   isPreset: z.boolean().optional(),
+  isCopied: z.boolean().optional(),
 });
 
 const createEventSchema = z.object({
@@ -203,7 +204,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const body = await req.json();
+    console.log('[events][POST] Received payload:', JSON.stringify(body, null, 2));
+
     const validatedData = createEventSchema.parse(body);
+    console.log('[events][POST] Validation passed, validated data:', JSON.stringify(validatedData, null, 2));
 
     // Ensure uniqueness defensively on server-side as well
     const uniqueSalleIds = Array.isArray(validatedData.salleIds)
@@ -281,14 +285,30 @@ export async function POST(req: NextRequest) {
         let outUrl = d.fileUrl;
         let outSize = d.fileSize;
         const outType = d.fileType;
-        const wantCopy = d.isPreset === true || (typeof d.fileUrl === 'string' && d.fileUrl.includes('/preset/'));
+        const wantCopy = d.isPreset === true || d.isCopied === true || 
+          (typeof d.fileUrl === 'string' && (d.fileUrl.includes('/preset/') || d.fileUrl.includes('/user_')));
         if (wantCopy) {
           const relRaw = d.fileUrl.replace(/^\/+/, '');
           let relDec = relRaw;
           try { relDec = decodeURIComponent(relRaw); } catch {}
-          const relNoPreset = relDec.replace('/preset/', '/');
-          const targetAbs = path.join(publicRoot, relNoPreset);
-          await fs.mkdir(path.dirname(targetAbs), { recursive: true });
+          
+          // Extraire le nom du fichier depuis n'importe quelle URL source
+          const fileName = path.basename(relDec);
+          
+          let sourcePath: string;
+          if (d.isPreset === true || relDec.includes('/preset/')) {
+            // Pour les presets : utiliser le chemin après /preset/
+            sourcePath = relDec.replace('/preset/', '/');
+          } else if (d.isCopied === true || relDec.includes('/user_')) {
+            // Pour les événements copiés : utiliser le chemin complet (on copie depuis un autre user)
+            sourcePath = relDec;
+          } else {
+            sourcePath = relDec;
+          }
+          
+          // Construire le chemin absolu source
+          const sourceAbs = path.join(publicRoot, sourcePath);
+          
           // Locate source
           const candidates = [relDec, relRaw];
           let stat: any = null;
@@ -299,12 +319,17 @@ export async function POST(req: NextRequest) {
             if (st && st.isFile()) { stat = st; srcAbs = abs; break; }
           }
           if (!srcAbs || !stat) {
-            console.warn('[events][create] preset source not found, skipping doc', d.fileUrl);
+            console.warn('[events][create] source not found, skipping doc', d.fileUrl);
             continue;
           }
+          
+          // Construire le chemin de destination avec le mois actuel
+          const destDir = path.join(publicRoot, userFolder, monthFolder);
+          await fs.mkdir(destDir, { recursive: true });
+          
           const buffer = await fs.readFile(srcAbs);
-          // Ensure unique name at destination with sanitized name
-          const finalDest = await ensureUniqueFile(path.join(path.dirname(targetAbs), outName));
+          // Utiliser le nom de fichier extrait pour la destination
+          const finalDest = await ensureUniqueFile(path.join(destDir, fileName));
           await fs.writeFile(finalDest, buffer);
           outSize = stat.size;
           outName = path.basename(finalDest);
@@ -477,8 +502,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ event: mapped }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('[events][POST] Zod validation error:', error.issues);
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
+    console.error('[events][POST] Unexpected error:', error);
     return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
   }
 }
