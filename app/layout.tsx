@@ -89,7 +89,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         {/* Favicon et icônes pour tous les appareils */}
         <link rel="icon" href="/static_images/favicon.ico" sizes="any" />
-        <link rel="icon" href="/static_images/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/static_images/apple-touch-icon.png" />
         <link rel="apple-touch-icon-precomposed" href="/static_images/apple-touch-icon-precomposed.png" />
 

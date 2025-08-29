@@ -38,7 +38,6 @@ import SlotDisplay from '@/components/calendar/SlotDisplay';
 import { Person as PersonIcon } from '@mui/icons-material';
 import { EventListSkeleton } from '@/components/shared/LoadingSkeleton';
 import { useEntityNames } from '@/components/providers/EntityNamesProvider';
-import { buildAndDownloadEventPdfServer } from '@/lib/export/serverEventPdf';
 
 interface Event {
   id: number;

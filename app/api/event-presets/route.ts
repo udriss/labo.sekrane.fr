@@ -18,6 +18,37 @@ function toLocalLiteral(d: Date | string | null | undefined): string | null {
   return toLocal(d);
 }
 
+// Rate limiting cache to track recent preset creations per user
+const rateLimitCache = new Map<number, { count: number; resetTime: number }>();
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_PRESETS_PER_WINDOW = 25; // Maximum 50 presets per minute
+const MAX_TOTAL_PRESETS = 1000; // Maximum total presets per user
+
+function checkRateLimit(userId: number): { allowed: boolean; message?: string } {
+  const now = Date.now();
+  const userLimit = rateLimitCache.get(userId);
+
+  if (!userLimit || now > userLimit.resetTime) {
+    // Reset or initialize rate limit for user
+    rateLimitCache.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true };
+  }
+
+  if (userLimit.count >= MAX_PRESETS_PER_WINDOW) {
+    const resetInSeconds = Math.ceil((userLimit.resetTime - now) / 1000);
+    return {
+      allowed: false,
+      message: `Trop de presets créés récemment. Réessayez dans ${resetInSeconds} secondes. (Maximum: ${MAX_PRESETS_PER_WINDOW} presets par minute)`
+    };
+  }
+
+  // Increment counter
+  userLimit.count++;
+  return { allowed: true };
+}
+
 const materielItemSchema = z.object({
   materielId: z.number().int().optional(),
   materielName: z.string(),
@@ -47,6 +78,8 @@ const createPresetSchema = z.object({
   materiels: z.array(materielItemSchema).optional().default([]),
   reactifs: z.array(reactifItemSchema).optional().default([]),
   documents: z.array(documentItemSchema).optional().default([]),
+  // New field to detect batch operations
+  batchSize: z.number().int().min(1).max(50).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -104,8 +137,58 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     const userId = session?.user?.id ? Number(session.user.id) : null;
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Security: Check total presets count per user
+    const totalPresetsCount = await prisma.evenementPreset.count({
+      where: { ownerId: userId },
+    });
+
+    // Limit: max 1000 presets per user total
+    if (totalPresetsCount >= 1000) {
+      return NextResponse.json({
+        error: 'Limite de presets atteinte (1000 maximum par utilisateur). Veuillez supprimer des presets existants.',
+      }, { status: 400 });
+    }
+
     const body = await req.json();
     const data = createPresetSchema.parse(body);
+
+    // Security: Check rate limiting for batch operations
+    const rateLimitResult = checkRateLimit(userId);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({
+        error: rateLimitResult.message || 'Trop de requêtes. Veuillez réessayer plus tard.',
+      }, { status: 429 });
+    }
+
+    // Additional security: Validate title length and content
+    if (data.title.length > 200) {
+      return NextResponse.json({ error: 'Titre trop long (maximum 200 caractères)' }, { status: 400 });
+    }
+
+    // Prevent XSS in notes
+    if (data.notes && data.notes.length > 1000) {
+      return NextResponse.json({ error: 'Notes trop longues (maximum 1000 caractères)' }, { status: 400 });
+    }
+
+    // Additional security: If this is a batch operation, validate batch size
+    if (data.batchSize && data.batchSize > 1) {
+      // For batch operations, ensure we don't exceed limits
+      const remainingCapacity = MAX_TOTAL_PRESETS - totalPresetsCount;
+      if (data.batchSize > remainingCapacity) {
+        return NextResponse.json({
+          error: `Batch trop grand. Vous pouvez créer maximum ${remainingCapacity} preset(s) supplémentaires.`,
+        }, { status: 400 });
+      }
+
+      // Additional validation: batch size should not exceed rate limit window
+      if (data.batchSize > MAX_PRESETS_PER_WINDOW) {
+        return NextResponse.json({
+          error: `Taille de batch invalide. Maximum ${MAX_PRESETS_PER_WINDOW} presets par minute.`,
+        }, { status: 400 });
+      }
+    }
+
     const created = await prisma.evenementPreset.create({
       data: {
         title: data.title,

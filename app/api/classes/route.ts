@@ -8,7 +8,7 @@ import { auth } from '@/auth';
 const CreateClassSchema = z.object({
   name: z.string().min(1, 'Le nom de la classe est requis'),
   description: z.string().optional(),
-  type: z.enum(['predefined', 'custom']).optional(), // mapping UI -> system boolean
+  system: z.boolean().optional(), // Use system field directly
 });
 
 const UpdateClassSchema = CreateClassSchema.partial();
@@ -82,16 +82,23 @@ export async function POST(request: NextRequest) {
     const userIdStr = session?.user ? (session.user as any).id : undefined;
     const userId = typeof userIdStr === 'string' ? parseInt(userIdStr, 10) : userIdStr;
     const body = await request.json();
+    
+    // Handle legacy 'type' field for backward compatibility
+    if (body.type && !body.system) {
+      body.system = body.type === 'predefined';
+      delete body.type;
+    }
+    
     const validatedData = CreateClassSchema.parse(body);
 
     // Classes can have duplicate names, so we remove this validation
     // Different teachers can choose identical names for their classes
 
-    const { type, ...rest } = validatedData as any;
+    const { system, ...rest } = validatedData as any;
     const newClass = await prisma.classe.create({
       data: {
         ...rest,
-        system: type === 'predefined',
+        system: system ?? false, // Default to false (custom) if not specified
       },
       include: {
         _count: {
@@ -148,6 +155,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    // Handle legacy 'type' field for backward compatibility
+    if (body.type && !body.system) {
+      body.system = body.type === 'predefined';
+      delete body.type;
+    }
+    
     const validatedData = UpdateClassSchema.parse(body);
 
     // Check if class exists

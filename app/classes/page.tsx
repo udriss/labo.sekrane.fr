@@ -117,7 +117,7 @@ export default function ClassesPage() {
   const save = async () => {
     try {
       if (!name.trim()) return;
-      const body = { name, type: isSystem ? 'predefined' : 'custom' };
+      const body = { name, system: isSystem };
       const url = editing ? `/api/classes?id=${editing.id}` : '/api/classes';
       const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, {

@@ -26,14 +26,25 @@ async function generatePdfToPublic(
 
     // Générer un nom de fichier unique
     const timestamp = Date.now();
-    const filename = `event-pdf-${timestamp}.pdf`;
-    const publicPath = path.join(process.cwd(), 'public', filename);
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // getMonth() retourne 0-11, donc +1
+    const year = now.getFullYear();
+    const monthYearFolder = `${month}_${year}`;
 
-    // Écrire le fichier dans /public
+    // Créer le chemin organisé par mois/année
+    const organizedPath = path.join(process.cwd(), 'public', 'eventPDFs', monthYearFolder);
+
+    // S'assurer que le dossier existe
+    await fs.mkdir(organizedPath, { recursive: true });
+
+    const filename = `event-pdf-${timestamp}.pdf`;
+    const publicPath = path.join(organizedPath, filename);
+
+    // Écrire le fichier dans le dossier organisé
     await fs.writeFile(publicPath, Buffer.from(pdfBuffer));
 
-    // Retourner l'URL publique
-    const pdfUrl = `/${filename}`;
+    // Retourner l'URL publique avec le chemin organisé
+    const pdfUrl = `/eventPDFs/${monthYearFolder}/${filename}`;
 
     return {
       success: true,
@@ -103,7 +114,28 @@ async function prepareChromeWritableDirs() {
 }
 
 export async function POST(req: NextRequest) {
-  return await generatePdf(req);
+  // Générer le PDF et le stocker dans /public
+  const result = await generatePdfToPublic(req);
+
+  if (result.success) {
+    // Retourner l'URL du fichier stocké
+    return new Response(
+      JSON.stringify({
+        success: true,
+        pdfUrl: result.pdfUrl,
+        filename: result.filename,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
+  } else {
+    return new Response(JSON.stringify({ error: result.error }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 export async function GET(req: NextRequest) {

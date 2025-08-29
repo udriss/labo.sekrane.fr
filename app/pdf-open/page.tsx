@@ -11,6 +11,10 @@ function PdfOpenContent() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [filename, setFilename] = React.useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+  const [event, setEvent] = React.useState<any>(null);
+  const [salleMap, setSalleMap] = React.useState<Record<number, string>>({});
+  const [classMap, setClassMap] = React.useState<Record<number, string>>({});
 
   React.useEffect(() => {
     const run = async () => {
@@ -19,14 +23,80 @@ function PdfOpenContent() {
         setLoading(false);
         return;
       }
+
       try {
-        const res = await fetch(`/api/generate-event-pdf?eventId=${eventId}&t=${Date.now()}`);
-        if (!res.ok) throw new Error('Echec de génération');
-        const json = await res.json();
+        // Récupérer les données de l'événement
+        const eventRes = await fetch(`/api/events/${eventId}`);
+        if (!eventRes.ok) {
+          throw new Error('Événement non trouvé');
+        }
+        const eventData = await eventRes.json();
+        const eventInfo = eventData.event;
+
+        // Récupérer les maps des salles et classes en parallèle
+        const [roomsRes, classesRes] = await Promise.all([
+          fetch('/api/rooms'),
+          fetch('/api/classes'),
+        ]);
+
+        let sMap: Record<number, string> = {};
+        if (roomsRes.ok) {
+          const roomsData = await roomsRes.json();
+          const rooms = roomsData?.rooms || [];
+          if (Array.isArray(rooms)) {
+            sMap = rooms.reduce(
+              (acc: any, r: any) => {
+                acc[r.id] = r.name || `Salle ${r.id}`;
+                return acc;
+              },
+              {} as Record<number, string>,
+            );
+          }
+        }
+
+        let cMap: Record<number, string> = {};
+        if (classesRes.ok) {
+          const classesData = await classesRes.json();
+          const all = [
+            ...(Array.isArray(classesData?.predefinedClasses) ? classesData.predefinedClasses : []),
+            ...(Array.isArray(classesData?.customClasses) ? classesData.customClasses : []),
+          ];
+          cMap = all.reduce(
+            (acc: any, c: any) => {
+              acc[c.id] = c.name || `Classe ${c.id}`;
+              return acc;
+            },
+            {} as Record<number, string>,
+          );
+        }
+
+        setEvent(eventInfo);
+        setSalleMap(sMap);
+        setClassMap(cMap);
+
+        // Générer le PDF avec les maps des salles et classes
+        const pdfRes = await fetch('/api/generate-event-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: eventInfo,
+            salleMap: sMap,
+            classMap: cMap,
+          }),
+        });
+
+        if (!pdfRes.ok) {
+          const errorData = await pdfRes.json();
+          throw new Error(errorData.error || 'Echec de génération');
+        }
+
+        const json = await pdfRes.json();
         if (!json?.success || !json?.filename) {
           throw new Error(json?.error || 'PDF non disponible');
         }
+
         setFilename(json.filename);
+        setPdfUrl(`/api/pdf?filename=${json.filename}`);
       } catch (e: any) {
         setError(e?.message || 'Erreur inconnue');
       } finally {
@@ -75,7 +145,23 @@ function PdfOpenContent() {
     );
   }
 
-  const pdfUrl = `/api/public-files/${filename}`;
+  if (!pdfUrl) {
+    return (
+      <Box
+        minHeight="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        flexDirection="column"
+        gap={2}
+      >
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary">
+          Chargement du PDF…
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box

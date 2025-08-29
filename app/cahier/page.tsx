@@ -34,6 +34,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Snackbar,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -49,6 +50,7 @@ import {
   OpenInNew as OpenInNewIcon,
   DeleteSweep as DeleteSweepIcon,
   AttachFile as AttachFileIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
@@ -97,6 +99,13 @@ export default function CahierPage() {
   const [selectedPresets, setSelectedPresets] = useState<Set<number>>(new Set());
   const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
   const [presetsWithDetails, setPresetsWithDetails] = useState<any[]>([]);
+
+  // Snackbar state for notifications
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  } | null>(null);
 
   const theme = useTheme();
   const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
@@ -280,7 +289,7 @@ export default function CahierPage() {
       </Box>
       <Box role="tabpanel" hidden={tab !== 2} sx={{ mt: 1 }}>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <BatchPresetWizard onCreated={handleCreated} />
+          <BatchPresetWizard onCreated={handleCreated} setSnackbar={setSnackbar} />
         </motion.div>
       </Box>
       <Box role="tabpanel" hidden={tab !== 3} sx={{ mt: 1 }}>
@@ -350,6 +359,22 @@ export default function CahierPage() {
           }
         }}
       />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar?.open || false}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(null)}
+          severity={snackbar?.severity || 'info'}
+          sx={{ width: '100%' }}
+        >
+          {snackbar?.message || ''}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
@@ -1509,7 +1534,10 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
+function BatchPresetWizard({ onCreated, setSnackbar }: { 
+  onCreated: () => void;
+  setSnackbar: (snackbar: { open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' } | null) => void;
+}) {
   // Step 1: description + naming
   const [discipline, setDiscipline] = useState<'chimie' | 'physique'>('chimie');
   const [count, setCount] = useState<number>(5);
@@ -1570,6 +1598,36 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
       addFiles(files);
     };
     input.click();
+  };
+
+  // Function to reset the entire form
+  const resetForm = () => {
+    setDiscipline('chimie');
+    setCount(5);
+    setBaseName('');
+    setFormat('base_hash');
+    setCustomPattern('Événement {i}');
+    setNotes('');
+    setCreationCompleteBatch(false);
+    setMode('none');
+    setStartDate(new Date());
+    setWeekday(new Date().getDay());
+    setTimeStart('10:00');
+    setTimeEnd('12:00');
+    setManualDates([]);
+    setTimeslotsTouched(false);
+    setBatchSlots([]);
+    setGlobalClass(null);
+    setGlobalSalle(null);
+    setMaterials([]);
+    setChemicals([]);
+    setDocs([]);
+    setActiveStep(0);
+    setSaving(false);
+    setBatchProgress(null);
+    setBatchStopped(false);
+    setAbortController(null);
+    setBatchComplete(false);
   };
 
   // Fetch classes & salles once
@@ -1899,8 +1957,20 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
             type="number"
             label="Nombre de TP à ajouter"
             value={count}
-            onChange={(e) => setCount(Math.max(1, Number(e.target.value || 1)))}
-            slotProps={{ htmlInput: { min: 1, max: 25 } }}
+            onChange={(e) => {
+              const value = Number(e.target.value || 1);
+              // Double validation: client-side limits
+              const clampedValue = Math.max(1, Math.min(25, value)); // Max 25 TP
+              setCount(clampedValue);
+            }}
+            slotProps={{
+              htmlInput: {
+                min: 1,
+                max: 25,
+                step: 1
+              }
+            }}
+            helperText={`Maximum: 25 TP (sécurité serveur)`}
           />
           <TextField
             label="Nom de base"
@@ -2617,6 +2687,26 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                   disabled={saving || !!batchProgress}
                   onClick={async () => {
                     if (saving) return;
+
+                    // Additional client-side validation before server calls
+                    if (count > 25) {
+                      setSnackbar({
+                        open: true,
+                        message: 'Nombre maximum de TP dépassé (25 maximum)',
+                        severity: 'error',
+                      });
+                      return;
+                    }
+
+                    if (count < 1) {
+                      setSnackbar({
+                        open: true,
+                        message: 'Il faut au moins 1 TP',
+                        severity: 'error',
+                      });
+                      return;
+                    }
+
                     setSaving(true);
                     setBatchStopped(false);
                     setBatchComplete(false);
@@ -2673,6 +2763,7 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                             title,
                             discipline,
                             notes,
+                            batchSize: count, // Send batch size for server-side validation
                             materiels: materials.map((m: any) => ({
                               materielId: m.id ?? undefined,
                               materielName: m.name,
@@ -2689,7 +2780,25 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
                             documents: [],
                           }),
                         });
-                        if (!r.ok) throw new Error(`Échec ajout TP ${i + 1}: ${title}`);
+
+                        if (!r.ok) {
+                          // Enhanced error handling with server messages
+                          let errorMessage = `Échec ajout TP ${i + 1}: ${title}`;
+                          try {
+                            const errorData = await r.json();
+                            if (errorData.error) {
+                              if (typeof errorData.error === 'string') {
+                                errorMessage = errorData.error;
+                              } else if (Array.isArray(errorData.error)) {
+                                // Zod validation errors
+                                errorMessage = errorData.error.map((e: any) => e.message).join(', ');
+                              }
+                            }
+                          } catch {
+                            // Keep default error message if JSON parsing fails
+                          }
+                          throw new Error(errorMessage);
+                        }
                         const created = await r.json();
                         const presetId = created?.preset?.id;
 
@@ -3009,6 +3118,21 @@ function BatchPresetWizard({ onCreated }: { onCreated: () => void }) {
 
   return (
     <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<RefreshIcon />}
+          onClick={() => {
+            if (window.confirm('Êtes-vous sûr de vouloir réinitialiser le formulaire ? Toutes les données saisies seront perdues.')) {
+              resetForm();
+            }
+          }}
+          disabled={saving}
+        >
+          Tout réinitialiser
+        </Button>
+      </Box>
       <WizardStepper
         steps={steps}
         activeStep={activeStep}

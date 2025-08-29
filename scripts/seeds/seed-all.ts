@@ -411,6 +411,9 @@ const DEFAULT_SYSTEM_CLASSES = [
   '1ère STI2D',
   'Tle STI2D',
   'Tle ES',
+  'MP2I',
+  'PCSI',
+  'MP',
 ];
 async function seedSystemClasses() {
   let created = 0;

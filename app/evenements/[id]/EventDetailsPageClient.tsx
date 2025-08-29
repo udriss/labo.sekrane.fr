@@ -1084,7 +1084,13 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
             </Typography>
           )}
           {localDocuments.length > 0 && (
-            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+            <Stack
+              sx={{ mt: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                maxWidth: 400,
+                }}>
               {localDocuments.map((doc: any) => {
                 const effectiveName =
                   doc.fileName ||
@@ -1107,15 +1113,46 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                 };
                 const openUrl = buildDownloadUrl(doc.fileUrl);
                 return (
-                  <Tooltip key={doc.id || doc.fileUrl} title={tooltip} arrow>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Chip
-                        label={effectiveName}
-                        size="small"
-                        variant="outlined"
-                        onClick={() => openUrl && window.open(openUrl, '_blank')}
-                        icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
-                      />
+                  
+                    <Box 
+                    sx = {{
+                      display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexDirection: 'row',
+                        width: '100%',
+                        gap: 0.5,
+                    }}
+                    >
+                        <Tooltip
+                        key={doc.id || doc.fileUrl}
+                        title={tooltip}
+                        arrow
+                        sx={{
+                            flexGrow: 100,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                        <Chip
+                          label={effectiveName}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'start',
+                            flexGrow: 100,
+                            '& .MuiChip-label': {
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                          },
+                          }}
+                          onClick={() => openUrl && window.open(openUrl, '_blank')}
+                          icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
+                        />
+                        </Tooltip>
                       <Tooltip title="Télécharger">
                         <span>
                           <IconButton
@@ -1166,7 +1203,7 @@ export default function EventDetailsPageClient({ initialEvent }: { initialEvent:
                         </Tooltip>
                       )}{' '}
                     </Box>
-                  </Tooltip>
+                  
                 );
               })}
             </Stack>

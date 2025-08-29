@@ -137,11 +137,38 @@ export default function ProfilePage() {
   // NOTE: On retire minHeight: '100vh' car AppShell ajoute déjà un offset (navbar fixe + margin top)
   // ce qui provoquait un dépassement vertical (100vh + 64px + spacing) et donc un scroll inutile.
   return (
-    <Container maxWidth="sm">
+    <Container 
+    sx = {{
+      maxWidth: '600px !important',
+      '& .MuiContainer-root, & .MuiPaper-root': {
+      maxWidth: '600px !important',
+      margin: '0 auto',
+    },
+    }}
+    >
       <Paper elevation={6} sx={{ p: 4, borderRadius: 3 }}>
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
+        <Box 
+        sx = {{
+          display: 'flex',
+          alignItems: 'left',
+          justifyContent: 'flex-start',
+          alignContent: 'flex-start',
+          gap: 1,
+          mb: 4
+        }}
+        >
           <AccountCircleIcon fontSize="large" color="primary" />
-          <Box>
+          <Box
+          sx = {{
+            display: 'flex',
+            alignItems: 'left',
+            justifyContent: 'flex-start',
+            alignContent: 'flex-start',
+            flexDirection: 'column',
+            gap: .5,
+            mb: 0,
+          }}
+          >
             <Typography variant="h4" fontWeight={600}>
               Mon Profil
             </Typography>
@@ -214,7 +241,7 @@ export default function ProfilePage() {
         </Typography>
 
         <Divider sx={{ my: 4 }} />
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ letterSpacing: 0.4 }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ letterSpacing: 0.4, mb: 1 }}>
           Changer d'email
         </Typography>
         {pendingEmail && (
@@ -281,7 +308,7 @@ export default function ProfilePage() {
         </Typography>
 
         <Divider sx={{ my: 4 }} />
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ letterSpacing: 0.4 }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ letterSpacing: 0.4, mb: 1 }}>
           Changer de mot de passe
         </Typography>
         {pwdMsg && (
@@ -289,44 +316,28 @@ export default function ProfilePage() {
             {pwdMsg}
           </Alert>
         )}
+        <Stack
+        sx={{ my: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          maxWidth: 400,
+          margin: '0 auto'
+        }}>
         <TextField
           label="Mot de passe actuel"
           type={showPwdCurrent ? 'text' : 'password'}
           fullWidth
           size="small"
-          sx={{ mb: 2 }}
           value={pwdCurrent}
           onChange={(e) => setPwdCurrent(e.target.value)}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip title={showPwdCurrent ? 'Masquer' : 'Afficher'}>
-                  <IconButton size="small" onClick={() => setShowPwdCurrent((v) => !v)}>
-                    {showPwdCurrent ? (
-                      <VisibilityOff fontSize="small" />
-                    ) : (
-                      <Visibility fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-          <TextField
-            label="Nouveau mot de passe"
-            type={showPwdNew ? 'text' : 'password'}
-            fullWidth
-            size="small"
-            value={pwdNew}
-            onChange={(e) => setPwdNew(e.target.value)}
-            InputProps={{
+          slotProps={{
+            input: {
               endAdornment: (
                 <InputAdornment position="end">
-                  <Tooltip title={showPwdNew ? 'Masquer' : 'Afficher'}>
-                    <IconButton size="small" onClick={() => setShowPwdNew((v) => !v)}>
-                      {showPwdNew ? (
+                  <Tooltip title={showPwdCurrent ? 'Masquer' : 'Afficher'}>
+                    <IconButton size="small" onClick={() => setShowPwdCurrent((v) => !v)}>
+                      {showPwdCurrent ? (
                         <VisibilityOff fontSize="small" />
                       ) : (
                         <Visibility fontSize="small" />
@@ -335,6 +346,32 @@ export default function ProfilePage() {
                   </Tooltip>
                 </InputAdornment>
               ),
+            },
+          }}
+        />
+          <TextField
+            label="Nouveau mot de passe"
+            type={showPwdNew ? 'text' : 'password'}
+            fullWidth
+            size="small"
+            value={pwdNew}
+            onChange={(e) => setPwdNew(e.target.value)}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title={showPwdNew ? 'Masquer' : 'Afficher'}>
+                      <IconButton size="small" onClick={() => setShowPwdNew((v) => !v)}>
+                        {showPwdNew ? (
+                          <VisibilityOff fontSize="small" />
+                        ) : (
+                          <Visibility fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
           <TextField
@@ -344,23 +381,24 @@ export default function ProfilePage() {
             size="small"
             value={pwdNew2}
             onChange={(e) => setPwdNew2(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title={showPwdNew2 ? 'Masquer' : 'Afficher'}>
-                    <IconButton size="small" onClick={() => setShowPwdNew2((v) => !v)}>
-                      {showPwdNew2 ? (
-                        <VisibilityOff fontSize="small" />
-                      ) : (
-                        <Visibility fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title={showPwdNew2 ? 'Masquer' : 'Afficher'}>
+                      <IconButton size="small" onClick={() => setShowPwdNew2((v) => !v)}>
+                        {showPwdNew2 ? (
+                          <VisibilityOff fontSize="small" />
+                        ) : (
+                          <Visibility fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
-        </Stack>
         <Button
           variant="outlined"
           disabled={pwdLoading || !pwdCurrent || !pwdNew || pwdNew !== pwdNew2 || pwdNew.length < 5}
@@ -391,8 +429,10 @@ export default function ProfilePage() {
         >
           {pwdLoading ? 'Changement…' : 'Mettre à jour'}
         </Button>
+        </Stack>
+
         <Typography variant="caption" display="block" mt={2} color="text.secondary">
-          Longueur minimale: 5 caractères.
+          Longueur minimale : 5 caractères.
         </Typography>
       </Paper>
     </Container>

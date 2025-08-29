@@ -1254,7 +1254,13 @@ export default function EventDetailsDialog({
                   </Typography>
                 )}
                 {localDocuments.length > 0 && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+                  <Stack
+                  sx={{ mt: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    maxWidth: 400,
+                   }}>
                     {localDocuments.map((doc: any) => {
                       const effectiveName =
                         doc.fileName ||
@@ -1280,8 +1286,20 @@ export default function EventDetailsDialog({
                       const openUrl = buildDownloadUrl(doc.fileUrl);
                       const key = doc.id || doc.fileUrl || `${effectiveName}-${Math.random()}`;
                       return (
-                        <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Tooltip title={tooltip} arrow>
+                        <Box key={key} sx={{ 
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexDirection: 'row',
+                        width: '100%',
+                        gap: 0.5 }}>
+                          <Tooltip title={tooltip} arrow
+                          sx={{
+                            flexGrow: 100,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          >
                             <Chip
                               label={effectiveName}
                               size="small"
@@ -1289,11 +1307,14 @@ export default function EventDetailsDialog({
                               onClick={() => openUrl && window.open(openUrl, '_blank')}
                               icon={<AttachFileIcon sx={{ fontSize: 14 }} />}
                           sx={{
-                          cursor: 'pointer',
-                          '& .MuiChip-label': {
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'start',
+                            flexGrow: 100,
+                            '& .MuiChip-label': {
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                           },
                           }}
                             />
