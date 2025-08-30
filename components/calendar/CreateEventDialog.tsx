@@ -196,9 +196,6 @@ export default function CreateEventDialog({
                   : f
               )
             );
-            console.log(
-              `✅ Fichier uploadé: ${uploaded.fileName || fileObj.file.name}`
-            );
           } else {
             console.error(`❌ Échec upload: ${fileObj.file.name}`);
           }
@@ -252,9 +249,6 @@ export default function CreateEventDialog({
                     : f
                 )
               );
-              console.log(
-                `✅ Document copié depuis preset: ${ef.fileName || ef.fileUrl}`
-              );
             } else {
               console.error(
                 `❌ Échec copie preset: ${ef.fileName || ef.fileUrl}`
@@ -293,7 +287,7 @@ export default function CreateEventDialog({
                     : f
                 )
               );
-              console.log(`✅ Document lié: ${ef.fileName || ef.fileUrl}`);
+              
             } else {
               console.error(`❌ Échec liaison: ${ef.fileName || ef.fileUrl}`);
             }
@@ -312,7 +306,7 @@ export default function CreateEventDialog({
         window.dispatchEvent(
           new CustomEvent("event-update:end", { detail: { eventId } })
         );
-        console.log(`📄 Documents mis à jour pour événement ${eventId}`);
+        
       } catch (error) {
         console.error("❌ Erreur émission événement:", error);
       }
@@ -449,7 +443,7 @@ export default function CreateEventDialog({
 
         // Populate form with basic event data
         const newForm = {
-          title: event.title || "Copie de l'événement", // Ensure title is always provided
+          title: '',
           discipline: event.discipline || "chimie",
           notes: event.notes || "",
         };
@@ -761,26 +755,29 @@ export default function CreateEventDialog({
         const r = await fetch("/api/classes");
         if (r.ok) {
           const d = await r.json();
-          const custom: any[] = (d?.custom || []).map((c: any) => ({
+          // API returns { predefinedClasses, customClasses, mine, count }
+          const customSrc: any[] = Array.isArray(d?.customClasses) ? d.customClasses : [];
+          const predefSrc: any[] = Array.isArray(d?.predefinedClasses) ? d.predefinedClasses : [];
+          const custom: any[] = customSrc.map((c: any) => ({
             id: c.id,
             name: c.name,
-            system: false,
-            isCustom: true,
-            group: c.group || "",
+            system: !!c.system,
+            isCustom: !c.system,
+            group: (c as any).group || "",
           }));
-          const predefined: any[] = (d?.classes || []).map((c: any) => ({
+          const predefined: any[] = predefSrc.map((c: any) => ({
             id: c.id,
             name: c.name,
-            system: true,
-            isCustom: false,
-            group: c.group || "",
+            system: !!c.system,
+            isCustom: !c.system,
+            group: (c as any).group || "",
           }));
           setAvailableClasses([...custom, ...predefined]);
         }
       } catch {
         setAvailableClasses([]);
       }
-      try {
+  try {
         const r = await fetch("/api/salles");
         if (r.ok) {
           const d = await r.json();
@@ -1126,10 +1123,6 @@ export default function CreateEventDialog({
                                       raw?.slots ||
                                       raw?.data ||
                                       [];
-                                  console.log(
-                                    "🟢 Créneaux récupérés:",
-                                    presetCreneaux
-                                  );
                                   if (
                                     Array.isArray(presetCreneaux) &&
                                     presetCreneaux.length > 0
@@ -1277,7 +1270,8 @@ export default function CreateEventDialog({
                                 }
                               }
 
-                              setForm((f) => ({ ...f, title: preset.title }));
+                              // Ne pas pré-remplir le titre depuis le preset; laisser vide tant que l'utilisateur ne saisit rien
+                              setForm((f) => ({ ...f, title: '' }));
                               if (preset.remarks)
                                 setForm((f) => ({
                                   ...f,
@@ -1372,11 +1366,11 @@ export default function CreateEventDialog({
                 </Box>
               )}
 
-              <Box display="flex" gap={1} mt={2}>
+        <Box display="flex" gap={1} mt={2}>
                 <Button onClick={() => setActiveStep(0)}>Retour</Button>
                 <Button
                   variant="contained"
-                  disabled={!uploadMethod || !form.title}
+                disabled={!uploadMethod}
                   onClick={() => setActiveStep(idxTimeslots)}
                 >
                   Continuer
@@ -2131,13 +2125,7 @@ export default function CreateEventDialog({
     }, */
   ];
 
-  // Debug logging
-  console.log("Debug values:", {
-    isLaborantin,
-    showResources,
-    activeStep,
-    idxDocuments,
-  });
+
 
   return (
     <DialogContent>

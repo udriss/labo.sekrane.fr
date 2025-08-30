@@ -168,17 +168,21 @@ function CalendrierContent() {
 
     // Pour la copie d'événement, on permet la création même sans créneaux
     if (!copiedEventId) {
-      const latestDrafts = ((createMeta as any)?.timeSlotsDrafts || pendingSlotDrafts || []);
+      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+        ? ((createMeta as any)?.timeSlotsDrafts as any[])
+        : [];
+      const latestDrafts = metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []);
       if (!latestDrafts || latestDrafts.length === 0) {
         setIsCreateButtonDisabled(true);
         return;
       }
 
       // Vérifier que tous les créneaux ont les informations requises
-      const invalidSlots = latestDrafts.filter((slot: any) => 
-        !slot.startDate || !slot.endDate || !slot.timeslotDate
+      const invalidSlots = latestDrafts.filter((slot: any) =>
+        !slot.startDate || !slot.endDate || !slot.timeslotDate,
       );
       if (invalidSlots.length > 0) {
+        console.log('Invalid slots found:', invalidSlots);
         setIsCreateButtonDisabled(true);
         return;
       }
@@ -420,11 +424,17 @@ function CalendrierContent() {
   // 6. Ouvre les dialogues d'ajout d'événement TP ou Laborantin
   const handleCreateTPEvent = () => {
     setCreateType('tp');
+  // Ensure copy mode is cleared when starting a fresh creation
+  setEventToCopy(null);
+  setCopiedEventId(null);
     setCreateDialogOpen(true);
   };
 
   const handleCreateLaborantinEvent = () => {
     setCreateType('laborantin');
+  // Ensure copy mode is cleared when starting a fresh creation
+  setEventToCopy(null);
+  setCopiedEventId(null);
     setCreateDialogOpen(true);
   };
 
@@ -567,34 +577,39 @@ function CalendrierContent() {
     }
   };
 
-  // Handler pour l\'ajout d'événement
+  // Handler pour l'ajout d'événement
   const handleCreateEvent = useCallback(async () => {
-    // Validation: vérifier qu'il y a une discipline et au moins un créneau
-    if (!createEventForm.discipline) {
-      return;
+    // Ne bloque pas sur la discipline ici: le payload appliquera un fallback robuste
+    if (!createEventForm.discipline && (createMeta as any)?.method !== 'preset') {
+      showSnackbar('La discipline sera déduite automatiquement', 'info');
     }
 
     // Give React a microtask to flush any pending meta updates before reading drafts
     await Promise.resolve();
     // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
-    const latestDrafts = ((createMeta as any)?.timeSlotsDrafts || pendingSlotDrafts || []) as Array<
+    // Prefer non-empty drafts from meta; else fallback to pendingSlotDrafts
+  const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+      ? ((createMeta as any)?.timeSlotsDrafts as any[])
+      : [];
+    const latestDrafts = (metaDrafts.length ? metaDrafts : (pendingSlotDrafts || [])) as Array<
       Pick<
         TimeslotData,
         'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
       >
     >;
 
-    // Validation: vérifier qu'il y a au moins un créneau valide
-    // Pour la copie d'événement, on permet la création même sans créneaux (ils seront copiés)
-    if (!copiedEventId && (!latestDrafts || latestDrafts.length === 0)) {
+  const methodIsPreset = (createMeta as any)?.method === 'preset' && !!(createMeta as any)?.presetId;
+
+    // Validation: au moins un créneau valide, sauf en mode copie ou preset (fallback creneaux preset)
+    if (!copiedEventId && !methodIsPreset && (!latestDrafts || latestDrafts.length === 0)) {
+      showSnackbar('Ajoutez au moins un créneau ou sélectionnez un preset', 'warning');
       return;
     }
 
     // Vérifier que tous les créneaux ont les informations requises
-    const invalidSlots = latestDrafts.filter(slot => 
-      !slot.startDate || !slot.endDate || !slot.timeslotDate
-    );
-    if (invalidSlots.length > 0) {
+    const invalidSlots = latestDrafts.filter((slot) => !slot.startDate || !slot.endDate || !slot.timeslotDate);
+    if (invalidSlots.length > 0 && !methodIsPreset) {
+      showSnackbar('Complétez la date et les heures de chaque créneau', 'warning');
       return;
     }
 
@@ -720,13 +735,30 @@ function CalendrierContent() {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('[handleCreateEvent] API error response:', res.status, errorText);
+      // Try to build a more helpful error message
+      let msg = "Erreur lors de l'ajout de l'événement";
       try {
-        const errorJson = JSON.parse(errorText);
-        console.error('[handleCreateEvent] Parsed error:', errorJson);
-      } catch (e) {
-        console.error('[handleCreateEvent] Could not parse error response');
+        const ej = JSON.parse(errorText);
+        console.error('[handleCreateEvent] Parsed error:', ej);
+        if (ej && Array.isArray(ej.error)) {
+          // Zod issues array
+          const items = ej.error
+            .map((it: any) => {
+              const path = Array.isArray(it.path) ? it.path.join('.') : it.path || '';
+              const code = it.code || it.message || 'invalid';
+              const recv = typeof it.received === 'string' ? ` (reçu: ${it.received})` : '';
+              return path ? `${path}: ${code}${recv}` : code;
+            })
+            .filter(Boolean)
+            .slice(0, 3);
+          if (items.length) msg = `Erreur de validation: ${items.join(', ')}`;
+        } else if (ej && typeof ej.error === 'string') {
+          msg = ej.error;
+        }
+      } catch {
+        // keep default msg
       }
-      showSnackbar("Erreur lors de l'ajout de l'événement", 'error');
+      showSnackbar(msg, 'error');
       return;
     }
     const created = await res.json();
@@ -765,14 +797,109 @@ function CalendrierContent() {
     // Add the new event to the local state optimistically for animation (at the top)
     setEvents((prev) => [newEvent, ...prev]);
 
-    // Propose slots if any and then fetch complete event data
-    if ((latestDrafts || []).length) {
+    // Build a robust set of slots: prefer latestDrafts; if empty but copying from an event with slots, derive from it
+  let proposalSlots = latestDrafts || [];
+    if (
+      (!proposalSlots || proposalSlots.length === 0) &&
+      copiedEventId &&
+      (createMeta as any)?.method !== 'preset' &&
+      eventToCopy &&
+      Array.isArray((eventToCopy as any).timeslots) &&
+      (eventToCopy as any).timeslots.length > 0
+    ) {
       try {
-        await proposeTimeslots({
+        const asLocalLiteral = (d: Date) =>
+          new Date(
+            d.getUTCFullYear(),
+            d.getUTCMonth(),
+            d.getUTCDate(),
+            d.getUTCHours(),
+            d.getUTCMinutes(),
+            d.getUTCSeconds(),
+            d.getUTCMilliseconds(),
+          );
+        proposalSlots = ((eventToCopy as any).timeslots || []).map((s: any) => {
+          // Normalize to local wall-time strings "YYYY-MM-DDTHH:MM:SS"
+          const start = s.startDate ? asLocalLiteral(new Date(s.startDate)) : null;
+          const end = s.endDate ? asLocalLiteral(new Date(s.endDate)) : null;
+          const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+          const toLocal = (dt: Date) =>
+            `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
+          const timeslotDay = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+          const startStr = start ? toLocal(start) : undefined;
+          const endStr = end ? toLocal(end) : undefined;
+          const dayStr = s.timeslotDate
+            ? (() => {
+                const d = new Date(s.timeslotDate);
+                return isNaN(d.getTime()) ? undefined : timeslotDay(asLocalLiteral(d));
+              })()
+            : start
+              ? timeslotDay(start)
+              : undefined;
+          return {
+            startDate: startStr,
+            endDate: endStr,
+            timeslotDate: dayStr,
+            salleIds: Array.isArray(s.salleIds) ? (s.salleIds as number[]) : [],
+            classIds: Array.isArray(s.classIds) ? (s.classIds as number[]) : [],
+          } as any;
+        }).filter((s: any) => s.startDate && s.endDate);
+      } catch (e) {
+        console.warn('[handleCreateEvent] Could not derive slots from copied event', e);
+      }
+    }
+
+    // Fallback: en mode preset, si pas de drafts encore propagés, récupérer les créneaux du preset
+    if ((!proposalSlots || proposalSlots.length === 0) && methodIsPreset) {
+      try {
+        const pid = (createMeta as any)?.presetId;
+        const r = await fetch(`/api/event-presets/${pid}/creneaux`);
+        if (r.ok) {
+          const raw = await r.json();
+          const presetSlots = Array.isArray(raw) ? raw : (raw?.timeslots || raw?.creneaux || raw?.slots || raw?.data || []);
+          const asLocal = (d: Date) =>
+            new Date(
+              d.getUTCFullYear(),
+              d.getUTCMonth(),
+              d.getUTCDate(),
+              d.getUTCHours(),
+              d.getUTCMinutes(),
+              d.getUTCSeconds(),
+              d.getUTCMilliseconds(),
+            );
+          const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+          const toLocal = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
+          const dayStr = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+          proposalSlots = (presetSlots || [])
+            .map((s: any) => {
+              const st = s.startDate ? asLocal(new Date(s.startDate)) : undefined;
+              const en = s.endDate ? asLocal(new Date(s.endDate)) : undefined;
+              const tsd = s.timeslotDate ? asLocal(new Date(s.timeslotDate)) : undefined;
+              return {
+                startDate: st ? toLocal(st) : undefined,
+                endDate: en ? toLocal(en) : undefined,
+                timeslotDate: tsd ? dayStr(tsd) : st ? dayStr(st) : undefined,
+                salleIds: Array.isArray(s.salleIds) ? (s.salleIds as number[]) : [],
+                classIds: Array.isArray(s.classIds) ? (s.classIds as number[]) : [],
+              } as any;
+            })
+            .filter((s: any) => s.startDate && s.endDate);
+        }
+      } catch (e) {
+        console.warn('[handleCreateEvent] fallback preset slots fetch failed', e);
+      }
+    }
+
+    // Propose slots if any and then fetch complete event data
+  if ((proposalSlots || []).length) {
+      try {
+        console.log('[handleCreateEvent] Proposing timeslots:', proposalSlots.length);
+    await proposeTimeslots({
           eventId: newEvent.id,
           discipline: newEvent.discipline,
-          slots: latestDrafts,
+          slots: proposalSlots,
         });
+    console.log('[handleCreateEvent] Timeslots proposed via hook');
 
         // Fetch the complete event with timeslots after timeslots have been created
         try {
@@ -790,7 +917,26 @@ function CalendrierContent() {
           console.error('Error fetching complete event data:', error);
         }
       } catch (error) {
-        console.error('Error proposing timeslots:', error);
+        console.error('Error proposing timeslots via hook, falling back to direct POST:', error);
+        try {
+          const resp = await fetch('/api/timeslots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventId: newEvent.id,
+              discipline: newEvent.discipline,
+              slots: proposalSlots,
+            }),
+          });
+          if (!resp.ok) {
+            const txt = await resp.text();
+            console.error('[handleCreateEvent] Fallback /api/timeslots failed:', resp.status, txt);
+          } else {
+            console.log('[handleCreateEvent] Timeslots proposed via fallback direct POST');
+          }
+        } catch (e) {
+          console.error('[handleCreateEvent] Fallback POST /api/timeslots threw:', e);
+        }
       }
     }
 
@@ -800,6 +946,9 @@ function CalendrierContent() {
     setCreateMeta({ classes: [], materials: [], chemicals: [], uploads: [] });
     resetCreateEventDialogCache();
     setCreateDialogOpen(false);
+  // Clear any previous copy state to avoid leaking into next creations
+    setEventToCopy(null);
+    setCopiedEventId(null);
   }, [
     createEventForm,
     createMeta,

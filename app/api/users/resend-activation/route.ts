@@ -29,16 +29,7 @@ export async function POST(req: NextRequest) {
     (isProduction 
       ? process.env.NEXTAUTH_URL 
       : (process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || ''));
-  
-  console.log('[DEBUG] URL Detection:', {
-    isProduction,
-    host,
-    protocol,
-    currentUrl,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-    finalBaseUrl: baseUrl
-  });
+
   const primaryColor = lightModeColors.primary.main;
   const secondaryColor = lightModeColors.secondary.main;
   const primaryTransparent = alpha(primaryColor, 0.12);

@@ -160,12 +160,6 @@ export default function DataExportTab<T>({
   );
 
   const handleExport = () => {
-    console.log('handleExport called with:', {
-      exportFormat,
-      sortedRows: sortedRows.length,
-      visibleColumns: visibleColumns.length,
-      filename,
-    });
 
     if (exportFormat === 'csv') {
       const data = toCSV(sortedRows, visibleColumns, ',');
@@ -173,13 +167,6 @@ export default function DataExportTab<T>({
     } else if (exportFormat === 'xlsx') {
       downloadXLSX(filename, sortedRows, visibleColumns);
     } else if (exportFormat === 'pdf') {
-      console.log('Starting PDF export with:', {
-        title,
-        filename,
-        rowCount: sortedRows.length,
-        columnCount: visibleColumns.length,
-        orientation,
-      });
       try {
         exportTablePDF(sortedRows, visibleColumns, {
           title,

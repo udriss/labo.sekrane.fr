@@ -1226,7 +1226,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       if (isReupload && lastPresetId) {
         // Use existing preset for re-upload
         presetId = lastPresetId;
-        console.log('🔄 Ré-upload vers preset existant:', presetId);
+        
       } else {
         // Create new preset
         const res = await fetch('/api/event-presets', {
@@ -1297,7 +1297,7 @@ function PresetWizard({ onCreated }: { onCreated: () => void }) {
       if ((window as any).uploadFilesToEventWizard && uploads.length > 0) {
         try {
           await (window as any).uploadFilesToEventWizard(presetId, isReupload);
-          console.log(`${isReupload ? '🔄 Ré-upload' : '📄 Upload'} des fichiers vers preset:`, presetId);
+          
         } catch (error) {
           console.error('❌ Erreur upload fichiers preset:', error);
         }

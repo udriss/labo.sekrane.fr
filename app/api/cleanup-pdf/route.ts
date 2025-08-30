@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
           if (fileAge > oneDayMs) {
             await fs.unlink(filePath);
             deletedCount++;
-            console.log(`[PDF Cleanup] Supprimé: ${file}`);
+            
           }
         } catch (error) {
           console.warn(`[PDF Cleanup] Erreur avec le fichier ${file}:`, error);

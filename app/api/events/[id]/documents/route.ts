@@ -222,7 +222,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
       if (parsed.copyFromPreset && parsed.fileUrl.includes('/preset/')) {
         // This is a preset file being copied to an event - ensure it goes to event folder structure
         // The targetDir is already set correctly above, so the file will be copied to the event folder
-        console.log(`📋 Copie fichier preset vers événement: ${srcFileName}`);
+        
       }
     } else {
       return NextResponse.json({ error: 'URL source non supportée' }, { status: 400 });

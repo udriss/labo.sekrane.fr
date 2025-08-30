@@ -303,7 +303,7 @@ async function generateCustomLayoutPdf(
           };
         }
       } catch (err) {
-        console.log('[PDF Route] Failed to pre-fetch image:', url, err);
+        
       }
       return doc;
     }),
@@ -570,7 +570,7 @@ async function generateStandardPdf(event: any, salleMap: any, classMap: any, req
         const enc = encodeURIComponent(url);
         const absUrl = new URL(`/api/documents/proxy?fileUrl=${enc}`, baseUrl).toString();
 
-        console.log('[PDF Route] Reading image file:', absUrl);
+        
         const res = await fetch(absUrl, {
           headers: {
             cookie: req.headers.get('cookie') ?? '',
@@ -579,7 +579,7 @@ async function generateStandardPdf(event: any, salleMap: any, classMap: any, req
         });
 
         if (!res.ok) {
-          console.log('[PDF Route] Fetch failed:', res.status, res.statusText);
+          
           return doc;
         }
 
@@ -599,10 +599,10 @@ async function generateStandardPdf(event: any, salleMap: any, classMap: any, req
         const base64 = Buffer.from(buffer).toString('base64');
         const dataUrl = `data:${contentType};base64,${base64}`;
 
-        console.log('[PDF Route] Successfully embedded image:', name);
+        
         return { ...doc, dataUrl };
       } catch (e) {
-        console.log('[PDF Route] Failed to read image file:', e);
+        
       }
 
       return doc;

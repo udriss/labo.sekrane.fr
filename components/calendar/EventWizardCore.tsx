@@ -1400,7 +1400,7 @@ export default function EventWizardCore({
       window.dispatchEvent(
         new CustomEvent('event-update:end', { detail: { eventId: presetId } })
       );
-      console.log(`📄 Documents mis à jour pour preset ${presetId}`);
+      
     } catch (error) {
       console.error('❌ Erreur émission événement preset:', error);
     }

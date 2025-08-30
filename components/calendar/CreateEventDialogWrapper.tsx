@@ -48,6 +48,7 @@ export default function CreateEventDialogWrapper({
   onCreateEvent,
   isCreateButtonDisabled = false,
 }: CreateEventDialogWrapperProps) {
+  const [submitting, setSubmitting] = React.useState(false);
   const handleClose = () => {
     onPendingSlotDraftsChange([]);
     onClose();
@@ -66,13 +67,48 @@ export default function CreateEventDialogWrapper({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+  // Local guard: enable the button when valid drafts exist (e.g., after selecting a preset),
+  // even if parent disabled state lags due to async meta propagation.
+  const wrapperCanCreate = React.useMemo(() => {
+    // When copying an event, allow creation without drafts
+    if (copiedEventId) return true;
+    const method = (createMeta as any)?.method;
+    // If a preset is selected, allow creation even if drafts propagation is slightly delayed
+    if (method === 'preset' && (createMeta as any)?.presetId) {
+      // Prefer real drafts when available
+      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+        ? ((createMeta as any)?.timeSlotsDrafts as any[])
+        : [];
+      const drafts = metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []);
+      if (Array.isArray(drafts) && drafts.length > 0) {
+        const invalid = drafts.some((s: any) => !s?.startDate || !s?.endDate || !s?.timeslotDate);
+        if (!invalid) return true;
+      }
+      // Fallback: preset chosen, let user proceed and let server-side validation handle absence of slots
+      return true;
+    }
+    // Manual mode: if drafts array exists and non-empty, allow proceed; detailed validation will be handled in handler
+    if (method === 'manual') {
+      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+        ? ((createMeta as any)?.timeSlotsDrafts as any[])
+        : [];
+      const drafts = metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []);
+      return Array.isArray(drafts) && drafts.length > 0;
+    }
+    const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+      ? ((createMeta as any)?.timeSlotsDrafts as any[])
+      : [];
+    const drafts = metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []);
+    return Array.isArray(drafts) && drafts.length > 0;
+  }, [copiedEventId, createMeta, pendingSlotDrafts]);
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={isMobile}>
       <DialogTitle>Ajouter un événement {createType === 'tp' ? 'TP' : 'Laborantin'}</DialogTitle>
       <CreateEventDialog
         createType={createType}
         initial={{
-          title: eventToCopy?.title ? `Copie de ${eventToCopy.title}` : '',
+          title: '',
           discipline: (eventToCopy?.discipline as any) ?? 'chimie',
           notes: eventToCopy?.notes ?? '',
         }}
@@ -85,12 +121,20 @@ export default function CreateEventDialogWrapper({
         <Button onClick={handleClose}>Annuler</Button>
         <Button 
           variant="outlined" 
-          onClick={onCreateEvent}
-          disabled={isCreateButtonDisabled}
+          onClick={async () => {
+            if (!wrapperCanCreate || submitting) return;
+            try {
+              setSubmitting(true);
+              await onCreateEvent();
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+          disabled={submitting || !wrapperCanCreate}
           color="success"
           startIcon={<CheckCircle />}
         >
-          Ajouter
+          {submitting ? 'Ajout…' : 'Ajouter'}
         </Button>
       </DialogActions>
     </Dialog>
