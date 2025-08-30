@@ -1370,7 +1370,6 @@ const EditEventDialog = React.forwardRef<
                       display: "flex",
                       justifyContent: "flex-start",
                       flexDirection: { sm: "column", md: "row" },
-                      mt: 2,
                       width: "100%",
                     }}
                   >

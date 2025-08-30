@@ -166,7 +166,12 @@ export default function EditEventDialogWrapper({
       </Snackbar>
       <DialogActions>
         <Button onClick={onClose}>Annuler</Button>
-        <Button variant="contained" onClick={handleSave} disabled={!hasChanges}>
+        <Button
+          variant="outlined"
+          onClick={handleSave}
+          disabled={!hasChanges}
+          color='success'
+        >
           Sauvegarder
         </Button>
       </DialogActions>

@@ -5,6 +5,7 @@
 import React, { useState, useEffect, Suspense, useCallback, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Box, Alert, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import CalendarExportTab from '@/components/export/CalendarExportTab';
 import { CreateEventMeta } from '@/components/calendar/CreateEventDialog';
 import { EditEventMeta as EditMeta } from '@/components/calendar/EditEventDialog';
@@ -1632,7 +1633,9 @@ function CalendrierContent() {
               Annuler
             </Button>
             <Button 
-              variant="contained" 
+              variant="outlined" 
+              color='success'
+              startIcon={<AddIcon />}
               onClick={() => handleCreateEvent()}
               disabled={isCreateButtonDisabled}
             >

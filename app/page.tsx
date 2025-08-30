@@ -81,7 +81,7 @@ export default async function HomePage() {
       {/* Menu Cards */}
       <Grid container spacing={3}>
         {menuItems.map((item) => (
-          <Grid size={{ xs: 6, sm: 4, md: 4 }} key={item.title}>
+          <Grid size={{ xs: 6, sm: 6, md: 4 }} key={item.title}>
             <Card
               elevation={4}
               sx={{
