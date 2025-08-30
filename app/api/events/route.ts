@@ -204,10 +204,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const body = await req.json();
-    
+    console.log('[events][POST] Received payload:', JSON.stringify(body, null, 2));
 
     const validatedData = createEventSchema.parse(body);
-    
+    console.log('[events][POST] Validation passed, validated data:', JSON.stringify(validatedData, null, 2));
 
     // Ensure uniqueness defensively on server-side as well
     const uniqueSalleIds = Array.isArray(validatedData.salleIds)
@@ -219,10 +219,9 @@ export async function POST(req: NextRequest) {
 
     // no debug logs in production
 
-  // Title policy: keep empty if user didn't type anything; fill after creation with "Événement ID <newId>"
-  const providedTitle = (validatedData.title || '').trim();
-  const wantsEmptyTitle = !providedTitle;
-  const finalTitle = wantsEmptyTitle ? '' : providedTitle;
+    // Create event with provided title or generate one
+    const providedTitle = (validatedData.title || '').trim();
+    const finalTitle = providedTitle || `Événement ID ${Date.now()}`;
 
     const inferredType =
       validatedData.type ||
@@ -276,7 +275,7 @@ export async function POST(req: NextRequest) {
       );
     }
     if (validatedData.documents && validatedData.documents.length) {
-      
+      console.log(`[events][create] Preparing to add ${validatedData.documents.length} documents for event ID ${event.id}`);
       const publicRoot = path.join(process.cwd(), 'public');
       const userFolder = `user_${userId}`;
       const monthFolder = getFrenchMonthFolder();
@@ -361,7 +360,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  if (wantsEmptyTitle) {
+    if (!providedTitle) {
       await prisma.evenement.update({
         where: { id: event.id },
         data: { title: `Événement ID ${event.id}` },

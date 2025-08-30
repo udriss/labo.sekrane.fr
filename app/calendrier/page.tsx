@@ -168,6 +168,17 @@ function CalendrierContent() {
 
     // Pour la copie d'événement, on permet la création même sans créneaux
     if (!copiedEventId) {
+      // Exception pour le mode preset : permettre la création même sans créneaux si un preset est sélectionné
+      const isPresetMode = (createMeta as any)?.method === 'preset';
+      const hasPresetSelected = !!(createMeta as any)?.presetId;
+      const isManualMode = (createMeta as any)?.method === 'manual';
+      
+      if ((isPresetMode && hasPresetSelected) || isManualMode) {
+        // En mode preset avec un preset sélectionné ou en mode manual, on autorise la création
+        setIsCreateButtonDisabled(false);
+        return;
+      }
+
       const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
         ? ((createMeta as any)?.timeSlotsDrafts as any[])
         : [];
@@ -182,7 +193,6 @@ function CalendrierContent() {
         !slot.startDate || !slot.endDate || !slot.timeslotDate,
       );
       if (invalidSlots.length > 0) {
-        console.log('Invalid slots found:', invalidSlots);
         setIsCreateButtonDisabled(true);
         return;
       }
@@ -579,16 +589,16 @@ function CalendrierContent() {
 
   // Handler pour l'ajout d'événement
   const handleCreateEvent = useCallback(async () => {
-    // Ne bloque pas sur la discipline ici: le payload appliquera un fallback robuste
-    if (!createEventForm.discipline && (createMeta as any)?.method !== 'preset') {
-      showSnackbar('La discipline sera déduite automatiquement', 'info');
+    // Validation: vérifier qu'il y a une discipline et au moins un créneau
+    if (!createEventForm.discipline) {
+      return;
     }
 
     // Give React a microtask to flush any pending meta updates before reading drafts
     await Promise.resolve();
     // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
     // Prefer non-empty drafts from meta; else fallback to pendingSlotDrafts
-  const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+    const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
       ? ((createMeta as any)?.timeSlotsDrafts as any[])
       : [];
     const latestDrafts = (metaDrafts.length ? metaDrafts : (pendingSlotDrafts || [])) as Array<
@@ -598,19 +608,50 @@ function CalendrierContent() {
       >
     >;
 
-  const methodIsPreset = (createMeta as any)?.method === 'preset' && !!(createMeta as any)?.presetId;
-
-    // Validation: au moins un créneau valide, sauf en mode copie ou preset (fallback creneaux preset)
-    if (!copiedEventId && !methodIsPreset && (!latestDrafts || latestDrafts.length === 0)) {
-      showSnackbar('Ajoutez au moins un créneau ou sélectionnez un preset', 'warning');
+    // Debug logging for manual mode
+    const isPresetMode = (createMeta as any)?.method === 'preset';
+    const hasPresetSelected = !!(createMeta as any)?.presetId;
+    const isManualMode = (createMeta as any)?.method === 'manual';
+    
+    console.log('[handleCreateEvent] Mode detection:', { 
+      isPresetMode, 
+      hasPresetSelected, 
+      isManualMode, 
+      method: (createMeta as any)?.method,
+      metaDraftsCount: metaDrafts.length,
+      pendingDraftsCount: (pendingSlotDrafts || []).length,
+      latestDraftsCount: latestDrafts.length,
+      createMeta: {
+        method: (createMeta as any)?.method,
+        hasTimeSlotsDrafts: !!(createMeta as any)?.timeSlotsDrafts,
+        timeSlotsDraftsLength: Array.isArray((createMeta as any)?.timeSlotsDrafts) ? (createMeta as any).timeSlotsDrafts.length : 0,
+      }
+    });
+    
+    // Log the actual drafts content for debugging
+    if (latestDrafts.length > 0) {
+      console.log('[handleCreateEvent] Latest drafts content:', latestDrafts.map((d, i) => ({
+        index: i,
+        startDate: d.startDate,
+        endDate: d.endDate,
+        timeslotDate: d.timeslotDate,
+        salleIds: d.salleIds?.length || 0,
+        classIds: d.classIds?.length || 0,
+      })));
+    }
+    
+    if (!copiedEventId && !(isPresetMode && hasPresetSelected) && !isManualMode && (!latestDrafts || latestDrafts.length === 0)) {
       return;
     }
 
-    // Vérifier que tous les créneaux ont les informations requises
-    const invalidSlots = latestDrafts.filter((slot) => !slot.startDate || !slot.endDate || !slot.timeslotDate);
-    if (invalidSlots.length > 0 && !methodIsPreset) {
-      showSnackbar('Complétez la date et les heures de chaque créneau', 'warning');
-      return;
+    // Vérifier que tous les créneaux ont les informations requises (sauf en mode preset ou manual)
+    if (!(isPresetMode && hasPresetSelected) && !isManualMode && latestDrafts) {
+      const invalidSlots = latestDrafts.filter(slot => 
+        !slot.startDate || !slot.endDate || !slot.timeslotDate
+      );
+      if (invalidSlots.length > 0) {
+        return;
+      }
     }
 
     // Create the event first
@@ -798,7 +839,85 @@ function CalendrierContent() {
     setEvents((prev) => [newEvent, ...prev]);
 
     // Build a robust set of slots: prefer latestDrafts; if empty but copying from an event with slots, derive from it
-  let proposalSlots = latestDrafts || [];
+    let proposalSlots = latestDrafts || [];
+    
+    // If no slots from drafts but we're in preset mode, try to fetch preset timeslots
+    if (
+      (!proposalSlots || proposalSlots.length === 0) &&
+      isPresetMode &&
+      hasPresetSelected
+    ) {
+      try {
+        console.log('[handleCreateEvent] Fetching preset timeslots for preset ID:', (createMeta as any)?.presetId);
+        const presetId = (createMeta as any)?.presetId;
+        const creneauxRes = await fetch(`/api/event-presets/${presetId}/creneaux`);
+        if (creneauxRes.ok) {
+          const raw = await creneauxRes.json();
+          const presetCreneaux = Array.isArray(raw) ? raw : raw?.timeslots || raw?.creneaux || raw?.slots || raw?.data || [];
+          console.log('[handleCreateEvent] Found preset timeslots:', presetCreneaux.length);
+          
+          if (Array.isArray(presetCreneaux) && presetCreneaux.length > 0) {
+            proposalSlots = presetCreneaux.map((creneau: any) => {
+              // Convert preset creneau format to proposal format
+              const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+              const toLocal = (dt: Date) =>
+                `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
+              const timeslotDay = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+              
+              let startDate, endDate, timeslotDate;
+              
+              if (creneau.startDate && creneau.endDate) {
+                // Direct ISO strings
+                const start = new Date(creneau.startDate);
+                const end = new Date(creneau.endDate);
+                startDate = toLocal(start);
+                endDate = toLocal(end);
+                timeslotDate = timeslotDay(start);
+              } else if (creneau.date && creneau.startTime && creneau.endTime) {
+                // Date + time strings
+                const baseDate = new Date(creneau.date);
+                const [sh, sm] = creneau.startTime.split(':').map((n: string) => parseInt(n, 10));
+                const [eh, em] = creneau.endTime.split(':').map((n: string) => parseInt(n, 10));
+                const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0, 0);
+                const end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), eh, em, 0, 0);
+                startDate = toLocal(start);
+                endDate = toLocal(end);
+                timeslotDate = timeslotDay(baseDate);
+              } else {
+                return null; // Skip invalid creneaux
+              }
+              
+              return {
+                startDate,
+                endDate,
+                timeslotDate,
+                salleIds: Array.isArray(creneau.salleIds) ? creneau.salleIds : [],
+                classIds: Array.isArray(creneau.classIds) ? creneau.classIds : [],
+              };
+            }).filter((slot): slot is NonNullable<typeof slot> => slot !== null); // Remove null entries
+            
+            console.log('[handleCreateEvent] Converted preset slots:', proposalSlots.length);
+          }
+        }
+      } catch (e) {
+        console.warn('[handleCreateEvent] Could not fetch preset timeslots:', e);
+      }
+    }
+    
+    // If no slots from drafts but we're in manual mode, ensure we use any available drafts
+    if (
+      (!proposalSlots || proposalSlots.length === 0) &&
+      isManualMode
+    ) {
+      console.log('[handleCreateEvent] Manual mode - checking for drafts in pendingSlotDrafts:', pendingSlotDrafts?.length);
+      // In manual mode, prioritize pendingSlotDrafts as they might be more up-to-date than meta drafts
+      if (pendingSlotDrafts && pendingSlotDrafts.length > 0) {
+        proposalSlots = pendingSlotDrafts;
+        console.log('[handleCreateEvent] Using pendingSlotDrafts for manual mode:', proposalSlots.length);
+      }
+    }
+    
+    // If still no slots but copying from an event with slots, derive from it
     if (
       (!proposalSlots || proposalSlots.length === 0) &&
       copiedEventId &&
@@ -849,46 +968,7 @@ function CalendrierContent() {
       }
     }
 
-    // Fallback: en mode preset, si pas de drafts encore propagés, récupérer les créneaux du preset
-    if ((!proposalSlots || proposalSlots.length === 0) && methodIsPreset) {
-      try {
-        const pid = (createMeta as any)?.presetId;
-        const r = await fetch(`/api/event-presets/${pid}/creneaux`);
-        if (r.ok) {
-          const raw = await r.json();
-          const presetSlots = Array.isArray(raw) ? raw : (raw?.timeslots || raw?.creneaux || raw?.slots || raw?.data || []);
-          const asLocal = (d: Date) =>
-            new Date(
-              d.getUTCFullYear(),
-              d.getUTCMonth(),
-              d.getUTCDate(),
-              d.getUTCHours(),
-              d.getUTCMinutes(),
-              d.getUTCSeconds(),
-              d.getUTCMilliseconds(),
-            );
-          const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-          const toLocal = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
-          const dayStr = (dt: Date) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-          proposalSlots = (presetSlots || [])
-            .map((s: any) => {
-              const st = s.startDate ? asLocal(new Date(s.startDate)) : undefined;
-              const en = s.endDate ? asLocal(new Date(s.endDate)) : undefined;
-              const tsd = s.timeslotDate ? asLocal(new Date(s.timeslotDate)) : undefined;
-              return {
-                startDate: st ? toLocal(st) : undefined,
-                endDate: en ? toLocal(en) : undefined,
-                timeslotDate: tsd ? dayStr(tsd) : st ? dayStr(st) : undefined,
-                salleIds: Array.isArray(s.salleIds) ? (s.salleIds as number[]) : [],
-                classIds: Array.isArray(s.classIds) ? (s.classIds as number[]) : [],
-              } as any;
-            })
-            .filter((s: any) => s.startDate && s.endDate);
-        }
-      } catch (e) {
-        console.warn('[handleCreateEvent] fallback preset slots fetch failed', e);
-      }
-    }
+    console.log('[handleCreateEvent] Final proposal slots count:', proposalSlots?.length || 0);
 
     // Propose slots if any and then fetch complete event data
   if ((proposalSlots || []).length) {
