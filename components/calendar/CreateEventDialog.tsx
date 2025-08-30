@@ -463,9 +463,9 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
 
         const event = data.event;
 
-        // Populate form with basic event data
+        // Populate form with basic event data - never copy title from original event
         const newForm = {
-          title: event.title || "Copie de l'événement", // Ensure title is always provided
+          title: "", // Always leave empty when copying - let user decide or use API default
           discipline: event.discipline || "chimie",
           notes: event.notes || "",
         };
@@ -563,13 +563,15 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
         // Populate time slots
         if (event.timeslots && event.timeslots.length > 0) {
           const timeSlotsFromEvent = event.timeslots.map((slot: any) => {
-            // Extract time from startDate/endDate or use existing format
+            // Extract time from startDate/endDate - avoid timezone conversion
             let startTime = null;
             let endTime = null;
             let date = null;
 
             if (slot.startDate) {
-              const startDate = new Date(slot.startDate);
+              // Parse as local time without timezone conversion
+              const isoString = slot.startDate.replace('Z', ''); // Remove Z if present
+              const startDate = new Date(isoString);
               startTime = `${startDate
                 .getHours()
                 .toString()
@@ -578,7 +580,9 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                 .toString()
                 .padStart(2, "0")}`;
               if (!date && slot.timeslotDate) {
-                date = new Date(slot.timeslotDate);
+                // Parse timeslotDate also without timezone conversion
+                const timeslotIsoString = slot.timeslotDate.replace('Z', '');
+                date = new Date(timeslotIsoString);
               } else if (!date) {
                 date = new Date(
                   startDate.getFullYear(),
@@ -589,7 +593,9 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
             }
 
             if (slot.endDate) {
-              const endDate = new Date(slot.endDate);
+              // Parse as local time without timezone conversion
+              const isoString = slot.endDate.replace('Z', ''); // Remove Z if present
+              const endDate = new Date(isoString);
               endTime = `${endDate
                 .getHours()
                 .toString()
@@ -600,7 +606,9 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
             }
 
             if (slot.timeslotDate && !date) {
-              date = new Date(slot.timeslotDate);
+              // Parse as local time without timezone conversion
+              const isoString = slot.timeslotDate.replace('Z', '');
+              date = new Date(isoString);
             }
 
             return {
@@ -1171,16 +1179,16 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                                         date: creneau.date
                                           ? new Date(creneau.date)
                                           : creneau.timeslotDate
-                                          ? new Date(creneau.timeslotDate)
+                                          ? new Date(creneau.timeslotDate.replace('Z', ''))
                                           : creneau.startDate
-                                          ? new Date(creneau.startDate)
+                                          ? new Date(creneau.startDate.replace('Z', ''))
                                           : null,
                                         startTime:
                                           creneau.startTime ||
                                           (creneau.startDate
                                             ? (() => {
                                                 const d = new Date(
-                                                  creneau.startDate
+                                                  creneau.startDate.replace('Z', '')
                                                 );
                                                 return isNaN(d.getTime())
                                                   ? null
@@ -1198,7 +1206,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                                           (creneau.endDate
                                             ? (() => {
                                                 const d = new Date(
-                                                  creneau.endDate
+                                                  creneau.endDate.replace('Z', '')
                                                 );
                                                 return isNaN(d.getTime())
                                                   ? null

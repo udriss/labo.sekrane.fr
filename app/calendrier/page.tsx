@@ -108,16 +108,7 @@ function CalendrierContent() {
     chemicals: [],
     uploads: [],
   });
-  // Draft créneaux en attente avant ajout de l'événement.
-  // Utilise désormais les tableaux salleIds / classIds (migration depuis l'ancien champ salleId unique)
-  const [pendingSlotDrafts, setPendingSlotDrafts] = useState<
-    Array<
-      Pick<
-        TimeslotData,
-        'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
-      >
-    >
-  >([]);
+  // NOTE: pendingSlotDrafts removed - now using direct dialog ref access
   const [salles, setSalles] = useState<Array<{ id: number; name: string }>>([]);
   const { impersonatedUser } = useImpersonation();
   const baseUserRole = (session as any)?.user?.role as
@@ -174,7 +165,7 @@ function CalendrierContent() {
 
     // Pour la copie d'événement, on permet la création même sans créneaux
     if (!copiedEventId) {
-      // Exception pour le mode preset : permettre la création même sans créneaux si un preset est sélectionné
+      // Exception pour le mode preset/manual : permettre la création 
       const isPresetMode = (createMeta as any)?.method === 'preset';
       const hasPresetSelected = !!(createMeta as any)?.presetId;
       const isManualMode = (createMeta as any)?.method === 'manual';
@@ -185,17 +176,15 @@ function CalendrierContent() {
         return;
       }
 
-      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
-        ? ((createMeta as any)?.timeSlotsDrafts as any[])
-        : [];
-      const latestDrafts = metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []);
-      if (!latestDrafts || latestDrafts.length === 0) {
+      // Pour les autres modes, vérifier via la ref dialog
+      const dialogDrafts = createEventDialogRef.current?.getCurrentDrafts() || [];
+      if (dialogDrafts.length === 0) {
         setIsCreateButtonDisabled(true);
         return;
       }
 
       // Vérifier que tous les créneaux ont les informations requises
-      const invalidSlots = latestDrafts.filter((slot: any) =>
+      const invalidSlots = dialogDrafts.filter((slot: any) =>
         !slot.startDate || !slot.endDate || !slot.timeslotDate,
       );
       if (invalidSlots.length > 0) {
@@ -205,7 +194,7 @@ function CalendrierContent() {
     }
 
     setIsCreateButtonDisabled(false);
-  }, [createEventForm.discipline, createMeta, pendingSlotDrafts, copiedEventId]);
+  }, [createEventForm.discipline, createMeta, copiedEventId]);
 
   // moved roleTestConfig above to avoid hook-order issues
 
@@ -338,6 +327,14 @@ function CalendrierContent() {
     originalIsCreator,
   });
 
+  // Utility function to parse date strings as local time without timezone conversion
+  const parseAsLocalTime = (dateString: string) => {
+    if (!dateString) return null;
+    // Remove Z suffix if present to prevent UTC parsing
+    const localDateString = dateString.replace('Z', '');
+    return new Date(localDateString);
+  };
+
   // Format grouped timeslots by date: "YYYY-MM-DD: 08:00-09:00, 10:00-11:00; YYYY-MM-DD: ..."
   const groupTimeslotsLabel = (slots: any[]) => {
     if (!Array.isArray(slots) || slots.length === 0) return 'Aucun créneau';
@@ -353,8 +350,12 @@ function CalendrierContent() {
       );
     const groups: Record<string, Array<{ s: string; e: string }>> = {};
     for (const s of slots) {
-      const start = asLocalLiteral(new Date(s.startDate));
-      const end = asLocalLiteral(new Date(s.endDate));
+      const startDate = parseAsLocalTime(s.startDate);
+      const endDate = parseAsLocalTime(s.endDate);
+      if (!startDate || !endDate) continue; // Skip invalid dates
+      
+      const start = asLocalLiteral(startDate);
+      const end = asLocalLiteral(endDate);
       const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
       const day = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
       const hs = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
@@ -430,7 +431,9 @@ function CalendrierContent() {
       event.timeslots.some((slot) => {
         if (slot.timeslotDate && String(slot.timeslotDate).startsWith(todayLocal)) return true;
         if (!slot.startDate) return false;
-        const d = asLocalLiteral(new Date(slot.startDate));
+        const startDate = parseAsLocalTime(slot.startDate);
+        if (!startDate) return false;
+        const d = asLocalLiteral(startDate);
         const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         return day === todayLocal;
       }),
@@ -600,82 +603,25 @@ function CalendrierContent() {
       return;
     }
 
-    // Give React multiple microtasks to flush any pending meta updates before reading drafts
-    await Promise.resolve();
-    await Promise.resolve();
-    
-    // Re-read the latest meta after potential updates
-    await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure state propagation
-    
-    // Use directly passed drafts if available (from CreateEventDialogWrapper)
-    let latestDrafts: Array<Pick<TimeslotData, 'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'>>;
-    
-    // Get drafts directly from the dialog ref instead of relying on state timing
+    // Get drafts directly from the dialog ref - much simpler!
     const dialogDrafts = createEventDialogRef.current?.getCurrentDrafts() || [];
     
-    if (directDrafts && directDrafts.length > 0) {
-      console.log('[handleCreateEvent] Using direct drafts:', directDrafts.length);
-      latestDrafts = directDrafts;
-    } else {
-      // Use dialog drafts first, then meta drafts, then pending drafts
-      console.log('[handleCreateEvent] Checking drafts sources:', {
-        dialogDraftsCount: dialogDrafts.length,
-        metaDraftsCount: Array.isArray((createMeta as any)?.timeSlotsDrafts) ? (createMeta as any).timeSlotsDrafts.length : 0,
-        pendingDraftsCount: (pendingSlotDrafts || []).length
-      });
-      
-      // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
-      // Prefer non-empty drafts from dialog ref; else from meta; else fallback to pendingSlotDrafts
-      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
-        ? ((createMeta as any)?.timeSlotsDrafts as any[])
-        : [];
-      latestDrafts = (dialogDrafts.length ? dialogDrafts : (metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []))) as Array<
-        Pick<
-          TimeslotData,
-          'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
-        >
-      >;
-    }
-
-    // Debug logging for manual mode - use ref for latest values
+    // Use direct drafts if provided, otherwise use dialog drafts
+    const latestDrafts = directDrafts?.length ? directDrafts : dialogDrafts;
+    
+    // Simple mode detection
     const currentMeta = createMetaRef.current;
     const isPresetMode = (currentMeta as any)?.method === 'preset';
     const hasPresetSelected = !!(currentMeta as any)?.presetId;
     const isManualMode = (currentMeta as any)?.method === 'manual';
-    
-    // Get metaDrafts for logging (even if we use direct drafts) - use ref
-    const metaDrafts = Array.isArray((currentMeta as any)?.timeSlotsDrafts)
-      ? ((currentMeta as any)?.timeSlotsDrafts as any[])
-      : [];
     
     console.log('[handleCreateEvent] Mode detection:', { 
       isPresetMode, 
       hasPresetSelected, 
       isManualMode, 
       method: (currentMeta as any)?.method,
-      usedDirectDrafts: !!(directDrafts && directDrafts.length > 0),
-      directDraftsCount: directDrafts?.length || 0,
-      metaDraftsCount: metaDrafts.length,
-      pendingDraftsCount: (pendingSlotDrafts || []).length,
-      latestDraftsCount: latestDrafts.length,
-      createMeta: {
-        method: (currentMeta as any)?.method,
-        hasTimeSlotsDrafts: !!(currentMeta as any)?.timeSlotsDrafts,
-        timeSlotsDraftsLength: Array.isArray((currentMeta as any)?.timeSlotsDrafts) ? (currentMeta as any).timeSlotsDrafts.length : 0,
-      }
+      latestDraftsCount: latestDrafts.length
     });
-    
-    // Log the actual drafts content for debugging
-    if (latestDrafts.length > 0) {
-      console.log('[handleCreateEvent] Latest drafts content:', latestDrafts.map((d, i) => ({
-        index: i,
-        startDate: d.startDate,
-        endDate: d.endDate,
-        timeslotDate: d.timeslotDate,
-        salleIds: d.salleIds?.length || 0,
-        classIds: d.classIds?.length || 0,
-      })));
-    }
     
     if (!copiedEventId && !(isPresetMode && hasPresetSelected) && !isManualMode && (!latestDrafts || latestDrafts.length === 0)) {
       return;
@@ -716,9 +662,7 @@ function CalendrierContent() {
       title:
         createEventForm.title && createEventForm.title.trim().length > 0
           ? createEventForm.title.trim()
-          : eventToCopy?.title
-            ? `Copie de ${eventToCopy.title}`
-            : `Événement ${Date.now()}`,
+          : '', // Always leave empty if user didn't provide a title - API will handle ID-based naming
       discipline: (createEventForm.discipline === 'chimie' || createEventForm.discipline === 'physique')
         ? createEventForm.discipline
         : ((eventToCopy?.discipline as any) === 'chimie' || (eventToCopy?.discipline as any) === 'physique')
@@ -904,12 +848,14 @@ function CalendrierContent() {
               let startDate, endDate, timeslotDate;
               
               if (creneau.startDate && creneau.endDate) {
-                // Direct ISO strings
-                const start = new Date(creneau.startDate);
-                const end = new Date(creneau.endDate);
-                startDate = toLocal(start);
-                endDate = toLocal(end);
-                timeslotDate = timeslotDay(start);
+                // Direct ISO strings - parse without timezone conversion
+                const start = parseAsLocalTime(creneau.startDate);
+                const end = parseAsLocalTime(creneau.endDate);
+                if (start && end) { // Only process if dates are valid
+                  startDate = toLocal(start);
+                  endDate = toLocal(end);
+                  timeslotDate = timeslotDay(start);
+                }
               } else if (creneau.date && creneau.startTime && creneau.endTime) {
                 // Date + time strings
                 const baseDate = new Date(creneau.date);
@@ -946,12 +892,7 @@ function CalendrierContent() {
       (!proposalSlots || proposalSlots.length === 0) &&
       isManualMode
     ) {
-      console.log('[handleCreateEvent] Manual mode - checking for drafts in pendingSlotDrafts:', pendingSlotDrafts?.length);
-      // In manual mode, prioritize pendingSlotDrafts as they might be more up-to-date than meta drafts
-      if (pendingSlotDrafts && pendingSlotDrafts.length > 0) {
-        proposalSlots = pendingSlotDrafts;
-        console.log('[handleCreateEvent] Using pendingSlotDrafts for manual mode:', proposalSlots.length);
-      }
+      // Logic removed - now using latestDrafts from dialog ref directly
     }
     
     // If still no slots but copying from an event with slots, derive from it
@@ -975,9 +916,11 @@ function CalendrierContent() {
             d.getUTCMilliseconds(),
           );
         proposalSlots = ((eventToCopy as any).timeslots || []).map((s: any) => {
-          // Normalize to local wall-time strings "YYYY-MM-DDTHH:MM:SS"
-          const start = s.startDate ? asLocalLiteral(new Date(s.startDate)) : null;
-          const end = s.endDate ? asLocalLiteral(new Date(s.endDate)) : null;
+          // Normalize to local wall-time strings "YYYY-MM-DDTHH:MM:SS" - without timezone conversion
+          const startDate = parseAsLocalTime(s.startDate);
+          const endDate = parseAsLocalTime(s.endDate);
+          const start = startDate ? asLocalLiteral(startDate) : null;
+          const end = endDate ? asLocalLiteral(endDate) : null;
           const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
           const toLocal = (dt: Date) =>
             `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
@@ -986,8 +929,8 @@ function CalendrierContent() {
           const endStr = end ? toLocal(end) : undefined;
           const dayStr = s.timeslotDate
             ? (() => {
-                const d = new Date(s.timeslotDate);
-                return isNaN(d.getTime()) ? undefined : timeslotDay(asLocalLiteral(d));
+                const timeslotDateObj = parseAsLocalTime(s.timeslotDate);
+                return timeslotDateObj && !isNaN(timeslotDateObj.getTime()) ? timeslotDay(asLocalLiteral(timeslotDateObj)) : undefined;
               })()
             : start
               ? timeslotDay(start)
@@ -1059,7 +1002,6 @@ function CalendrierContent() {
 
     // Note: createMeta (classes/materials/chemicals/uploads) are now sent to the API endpoint
     // Reset dialog state only after success
-    setPendingSlotDrafts([]);
     setCreateMeta({ classes: [], materials: [], chemicals: [], uploads: [] });
     resetCreateEventDialogCache();
     setCreateDialogOpen(false);
@@ -1070,7 +1012,6 @@ function CalendrierContent() {
     createEventForm,
     createMeta,
     eventToCopy,
-    pendingSlotDrafts,
     proposeTimeslots,
     showSnackbar,
     createType,
@@ -1671,7 +1612,7 @@ function CalendrierContent() {
           open={createDialogOpen}
           onClose={handleCreateDialogClose}
           fullWidth
-          maxWidth="lg"
+          maxWidth="md"
         >
           <CreateEventDialog
             ref={createEventDialogRef}
@@ -1680,9 +1621,7 @@ function CalendrierContent() {
             onChange={setCreateEventForm}
             valueMeta={createMeta}
             onMetaChange={(meta: any) => {
-              // Handle meta updates and capture timeslot drafts
-              console.log('Dialog: Meta updated:', meta);
-              // Update both state and ref for synchronous access
+              // Update meta for method, classes, materials, etc. (not timeslots)
               setCreateMeta(meta);
               createMetaRef.current = meta;
             }}

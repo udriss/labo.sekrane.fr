@@ -219,13 +219,13 @@ export async function POST(req: NextRequest) {
 
     // no debug logs in production
 
-    // Create event with provided title or generate one
+    // Create event with provided title or temporary placeholder
     const providedTitle = (validatedData.title || '').trim();
-    const finalTitle = providedTitle || `Événement ID ${Date.now()}`;
+    const tempTitle = providedTitle || `TEMP_${Date.now()}`; // Temporary placeholder
 
     const inferredType =
       validatedData.type ||
-      (finalTitle.toLowerCase().includes('labor')
+      (tempTitle.toLowerCase().includes('labor')
         ? validatedData.discipline === 'physique'
           ? 'LABORANTIN_PHYSIQUE'
           : 'LABORANTIN_CHIMIE'
@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
 
     const event = await prisma.evenement.create({
       data: {
-        title: finalTitle,
+        title: tempTitle,
         discipline: validatedData.discipline,
         type: inferredType,
         notes: validatedData.notes,
