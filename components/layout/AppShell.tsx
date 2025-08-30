@@ -9,6 +9,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { usePathname } from 'next/navigation';
 import NavbarLIMS from '@/components/layout/NavbarLIMS';
 import SidebarLIMS from '@/components/layout/SidebarLIMS';
+import Footer from '@/components/layout/Footer';
 import { useImpersonation } from '@/lib/contexts/ImpersonationContext';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { Button } from '@mui/material';
@@ -16,6 +17,7 @@ import { Button } from '@mui/material';
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [maintenance, setMaintenance] = useState(false);
+  const [brandName, setBrandName] = useState('');
   const NAVBAR_HEIGHT = 64;
   const theme = useTheme();
   const pathname = usePathname();
@@ -37,7 +39,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/public/settings', { cache: 'no-store' });
         const json = await res.json().catch(() => ({}));
-        if (!stop) setMaintenance(!!json.maintenanceMode);
+        if (!stop) {
+          setMaintenance(!!json.maintenanceMode);
+          setBrandName(json.NOM_ETABLISSEMENT || json.brandingName || '');
+        }
       } catch {
         if (!stop) setMaintenance(false);
       }
@@ -90,9 +95,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   } as const;
 
   const primaryColor =
-    theme.palette.mode === 'light' ? theme.palette.primary.light : theme.palette.primary.dark;
+    theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.primary.light;
   const secondaryColor =
-    theme.palette.mode === 'light' ? theme.palette.secondary.light : theme.palette.secondary.dark;
+    theme.palette.mode === 'light' ? theme.palette.secondary.dark : theme.palette.secondary.light;
   const primaryTransparent = alpha(primaryColor, 0.12);
   const secondaryTransparent = alpha(secondaryColor, 0.08);
 
@@ -105,6 +110,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     flexDirection: 'column',
     mx: 'auto',
     height: '100%',
+    mb: 4,
   } as const;
 
   return (
@@ -196,6 +202,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Alert>
           )}
           <Box sx={innerPanelStyles}>{children}</Box>
+          <Footer brandName={brandName} />
         </Box>
       </Box>
     </>

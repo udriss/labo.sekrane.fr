@@ -41,6 +41,7 @@ import {
   GitHub,
   Code,
   CheckCircle,
+  Psychology,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import DocsHeader from '@components/docs/DocsHeader';
@@ -871,7 +872,7 @@ const innerPanelStyles = {
           SGIL v2.0 - Laboratory Information Management System
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          Développé avec ❤️ pour simplifier la gestion des laboratoires scolaires
+          Développé avec <Psychology color="primary" sx={{ fontSize: 24}} /> pour simplifier la gestion des laboratoires scolaires
         </Typography>
       </Box>
     </Container>
