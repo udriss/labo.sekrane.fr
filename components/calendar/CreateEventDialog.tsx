@@ -801,20 +801,22 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
         const r = await fetch("/api/classes");
         if (r.ok) {
           const d = await r.json();
-          const custom: any[] = (d?.custom || []).map((c: any) => ({
+          console.log('[CreateEventDialog] Classes API response:', d); // Debug log
+          const custom: any[] = (d?.customClasses || []).map((c: any) => ({
             id: c.id,
             name: c.name,
             system: false,
             isCustom: true,
             group: c.group || "",
           }));
-          const predefined: any[] = (d?.classes || []).map((c: any) => ({
+          const predefined: any[] = (d?.predefinedClasses || []).map((c: any) => ({
             id: c.id,
             name: c.name,
             system: true,
             isCustom: false,
             group: c.group || "",
           }));
+          console.log('[CreateEventDialog] Available classes:', [...custom, ...predefined]); // Debug log
           setAvailableClasses([...custom, ...predefined]);
         }
       } catch {
