@@ -5,6 +5,8 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useImperativeHandle,
+  forwardRef,
 } from "react";
 import {
   Alert,
@@ -98,15 +100,11 @@ export function resetCreateEventDialogCache() {
   createEventDialogCache = {} as any;
 }
 
-export default function CreateEventDialog({
-  initial,
-  onChange,
-  valueMeta,
-  onMetaChange,
-  createType = "tp",
-  onEventCreated,
-  copiedEventId,
-}: {
+export interface CreateEventDialogRef {
+  getCurrentDrafts: () => any[];
+}
+
+const CreateEventDialog = forwardRef<CreateEventDialogRef, {
   initial?: Partial<CreateEventForm>;
   onChange: (data: CreateEventForm) => void;
   valueMeta?: CreateEventMeta;
@@ -114,7 +112,17 @@ export default function CreateEventDialog({
   createType?: "tp" | "laborantin";
   onEventCreated?: (eventId: number) => void;
   copiedEventId?: number | null;
-}) {
+  onSubmit?: (drafts: any[]) => void;
+}>(function CreateEventDialog({
+  initial,
+  onChange,
+  valueMeta,
+  onMetaChange,
+  createType = "tp",
+  onEventCreated,
+  copiedEventId,
+  onSubmit,
+}, ref) {
   const [form, setForm] = useState<CreateEventForm>(
     () =>
       createEventDialogCache.form || {
@@ -156,6 +164,14 @@ export default function CreateEventDialog({
 
   // État pour gérer l'événement ajouté (pour upload des fichiers)
   const [createdEventId, setCreatedEventId] = useState<number | null>(null);
+
+  // Reference to store the latest timeSlotsDrafts for external access
+  const timeSlotsDraftsRef = useRef<any[]>([]);
+
+  // Expose API via ref
+  useImperativeHandle(ref, () => ({
+    getCurrentDrafts: () => timeSlotsDraftsRef.current
+  }), []);
 
   // Function to upload files to a specific event ID (called after event creation)
   const uploadFilesToEvent = useCallback(
@@ -750,6 +766,22 @@ export default function CreateEventDialog({
           classIds: s.classIds,
         } as any;
       });
+    console.log('[CreateEventDialog] Updating timeSlotsDrafts:', {
+      timeSlotsCount: timeSlots.length,
+      validSlotsCount: timeSlots.filter((s) => s.date && s.startTime && s.endTime).length,
+      draftsCount: drafts.length,
+      currentMethod: (valueMeta as any)?.method,
+      drafts: drafts.map((d, i) => ({
+        index: i,
+        startDate: d.startDate,
+        endDate: d.endDate,
+        timeslotDate: d.timeslotDate
+      }))
+    });
+    
+    // Update the ref for external access
+    timeSlotsDraftsRef.current = drafts;
+    
     onMetaChange?.({ ...(valueMeta || {}), timeSlotsDrafts: drafts } as any);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeSlots]);
@@ -2258,4 +2290,6 @@ export default function CreateEventDialog({
       )}
     </DialogContent>
   );
-}
+});
+
+export default CreateEventDialog;

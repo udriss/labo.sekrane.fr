@@ -14,7 +14,8 @@ import { EntityNamesProvider } from '@/components/providers/EntityNamesProvider'
 import CalendarTabs, { TabPanel } from '@/components/calendar/CalendarTabs';
 import CalendarNavigation from '@/components/calendar/CalendarNavigation';
 import EventDetailsDialog from '@/components/calendar/EventDetailsDialog';
-import CreateEventDialogWrapper from '@/components/calendar/CreateEventDialogWrapper';
+import CreateEventDialog, { CreateEventDialogRef } from '@/components/calendar/CreateEventDialog';
+import { Dialog, DialogActions, Button } from '@mui/material';
 import { resetCreateEventDialogCache } from '@/components/calendar/CreateEventDialog';
 import EditEventDialogWrapper from '@/components/calendar/EditEventDialogWrapper';
 import RoleTester, { RoleTestConfig } from '@/components/calendar/RoleTester';
@@ -85,6 +86,11 @@ function CalendrierContent() {
     chemicals: [],
     uploads: [],
   });
+  // Add a ref for synchronous access to the latest createMeta
+  const createMetaRef = useRef<CreateEventMeta>(createMeta);
+  
+  // Reference to the CreateEventDialog to access drafts directly
+  const createEventDialogRef = useRef<CreateEventDialogRef>(null);
   const [weeklyRefDate, setWeeklyRefDate] = useState<Date>(() => {
     const d = new Date();
     // set to Monday of current week
@@ -588,43 +594,74 @@ function CalendrierContent() {
   };
 
   // Handler pour l'ajout d'événement
-  const handleCreateEvent = useCallback(async () => {
+  const handleCreateEvent = useCallback(async (directDrafts?: any[]) => {
     // Validation: vérifier qu'il y a une discipline et au moins un créneau
     if (!createEventForm.discipline) {
       return;
     }
 
-    // Give React a microtask to flush any pending meta updates before reading drafts
+    // Give React multiple microtasks to flush any pending meta updates before reading drafts
     await Promise.resolve();
-    // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
-    // Prefer non-empty drafts from meta; else fallback to pendingSlotDrafts
-    const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
-      ? ((createMeta as any)?.timeSlotsDrafts as any[])
-      : [];
-    const latestDrafts = (metaDrafts.length ? metaDrafts : (pendingSlotDrafts || [])) as Array<
-      Pick<
-        TimeslotData,
-        'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
-      >
-    >;
+    await Promise.resolve();
+    
+    // Re-read the latest meta after potential updates
+    await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to ensure state propagation
+    
+    // Use directly passed drafts if available (from CreateEventDialogWrapper)
+    let latestDrafts: Array<Pick<TimeslotData, 'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'>>;
+    
+    // Get drafts directly from the dialog ref instead of relying on state timing
+    const dialogDrafts = createEventDialogRef.current?.getCurrentDrafts() || [];
+    
+    if (directDrafts && directDrafts.length > 0) {
+      console.log('[handleCreateEvent] Using direct drafts:', directDrafts.length);
+      latestDrafts = directDrafts;
+    } else {
+      // Use dialog drafts first, then meta drafts, then pending drafts
+      console.log('[handleCreateEvent] Checking drafts sources:', {
+        dialogDraftsCount: dialogDrafts.length,
+        metaDraftsCount: Array.isArray((createMeta as any)?.timeSlotsDrafts) ? (createMeta as any).timeSlotsDrafts.length : 0,
+        pendingDraftsCount: (pendingSlotDrafts || []).length
+      });
+      
+      // Utiliser la source la plus fraîche pour les drafts (évite une condition de course au 1er envoi)
+      // Prefer non-empty drafts from dialog ref; else from meta; else fallback to pendingSlotDrafts
+      const metaDrafts = Array.isArray((createMeta as any)?.timeSlotsDrafts)
+        ? ((createMeta as any)?.timeSlotsDrafts as any[])
+        : [];
+      latestDrafts = (dialogDrafts.length ? dialogDrafts : (metaDrafts.length ? metaDrafts : (pendingSlotDrafts || []))) as Array<
+        Pick<
+          TimeslotData,
+          'startDate' | 'endDate' | 'timeslotDate' | 'proposedNotes' | 'salleIds' | 'classIds'
+        >
+      >;
+    }
 
-    // Debug logging for manual mode
-    const isPresetMode = (createMeta as any)?.method === 'preset';
-    const hasPresetSelected = !!(createMeta as any)?.presetId;
-    const isManualMode = (createMeta as any)?.method === 'manual';
+    // Debug logging for manual mode - use ref for latest values
+    const currentMeta = createMetaRef.current;
+    const isPresetMode = (currentMeta as any)?.method === 'preset';
+    const hasPresetSelected = !!(currentMeta as any)?.presetId;
+    const isManualMode = (currentMeta as any)?.method === 'manual';
+    
+    // Get metaDrafts for logging (even if we use direct drafts) - use ref
+    const metaDrafts = Array.isArray((currentMeta as any)?.timeSlotsDrafts)
+      ? ((currentMeta as any)?.timeSlotsDrafts as any[])
+      : [];
     
     console.log('[handleCreateEvent] Mode detection:', { 
       isPresetMode, 
       hasPresetSelected, 
       isManualMode, 
-      method: (createMeta as any)?.method,
+      method: (currentMeta as any)?.method,
+      usedDirectDrafts: !!(directDrafts && directDrafts.length > 0),
+      directDraftsCount: directDrafts?.length || 0,
       metaDraftsCount: metaDrafts.length,
       pendingDraftsCount: (pendingSlotDrafts || []).length,
       latestDraftsCount: latestDrafts.length,
       createMeta: {
-        method: (createMeta as any)?.method,
-        hasTimeSlotsDrafts: !!(createMeta as any)?.timeSlotsDrafts,
-        timeSlotsDraftsLength: Array.isArray((createMeta as any)?.timeSlotsDrafts) ? (createMeta as any).timeSlotsDrafts.length : 0,
+        method: (currentMeta as any)?.method,
+        hasTimeSlotsDrafts: !!(currentMeta as any)?.timeSlotsDrafts,
+        timeSlotsDraftsLength: Array.isArray((currentMeta as any)?.timeSlotsDrafts) ? (currentMeta as any).timeSlotsDrafts.length : 0,
       }
     });
     
@@ -1630,21 +1667,40 @@ function CalendrierContent() {
         />
 
         {/* Dialogue d'ajout d'événement */}
-        <CreateEventDialogWrapper
+        <Dialog 
           open={createDialogOpen}
           onClose={handleCreateDialogClose}
-          createType={createType}
-          eventToCopy={eventToCopy}
-          copiedEventId={copiedEventId}
-          createEventForm={createEventForm}
-          onCreateEventFormChange={setCreateEventForm}
-          createMeta={createMeta}
-          onCreateMetaChange={setCreateMeta}
-          pendingSlotDrafts={pendingSlotDrafts}
-          onPendingSlotDraftsChange={setPendingSlotDrafts}
-          onCreateEvent={handleCreateEvent}
-          isCreateButtonDisabled={isCreateButtonDisabled}
-        />
+          fullWidth
+          maxWidth="lg"
+        >
+          <CreateEventDialog
+            ref={createEventDialogRef}
+            createType={createType}
+            initial={createEventForm}
+            onChange={setCreateEventForm}
+            valueMeta={createMeta}
+            onMetaChange={(meta: any) => {
+              // Handle meta updates and capture timeslot drafts
+              console.log('Dialog: Meta updated:', meta);
+              // Update both state and ref for synchronous access
+              setCreateMeta(meta);
+              createMetaRef.current = meta;
+            }}
+            copiedEventId={copiedEventId}
+          />
+          <DialogActions>
+            <Button onClick={handleCreateDialogClose}>
+              Annuler
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={() => handleCreateEvent()}
+              disabled={isCreateButtonDisabled}
+            >
+              Ajouter
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Dialogue d'édition d'événement */}
         <EditEventDialogWrapper
