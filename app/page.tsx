@@ -125,8 +125,8 @@ export default async function HomePage() {
                     className="card-icon"
                     sx={{
                       position: 'absolute',
-                      top: -8,
-                      right: -8,
+                      top: -25,
+                      right: -5,
                       color: 'primary.light',
                       opacity: 0.3,
                       fontSize: '4.5rem',

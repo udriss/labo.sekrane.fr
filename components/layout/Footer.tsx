@@ -178,7 +178,7 @@ export default function Footer({ brandName }: FooterProps) {
             gap: 1,
           }}
           >
-            <Copyright color="primary" sx={{ fontSize: 14, mt: 1 }} /> {currentYear} SGIL - Tous droits réservés
+            <Copyright color="primary" sx={{ fontSize: 14 }} /> {currentYear} SGIL - Tous droits réservés
           </Typography>
           <Stack
             direction="row"
