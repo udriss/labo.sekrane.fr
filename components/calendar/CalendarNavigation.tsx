@@ -226,7 +226,7 @@ export default function CalendarNavigation({
             },
           }}
         >
-          <Button
+          {/* <Button
             variant="outlined"
             size={isMobile ? 'medium' : 'small'}
             onClick={onPrevious}
@@ -249,7 +249,7 @@ export default function CalendarNavigation({
             sx={{ borderRadius: 2, minWidth: { xs: 'auto', md: 'auto' } }}
           >
             {isMobile ? nextLabel.split(' ')[0] : nextLabel} →
-          </Button>
+          </Button> */}
           {/* Date picker to jump directly to a date */}
           <Box sx={{ minWidth: 180, ml: { xs: 0, sm: 1 } }}>
             <FrenchDateOnly

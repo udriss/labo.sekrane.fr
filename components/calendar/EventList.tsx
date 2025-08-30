@@ -620,10 +620,9 @@ export default function EventList({
 
       setLocalEvents((prev) => prev.filter((event) => !idsToDelete.includes(event.id)));
 
-      if (onEventUpdate) {
-        idsToDelete.forEach((eventId) => onEventUpdate(eventId));
-      }
-
+      // Ne pas appeler onEventUpdate pour les événements supprimés car cela génère des 404
+      // L'état local a déjà été mis à jour avec setLocalEvents
+      
       setSelectedEvents(new Set());
       setSelectionMode(false);
     } catch (error) {

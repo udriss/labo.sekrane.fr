@@ -190,6 +190,7 @@ export async function GET(req: NextRequest) {
         updatedAt: formatLocalLiteral(d.updatedAt),
       })),
     }));
+    console.log('[events][GET] Mapped events:', JSON.stringify(mapped, null, 2));
     return NextResponse.json({ events: mapped });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
