@@ -71,7 +71,7 @@ export default async function HomePage() {
             </Typography>
           </Stack>
 
-          <Typography variant="body1" sx={{ maxWidth: 880, opacity: 0.9 }}>
+          <Typography variant="body1" sx={{ opacity: 0.9 }}>
             Plateforme unifiée pour piloter vos activités de laboratoire : stocks, équipements, réactifs, planification,
             documentation et traçabilité.
           </Typography>

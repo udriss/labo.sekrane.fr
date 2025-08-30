@@ -11,6 +11,7 @@ export type AppSettings = {
   brandingName: string;
   // Nom de l'établissement (affiché dans les emails, pied de page, etc.)
   NOM_ETABLISSEMENT?: string;
+  NOM_ETABLISSEMENT_COURT?: string;
   lockThreshold: number;
   lockWindowMinutes: number;
   lockDurationMinutes: number;
@@ -48,6 +49,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   timezone: 'Europe/Paris',
   brandingName: 'SGIL',
   NOM_ETABLISSEMENT: 'Paul VALÉRY — Paris 12e',
+  NOM_ETABLISSEMENT_COURT: 'P. VALÉRY — 12e',
   lockThreshold: 5,
   lockWindowMinutes: 15,
   lockDurationMinutes: 15,
@@ -82,6 +84,7 @@ const KEYS: (keyof AppSettings)[] = [
   'timezone',
   'brandingName',
   'NOM_ETABLISSEMENT',
+  'NOM_ETABLISSEMENT_COURT',
   'lockThreshold',
   'lockWindowMinutes',
   'lockDurationMinutes',

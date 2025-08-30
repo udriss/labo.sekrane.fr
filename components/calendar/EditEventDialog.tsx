@@ -19,6 +19,7 @@ import {
   Autocomplete,
   IconButton,
   Tooltip,
+  Divider,
 } from '@mui/material';
 
 import {
@@ -29,6 +30,12 @@ import {
   Delete as DeleteIcon,
   AttachFile as AttachFileIcon,
   Download as DownloadIcon,
+  ControlPointDuplicate,
+  HideSource,
+  GroupAdd,
+  GroupOff,
+  MeetingRoom,
+  NoMeetingRoom,
 } from '@mui/icons-material';
 import AddResourcesDialog, { AddResourcesDialogChange } from './AddResourcesDialog';
 import { FileUploadSection } from '@components/calendar/FileUploadSection';
@@ -155,6 +162,13 @@ const EditEventDialog = React.forwardRef<
   const eventDocuments = (event as any)?.documents;
   const [selectedPreset, setSelectedPreset] = useState<any>(null);
   const [docActionLoading, setDocActionLoading] = useState<string | null>(null);
+  
+  // State for showing resources step
+  const [showResources, setShowResources] = useState(false);
+  
+  // State for showing salles/classes section
+  const [showSallesClasses, setShowSallesClasses] = useState(false);
+  
   // Legacy custom matériel / réactifs state removed (managed inside AddResourcesDialog)
 
   // Data sources
@@ -788,6 +802,12 @@ const EditEventDialog = React.forwardRef<
         return null;
       })()}
       {(() => {
+        // Derived step indexes
+        const idxDescription = 0;
+        const idxTimeslots = 1;
+        const idxResources = 3;
+        const idxDocuments = 2;
+        
         const steps: GenericWizardStep[] = [
           /* 
           {
@@ -1015,7 +1035,7 @@ const EditEventDialog = React.forwardRef<
                   />
                   <Box display="flex" gap={1}>
                     <Button onClick={() => setActiveStep(0)}>Retour</Button>
-                    <Button variant="contained" onClick={() => setActiveStep(2)}>
+                    <Button variant="contained" onClick={() => setActiveStep(idxTimeslots)}>
                       Continuer
                     </Button>
                   </Box>
@@ -1030,17 +1050,27 @@ const EditEventDialog = React.forwardRef<
             valid: !!(editEventDialogCache as any).validation?.timeSlots,
             content: (
               <>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Ajustez les créneaux si nécessaire
-                </Typography>
+                </Typography> */}
                 <Box display="flex" flexDirection="column" gap={2}>
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      Créneaux horaires
-                    </Typography>
-                    <Button variant="outlined" size="small" onClick={addTimeSlot}>
-                      Ajouter un créneau
-                    </Button>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      mt: 2,
+                      flexDirection: { xs: "column", sm: "row" },
+                      width: "100%",
+                    }}
+                  >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={addTimeSlot}
+                        startIcon={<AddIcon />}
+                      >
+                        <Typography variant='overline'>Ajouter un créneau</Typography>
+                      </Button>
                   </Box>
                   {timeSlots.map((slot, index) => {
                     const isComplete = slot.date && slot.startTime && slot.endTime;
@@ -1169,6 +1199,7 @@ const EditEventDialog = React.forwardRef<
                           </Box>
                         </Box>
                         {/* Ligne 2 */}
+                        {showSallesClasses && (
                         <Box
                           mt={2}
                           display="grid"
@@ -1212,6 +1243,7 @@ const EditEventDialog = React.forwardRef<
                             />
                           </Box>
                         </Box>
+                        )}
                         {!slot.deleted &&
                           slot.date &&
                           slot.startTime &&
@@ -1242,11 +1274,109 @@ const EditEventDialog = React.forwardRef<
                     );
                   })}
                 </Box>
+                {/* Divider pour salles/classes */}
+                {!showSallesClasses && (
+                  <Box sx={{ position: "relative", my: 2 }}>
+                    <Divider />
+                      <Box>
+                        <Tooltip title="Afficher salles et classes">
+                      <IconButton
+                      size="medium"
+                        onClick={() => setShowSallesClasses(true)}
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "45%",
+                          transform: "translate(-45%, -50%)",
+                          bgcolor: "background.paper",
+                          border: "2px solid",
+                          borderColor: "divider",
+                          "&:hover": {
+                            bgcolor: "primary.light",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                      >
+                        <GroupAdd />
+                      </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Afficher salles et classes">
+                      <IconButton
+                        size="medium"
+                        onClick={() => setShowSallesClasses(true)}
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "55%",
+                          transform: "translate(-55%, -50%)",
+                          bgcolor: "background.paper",
+                          border: "2px solid",
+                          borderColor: "divider",
+                          "&:hover": {
+                            bgcolor: "primary.light",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                      >
+                        <MeetingRoom />
+                      </IconButton>
+                      </Tooltip>
+                      </Box>
+                  </Box>
+                )}
+                {showSallesClasses && (
+                  <Box sx={{ position: "relative", my: 2 }}>
+                    <Divider />
+                    
+                        <Tooltip title="Masquer salles et classes">
+                      <IconButton
+                      size="medium"
+                        onClick={() => setShowSallesClasses(false)}
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "45%",
+                          transform: "translate(-45%, -50%)",
+                          bgcolor: "background.paper",
+                          border: "2px solid",
+                          borderColor: "divider",
+                          "&:hover": {
+                            bgcolor: "primary.dark",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                      >
+                        <GroupOff />
+                      </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Masquer salles et classes">
+                      <IconButton
+                      size="medium"
+                        onClick={() => setShowSallesClasses(false)}
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "55%",
+                          transform: "translate(-55%, -50%)",
+                          bgcolor: "background.paper",
+                          border: "2px solid",
+                          borderColor: "divider",
+                          "&:hover": {
+                            bgcolor: "primary.dark",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                      >
+                        <NoMeetingRoom />
+                      </IconButton>
+                      </Tooltip>
+                  </Box>
+                )}
                 <Box display="flex" gap={1} mt={2}>
-                  <Button onClick={() => setActiveStep(1)}>Retour</Button>
+                  <Button onClick={() => setActiveStep(idxDescription)}>Retour</Button>
                   <Button
                     variant="contained"
-                    onClick={() => setActiveStep(3)}
+                    onClick={() => setActiveStep(showResources ? idxResources : idxDocuments)}
                     disabled={timeSlots.some(
                       (s) => !s.date || !s.startTime || !s.endTime || s.startTime! >= s.endTime!,
                     )}
@@ -1257,7 +1387,7 @@ const EditEventDialog = React.forwardRef<
               </>
             ),
           },
-          {
+          ...(showResources ? [{
             key: 'resources',
             label: 'Matériel & Réactifs',
             required: false,
@@ -1336,14 +1466,14 @@ const EditEventDialog = React.forwardRef<
                   }}
                 />
                 <Box display="flex" gap={1} mt={2}>
-                  <Button onClick={() => setActiveStep(2)}>Retour</Button>
-                  <Button variant="contained" onClick={() => setActiveStep(4)}>
+                  <Button onClick={() => setActiveStep(idxTimeslots)}>Retour</Button>
+                  <Button variant="contained" onClick={() => setActiveStep(idxDocuments)}>
                     Continuer
                   </Button>
                 </Box>
               </>
             ),
-          },
+          }] as GenericWizardStep[] : []),
           {
             key: 'documents',
             label: 'Documents',
@@ -1351,9 +1481,9 @@ const EditEventDialog = React.forwardRef<
             valid: (valueMeta?.uploads || []).length > 0,
             content: (
               <>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   Ajoutez des documents liés (protocoles, fiches de sécurité, etc.)
-                </Typography>
+                </Typography> */}
                 <FileUploadSection
                   files={selectedFiles}
                   onFilesChange={(files) => {
@@ -1443,7 +1573,7 @@ const EditEventDialog = React.forwardRef<
                   }}
                 />
                 {(valueMeta?.uploads || []).length > 0 && (
-                  <Stack sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: 400 }}>
+                  <Stack sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: 400, mt: 3 }}>
                     {(valueMeta?.uploads || []).map((u: any) => {
                       const fileUrl = typeof u === 'string' ? u : u.fileUrl;
                       const effectiveName = 
@@ -1503,6 +1633,7 @@ const EditEventDialog = React.forwardRef<
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
+                                maxWidth: 336,
                             },
                             }}
                             />
@@ -1568,8 +1699,8 @@ const EditEventDialog = React.forwardRef<
                   </Stack>
                 )}
                 <Box display="flex" gap={1} mt={2}>
-                  <Button onClick={() => setActiveStep(3)}>Retour</Button>
-                  <Button variant="contained" onClick={() => setActiveStep(5)}>
+                  <Button onClick={() => setActiveStep(showResources ? idxResources : idxTimeslots)}>Retour</Button>
+                  <Button variant="contained" onClick={() => setActiveStep(idxDocuments + 1)}>
                     Terminé
                   </Button>
                 </Box>
@@ -1651,13 +1782,67 @@ const EditEventDialog = React.forwardRef<
           }, */
         ];
         return (
-          <WizardStepper
-            orientation="vertical"
-            steps={steps}
-            activeStep={activeStep}
-            onStepChange={setActiveStep}
-            sx={{ '& .wizard-step-required-incomplete .MuiStepIcon-root': { color: 'orange' } }}
-          />
+          <>
+            <WizardStepper
+              orientation="vertical"
+              steps={steps}
+              activeStep={activeStep}
+              onStepChange={setActiveStep}
+              sx={{ '& .wizard-step-required-incomplete .MuiStepIcon-root': { color: 'orange' } }}
+            />
+            {/* Divider pour les ressources */}
+            {!showResources && (
+              <Box sx={{ position: "relative", my: 2 }}>
+                <Divider />
+                <Tooltip title="Afficher les ressources">
+                  <IconButton
+                    onClick={() => setShowResources(true)}
+                    color="primary"
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      bgcolor: "background.paper",
+                      border: "2px solid",
+                      borderColor: "divider",
+                      "&:hover": {
+                        bgcolor: "primary.dark",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    <ControlPointDuplicate />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+            {showResources && (
+              <Box sx={{ position: "relative", my: 2 }}>
+                <Divider />
+                <Tooltip title="Masquer les ressources">
+                  <IconButton
+                    onClick={() => setShowResources(false)}
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      bgcolor: "background.paper",
+                      border: "2px solid",
+                      borderColor: "divider",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                  >
+                    <HideSource />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+          </>
         );
       })()}
     </DialogContent>

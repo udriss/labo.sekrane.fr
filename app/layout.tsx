@@ -13,7 +13,7 @@ const getAppSettings = cache(loadAppSettings);
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getAppSettings();
-  const footerBrand = settings.NOM_ETABLISSEMENT || settings.brandingName || '';
+  const footerBrand = settings.NOM_ETABLISSEMENT_COURT || settings.brandingName || '';
   const brandSuffix = footerBrand ? ` • ${footerBrand}` : '';
 
   return {
@@ -82,7 +82,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getAppSettings();
   const footerBrand = settings.NOM_ETABLISSEMENT || settings.brandingName || '';
-  const brandSuffix = footerBrand ? ` - ${footerBrand}` : '';
+  const brandSuffixLong = footerBrand ? ` - ${footerBrand}` : '';
+  const brandSuffix = footerBrand ? ` • ${footerBrand}` : '';
 
   return (
     <html lang="fr">
@@ -95,9 +96,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Balises meta additionnelles pour le partage universel */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="SGIL" />
+        <meta name="apple-mobile-web-app-title" content={brandSuffixLong} />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="SGIL" />
+        <meta name="application-name" content={brandSuffix} />
 
         {/* Pour WhatsApp et autres messageries */}
         <meta property="og:description" content="Système complet de gestion de laboratoire scolaire : planification des séances, gestion du matériel, inventaire des réactifs chimiques, cahiers de TP et suivi des équipements." />

@@ -186,9 +186,6 @@ export default function Footer({ brandName }: FooterProps) {
             divider={<Divider orientation="vertical" flexItem />}
           >
             <Typography variant="caption" color="text.secondary">
-              Made with Next.js
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
               Material-UI
             </Typography>
             <Typography variant="caption" color="text.secondary">

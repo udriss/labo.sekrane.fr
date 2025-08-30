@@ -49,7 +49,9 @@ import {
   Event as EventIcon,
   Download as DownloadIcon,
   CloudUpload as CloudUploadIcon,
-  FolderCopy as FolderCopyIcon
+  FolderCopy as FolderCopyIcon,
+  ControlPointDuplicate,
+  HideSource,
 } from '@mui/icons-material';
 import MultiAssignDialog, { MultiAssignOption } from '@/components/shared/MultiAssignDialog';
 import { useEntityNames } from '@/components/providers/EntityNamesProvider';
@@ -153,6 +155,7 @@ export default function EventDetailsDialog({
   const [eventSalleIds, setEventSalleIds] = useState<number[]>([]);
   const [eventClassIds, setEventClassIds] = useState<number[]>([]);
   const [localTimeslots, setLocalTimeslots] = useState<any[]>([]);
+  const [showResources, setShowResources] = useState(false);
 
   // Reset sticky UI state when dialog opens/closes or event changes
   useEffect(() => {
@@ -1046,6 +1049,7 @@ export default function EventDetailsDialog({
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
+                                maxWidth: 336,
                             },
                             }}
                               />
@@ -1111,6 +1115,7 @@ export default function EventDetailsDialog({
                       display: 'flex',
                       justifyContent: 'center',
                       width: '100%',
+                      mt: 2,
                      }}>
                       <Button
                         size="small"
@@ -1179,12 +1184,68 @@ export default function EventDetailsDialog({
                 </Box>
               </Paper>
 
+              {/* Divider pour ressources */}
+              {!showResources && (localMateriels.length > 0 
+                || localCustomMats.length > 0 
+                || ((event.discipline === 'chimie' || event.discipline === 'Chimie') && (localReactifs.length > 0 || localCustomChems.length > 0))
+              ) && (
+                <Box sx={{ position: "relative", my: 2 }}>
+                  <Divider />
+                  <Tooltip title="Afficher les ressources">
+                    <IconButton
+                      onClick={() => setShowResources(true)}
+                      sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        bgcolor: "background.paper",
+                        border: "2px solid",
+                        borderColor: "divider",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                    >
+                      <ControlPointDuplicate />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+              {showResources && (localMateriels.length > 0 
+                || localCustomMats.length > 0 
+                || ((event.discipline === 'chimie' || event.discipline === 'Chimie') && (localReactifs.length > 0 || localCustomChems.length > 0))
+              ) && (
+                <Box sx={{ position: "relative", my: 2 }}>
+                  <Divider />
+                  <Tooltip title="Masquer les ressources">
+                    <IconButton
+                      onClick={() => setShowResources(false)}
+                      sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        bgcolor: "background.paper",
+                        border: "2px solid",
+                        borderColor: "divider",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                    >
+                      <HideSource />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
 
-                              {(localMateriels.length > 0 
-                  || localCustomMats.length > 0 
-                  || ((event.discipline === 'chimie' || event.discipline === 'Chimie') && (localReactifs.length > 0 || localCustomChems.length > 0))
-                ) 
-                  && (
+              {showResources && (localMateriels.length > 0 
+                || localCustomMats.length > 0 
+                || ((event.discipline === 'chimie' || event.discipline === 'Chimie') && (localReactifs.length > 0 || localCustomChems.length > 0))
+              ) && (
                 <TableContainer component={Paper} sx={{ mt: 2, maxWidth: 600, margin: '0 auto' }}>
                   <Table size="small" sx={{ minWidth: 300 }}>
                   <TableHead>
@@ -1484,20 +1545,25 @@ export default function EventDetailsDialog({
                   </TableBody>
                   </Table>
                 </TableContainer>
-                )}
-              {/* {canEdit && (
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+              )}
+
+              {/* Button to edit resources */}
+              {canEdit && (localMateriels.length > 0 || localCustomMats.length > 0 || 
+                ((event.discipline === 'chimie' || event.discipline === 'Chimie') && 
+                (localReactifs.length > 0 || localCustomChems.length > 0))) && (
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', width: '100%' }}>
                   <Button
                     size="small"
                     startIcon={<AddIcon />}
                     variant="outlined"
-                    color='inherit'
+                    color='primary'
                     onClick={() => setResourcesDialogOpen(true)}
                   >
-                    Matériel & réactifs inventaire
+                    Modifier matériel & réactifs
                   </Button>
                 </Box>
-              )} */}
+              )}
+
               {resourcesDialogOpen && event && (
                 <AddResourcesDialog
                   discipline={event.discipline === 'chimie' ? 'chimie' : 'physique'}

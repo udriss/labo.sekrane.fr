@@ -49,6 +49,7 @@ import {
   FrenchDateOnly,
   FrenchTimeOnly,
 } from "@/components/shared/FrenchDatePicker";
+import theme from "@/lib/theme";
 
 export type CreateEventForm = {
   title: string;
@@ -1699,7 +1700,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.dark",
+                      bgcolor: "primary.light",
                       borderColor: "primary.main",
                     },
                   }}
@@ -1720,7 +1721,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.dark",
+                      bgcolor: "primary.light",
                       borderColor: "primary.main",
                     },
                   }}
@@ -1845,9 +1846,9 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
       valid: (valueMeta?.uploads || []).length > 0,
       content: (
         <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             Ajoutez des documents liés (protocoles, fiches de sécurité, etc.)
-          </Typography>
+          </Typography> */}
           <Card
             sx={{
               p: 3,
@@ -2247,25 +2248,20 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
         }}
       />
       {/* Debug: isLaborantin={isLaborantin}, showResources={showResources}, activeStep={activeStep}, idxDocuments={idxDocuments} */}
-      {/* Temporarily force display for debugging */}
       {!isLaborantin && !showResources && (
         <Box sx={{ position: "relative", my: 2 }}>
           <Divider />
           <Tooltip title="Afficher les ressources">
             <IconButton
               onClick={() => setShowResources(true)}
+              color="primary"
               sx={{
                 position: "absolute",
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                bgcolor: "background.paper",
                 border: "2px solid",
                 borderColor: "divider",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  borderColor: "primary.main",
-                },
               }}
             >
               <ControlPointDuplicate />
