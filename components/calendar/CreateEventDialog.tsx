@@ -24,6 +24,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  alpha as alphaMUI,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -50,6 +51,7 @@ import {
   FrenchTimeOnly,
 } from "@/components/shared/FrenchDatePicker";
 import theme from "@/lib/theme";
+import { alpha } from "framer-motion";
 
 export type CreateEventForm = {
   title: string;
@@ -1684,10 +1686,10 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
           </Box>
           {/* Divider pour salles/classes */}
           {!showSallesClasses && (
-            <Box sx={{ position: "relative", my: 2 }}>
+            <Box sx={{ position: "relative", my: 6 }}>
               <Divider />
                 <Box>
-                  <Tooltip title="Afficher salles et classes">
+                <Tooltip title="Afficher salles et classes">
                 <IconButton
                 size="medium"
                   onClick={() => setShowSallesClasses(true)}
@@ -1700,7 +1702,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.light",
+                      bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                       borderColor: "primary.main",
                     },
                   }}
@@ -1721,7 +1723,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.light",
+                      bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                       borderColor: "primary.main",
                     },
                   }}
@@ -1734,7 +1736,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
             </Box>
           )}
           {showSallesClasses && (
-            <Box sx={{ position: "relative", my: 2 }}>
+            <Box sx={{ position: "relative", my: 6 }}>
               <Divider />
               
                   <Tooltip title="Masquer salles et classes">
@@ -1750,7 +1752,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.dark",
+                      bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                       borderColor: "primary.main",
                     },
                   }}
@@ -1771,7 +1773,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                     border: "2px solid",
                     borderColor: "divider",
                     "&:hover": {
-                      bgcolor: "primary.dark",
+                      bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                       borderColor: "primary.main",
                     },
                   }}
@@ -1821,7 +1823,6 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
               sx={{
                 display: "flex",
                 justifyContent: "flex-end",
-                mt: 2,
                 flexDirection: { xs: "column", sm: "row" },
                 width: "100%",
               }}
@@ -2249,7 +2250,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
       />
       {/* Debug: isLaborantin={isLaborantin}, showResources={showResources}, activeStep={activeStep}, idxDocuments={idxDocuments} */}
       {!isLaborantin && !showResources && (
-        <Box sx={{ position: "relative", my: 2 }}>
+        <Box sx={{ position: "relative", my: 6 }}>
           <Divider />
           <Tooltip title="Afficher les ressources">
             <IconButton
@@ -2260,8 +2261,13 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
+                bgcolor: "background.paper",
                 border: "2px solid",
                 borderColor: "divider",
+                "&:hover": {
+                  bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
+                  borderColor: "primary.main",
+                },
               }}
             >
               <ControlPointDuplicate />
@@ -2270,7 +2276,7 @@ const CreateEventDialog = forwardRef<CreateEventDialogRef, {
         </Box>
       )}
       {!isLaborantin && showResources && (
-        <Box sx={{ position: "relative", my: 2 }}>
+        <Box sx={{ position: "relative", my: 6 }}>
           <Divider />
           <Tooltip title="Masquer les ressources">
             <IconButton

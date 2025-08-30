@@ -33,6 +33,7 @@ import {
   Collapse,
   useMediaQuery,
   useTheme,
+  alpha as alphaMUI,
 } from '@mui/material';
 import {
   Cancel as CancelIcon,
@@ -1203,7 +1204,7 @@ export default function EventDetailsDialog({
                         border: "2px solid",
                         borderColor: "divider",
                         "&:hover": {
-                          bgcolor: "action.hover",
+                          bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                           borderColor: "primary.main",
                         },
                       }}

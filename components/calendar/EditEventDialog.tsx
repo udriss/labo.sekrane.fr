@@ -20,6 +20,7 @@ import {
   IconButton,
   Tooltip,
   Divider,
+  alpha as alphaMUI,
 } from '@mui/material';
 
 import {
@@ -531,8 +532,8 @@ const EditEventDialog = React.forwardRef<
       "Méthode d'ajout",
       'Description & remarques',
       'Planification : créneaux, classes & salles',
-      'Matériel & Réactifs',
       'Documents',
+      'Matériel & Réactifs',
     ],
     [],
   );
@@ -1054,24 +1055,6 @@ const EditEventDialog = React.forwardRef<
                   Ajustez les créneaux si nécessaire
                 </Typography> */}
                 <Box display="flex" flexDirection="column" gap={2}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      mt: 2,
-                      flexDirection: { xs: "column", sm: "row" },
-                      width: "100%",
-                    }}
-                  >
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={addTimeSlot}
-                        startIcon={<AddIcon />}
-                      >
-                        <Typography variant='overline'>Ajouter un créneau</Typography>
-                      </Button>
-                  </Box>
                   {timeSlots.map((slot, index) => {
                     const isComplete = slot.date && slot.startTime && slot.endTime;
                     const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
@@ -1276,7 +1259,7 @@ const EditEventDialog = React.forwardRef<
                 </Box>
                 {/* Divider pour salles/classes */}
                 {!showSallesClasses && (
-                  <Box sx={{ position: "relative", my: 2 }}>
+                  <Box sx={{ position: "relative", my: 6 }}>
                     <Divider />
                       <Box>
                         <Tooltip title="Afficher salles et classes">
@@ -1292,7 +1275,7 @@ const EditEventDialog = React.forwardRef<
                           border: "2px solid",
                           borderColor: "divider",
                           "&:hover": {
-                            bgcolor: "primary.light",
+                            bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                             borderColor: "primary.main",
                           },
                         }}
@@ -1313,7 +1296,7 @@ const EditEventDialog = React.forwardRef<
                           border: "2px solid",
                           borderColor: "divider",
                           "&:hover": {
-                            bgcolor: "primary.light",
+                            bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                             borderColor: "primary.main",
                           },
                         }}
@@ -1325,7 +1308,7 @@ const EditEventDialog = React.forwardRef<
                   </Box>
                 )}
                 {showSallesClasses && (
-                  <Box sx={{ position: "relative", my: 2 }}>
+                  <Box sx={{ position: "relative", my: 6 }}>
                     <Divider />
                     
                         <Tooltip title="Masquer salles et classes">
@@ -1341,7 +1324,7 @@ const EditEventDialog = React.forwardRef<
                           border: "2px solid",
                           borderColor: "divider",
                           "&:hover": {
-                            bgcolor: "primary.dark",
+                            bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                             borderColor: "primary.main",
                           },
                         }}
@@ -1362,7 +1345,7 @@ const EditEventDialog = React.forwardRef<
                           border: "2px solid",
                           borderColor: "divider",
                           "&:hover": {
-                            bgcolor: "primary.dark",
+                            bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                             borderColor: "primary.main",
                           },
                         }}
@@ -1372,7 +1355,25 @@ const EditEventDialog = React.forwardRef<
                       </Tooltip>
                   </Box>
                 )}
-                <Box display="flex" gap={1} mt={2}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    mt: 3,
+                    justifyContent: "space-between",
+                    flexDirection: { xs: "column", sm: "row" },
+      
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-start",
+                      flexDirection: { sm: "column", md: "row" },
+                      mt: 2,
+                      width: "100%",
+                    }}
+                  >
                   <Button onClick={() => setActiveStep(idxDescription)}>Retour</Button>
                   <Button
                     variant="contained"
@@ -1383,97 +1384,29 @@ const EditEventDialog = React.forwardRef<
                   >
                     Continuer
                   </Button>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      flexDirection: { xs: "column", sm: "row" },
+                      width: "100%",
+                    }}
+                  >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={addTimeSlot}
+                        startIcon={<AddIcon />}
+                      >
+                        <Typography variant='overline'>Ajouter un créneau</Typography>
+                      </Button>
+                  </Box>
+                  </Box>
                 </Box>
               </>
             ),
           },
-          ...(showResources ? [{
-            key: 'resources',
-            label: 'Matériel & Réactifs',
-            required: false,
-            valid:
-              (valueMeta?.materialsDetailed || []).length +
-                (valueMeta?.customMaterials || []).length +
-                (valueMeta?.chemicalsDetailed || []).length +
-                (valueMeta?.customChemicals || []).length >
-              0,
-            content: (
-              <>
-                <AddResourcesDialog
-                  mode="embedded"
-                  discipline={form.discipline}
-                  presetMaterials={(valueMeta?.materialsDetailed || []) as any}
-                  customMaterials={(valueMeta?.customMaterials || []) as any}
-                  presetChemicals={(valueMeta?.chemicalsDetailed || []) as any}
-                  customChemicals={(valueMeta?.customChemicals || []) as any}
-                  onChange={(data: AddResourcesDialogChange) => {
-                    const toNumber = (v: any, def: number) => {
-                      if (v === '' || v === null || v === undefined) return def;
-                      const n = Number(v);
-                      return Number.isFinite(n) ? n : def;
-                    };
-                    const clampMin = (v: number, min: number) => (v < min ? min : v);
-                    const sanitizedPresetMaterials = data.presetMaterials
-                      .filter((m) => m.name && m.name.trim())
-                      .map((m) => ({
-                        ...m,
-                        name: m.name.trim(),
-                        quantity: clampMin(toNumber(m.quantity, 1), 1),
-                        isCustom: false,
-                      }));
-                    const sanitizedCustomMaterials = data.customMaterials
-                      .filter((m) => m.name && m.name.trim())
-                      .map((m) => ({
-                        ...m,
-                        name: m.name.trim(),
-                        quantity: clampMin(toNumber(m.quantity, 1), 1),
-                      }));
-                    const sanitizedPresetChemicals = data.presetChemicals
-                      .filter((c) => c.name && c.name.trim())
-                      .map((c) => ({
-                        ...c,
-                        name: c.name.trim(),
-                        requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
-                        unit: (c.unit && c.unit.trim()) || 'g',
-                        isCustom: false,
-                      }));
-                    const sanitizedCustomChemicals = data.customChemicals
-                      .filter((c) => c.name && c.name.trim())
-                      .map((c) => ({
-                        ...c,
-                        name: c.name.trim(),
-                        requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
-                        unit: (c.unit && c.unit.trim()) || 'g',
-                      }));
-                    updateMeta({
-                      materialsDetailed: sanitizedPresetMaterials,
-                      customMaterials: sanitizedCustomMaterials,
-                      chemicalsDetailed: sanitizedPresetChemicals,
-                      customChemicals: sanitizedCustomChemicals,
-                      materials: Array.from(
-                        new Set([
-                          ...sanitizedPresetMaterials.map((m) => m.name),
-                          ...sanitizedCustomMaterials.map((m) => m.name),
-                        ]),
-                      ),
-                      chemicals: Array.from(
-                        new Set([
-                          ...sanitizedPresetChemicals.map((c) => c.name),
-                          ...sanitizedCustomChemicals.map((c) => c.name),
-                        ]),
-                      ),
-                    });
-                  }}
-                />
-                <Box display="flex" gap={1} mt={2}>
-                  <Button onClick={() => setActiveStep(idxTimeslots)}>Retour</Button>
-                  <Button variant="contained" onClick={() => setActiveStep(idxDocuments)}>
-                    Continuer
-                  </Button>
-                </Box>
-              </>
-            ),
-          }] as GenericWizardStep[] : []),
           {
             key: 'documents',
             label: 'Documents',
@@ -1707,6 +1640,93 @@ const EditEventDialog = React.forwardRef<
               </>
             ),
           },
+          ...(showResources ? [{
+            key: 'resources',
+            label: 'Matériel & Réactifs',
+            required: false,
+            valid:
+              (valueMeta?.materialsDetailed || []).length +
+                (valueMeta?.customMaterials || []).length +
+                (valueMeta?.chemicalsDetailed || []).length +
+                (valueMeta?.customChemicals || []).length >
+              0,
+            content: (
+              <>
+                <AddResourcesDialog
+                  mode="embedded"
+                  discipline={form.discipline}
+                  presetMaterials={(valueMeta?.materialsDetailed || []) as any}
+                  customMaterials={(valueMeta?.customMaterials || []) as any}
+                  presetChemicals={(valueMeta?.chemicalsDetailed || []) as any}
+                  customChemicals={(valueMeta?.customChemicals || []) as any}
+                  onChange={(data: AddResourcesDialogChange) => {
+                    const toNumber = (v: any, def: number) => {
+                      if (v === '' || v === null || v === undefined) return def;
+                      const n = Number(v);
+                      return Number.isFinite(n) ? n : def;
+                    };
+                    const clampMin = (v: number, min: number) => (v < min ? min : v);
+                    const sanitizedPresetMaterials = data.presetMaterials
+                      .filter((m) => m.name && m.name.trim())
+                      .map((m) => ({
+                        ...m,
+                        name: m.name.trim(),
+                        quantity: clampMin(toNumber(m.quantity, 1), 1),
+                        isCustom: false,
+                      }));
+                    const sanitizedCustomMaterials = data.customMaterials
+                      .filter((m) => m.name && m.name.trim())
+                      .map((m) => ({
+                        ...m,
+                        name: m.name.trim(),
+                        quantity: clampMin(toNumber(m.quantity, 1), 1),
+                      }));
+                    const sanitizedPresetChemicals = data.presetChemicals
+                      .filter((c) => c.name && c.name.trim())
+                      .map((c) => ({
+                        ...c,
+                        name: c.name.trim(),
+                        requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
+                        unit: (c.unit && c.unit.trim()) || 'g',
+                        isCustom: false,
+                      }));
+                    const sanitizedCustomChemicals = data.customChemicals
+                      .filter((c) => c.name && c.name.trim())
+                      .map((c) => ({
+                        ...c,
+                        name: c.name.trim(),
+                        requestedQuantity: Math.max(0, toNumber(c.requestedQuantity, 0)),
+                        unit: (c.unit && c.unit.trim()) || 'g',
+                      }));
+                    updateMeta({
+                      materialsDetailed: sanitizedPresetMaterials,
+                      customMaterials: sanitizedCustomMaterials,
+                      chemicalsDetailed: sanitizedPresetChemicals,
+                      customChemicals: sanitizedCustomChemicals,
+                      materials: Array.from(
+                        new Set([
+                          ...sanitizedPresetMaterials.map((m) => m.name),
+                          ...sanitizedCustomMaterials.map((m) => m.name),
+                        ]),
+                      ),
+                      chemicals: Array.from(
+                        new Set([
+                          ...sanitizedPresetChemicals.map((c) => c.name),
+                          ...sanitizedCustomChemicals.map((c) => c.name),
+                        ]),
+                      ),
+                    });
+                  }}
+                />
+                <Box display="flex" gap={1} mt={2}>
+                  <Button onClick={() => setActiveStep(idxTimeslots)}>Retour</Button>
+                  <Button variant="contained" onClick={() => setActiveStep(idxDocuments)}>
+                    Continuer
+                  </Button>
+                </Box>
+              </>
+            ),
+          }] as GenericWizardStep[] : []),
           /* {
             key: 'recap',
             label: 'Récapitulatif',
@@ -1792,7 +1812,7 @@ const EditEventDialog = React.forwardRef<
             />
             {/* Divider pour les ressources */}
             {!showResources && (
-              <Box sx={{ position: "relative", my: 2 }}>
+              <Box sx={{ position: "relative", my: 6 }}>
                 <Divider />
                 <Tooltip title="Afficher les ressources">
                   <IconButton
@@ -1807,7 +1827,7 @@ const EditEventDialog = React.forwardRef<
                       border: "2px solid",
                       borderColor: "divider",
                       "&:hover": {
-                        bgcolor: "primary.dark",
+                        bgcolor: (theme) => alphaMUI(theme.palette.primary.light, 0.1),
                         borderColor: "primary.main",
                       },
                     }}
@@ -1818,7 +1838,7 @@ const EditEventDialog = React.forwardRef<
               </Box>
             )}
             {showResources && (
-              <Box sx={{ position: "relative", my: 2 }}>
+              <Box sx={{ position: "relative", my: 6 }}>
                 <Divider />
                 <Tooltip title="Masquer les ressources">
                   <IconButton
